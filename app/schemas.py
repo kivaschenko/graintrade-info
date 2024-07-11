@@ -22,9 +22,8 @@ class ItemInResponse(ItemInDB):
     created_at: datetime = Field(alias="created_at")
 
     @property
-    def created_at(self) -> str:
-        return self._created_at.isoformat()
+    def formatted_created_at(self) -> str:
+        return self.created_at.isoformat()
 
     class Config:
-        orm_mode = True
-        getter_dict = lambda self: {"created_at": self.created_at, **self.dict()}
+        from_attributes = True
