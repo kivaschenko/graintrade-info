@@ -62,6 +62,7 @@ class AsyncpgItemRepository(ItemRepository):
         query = """
             SELECT id, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
             FROM items
+            ORDER BY id DESC LIMIT 100
         """
         async with self.conn as connection:
             rows = await connection.fetch(query)
@@ -117,7 +118,8 @@ class AsyncpgItemRepository(ItemRepository):
         query = """
             DELETE FROM items
         """
-        await self.conn.execute(query)
+        async with self.conn as connection:
+            await connection.execute(query)
 
 
 class FakeItemRepository(ItemRepository):
