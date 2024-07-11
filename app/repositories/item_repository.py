@@ -110,7 +110,8 @@ class AsyncpgItemRepository(ItemRepository):
             DELETE FROM items
             WHERE id = $1
         """
-        await self.conn.execute(query, item_id)
+        async with self.conn as connection:
+            await connection.execute(query, item_id)
 
     async def delete_all(self) -> None:
         query = """
