@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 
@@ -19,13 +19,12 @@ class ItemInDB(BaseModel):
 
 class ItemInResponse(ItemInDB):
     id: int
-    _created_at: datetime  # Add this line
-    created_at: str  # Add this line
+    created_at: datetime = Field(alias="created_at")
 
     @property
     def created_at(self) -> str:
         return self._created_at.isoformat()
 
-    @created_at.setter
-    def created_at(self, value: str) -> None:
-        self._created_at = datetime.fromisoformat(value)
+    class Config:
+        orm_mode = True
+        getter_dict = lambda self: {"created_at": self.created_at, **self.dict()}
