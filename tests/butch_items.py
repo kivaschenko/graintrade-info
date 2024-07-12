@@ -82,5 +82,5 @@ butch = [
         "latitude": 49.659466,
         "longitude": 30.974681,
         # "id": 6
-    }
+    },
 ]

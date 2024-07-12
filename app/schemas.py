@@ -16,7 +16,6 @@ class ItemInDB(BaseModel):
     longitude: float
 
 
-
 class ItemInResponse(ItemInDB):
     id: int
     created_at: datetime = Field(alias="created_at")
