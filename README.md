@@ -2,6 +2,11 @@
 This is a favorite project for learning more about asynchronous API with the FastAPI package. The main concept of the business is to help cope with a large number of offers from small and large participants of the agricultural market, tied to geographical points. You also need different filters to search for information.
 It should be completely anonymous and transparent, storing sensitive data as cryptographically hashed.
 
+## Azure stage host
+Redoc API: <https://web-app-graintrade.mangosky-9dd5102f.westus2.azurecontainerapps.io/redoc>
+
+Docs API: <https://web-app-graintrade.mangosky-9dd5102f.westus2.azurecontainerapps.io/docs>
+
 # Development
 ## Environment
 To install all dependencies use `poetry`. Move to `graintrade-info/` and run:
