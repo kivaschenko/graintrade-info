@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List
+from fastapi.security import OAuth2PasswordBearer
+from typing import List, Annotated
 from asyncpg import Connection
 from app.schemas import ItemInDB, ItemInResponse
 from app.repositories.item_repository import AsyncpgItemRepository
 from app.database import get_db
 
 router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 def get_item_repository(db: Connection = Depends(get_db)) -> AsyncpgItemRepository:
@@ -14,7 +17,9 @@ def get_item_repository(db: Connection = Depends(get_db)) -> AsyncpgItemReposito
 
 @router.post("/items/", response_model=ItemInResponse)
 async def create_item(
-    item: ItemInDB, repo: AsyncpgItemRepository = Depends(get_item_repository)
+    item: ItemInDB,
+    repo: AsyncpgItemRepository = Depends(get_item_repository),
+    token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     return await repo.create(item)
 
@@ -39,6 +44,7 @@ async def update_item(
     item_id: int,
     item: ItemInDB,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
+    token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     db_item = await repo.update(item_id, item)
     if db_item is None:
@@ -48,7 +54,9 @@ async def update_item(
 
 @router.delete("/items/{item_id}")
 async def delete_item(
-    item_id: int, repo: AsyncpgItemRepository = Depends(get_item_repository)
+    item_id: int,
+    repo: AsyncpgItemRepository = Depends(get_item_repository),
+    token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     await repo.delete(item_id)
     return {"message": "Item deleted successfully"}

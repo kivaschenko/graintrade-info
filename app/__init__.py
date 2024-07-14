@@ -31,6 +31,9 @@ DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABAS
 # DATABASE_URL = "postgresql://user:password@db/dbname"
 print(f"DATABASE_URL: {DATABASE_URL}")
 
+JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_EXPIRATION = int(os.getenv("JWT_EXPIRED_IN_MINUTES", "60"))
+
 
 conn = psycopg2.connect(DATABASE_URL)
 conn.autocommit = True

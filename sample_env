@@ -1,6 +1,0 @@
-# Database connection
-PGHOST=172.18.0.1
-PGUSER=user
-PGPORT=5432
-PGDATABASE=dbname
-PGPASSWORD=password
