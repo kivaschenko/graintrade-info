@@ -3,9 +3,10 @@ from typing import Annotated
 
 from fastapi import Depends, APIRouter, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, EmailStr
+
 import bcrypt
 import jwt
+from ..schemas import User, UserInDB, TokenData
 
 from .. import JWT_SECRET, JWT_EXPIRATION
 
@@ -27,26 +28,6 @@ fake_users_db = {
         "disabled": False,
     }
 }
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    username: str | None = None
-
-
-class User(BaseModel):
-    username: str
-    email: EmailStr = None
-    full_name: str | None = None
-    disabled: bool | None = None
-
-
-class UserInDB(User):
-    hashed_password: str
 
 
 def verify_password(plain_password, hashed_password):

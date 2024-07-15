@@ -121,6 +121,17 @@ class AsyncpgItemRepository(ItemRepository):
         async with self.conn as connection:
             await connection.execute(query)
 
+    async def get_items_by_user_id(self, user_id: int) -> List[ItemInResponse]:
+        query = """
+            SELECT i.id, i.title, i.description, i.price, i.currency, i.amount, i.measure, i.terms_delivery, i.country, i.region, i.latitude, i.longitude, i.created_at
+            FROM items i
+            JOIN items_users iu ON i.id = iu.item_id
+            WHERE iu.user_id = $1
+        """
+        async with self.conn as connection:
+            rows = await connection.fetch(query, user_id)
+        return [ItemInResponse(**row) for row in rows]
+
 
 class FakeItemRepository(ItemRepository):
     def __init__(self, items: list = []) -> None:
