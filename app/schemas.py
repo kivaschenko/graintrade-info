@@ -4,6 +4,7 @@ from datetime import datetime
 
 # Item schema
 
+
 class ItemInDB(BaseModel):
     title: str
     description: str
@@ -40,6 +41,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
+    scopes: list[str] = []
 
 
 class User(BaseModel):
@@ -49,5 +51,13 @@ class User(BaseModel):
     disabled: bool | None = None
 
 
+class UserInCreate(User):
+    password: str
+
+
 class UserInDB(User):
     hashed_password: str
+
+
+class UserInResponse(User):
+    id: int

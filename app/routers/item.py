@@ -15,6 +15,10 @@ def get_item_repository(db: Connection = Depends(get_db)) -> AsyncpgItemReposito
     return AsyncpgItemRepository(conn=db)
 
 
+# ------------------------
+# standard CRUD operations
+
+
 @router.post("/items/", response_model=ItemInResponse)
 async def create_item(
     item: ItemInDB,
@@ -25,8 +29,12 @@ async def create_item(
 
 
 @router.get("/items/", response_model=List[ItemInResponse])
-async def read_items(repo: AsyncpgItemRepository = Depends(get_item_repository)):
-    return await repo.get_all()
+async def read_items(
+    repo: AsyncpgItemRepository = Depends(get_item_repository),
+    offset: int = 0,
+    limit: int = 10,
+):
+    return await repo.get_all(offset=offset, limit=limit)
 
 
 @router.get("/items/{item_id}", response_model=ItemInResponse)
@@ -60,3 +68,18 @@ async def delete_item(
 ):
     await repo.delete(item_id)
     return {"message": "Item deleted successfully"}
+
+
+# ---------------------
+# additional operations
+
+
+@router.get("/find-items-in-distance/")
+async def find_items_in_radius(
+    latitude: float,
+    longitude: float,
+    distance: int,  # in meters
+    repo: AsyncpgItemRepository = Depends(get_item_repository),
+):
+    """Find all items within a given distance from a given point. The distance is in meters."""
+    return await repo.find_in_distance(latitude, longitude, distance)
