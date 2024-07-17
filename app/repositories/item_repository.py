@@ -58,14 +58,16 @@ class AsyncpgItemRepository(ItemRepository):
             print(row, type(row))
         return ItemInResponse(**row)
 
-    async def get_all(self) -> List[ItemInResponse]:
+    async def get_all(self, offset: int, limit: int) -> List[ItemInResponse]:
         query = """
             SELECT id, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
             FROM items
-            ORDER BY id DESC LIMIT 100
+            ORDER BY id DESC
+            OFFSET $1
+            LIMIT $2
         """
         async with self.conn as connection:
-            rows = await connection.fetch(query)
+            rows = await connection.fetch(query, offset, limit)
             print(f"rows: {rows}")
         return [ItemInResponse(**row) for row in rows]
 
@@ -130,6 +132,18 @@ class AsyncpgItemRepository(ItemRepository):
         """
         async with self.conn as connection:
             rows = await connection.fetch(query, user_id)
+        return [ItemInResponse(**row) for row in rows]
+
+    async def find_in_distance(
+        self, longitude: float, latitude: float, distance: int
+    ) -> List[ItemInResponse]:
+        query = """
+            SELECT id, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+            FROM items
+            WHERE ST_DWithin(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3)
+        """
+        async with self.conn as connection:
+            rows = await connection.fetch(query, longitude, latitude, distance)
         return [ItemInResponse(**row) for row in rows]
 
 

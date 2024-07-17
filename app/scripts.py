@@ -1,4 +1,3 @@
-
 import os
 import psycopg2
 from pathlib import Path
@@ -32,7 +31,6 @@ DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABAS
 print(f"DATABASE_URL: {DATABASE_URL}")
 
 
-
 def create_item_table(cursor):
     """Create table items if not exists"""
     print("Creating table items if not exists...")
@@ -56,6 +54,7 @@ def create_item_table(cursor):
     print("Table items created successfully!")
     print(res)
 
+
 def create_user_table(cursor):
     """Create table users if not exists"""
     print("Creating table users if not exists...")
@@ -72,6 +71,7 @@ def create_user_table(cursor):
     print("Table users created successfully!")
     print(res)
 
+
 def create_item_user_table(cursor):
     """Create table items_users if not exists"""
     print("Creating table items_users if not exists...")
@@ -84,6 +84,7 @@ def create_item_user_table(cursor):
     )
     print("Table items_users created successfully!")
     print(res)
+
 
 def create_tables():
     conn = psycopg2.connect(DATABASE_URL)

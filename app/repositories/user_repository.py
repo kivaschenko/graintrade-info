@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.schemas import UserInDB, UserInResponse    # noqa
+from app.schemas import UserInDB, UserInResponse
 
 
 class UserRepository(ABC):
@@ -29,6 +29,7 @@ class UserRepository(ABC):
     async def delete_all(self) -> None:
         pass
 
+
 class AsyncpgUserRepository(UserRepository):
     def __init__(self, conn: asyncpg.Connection) -> None:
         self.conn = conn
@@ -37,7 +38,7 @@ class AsyncpgUserRepository(UserRepository):
         query = """
             INSERT INTO users (username, email, full_name, hashed_password)
             VALUES ($1, $2, $3, $4)
-            RETURNING id, username, email, full_name, disabled
+            RETURNING id, username, email, full_name, hashed_password, disabled
         """
         async with self.conn as connection:
             row = await connection.fetchrow(
@@ -49,7 +50,7 @@ class AsyncpgUserRepository(UserRepository):
             )
             print(row, type(row))
         return UserInResponse(**row)
-    
+
     async def get_all(self) -> List[UserInResponse]:
         query = """
             SELECT id, username, email, full_name, disabled
@@ -57,7 +58,7 @@ class AsyncpgUserRepository(UserRepository):
         """
         async with self.conn as connection:
             rows = await connection.fetch(query)
-        return [UserInResponse(**row) for row in rows]  
+        return [UserInResponse(**row) for row in rows]
 
     async def get_by_id(self, user_id: int) -> UserInResponse:
         query = """
@@ -68,7 +69,7 @@ class AsyncpgUserRepository(UserRepository):
         async with self.conn as connection:
             row = await connection.fetchrow(query, user_id)
         return UserInResponse(**row)
-    
+
     async def update(self, user_id: int, user: UserInDB) -> UserInResponse:
         query = """
             UPDATE users
@@ -86,7 +87,7 @@ class AsyncpgUserRepository(UserRepository):
                 user_id,
             )
         return UserInResponse(**row)
-    
+
     async def delete(self, user_id: int) -> None:
         query = """
             DELETE FROM users
@@ -101,17 +102,17 @@ class AsyncpgUserRepository(UserRepository):
         """
         async with self.conn as connection:
             await connection.execute(query)
-    
+
     async def get_by_username(self, username: str) -> UserInResponse:
         query = """
-            SELECT id, username, email, full_name, disabled
+            SELECT id, username, email, full_name, hashed_password, disabled
             FROM users
             WHERE username = $1
         """
         async with self.conn as connection:
             row = await connection.fetchrow(query, username)
         return UserInResponse(**row)
-    
+
     async def get_by_email(self, email: str) -> UserInResponse:
         query = """
             SELECT id, username, email, full_name, disabled
@@ -121,8 +122,10 @@ class AsyncpgUserRepository(UserRepository):
         async with self.conn as connection:
             row = await connection.fetchrow(query, email)
         return UserInResponse(**row)
-    
-    async def get_by_username_and_email(self, username: str, email: str) -> UserInResponse: 
+
+    async def get_by_username_and_email(
+        self, username: str, email: str
+    ) -> UserInResponse:
         query = """
             SELECT id, username, email, full_name, disabled
             FROM users
@@ -131,4 +134,3 @@ class AsyncpgUserRepository(UserRepository):
         async with self.conn as connection:
             row = await connection.fetchrow(query, username, email)
         return UserInResponse(**row)
-    
