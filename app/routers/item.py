@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+import jwt
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from typing import List, Annotated
 from asyncpg import Connection
 from app.schemas import ItemInDB, ItemInResponse
-from app.repositories.item_repository import AsyncpgItemRepository
+from app.repositories import AsyncpgItemRepository
 from app.database import get_db
+from app.service_layer.unit_of_works import AsyncpgUnitOfWork
+from app import JWT_SECRET
 
 router = APIRouter()
 
@@ -13,6 +16,35 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_item_repository(db: Connection = Depends(get_db)) -> AsyncpgItemRepository:
     return AsyncpgItemRepository(conn=db)
+
+
+def get_unit_of_work(db: Connection = Depends(get_db)) -> AsyncpgUnitOfWork:
+    return AsyncpgUnitOfWork(conn=db)
+
+
+def get_user(repo, username: str):
+    try:
+        return repo.get_by_username(username)
+    except Exception as e:
+        print(e)
+        return None
+
+
+async def get_current_username(token: Annotated[str, Depends(oauth2_scheme)] = None):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except jwt.PyJWTError as e:
+        print(e, "is the error")
+        raise credentials_exception
+    return username
 
 
 # ------------------------
@@ -25,9 +57,13 @@ async def create_item(
     repo: AsyncpgItemRepository = Depends(get_item_repository),
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
-    print(item)
+    if token is None:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    print(item, "is the item")
     print(token + " is the token")
-    return await repo.create(item)
+    username = await get_current_username(token)
+    print(username, "is the username")
+    return await repo.create(item, username)
 
 
 @router.get("/items/", response_model=List[ItemInResponse])
