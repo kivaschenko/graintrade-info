@@ -25,6 +25,8 @@ async def create_item(
     repo: AsyncpgItemRepository = Depends(get_item_repository),
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
+    print(item)
+    print(token + " is the token")
     return await repo.create(item)
 
 

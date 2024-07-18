@@ -4,7 +4,7 @@ from typing import List
 from app.schemas import ItemInDB, ItemInResponse
 
 
-class ItemRepository(ABC):
+class AbstractItemRepository(ABC):
     @abstractmethod
     async def create(self, item: ItemInDB) -> ItemInResponse:
         raise NotImplementedError
@@ -30,7 +30,7 @@ class ItemRepository(ABC):
         pass
 
 
-class AsyncpgItemRepository(ItemRepository):
+class AsyncpgItemRepository(AbstractItemRepository):
     def __init__(self, conn: asyncpg.Connection) -> None:
         self.conn = conn
 
@@ -147,7 +147,7 @@ class AsyncpgItemRepository(ItemRepository):
         return [ItemInResponse(**row) for row in rows]
 
 
-class FakeItemRepository(ItemRepository):
+class FakeItemRepository(AbstractItemRepository):
     def __init__(self, items: list = []) -> None:
         self.items = items
 
