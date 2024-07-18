@@ -4,7 +4,7 @@ from typing import List
 from app.schemas import UserInDB, UserInResponse
 
 
-class UserRepository(ABC):
+class AbstractUserRepository(ABC):
     @abstractmethod
     async def create(self, user: UserInDB) -> UserInResponse:
         raise NotImplementedError
@@ -30,7 +30,7 @@ class UserRepository(ABC):
         pass
 
 
-class AsyncpgUserRepository(UserRepository):
+class AsyncpgUserRepository(AbstractUserRepository):
     def __init__(self, conn: asyncpg.Connection) -> None:
         self.conn = conn
 
@@ -134,3 +134,60 @@ class AsyncpgUserRepository(UserRepository):
         async with self.conn as connection:
             row = await connection.fetchrow(query, username, email)
         return UserInResponse(**row)
+
+
+# User and Item repositories
+
+class AbstractItemUserRepository(ABC):
+    @abstractmethod
+    async def add_item_to_user(self, user_id: int, item_id: int) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def remove_item_from_user(self, user_id: int, item_id: int) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_items_by_user_id(self, user_id: int) -> List[int]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_all(self) -> None:
+        raise NotImplementedError
+    
+class AsyncpgItemUserRepository(AbstractItemUserRepository):
+    def __init__(self, conn: asyncpg.Connection) -> None:
+        self.conn = conn
+
+    async def add_item_to_user(self, user_id: int, item_id: int) -> None:
+        query = """
+            INSERT INTO items_users (user_id, item_id)
+            VALUES ($1, $2)
+        """
+        async with self.conn as connection:
+            await connection.execute(query, user_id, item_id)
+
+    async def remove_item_from_user(self, user_id: int, item_id: int) -> None:
+        query = """
+            DELETE FROM items_users
+            WHERE user_id = $1 AND item_id = $2
+        """
+        async with self.conn as connection:
+            await connection.execute(query, user_id, item_id)
+
+    async def get_items_by_user_id(self, user_id: int) -> List[int]:
+        query = """
+            SELECT item_id
+            FROM items_users
+            WHERE user_id = $1
+        """
+        async with self.conn as connection:
+            rows = await connection.fetch(query, user_id)
+        return [row["item_id"] for row in rows]
+
+    async def delete_all(self) -> None:
+        query = """
+            DELETE FROM items_users
+        """
+        async with self.conn as connection:
+            await connection.execute(query)
