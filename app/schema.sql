@@ -38,16 +38,6 @@ CREATE TABLE IF NOT EXISTS items_users (
             FOREIGN KEY (user_id) REFERENCES users (id)
         );
 
--- CREATE OR REPLACE FUNCTION update_geometry_from_lat_lon()
--- RETURNS void AS
--- $$
--- BEGIN
---     UPDATE items
---     SET geometry = ST_MakePoint(longitude, latitude)::point;
--- END;
--- $$
--- LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION update_geometry_from_lat_lon()
 RETURNS void AS
 $$

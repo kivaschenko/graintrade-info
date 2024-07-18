@@ -26,7 +26,7 @@ class AbstractUnitOfWork(ABC):
     @abstractmethod
     async def __aexit__(self, exc_type, exc, tb):
         raise NotImplementedError
-    
+
 
 class AsyncpgUnitOfWork(AbstractUnitOfWork):
     def __init__(self, conn: asyncpg.Connection) -> None:

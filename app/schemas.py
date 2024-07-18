@@ -59,5 +59,5 @@ class UserInDB(User):
     hashed_password: str
 
 
-class UserInResponse(User):
+class UserInResponse(UserInDB):
     id: int

@@ -53,7 +53,7 @@ class AsyncpgUserRepository(AbstractUserRepository):
 
     async def get_all(self) -> List[UserInResponse]:
         query = """
-            SELECT id, username, email, full_name, disabled
+            SELECT id, username, email, full_name, disabled, hashed_password
             FROM users
         """
         async with self.conn as connection:
@@ -62,7 +62,7 @@ class AsyncpgUserRepository(AbstractUserRepository):
 
     async def get_by_id(self, user_id: int) -> UserInResponse:
         query = """
-            SELECT id, username, email, full_name, disabled
+            SELECT id, username, email, full_name, disabled, hashed_password
             FROM users
             WHERE id = $1
         """
@@ -75,7 +75,7 @@ class AsyncpgUserRepository(AbstractUserRepository):
             UPDATE users
             SET username = $1, email = $2, full_name = $3, hashed_password = $4
             WHERE id = $5
-            RETURNING id, username, email, full_name, disabled
+            RETURNING id, username, email, full_name, disabled, hashed_password
         """
         async with self.conn as connection:
             row = await connection.fetchrow(
@@ -115,7 +115,7 @@ class AsyncpgUserRepository(AbstractUserRepository):
 
     async def get_by_email(self, email: str) -> UserInResponse:
         query = """
-            SELECT id, username, email, full_name, disabled
+            SELECT id, username, email, full_name, disabled, hashed_password
             FROM users
             WHERE email = $1
         """
@@ -127,7 +127,7 @@ class AsyncpgUserRepository(AbstractUserRepository):
         self, username: str, email: str
     ) -> UserInResponse:
         query = """
-            SELECT id, username, email, full_name, disabled
+            SELECT id, username, email, full_name, disabled, hashed_password
             FROM users
             WHERE username = $1 AND email = $2
         """
@@ -137,6 +137,7 @@ class AsyncpgUserRepository(AbstractUserRepository):
 
 
 # User and Item repositories
+
 
 class AbstractItemUserRepository(ABC):
     @abstractmethod
@@ -154,7 +155,8 @@ class AbstractItemUserRepository(ABC):
     @abstractmethod
     async def delete_all(self) -> None:
         raise NotImplementedError
-    
+
+
 class AsyncpgItemUserRepository(AbstractItemUserRepository):
     def __init__(self, conn: asyncpg.Connection) -> None:
         self.conn = conn

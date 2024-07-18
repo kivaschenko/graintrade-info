@@ -34,11 +34,15 @@ class AsyncpgItemRepository(AbstractItemRepository):
     def __init__(self, conn: asyncpg.Connection) -> None:
         self.conn = conn
 
-    async def create(self, item: ItemInDB) -> ItemInResponse:
+    async def create(self, item: ItemInDB, username: str) -> ItemInResponse:
         query = """
-            INSERT INTO items (title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO items (title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, geom)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::numeric, $11::numeric, ST_SetSRID(ST_MakePoint($11::numeric, $10::numeric), 4326))
             RETURNING id, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+        """
+        query2 = """
+            INSERT INTO items_users (item_id, user_id)
+            VALUES ($1, (SELECT id FROM users WHERE username = $2))
         """
         async with self.conn as connection:
             row = await connection.fetchrow(
@@ -56,7 +60,9 @@ class AsyncpgItemRepository(AbstractItemRepository):
                 item.longitude,
             )
             print(row, type(row))
-        return ItemInResponse(**row)
+            item = ItemInResponse(**row)
+            await connection.execute(query2, item.id, username)
+        return item
 
     async def get_all(self, offset: int, limit: int) -> List[ItemInResponse]:
         query = """
