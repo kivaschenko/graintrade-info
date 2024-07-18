@@ -1,5 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
+
+
+# Item schema
 
 
 class ItemInDB(BaseModel):
@@ -26,3 +29,35 @@ class ItemInResponse(ItemInDB):
 
     class Config:
         from_attributes = True
+
+
+# User schema
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None
+    scopes: list[str] = []
+
+
+class User(BaseModel):
+    username: str
+    email: EmailStr = None
+    full_name: str | None = None
+    disabled: bool | None = None
+
+
+class UserInCreate(User):
+    password: str
+
+
+class UserInDB(User):
+    hashed_password: str
+
+
+class UserInResponse(UserInDB):
+    id: int
