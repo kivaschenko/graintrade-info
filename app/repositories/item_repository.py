@@ -4,7 +4,7 @@ from typing import List
 from app.schemas import ItemInDB, ItemInResponse
 
 
-class ItemRepository(ABC):
+class AbstractItemRepository(ABC):
     @abstractmethod
     async def create(self, item: ItemInDB) -> ItemInResponse:
         raise NotImplementedError
@@ -30,15 +30,19 @@ class ItemRepository(ABC):
         pass
 
 
-class AsyncpgItemRepository(ItemRepository):
+class AsyncpgItemRepository(AbstractItemRepository):
     def __init__(self, conn: asyncpg.Connection) -> None:
         self.conn = conn
 
-    async def create(self, item: ItemInDB) -> ItemInResponse:
+    async def create(self, item: ItemInDB, username: str) -> ItemInResponse:
         query = """
-            INSERT INTO items (title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO items (title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, geom)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::numeric, $11::numeric, ST_SetSRID(ST_MakePoint($11::numeric, $10::numeric), 4326))
             RETURNING id, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+        """
+        query2 = """
+            INSERT INTO items_users (item_id, user_id)
+            VALUES ($1, (SELECT id FROM users WHERE username = $2))
         """
         async with self.conn as connection:
             row = await connection.fetchrow(
@@ -56,16 +60,20 @@ class AsyncpgItemRepository(ItemRepository):
                 item.longitude,
             )
             print(row, type(row))
-        return ItemInResponse(**row)
+            item = ItemInResponse(**row)
+            await connection.execute(query2, item.id, username)
+        return item
 
-    async def get_all(self) -> List[ItemInResponse]:
+    async def get_all(self, offset: int, limit: int) -> List[ItemInResponse]:
         query = """
             SELECT id, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
             FROM items
-            ORDER BY id DESC LIMIT 100
+            ORDER BY id DESC
+            OFFSET $1
+            LIMIT $2
         """
         async with self.conn as connection:
-            rows = await connection.fetch(query)
+            rows = await connection.fetch(query, offset, limit)
             print(f"rows: {rows}")
         return [ItemInResponse(**row) for row in rows]
 
@@ -121,8 +129,31 @@ class AsyncpgItemRepository(ItemRepository):
         async with self.conn as connection:
             await connection.execute(query)
 
+    async def get_items_by_user_id(self, user_id: int) -> List[ItemInResponse]:
+        query = """
+            SELECT i.id, i.title, i.description, i.price, i.currency, i.amount, i.measure, i.terms_delivery, i.country, i.region, i.latitude, i.longitude, i.created_at
+            FROM items i
+            JOIN items_users iu ON i.id = iu.item_id
+            WHERE iu.user_id = $1
+        """
+        async with self.conn as connection:
+            rows = await connection.fetch(query, user_id)
+        return [ItemInResponse(**row) for row in rows]
 
-class FakeItemRepository(ItemRepository):
+    async def find_in_distance(
+        self, longitude: float, latitude: float, distance: int
+    ) -> List[ItemInResponse]:
+        query = """
+            SELECT id, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+            FROM items
+            WHERE ST_DWithin(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3)
+        """
+        async with self.conn as connection:
+            rows = await connection.fetch(query, longitude, latitude, distance)
+        return [ItemInResponse(**row) for row in rows]
+
+
+class FakeItemRepository(AbstractItemRepository):
     def __init__(self, items: list = []) -> None:
         self.items = items
 
