@@ -121,3 +121,28 @@ async def find_items_in_radius(
 ):
     """Find all items within a given distance from a given point. The distance is in meters."""
     return await repo.find_in_distance(latitude, longitude, distance)
+
+@router.get("/filter-items/", response_model=List[ItemInResponse])
+async def filter_items(
+    min_price: float = None,
+    max_price: float = None,
+    currency: str = None,
+    min_amount: int = None,
+    max_amount: int = None,
+    measure: str = None,
+    terms_delivery: str = None,
+    country: str = None,
+    region: str = None,
+    repo: AsyncpgItemRepository = Depends(get_item_repository),
+):
+    return await repo.get_filtered_items(
+        min_price=min_price,
+        max_price=max_price,
+        currency=currency,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        measure=measure,
+        terms_delivery=terms_delivery,
+        country=country,
+        region=region,
+    )
