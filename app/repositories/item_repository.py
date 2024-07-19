@@ -59,7 +59,6 @@ class AsyncpgItemRepository(AbstractItemRepository):
                 item.latitude,
                 item.longitude,
             )
-            print(row, type(row))
             item = ItemInResponse(**row)
             await connection.execute(query2, item.id, username)
         return item

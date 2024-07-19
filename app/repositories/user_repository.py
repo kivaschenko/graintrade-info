@@ -174,8 +174,13 @@ class AsyncpgItemUserRepository(AbstractItemUserRepository):
             DELETE FROM items_users
             WHERE user_id = $1 AND item_id = $2
         """
+        query2 = """
+            DELETE FROM items
+            WHERE id = $1
+        """
         async with self.conn as connection:
             await connection.execute(query, user_id, item_id)
+            await connection.execute(query2, item_id)
 
     async def get_items_by_user_id(self, user_id: int) -> List[int]:
         query = """
