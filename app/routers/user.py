@@ -87,7 +87,6 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        print(f"payload: {payload}")
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -130,7 +129,7 @@ async def login_for_access_token(
         )
     access_token_expires = timedelta(minutes=JWT_EXPIRATION)
     access_token = create_access_token(
-        data={"sub": user.username, "scopes": form_data.scopes},
+        data={"sub": user.username, "scopes": form_data.scopes, "user_id": user.id},
         expires_delta=access_token_expires,
     )
     return Token(access_token=access_token, token_type="bearer")

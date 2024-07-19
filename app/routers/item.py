@@ -4,9 +4,12 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import List, Annotated
 from asyncpg import Connection
 from app.schemas import ItemInDB, ItemInResponse
-from app.repositories import AsyncpgItemRepository
+from app.repositories import (
+    AsyncpgItemRepository,
+    AsyncpgItemUserRepository,
+    AsyncpgUserRepository,
+)
 from app.database import get_db
-from app.service_layer.unit_of_works import AsyncpgUnitOfWork
 from app import JWT_SECRET
 
 router = APIRouter()
@@ -18,8 +21,14 @@ def get_item_repository(db: Connection = Depends(get_db)) -> AsyncpgItemReposito
     return AsyncpgItemRepository(conn=db)
 
 
-def get_unit_of_work(db: Connection = Depends(get_db)) -> AsyncpgUnitOfWork:
-    return AsyncpgUnitOfWork(conn=db)
+def get_user_repository(db: Connection = Depends(get_db)) -> AsyncpgUserRepository:
+    return AsyncpgUserRepository(conn=db)
+
+
+def get_item_user_repository(
+    db: Connection = Depends(get_db),
+) -> AsyncpgItemUserRepository:
+    return AsyncpgItemUserRepository(conn=db)
 
 
 def get_user(repo, username: str):
@@ -47,6 +56,13 @@ async def get_current_username(token: Annotated[str, Depends(oauth2_scheme)] = N
     return username
 
 
+async def verify_ownership(user_id, item_id, item_user_repo: AsyncpgItemUserRepository):
+    item_user = await item_user_repo.get_by_user_id_item_id(user_id, item_id)
+    if item_user is None:
+        raise HTTPException(status_code=403, detail="User does not own the item")
+    return item_user
+
+
 # ------------------------
 # standard CRUD operations
 
@@ -59,10 +75,7 @@ async def create_item(
 ):
     if token is None:
         raise HTTPException(status_code=401, detail="Invalid token")
-    print(item, "is the item")
-    print(token + " is the token")
     username = await get_current_username(token)
-    print(username, "is the username")
     return await repo.create(item, username)
 
 
@@ -99,13 +112,29 @@ async def update_item(
 
 
 @router.delete("/items/{item_id}")
-async def delete_item(
+async def delete_item_bound_to_user(
     item_id: int,
-    repo: AsyncpgItemRepository = Depends(get_item_repository),
+    item_user_repo: AsyncpgItemUserRepository = Depends(get_item_user_repository),
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
-    await repo.delete(item_id)
-    return {"message": "Item deleted successfully"}
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise credentials_exception
+        await item_user_repo.remove_item_from_user(user_id, item_id)
+        return {"status": "success", "message": "Item deleted successfully"}
+    except jwt.ExpiredSignatureError:
+        return {"status": "error", "message": "Token has expired"}
+    except jwt.InvalidTokenError:
+        return {"status": "error", "message": "Invalid token"}
+    except Exception as e:
+        return {"status": "error", "message": "An error occurred: " + str(e)}
 
 
 # ---------------------
@@ -121,3 +150,29 @@ async def find_items_in_radius(
 ):
     """Find all items within a given distance from a given point. The distance is in meters."""
     return await repo.find_in_distance(latitude, longitude, distance)
+
+
+@router.get("/filter-items/", response_model=List[ItemInResponse])
+async def filter_items(
+    min_price: float = None,
+    max_price: float = None,
+    currency: str = None,
+    min_amount: int = None,
+    max_amount: int = None,
+    measure: str = None,
+    terms_delivery: str = None,
+    country: str = None,
+    region: str = None,
+    repo: AsyncpgItemRepository = Depends(get_item_repository),
+):
+    return await repo.get_filtered_items(
+        min_price=min_price,
+        max_price=max_price,
+        currency=currency,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        measure=measure,
+        terms_delivery=terms_delivery,
+        country=country,
+        region=region,
+    )
