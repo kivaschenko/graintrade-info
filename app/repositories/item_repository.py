@@ -59,7 +59,6 @@ class AsyncpgItemRepository(AbstractItemRepository):
                 item.latitude,
                 item.longitude,
             )
-            print(row, type(row))
             item = ItemInResponse(**row)
             await connection.execute(query2, item.id, username)
         return item
@@ -150,6 +149,38 @@ class AsyncpgItemRepository(AbstractItemRepository):
         """
         async with self.conn as connection:
             rows = await connection.fetch(query, longitude, latitude, distance)
+        return [ItemInResponse(**row) for row in rows]
+
+    async def get_filtered_items(
+        self,
+        min_price: float,
+        max_price: float,
+        currency: str,
+        min_amount: int,
+        max_amount: int,
+        measure: str,
+        terms_delivery: str,
+        country: str,
+        region: str,
+    ) -> List[ItemInResponse]:
+        query = """
+            SELECT id, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+            FROM items
+            WHERE (price >= $1 OR $1 IS NULL) AND (price <= $2 OR $2 IS NULL) AND (currency = $3 OR $3 IS NULL) AND (amount >= $4 OR $4 IS NULL) AND (amount <= $5 OR $5 IS NULL) AND (measure = $6 OR $6 IS NULL) AND (terms_delivery = $7 OR $7 IS NULL) AND (country = $8 OR $8 IS NULL) AND (region = $9 OR $9 IS NULL)
+        """
+        async with self.conn as connection:
+            rows = await connection.fetch(
+                query,
+                min_price,
+                max_price,
+                currency,
+                min_amount,
+                max_amount,
+                measure,
+                terms_delivery,
+                country,
+                region,
+            )
         return [ItemInResponse(**row) for row in rows]
 
 
