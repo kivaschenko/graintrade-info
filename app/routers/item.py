@@ -67,7 +67,7 @@ async def verify_ownership(user_id, item_id, item_user_repo: AsyncpgItemUserRepo
 # standard CRUD operations
 
 
-@router.post("/items/", response_model=ItemInResponse)
+@router.post("/items/", response_model=ItemInResponse, status_code=201, tags=["items"])
 async def create_item(
     item: ItemInDB,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
@@ -79,7 +79,7 @@ async def create_item(
     return await repo.create(item, username)
 
 
-@router.get("/items/", response_model=List[ItemInResponse])
+@router.get("/items/", response_model=List[ItemInResponse], tags=["items"])
 async def read_items(
     repo: AsyncpgItemRepository = Depends(get_item_repository),
     offset: int = 0,
@@ -88,7 +88,7 @@ async def read_items(
     return await repo.get_all(offset=offset, limit=limit)
 
 
-@router.get("/items/{item_id}", response_model=ItemInResponse)
+@router.get("/items/{item_id}", response_model=ItemInResponse, tags=["items"])
 async def read_item(
     item_id: int, repo: AsyncpgItemRepository = Depends(get_item_repository)
 ):
@@ -98,7 +98,7 @@ async def read_item(
     return db_item
 
 
-@router.put("/items/{item_id}", response_model=ItemInResponse)
+@router.put("/items/{item_id}", response_model=ItemInResponse, tags=["items"])
 async def update_item(
     item_id: int,
     item: ItemInDB,
@@ -111,7 +111,7 @@ async def update_item(
     return db_item
 
 
-@router.delete("/items/{item_id}")
+@router.delete("/items/{item_id}", response_model=dict, tags=["items"])
 async def delete_item_bound_to_user(
     item_id: int,
     item_user_repo: AsyncpgItemUserRepository = Depends(get_item_user_repository),
@@ -141,7 +141,7 @@ async def delete_item_bound_to_user(
 # additional operations
 
 
-@router.get("/find-items-in-distance/")
+@router.get("/find-items-in-distance/", response_model=List[ItemInResponse], tags=["filter items"])
 async def find_items_in_radius(
     latitude: float,
     longitude: float,
@@ -152,7 +152,7 @@ async def find_items_in_radius(
     return await repo.find_in_distance(latitude, longitude, distance)
 
 
-@router.get("/filter-items/", response_model=List[ItemInResponse])
+@router.get("/filter-items/", response_model=List[ItemInResponse], tags=["filter items"])
 async def filter_items(
     min_price: float = None,
     max_price: float = None,
