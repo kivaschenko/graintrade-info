@@ -115,7 +115,7 @@ async def get_current_active_user(
     return current_user
 
 
-@router.post("/token")
+@router.post("/token", response_model=Token, tags=["login"])
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     repo: AsyncpgUserRepository = Depends(get_user_repository),
@@ -135,14 +135,14 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@router.get("/users/me")
+@router.get("/users/me", response_model=UserInResponse, tags=["users"])
 async def read_users_me(
     current_user: Annotated[UserInResponse, Depends(get_current_active_user)]
 ):
     return current_user
 
 
-@router.get("/users/me/items/")
+@router.get("/users/me/items/", response_model=list[UserInResponse], tags=["users items"])
 async def read_own_items(
     current_user: Annotated[UserInResponse, Depends(get_current_active_user)],
     repo: AsyncpgItemRepository = Depends(get_item_repository),
@@ -151,7 +151,7 @@ async def read_own_items(
 
 
 @router.post(
-    "/users/", response_model=UserInResponse, status_code=status.HTTP_201_CREATED
+    "/users/", response_model=UserInResponse, status_code=status.HTTP_201_CREATED, tags=["users"]
 )
 async def create_user(
     user: UserInCreate,
@@ -167,12 +167,12 @@ async def create_user(
     return await repo.create(user_to_db)
 
 
-@router.get("/users/", response_model=list[UserInResponse])
+@router.get("/users/", response_model=list[UserInResponse], tags=["users"])
 async def read_users(repo: AsyncpgUserRepository = Depends(get_user_repository)):
     return await repo.get_all()
 
 
-@router.get("/users/{user_id}", response_model=UserInResponse)
+@router.get("/users/{user_id}", response_model=UserInResponse, tags=["users"])
 async def read_user(
     user_id: int,
     repo: AsyncpgUserRepository = Depends(get_user_repository),
