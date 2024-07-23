@@ -141,7 +141,11 @@ async def delete_item_bound_to_user(
 # additional operations
 
 
-@router.get("/find-items-in-distance/", response_model=List[ItemInResponse], tags=["filter items"])
+@router.get(
+    "/find-items-in-distance/",
+    response_model=List[ItemInResponse],
+    tags=["filter items"],
+)
 async def find_items_in_radius(
     latitude: float,
     longitude: float,
@@ -152,7 +156,9 @@ async def find_items_in_radius(
     return await repo.find_in_distance(latitude, longitude, distance)
 
 
-@router.get("/filter-items/", response_model=List[ItemInResponse], tags=["filter items"])
+@router.get(
+    "/filter-items/", response_model=List[ItemInResponse], tags=["filter items"]
+)
 async def filter_items(
     min_price: float = None,
     max_price: float = None,

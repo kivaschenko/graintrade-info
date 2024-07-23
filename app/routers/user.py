@@ -142,7 +142,9 @@ async def read_users_me(
     return current_user
 
 
-@router.get("/users/me/items/", response_model=list[UserInResponse], tags=["users items"])
+@router.get(
+    "/users/me/items/", response_model=list[UserInResponse], tags=["users items"]
+)
 async def read_own_items(
     current_user: Annotated[UserInResponse, Depends(get_current_active_user)],
     repo: AsyncpgItemRepository = Depends(get_item_repository),
@@ -151,7 +153,10 @@ async def read_own_items(
 
 
 @router.post(
-    "/users/", response_model=UserInResponse, status_code=status.HTTP_201_CREATED, tags=["users"]
+    "/users/",
+    response_model=UserInResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["users"],
 )
 async def create_user(
     user: UserInCreate,
