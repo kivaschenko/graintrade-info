@@ -12,10 +12,10 @@ import bcrypt
 import jwt
 
 from app import JWT_SECRET, JWT_EXPIRATION
-from app.database import get_db
-from app.schemas import UserInCreate, UserInDB, UserInResponse, TokenData, Token
-from app.repositories.user_repository import AsyncpgUserRepository
-from app.repositories.item_repository import AsyncpgItemRepository
+from app.infrastructure.database import get_db
+from app.schemas.schemas import UserInCreate, UserInDB, UserInResponse, TokenData, Token
+from app.infrastructure.user_repository import AsyncpgUserRepository
+from app.infrastructure.item_repository import AsyncpgItemRepository
 
 router = APIRouter()
 
@@ -108,7 +108,7 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: Annotated[UserInResponse, Security(get_current_user, scopes=["me"])]
+    current_user: Annotated[UserInResponse, Security(get_current_user, scopes=["me"])],
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -137,7 +137,7 @@ async def login_for_access_token(
 
 @router.get("/users/me", response_model=UserInResponse, tags=["users"])
 async def read_users_me(
-    current_user: Annotated[UserInResponse, Depends(get_current_active_user)]
+    current_user: Annotated[UserInResponse, Depends(get_current_active_user)],
 ):
     return current_user
 

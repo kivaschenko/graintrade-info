@@ -3,13 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from typing import List, Annotated
 from asyncpg import Connection
-from app.schemas import ItemInDB, ItemInResponse
-from app.repositories import (
+from app.schemas.schemas import ItemInDB, ItemInResponse
+from app.infrastructure import (
     AsyncpgItemRepository,
     AsyncpgItemUserRepository,
     AsyncpgUserRepository,
 )
-from app.database import get_db
+from app.infrastructure.database import get_db
 from app import JWT_SECRET
 
 router = APIRouter()

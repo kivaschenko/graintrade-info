@@ -2,12 +2,12 @@ from fastapi import FastAPI, Form, Request, status
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.routers import item, user
+from app.presentation import item_routes, user_routes
 
 app = FastAPI()
 
-app.include_router(item.router)
-app.include_router(user.router)
+app.include_router(item_routes.router)
+app.include_router(user_routes.router)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
