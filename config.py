@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import Optional, Any
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -21,6 +22,9 @@ class Settings(BaseSettings):
     mail_password: str
     app_name: str = "Graintrade Info API"
     DATABASE_URL: Optional[str] = None
+    BASE_DIR: Path = (
+        Path(__file__).resolve().parent
+    )  # Path to the directory where the settings file is located
 
     def model_post_init(self, __context: Any) -> None:
         """Override this method to perform additional initialization after `__init__`
@@ -37,3 +41,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+print(settings)
