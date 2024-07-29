@@ -3,8 +3,9 @@ from fastapi import FastAPI, Form, Request, status
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.infrastructure.database import Database
-from app.presentation import item_routes, user_routes
+from app.infrastructure.persistence.database import Database
+from app.presentation.routes import user_routes
+from app.presentation.routes import item_routes
 
 
 @asynccontextmanager
@@ -16,7 +17,7 @@ async def lifespan(app: FastAPI):
         yield
         print("Database closed")
     finally:
-        await Database.close()
+        await Database._pool.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -24,8 +25,8 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(item_routes.router)
 app.include_router(user_routes.router)
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+app.mount("/static", StaticFiles(directory="app/presentation/static"), name="static")
+templates = Jinja2Templates(directory="app/presentation/templates")
 
 
 @app.get("/", response_class=HTMLResponse)

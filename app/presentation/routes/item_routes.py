@@ -9,7 +9,7 @@ from app.infrastructure import (
     AsyncpgItemUserRepository,
     AsyncpgUserRepository,
 )
-from app.infrastructure.database import get_db
+from app.infrastructure.persistence.database import get_db
 from app import JWT_SECRET
 
 router = APIRouter()
