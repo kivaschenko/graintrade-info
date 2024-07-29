@@ -1,10 +1,25 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Form, Request, status
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from app.infrastructure.database import Database
 from app.presentation import item_routes, user_routes
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await Database.init()
+    print("Database initialized")
+    await Database.create_tables()
+    try:
+        yield
+        print("Database closed")
+    finally:
+        await Database.close()
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(item_routes.router)
 app.include_router(user_routes.router)

@@ -1,7 +1,8 @@
 CREATE EXTENSION IF NOT EXISTS postgis CASCADE;
 CREATE EXTENSION IF NOT EXISTS postgis_topology CASCADE;
 CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder CASCADE;
-CREATE EXTENSION IF NOT EXISTS postgis_sfcgal CASCADE;
+
+ALTER DATABASE template1 REFRESH COLLATION VERSION;
 
 CREATE TABLE IF NOT EXISTS items (
     id SERIAL PRIMARY KEY,
@@ -20,7 +21,6 @@ CREATE TABLE IF NOT EXISTS items (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- UPDATE items SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326);
 CREATE INDEX items_geom_idx ON items USING GIST (geom);
 CREATE INDEX items_country_idx ON items (country);
 CREATE INDEX items_region_idx ON items (region);
