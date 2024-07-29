@@ -1,9 +1,9 @@
-from .item_repository import (
+from .persistence.item_repository import (
     AbstractItemRepository,
     AsyncpgItemRepository,
     FakeItemRepository,
 )
-from .user_repository import (
+from .persistence.user_repository import (
     AbstractUserRepository,
     AbstractItemUserRepository,
     AsyncpgUserRepository,

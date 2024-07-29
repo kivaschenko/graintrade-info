@@ -5,7 +5,7 @@ from config import settings
 
 @asynccontextmanager
 async def get_db():
-    from .. import DATABASE_URL
+    from ... import DATABASE_URL
 
     print("Connecting to database...")
     conn = await asyncpg.connect(DATABASE_URL)
