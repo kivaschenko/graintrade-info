@@ -17,17 +17,13 @@ Make sure you have completed at least one `env` file.
 
 To run locally you can use 2 ways:
 
-1. Casually running of FastAPI and previously checked database params in `dev.env` or `sample_env` file and workinf PostgreSQL database:
+1. Casually running of FastAPI and previously checked database params in `.env` file and workinf PostgreSQL database:
 ```
-fastapi dev app/main.py
+fastapi dev
 ```
 2. And docker compose. To run this use command:
 ```
-$ export DEVELOPMENT=true
-$ echo $DEVELOPMENT 
-true
-$ docker compose build
-$ docker compose up
+docker compose up --build
 ```
 
 # Production

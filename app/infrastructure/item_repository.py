@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.schemas import ItemInDB, ItemInResponse
+from app.schemas.schemas import ItemInDB, ItemInResponse
 
 
 class AbstractItemRepository(ABC):
