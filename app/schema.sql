@@ -1,8 +1,7 @@
-CREATE EXTENSION IF NOT EXISTS postgis;
-CREATE EXTENSION IF NOT EXISTS postgis_topology;
-CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder;
-CREATE EXTENSION IF NOT EXISTS postgis_sfcgal;
-CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
+CREATE EXTENSION IF NOT EXISTS postgis CASCADE;
+CREATE EXTENSION IF NOT EXISTS postgis_topology CASCADE;
+CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder CASCADE;
+CREATE EXTENSION IF NOT EXISTS postgis_sfcgal CASCADE;
 
 CREATE TABLE IF NOT EXISTS items (
     id SERIAL PRIMARY KEY,
@@ -17,8 +16,16 @@ CREATE TABLE IF NOT EXISTS items (
     region VARCHAR(150),
     latitude DECIMAL(9, 6) NOT NULL,
     longitude DECIMAL(9, 6) NOT NULL,
+    geom GEOMETRY(POINT, 4326),
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- UPDATE items SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326);
+CREATE INDEX items_geom_idx ON items USING GIST (geom);
+CREATE INDEX items_country_idx ON items (country);
+CREATE INDEX items_region_idx ON items (region);
+CREATE INDEX items_created_at_idx ON items (created_at);
+
 
 CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
