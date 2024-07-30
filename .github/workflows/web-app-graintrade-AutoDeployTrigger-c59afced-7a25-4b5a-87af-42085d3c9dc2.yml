@@ -41,7 +41,17 @@ jobs:
           containerAppName: web-app-graintrade
           resourceGroup: graintrade-info-rg
           imageToBuild: ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }}
-          _buildArgumentsKey_: |
-            _buildArgumentsValues_
-
+          buildArguments: |
+            PGHOST=${{ secrets.PGHOST }}
+            PGUSER=${{ secrets.PGUSER }}
+            PGPORT=${{ secrets.PGPORT }}
+            PGDATABASE=${{ secrets.PGDATABASE }}
+            PGPASSWORD=${{ secrets.PGPASSWORD }}
+            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
+            MAIL_HOST=${{ secrets.MAIL_HOST }}
+            MAIL_PORT=${{ secrets.MAIL_PORT }}
+            MAIL_USER=${{ secrets.MAIL_USER }}
+            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
 
