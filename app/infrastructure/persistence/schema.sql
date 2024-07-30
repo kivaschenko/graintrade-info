@@ -55,4 +55,8 @@ END;
 $$
 LANGUAGE plpgsql;
 
-SELECT update_geometry_from_lat_lon();
+-- Create or update the trigger to call the function
+CREATE TRIGGER update_geom_trigger
+BEFORE INSERT OR UPDATE ON items
+FOR EACH ROW
+EXECUTE FUNCTION update_geometry_from_lat_lon();
