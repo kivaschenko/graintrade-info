@@ -70,7 +70,6 @@ class AsyncpgItemRepository(AbstractItemRepository):
         """
         async with self.conn as connection:
             rows = await connection.fetch(query, offset, limit)
-            print(f"rows: {rows}")
         return [ItemInResponse(**row) for row in rows]
 
     async def get_by_id(self, item_id: int) -> ItemInResponse:
@@ -81,7 +80,6 @@ class AsyncpgItemRepository(AbstractItemRepository):
         """
         async with self.conn as connection:
             row = await connection.fetchrow(query, item_id)
-            print(f"row: {row}")
         return ItemInResponse(**row)
 
     async def update(self, item_id: int, item: ItemInDB) -> ItemInResponse:
@@ -107,7 +105,6 @@ class AsyncpgItemRepository(AbstractItemRepository):
                 item.longitude,
                 item_id,
             )
-            print(f"row: {row}")
         return ItemInResponse(**row)
 
     async def delete(self, item_id: int) -> None:

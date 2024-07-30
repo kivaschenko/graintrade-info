@@ -52,7 +52,6 @@ def get_user(repo, username: str):
     try:
         return repo.get_by_username(username)
     except Exception as e:
-        print(e)
         return None
 
 

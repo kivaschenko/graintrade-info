@@ -9,23 +9,21 @@ class Database:
     @classmethod
     async def init(cls):
         cls._pool = await asyncpg.create_pool(dsn=settings.DATABASE_URL)
-        print("pool", cls._pool.__repr__())
+        print("Database connection pool created")
 
     @classmethod
     async def release_connection(cls, connection):
         await cls._pool.release(connection)
-        print("connection released", connection)
+        print("Connection released")
 
     @classmethod
     @asynccontextmanager
     async def get_connection(cls):
         connection = await cls._pool.acquire()
-        print("connection", connection)
         try:
             yield connection
         finally:
             await cls.release_connection(connection)
-            print("connection released", connection)
 
     @classmethod
     async def create_tables(cls):
@@ -33,7 +31,6 @@ class Database:
         file_path = (
             settings.BASE_DIR / "app" / "infrastructure" / "persistence" / "schema.sql"
         )
-        print("file_path", file_path)
         file_ = open(file_path, "r")
         SCHEMA_SQL = file_.read()
         print("SCHEMA_SQL", SCHEMA_SQL)
@@ -48,4 +45,3 @@ class Database:
 async def get_db():
     async with Database.get_connection() as connection:
         yield connection
-        print("connection released by get_db")

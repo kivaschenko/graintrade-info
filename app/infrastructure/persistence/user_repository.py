@@ -48,7 +48,6 @@ class AsyncpgUserRepository(AbstractUserRepository):
                 user.full_name,
                 user.hashed_password,
             )
-            print(row, type(row))
         return UserInResponse(**row)
 
     async def get_all(self) -> List[UserInResponse]:

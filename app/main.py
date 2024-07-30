@@ -11,11 +11,9 @@ from app.presentation.routes import item_routes
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await Database.init()
-    print("Database initialized")
     await Database.create_tables()
     try:
         yield
-        print("Database closed")
     finally:
         await Database._pool.close()
 
@@ -31,7 +29,6 @@ templates = Jinja2Templates(directory="app/presentation/templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    print("Request for index page received")
     return templates.TemplateResponse("index.html", {"request": request})
 
 
@@ -47,14 +44,10 @@ async def favicon():
 @app.post("/hello", response_class=HTMLResponse)
 async def hello(request: Request, name: str = Form(...)):
     if name:
-        print("Request for hello page received with name=%s" % name)
         return templates.TemplateResponse(
             "hello.html", {"request": request, "name": name}
         )
     else:
-        print(
-            "Request for hello page received with no name or blank name -- redirecting"
-        )
         return RedirectResponse(
             request.url_for("index"), status_code=status.HTTP_302_FOUND
         )
