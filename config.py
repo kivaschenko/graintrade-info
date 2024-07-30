@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     redis_port: int
     redis_password: str
     jwt_secret: str
-    jwt_expires_in: str
+    jwt_expires_in: int
     mail_host: str
     mail_port: int
     mail_user: str
