@@ -4,22 +4,18 @@ from pathlib import Path
 
 
 class Settings(BaseSettings):
-    db_user: str
-    db_password: str
-    db_name: str
-    db_port: int
-    db_host: str
-    pgadmin_email: str
-    pgadmin_password: str
-    redis_host: str
-    redis_port: int
-    redis_password: str
+    pguser: str
+    pgpassword: str
+    pgdatabase: str
+    pgport: int
+    pghost: str
+    telegram_bot_token: str | None
     jwt_secret: str
     jwt_expires_in: int
-    mail_host: str
-    mail_port: int
-    mail_user: str
-    mail_password: str
+    mail_host: str | None
+    mail_port: int | None
+    mail_user: str | None
+    mail_password: str | None
     app_name: str = "Graintrade Info API"
     DATABASE_URL: Optional[str] = None
     BASE_DIR: Path = (
@@ -32,11 +28,11 @@ class Settings(BaseSettings):
         requires the entire model to be initialized.
         """
         if not self.DATABASE_URL:
-            self.DATABASE_URL = f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+            self.DATABASE_URL = f"postgresql://{self.pguser}:{self.pgpassword}@{self.pghost}:{self.pgport}/{self.pgdatabase}"
 
     class Config:
-        env_file = "dev.env"
-        # env_file = ".env"
+        # env_file = "dev.env"
+        env_file = ".env"
         extra = "allow"
 
 
