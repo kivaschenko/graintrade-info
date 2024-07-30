@@ -3,21 +3,6 @@ from contextlib import asynccontextmanager
 from config import settings
 
 
-@asynccontextmanager
-async def get_db():
-    from ... import DATABASE_URL
-
-    print("Connecting to database...")
-    conn = await asyncpg.connect(DATABASE_URL)
-    print("Connected to database!")
-    try:
-        yield conn
-        print("Committing transaction...")
-    finally:
-        await conn.close()
-        print("Connection to database closed!")
-
-
 class Database:
     _pool = None
 
@@ -27,8 +12,8 @@ class Database:
         print("pool", cls._pool.__repr__())
 
     @classmethod
-    def release_connection(cls, connection):
-        cls._pool.release(connection)
+    async def release_connection(cls, connection):
+        await cls._pool.release(connection)
         print("connection released", connection)
 
     @classmethod
@@ -39,7 +24,7 @@ class Database:
         try:
             yield connection
         finally:
-            cls.release_connection(connection)
+            await cls.release_connection(connection)
             print("connection released", connection)
 
     @classmethod
@@ -57,3 +42,10 @@ class Database:
             print("Tables created successfully")
         file_.close()
         print("Finished creating tables")
+
+
+@asynccontextmanager
+async def get_db():
+    async with Database.get_connection() as connection:
+        yield connection
+        print("connection released by get_db")
