@@ -45,7 +45,9 @@ class Database:
     @classmethod
     async def create_tables(cls):
         print("Creating tables")
-        file_path = settings.BASE_DIR / "app" / "schemas" / "schema.sql"
+        file_path = (
+            settings.BASE_DIR / "app" / "infrastructure" / "persistence" / "schema.sql"
+        )
         print("file_path", file_path)
         file_ = open(file_path, "r")
         SCHEMA_SQL = file_.read()
