@@ -10,12 +10,17 @@ from fastapi.security import (
 
 import bcrypt
 import jwt
-
-from app import JWT_SECRET, JWT_EXPIRATION
-from app.database import get_db
-from app.schemas import UserInCreate, UserInDB, UserInResponse, TokenData, Token
-from app.repositories.user_repository import AsyncpgUserRepository
-from app.repositories.item_repository import AsyncpgItemRepository
+from config import settings
+from app.domain.entities.user import (
+    UserInCreate,
+    UserInDB,
+    UserInResponse,
+    TokenData,
+    Token,
+)
+from app.infrastructure.persistence.database import get_db
+from app.infrastructure.persistence.user_repository import AsyncpgUserRepository
+from app.infrastructure.persistence.item_repository import AsyncpgItemRepository
 
 router = APIRouter()
 
@@ -47,7 +52,6 @@ def get_user(repo, username: str):
     try:
         return repo.get_by_username(username)
     except Exception as e:
-        print(e)
         return None
 
 
@@ -67,7 +71,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=30)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm="HS256")
+    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm="HS256")
     return encoded_jwt
 
 
@@ -86,7 +90,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -108,7 +112,7 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: Annotated[UserInResponse, Security(get_current_user, scopes=["me"])]
+    current_user: Annotated[UserInResponse, Security(get_current_user, scopes=["me"])],
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -127,7 +131,7 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=JWT_EXPIRATION)
+    access_token_expires = timedelta(minutes=settings.jwt_expires_in)
     access_token = create_access_token(
         data={"sub": user.username, "scopes": form_data.scopes, "user_id": user.id},
         expires_delta=access_token_expires,
@@ -137,7 +141,7 @@ async def login_for_access_token(
 
 @router.get("/users/me", response_model=UserInResponse, tags=["users"])
 async def read_users_me(
-    current_user: Annotated[UserInResponse, Depends(get_current_active_user)]
+    current_user: Annotated[UserInResponse, Depends(get_current_active_user)],
 ):
     return current_user
 

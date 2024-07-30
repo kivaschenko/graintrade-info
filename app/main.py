@@ -1,21 +1,34 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Form, Request, status
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.routers import item, user
+from app.infrastructure.persistence.database import Database
+from app.presentation.routes import user_routes
+from app.presentation.routes import item_routes
 
-app = FastAPI()
 
-app.include_router(item.router)
-app.include_router(user.router)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await Database.init()
+    await Database.create_tables()
+    try:
+        yield
+    finally:
+        await Database._pool.close()
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+
+app = FastAPI(lifespan=lifespan)
+
+app.include_router(item_routes.router)
+app.include_router(user_routes.router)
+
+app.mount("/static", StaticFiles(directory="app/presentation/static"), name="static")
+templates = Jinja2Templates(directory="app/presentation/templates")
 
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    print("Request for index page received")
     return templates.TemplateResponse("index.html", {"request": request})
 
 
@@ -31,14 +44,10 @@ async def favicon():
 @app.post("/hello", response_class=HTMLResponse)
 async def hello(request: Request, name: str = Form(...)):
     if name:
-        print("Request for hello page received with name=%s" % name)
         return templates.TemplateResponse(
             "hello.html", {"request": request, "name": name}
         )
     else:
-        print(
-            "Request for hello page received with no name or blank name -- redirecting"
-        )
         return RedirectResponse(
             request.url_for("index"), status_code=status.HTTP_302_FOUND
         )

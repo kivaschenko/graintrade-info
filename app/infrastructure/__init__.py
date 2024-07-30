@@ -1,9 +1,9 @@
-from .item_repository import (
+from .persistence.item_repository import (
     AbstractItemRepository,
     AsyncpgItemRepository,
-    FakeItemRepository,
+    InMemoryItemRepository,
 )
-from .user_repository import (
+from .persistence.user_repository import (
     AbstractUserRepository,
     AbstractItemUserRepository,
     AsyncpgUserRepository,
@@ -13,7 +13,7 @@ from .user_repository import (
 __all__ = [
     AbstractItemRepository,
     AsyncpgItemRepository,
-    FakeItemRepository,
+    InMemoryItemRepository,
     AbstractUserRepository,
     AbstractItemUserRepository,
     AsyncpgUserRepository,
