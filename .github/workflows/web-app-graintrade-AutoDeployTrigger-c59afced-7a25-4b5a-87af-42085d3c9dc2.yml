@@ -1,8 +1,6 @@
 name: Trigger auto deployment for web-app-graintrade
 
-# When this action will be executed
 on:
-  # Automatically trigger it when detected changes in repo
   push:
     branches: 
       [ main ]
@@ -10,15 +8,14 @@ on:
     - '**'
     - '.github/workflows/web-app-graintrade-AutoDeployTrigger-c59afced-7a25-4b5a-87af-42085d3c9dc2.yml'
 
-  # Allow manual trigger 
   workflow_dispatch:      
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions: 
-      id-token: write #This is required for requesting the OIDC JWT Token
-      contents: read #Required when GH token is used to authenticate with private repo
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout to the branch
@@ -41,17 +38,22 @@ jobs:
           containerAppName: web-app-graintrade
           resourceGroup: graintrade-info-rg
           imageToBuild: ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }}
-          buildArguments: |
-            PGHOST=${{ secrets.PGHOST }}
-            PGUSER=${{ secrets.PGUSER }}
-            PGPORT=${{ secrets.PGPORT }}
-            PGDATABASE=${{ secrets.PGDATABASE }}
-            PGPASSWORD=${{ secrets.PGPASSWORD }}
-            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
-            MAIL_HOST=${{ secrets.MAIL_HOST }}
-            MAIL_PORT=${{ secrets.MAIL_PORT }}
-            MAIL_USER=${{ secrets.MAIL_USER }}
-            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
 
+      - name: Set environment variables for container app
+        run: |
+          az containerapp update \
+            --name web-app-graintrade \
+            --resource-group graintrade-info-rg \
+            --set-env-vars \
+              PGHOST=${{ secrets.PGHOST }} \
+              PGUSER=${{ secrets.PGUSER }} \
+              PGPORT=${{ secrets.PGPORT }} \
+              PGDATABASE=${{ secrets.PGDATABASE }} \
+              PGPASSWORD=${{ secrets.PGPASSWORD }} \
+              TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }} \
+              JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }} \
+              MAIL_HOST=${{ secrets.MAIL_HOST }} \
+              MAIL_PORT=${{ secrets.MAIL_PORT }} \
+              MAIL_USER=${{ secrets.MAIL_USER }} \
+              MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
