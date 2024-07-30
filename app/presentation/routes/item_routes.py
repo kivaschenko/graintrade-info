@@ -35,7 +35,6 @@ def get_user(repo, username: str):
     try:
         return repo.get_by_username(username)
     except Exception as e:
-        print(e)
         return None
 
 
@@ -51,7 +50,6 @@ async def get_current_username(token: Annotated[str, Depends(oauth2_scheme)] = N
         if username is None:
             raise credentials_exception
     except jwt.PyJWTError as e:
-        print(e, "is the error")
         raise credentials_exception
     return username
 
