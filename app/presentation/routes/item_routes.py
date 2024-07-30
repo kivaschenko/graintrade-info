@@ -3,14 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from typing import List, Annotated
 from asyncpg import Connection
-from app.schemas.schemas import ItemInDB, ItemInResponse
+from app.domain.entities.item import ItemInDB, ItemInResponse
 from app.infrastructure import (
     AsyncpgItemRepository,
     AsyncpgItemUserRepository,
     AsyncpgUserRepository,
 )
 from app.infrastructure.persistence.database import get_db
-from app import JWT_SECRET
+from config import settings
 
 router = APIRouter()
 
@@ -46,7 +46,7 @@ async def get_current_username(token: Annotated[str, Depends(oauth2_scheme)] = N
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -123,7 +123,7 @@ async def delete_item_bound_to_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         user_id = payload.get("user_id")
         if not user_id:
             raise credentials_exception

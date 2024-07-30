@@ -10,10 +10,15 @@ from fastapi.security import (
 
 import bcrypt
 import jwt
-
 from config import settings
+from app.domain.entities.user import (
+    UserInCreate,
+    UserInDB,
+    UserInResponse,
+    TokenData,
+    Token,
+)
 from app.infrastructure.persistence.database import get_db
-from app.schemas.schemas import UserInCreate, UserInDB, UserInResponse, TokenData, Token
 from app.infrastructure.persistence.user_repository import AsyncpgUserRepository
 from app.infrastructure.persistence.item_repository import AsyncpgItemRepository
 

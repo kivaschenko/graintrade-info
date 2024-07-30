@@ -1,9 +1,8 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 from datetime import datetime
 
+
 # Item schema
-
-
 class ItemInDB(BaseModel):
     title: str
     description: str

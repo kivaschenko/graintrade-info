@@ -115,8 +115,13 @@ class AsyncpgItemRepository(AbstractItemRepository):
             DELETE FROM items
             WHERE id = $1
         """
+        query2 = """
+            DELETE FROM items_users
+            WHERE item_id = $1
+        """
         async with self.conn as connection:
             await connection.execute(query, item_id)
+            await connection.execute(query2, item_id)
 
     async def get_items_by_user_id(self, user_id: int) -> List[ItemInResponse]:
         query = """
@@ -179,7 +184,9 @@ class InMemoryItemRepository(AbstractItemRepository):
         self.items = {}
         self.current_id = 1
 
-    async def create(self, item: ItemInDB) -> ItemInResponse:
+    async def create(
+        self, item: ItemInDB, username: str = "test_user_123"
+    ) -> ItemInResponse:
         item_id = self.current_id
         self.current_id += 1
         item_dict = item.model_dump()
