@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.schemas import UserInDB, UserInResponse
+from app.domain.entities.user import UserInDB, UserInResponse
 
 
 class AbstractUserRepository(ABC):
@@ -48,7 +48,6 @@ class AsyncpgUserRepository(AbstractUserRepository):
                 user.full_name,
                 user.hashed_password,
             )
-            print(row, type(row))
         return UserInResponse(**row)
 
     async def get_all(self) -> List[UserInResponse]:

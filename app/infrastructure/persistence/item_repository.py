@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.schemas import ItemInDB, ItemInResponse
+from datetime import date, timedelta, timezone
+from app.domain.entities.item import ItemInDB, ItemInResponse
 
 
 class AbstractItemRepository(ABC):
@@ -24,10 +25,6 @@ class AbstractItemRepository(ABC):
     @abstractmethod
     async def delete(self, item_id: int) -> None:
         raise NotImplementedError
-
-    @abstractmethod
-    async def delete_all(self) -> None:
-        pass
 
 
 class AsyncpgItemRepository(AbstractItemRepository):
@@ -73,7 +70,6 @@ class AsyncpgItemRepository(AbstractItemRepository):
         """
         async with self.conn as connection:
             rows = await connection.fetch(query, offset, limit)
-            print(f"rows: {rows}")
         return [ItemInResponse(**row) for row in rows]
 
     async def get_by_id(self, item_id: int) -> ItemInResponse:
@@ -84,7 +80,6 @@ class AsyncpgItemRepository(AbstractItemRepository):
         """
         async with self.conn as connection:
             row = await connection.fetchrow(query, item_id)
-            print(f"row: {row}")
         return ItemInResponse(**row)
 
     async def update(self, item_id: int, item: ItemInDB) -> ItemInResponse:
@@ -110,7 +105,6 @@ class AsyncpgItemRepository(AbstractItemRepository):
                 item.longitude,
                 item_id,
             )
-            print(f"row: {row}")
         return ItemInResponse(**row)
 
     async def delete(self, item_id: int) -> None:
@@ -118,15 +112,13 @@ class AsyncpgItemRepository(AbstractItemRepository):
             DELETE FROM items
             WHERE id = $1
         """
-        async with self.conn as connection:
-            await connection.execute(query, item_id)
-
-    async def delete_all(self) -> None:
-        query = """
-            DELETE FROM items
+        query2 = """
+            DELETE FROM items_users
+            WHERE item_id = $1
         """
         async with self.conn as connection:
-            await connection.execute(query)
+            await connection.execute(query, item_id)
+            await connection.execute(query2, item_id)
 
     async def get_items_by_user_id(self, user_id: int) -> List[ItemInResponse]:
         query = """
@@ -184,35 +176,40 @@ class AsyncpgItemRepository(AbstractItemRepository):
         return [ItemInResponse(**row) for row in rows]
 
 
-class FakeItemRepository(AbstractItemRepository):
-    def __init__(self, items: list = []) -> None:
-        self.items = items
+class InMemoryItemRepository(AbstractItemRepository):
+    def __init__(self) -> None:
+        self.items = {}
+        self.current_id = 1
 
-    async def create(self, item: ItemInDB) -> ItemInResponse:
-        item_id = len(self.items) + 1
-        item_in_response = ItemInResponse(id=item_id, **item.model_dump())
-        self.items.append(item_in_response)
-        return item_in_response
+    async def create(
+        self, item: ItemInDB, username: str = "test_user_123"
+    ) -> ItemInResponse:
+        item_id = self.current_id
+        self.current_id += 1
+        item_dict = item.model_dump()
+        item_dict["id"] = item_id
+        item_dict["created_at"] = date.today().isoformat()
+        self.items[item_id] = item_dict
+        return ItemInResponse(**item_dict)
 
     async def get_all(self) -> List[ItemInResponse]:
-        return self.items
+        return [item for item in self.items.values()]
 
     async def get_by_id(self, item_id: int) -> ItemInResponse:
-        for item in self.items:
-            if item.id == item_id:
-                return item
+        item = self.items.get(item_id)
+        if item:
+            return ItemInResponse(**item)
+        return None
 
     async def update(self, item_id: int, item: ItemInDB) -> ItemInResponse:
-        for i, item_in_response in enumerate(self.items):
-            if item_in_response.id == item_id:
-                self.items[i] = ItemInResponse(id=item_id, **item.model_dump())
-                return self.items[i]
+        if item_id not in self.items:
+            return None
+        item_dict = item.model_dump()
+        item_dict["id"] = item_id
+        item_dict["created_at"] = self.items[item_id]["created_at"]
+        self.items[item_id] = item_dict
+        return ItemInResponse(**item_dict)
 
     async def delete(self, item_id: int) -> None:
-        for i, item in enumerate(self.items):
-            if item.id == item_id:
-                del self.items[i]
-                break
-
-    async def delete_all(self) -> None:
-        self.items = []
+        if item_id in self.items:
+            del self.items[item_id]
