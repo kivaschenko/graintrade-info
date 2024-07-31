@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from datetime import date, timedelta, timezone
+from datetime import date
 from app.domain.entities.item import ItemInDB, ItemInResponse
 
 
