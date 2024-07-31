@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS items_users (
 );
 
 -- Drop the function if it exists
--- DROP FUNCTION IF EXISTS update_geometry_from_lat_lon();
+DROP FUNCTION IF EXISTS update_geometry_from_lat_lon() CASCADE;
 
 CREATE OR REPLACE FUNCTION update_geometry_from_lat_lon()
 RETURNS trigger AS
