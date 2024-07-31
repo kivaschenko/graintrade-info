@@ -17,7 +17,6 @@ class Database:
         print("Connection released")
 
     @classmethod
-    @asynccontextmanager
     async def get_connection(cls):
         connection = await cls._pool.acquire()
         try:

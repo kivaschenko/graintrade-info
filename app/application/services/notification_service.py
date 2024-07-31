@@ -1,4 +1,4 @@
-from app.domain.notifications.notification import Notification
+from app.domain.services.notification import Notification
 from app.domain.value_objects.recipient import Recipient
 from typing import List
 
