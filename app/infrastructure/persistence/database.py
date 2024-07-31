@@ -8,7 +8,9 @@ class Database:
 
     @classmethod
     async def init(cls):
-        cls._pool = await asyncpg.create_pool(dsn=settings.DATABASE_URL)
+        cls._pool = await asyncpg.create_pool(
+            dsn=settings.DATABASE_URL, min_size=1, max_size=10
+        )
         print("Database connection pool created")
 
     @classmethod
@@ -17,6 +19,7 @@ class Database:
         print("Connection released")
 
     @classmethod
+    @asynccontextmanager
     async def get_connection(cls):
         connection = await cls._pool.acquire()
         try:
