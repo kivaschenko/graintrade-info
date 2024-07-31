@@ -33,7 +33,6 @@ class Database:
         )
         file_ = open(file_path, "r")
         SCHEMA_SQL = file_.read()
-        print("SCHEMA_SQL", SCHEMA_SQL)
         async with cls.get_connection() as connection:
             await connection.execute(SCHEMA_SQL)
             print("Tables created successfully")
