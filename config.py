@@ -9,13 +9,8 @@ class Settings(BaseSettings):
     pgdatabase: str
     pgport: int
     pghost: str
-    telegram_bot_token: str | None
-    jwt_secret: str
-    jwt_expires_in: int
-    mail_host: str | None
-    mail_port: int | None
-    mail_user: str | None
-    mail_password: str | None
+    jwt_secret: str = "2b7e53b82f12b029f939ff1947bd5b6d4819a24fa53410ac246ebf10e4d64673"
+    jwt_expires_in: int = 3600
     app_name: str = "Graintrade Info API"
     DATABASE_URL: Optional[str] = None
     BASE_DIR: Path = (
