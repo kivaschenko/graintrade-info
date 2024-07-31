@@ -6,12 +6,16 @@ from fastapi.templating import Jinja2Templates
 from app.infrastructure.persistence.database import Database
 from app.presentation.routes import user_routes
 from app.presentation.routes import item_routes
+from config import settings
+
+DEV_MODE = settings.dev_mode
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await Database.init()
-    await Database.create_tables()
+    if DEV_MODE:
+        await Database.create_tables()
     try:
         yield
     finally:

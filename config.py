@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     BASE_DIR: Path = (
         Path(__file__).resolve().parent
     )  # Path to the directory where the settings file is located
+    dev_mode: bool = True
 
     def model_post_init(self, __context: Any) -> None:
         """Override this method to perform additional initialization after `__init__`
