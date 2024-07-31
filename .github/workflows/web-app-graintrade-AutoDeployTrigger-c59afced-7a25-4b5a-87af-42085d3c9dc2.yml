@@ -42,8 +42,9 @@ jobs:
             --build-arg MAIL_HOST=${{ secrets.MAIL_HOST }} \
             --build-arg MAIL_PORT=${{ secrets.MAIL_PORT }} \
             --build-arg MAIL_USER=${{ secrets.MAIL_USER }} \
-            --build-arg MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-            -t ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }} .
+            --build-arg MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }} \
+            -t ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }} \
+            .
           docker push ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }}
 
       - name: Deploy to Azure Container Apps
