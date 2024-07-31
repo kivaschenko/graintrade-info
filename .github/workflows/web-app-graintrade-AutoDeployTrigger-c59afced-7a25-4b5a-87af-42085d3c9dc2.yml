@@ -30,40 +30,31 @@ jobs:
 
       - name: Build and push container image to registry
         run: |
-          docker build \
+          docker buildx build \
             --build-arg PGHOST=${{ secrets.PGHOST }} \
             --build-arg PGUSER=${{ secrets.PGUSER }} \
             --build-arg PGPORT=${{ secrets.PGPORT }} \
             --build-arg PGDATABASE=${{ secrets.PGDATABASE }} \
             --build-arg PGPASSWORD=${{ secrets.PGPASSWORD }} \
+            --build-arg TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }} \
+            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            --build-arg JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }} \
+            --build-arg MAIL_HOST=${{ secrets.MAIL_HOST }} \
+            --build-arg MAIL_PORT=${{ secrets.MAIL_PORT }} \
+            --build-arg MAIL_USER=${{ secrets.MAIL_USER }} \
+            --build-arg MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
             -t ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }} .
           docker push ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }}
 
       - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v2
         with:
-          containerAppName: web-app-graintrade
-          resourceGroup: graintrade-info-rg
-          imageToBuild: ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }}
+          appSourcePath: ${{ github.workspace }} 
           registryUrl: ca6a3704c17cacr.azurecr.io
           registryUsername: ${{ secrets.WEBAPPGRAINTRADE_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.WEBAPPGRAINTRADE_REGISTRY_PASSWORD }}
-
-      - name: Set environment variables for container app
-        run: |
-          az containerapp envvar set \
-            --name web-app-graintrade \
-            --resource-group graintrade-info-rg \
-            --env-vars \
-              PGHOST=${{ secrets.PGHOST }} \
-              PGUSER=${{ secrets.PGUSER }} \
-              PGPORT=${{ secrets.PGPORT }} \
-              PGDATABASE=${{ secrets.PGDATABASE }} \
-              PGPASSWORD=${{ secrets.PGPASSWORD }} \
-              TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }} \
-              JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }} \
-              MAIL_HOST=${{ secrets.MAIL_HOST }} \
-              MAIL_PORT=${{ secrets.MAIL_PORT }} \
-              MAIL_USER=${{ secrets.MAIL_USER }} \
-              MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+          containerAppName: web-app-graintrade
+          resourceGroup: graintrade-info-rg
+          imageToBuild: ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
