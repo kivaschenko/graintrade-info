@@ -6,7 +6,7 @@ import os
 load_dotenv()
 
 # Telegram Bot Token
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 # Enable logging
 logging.basicConfig(
