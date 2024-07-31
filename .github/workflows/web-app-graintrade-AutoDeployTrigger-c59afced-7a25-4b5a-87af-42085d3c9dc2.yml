@@ -29,22 +29,32 @@ jobs:
           subscription-id: ${{ secrets.WEBAPPGRAINTRADE_AZURE_SUBSCRIPTION_ID }}
 
       - name: Build and push container image to registry
+        run: |
+          docker build \
+            --build-arg PGHOST=${{ secrets.PGHOST }} \
+            --build-arg PGUSER=${{ secrets.PGUSER }} \
+            --build-arg PGPORT=${{ secrets.PGPORT }} \
+            --build-arg PGDATABASE=${{ secrets.PGDATABASE }} \
+            --build-arg PGPASSWORD=${{ secrets.PGPASSWORD }} \
+            -t ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }} .
+          docker push ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }}
+
+      - name: Deploy to Azure Container Apps
         uses: azure/container-apps-deploy-action@v2
         with:
-          appSourcePath: ${{ github.workspace }} 
-          registryUrl: ca6a3704c17cacr.azurecr.io
-          registryUsername: ${{ secrets.WEBAPPGRAINTRADE_REGISTRY_USERNAME }}
-          registryPassword: ${{ secrets.WEBAPPGRAINTRADE_REGISTRY_PASSWORD }}
           containerAppName: web-app-graintrade
           resourceGroup: graintrade-info-rg
           imageToBuild: ca6a3704c17cacr.azurecr.io/web-app-graintrade:${{ github.sha }}
+          registryUrl: ca6a3704c17cacr.azurecr.io
+          registryUsername: ${{ secrets.WEBAPPGRAINTRADE_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.WEBAPPGRAINTRADE_REGISTRY_PASSWORD }}
 
       - name: Set environment variables for container app
         run: |
-          az containerapp update \
+          az containerapp envvar set \
             --name web-app-graintrade \
             --resource-group graintrade-info-rg \
-            --set-env-vars \
+            --env-vars \
               PGHOST=${{ secrets.PGHOST }} \
               PGUSER=${{ secrets.PGUSER }} \
               PGPORT=${{ secrets.PGPORT }} \
