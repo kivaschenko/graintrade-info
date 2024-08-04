@@ -1,7 +1,7 @@
+from typing import List, Annotated
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from typing import List, Annotated
 from asyncpg import Connection
 from app.domain.entities.item import ItemInDB, ItemInResponse
 from app.infrastructure import (
