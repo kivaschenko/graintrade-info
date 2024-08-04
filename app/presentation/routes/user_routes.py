@@ -1,7 +1,8 @@
 from datetime import timedelta, datetime, timezone
 from typing import Annotated
+import logging
 from asyncpg import Connection
-from fastapi import Depends, APIRouter, HTTPException, Security, status
+from fastapi import Depends, APIRouter, HTTPException, Security, status, Body
 from fastapi.security import (
     OAuth2PasswordBearer,
     OAuth2PasswordRequestForm,
@@ -11,7 +12,7 @@ from fastapi.security import (
 import bcrypt
 import jwt
 from config import settings
-from app.domain.entities.user import (
+from app.domain.user import (
     UserInCreate,
     UserInDB,
     UserInResponse,
@@ -21,9 +22,14 @@ from app.domain.entities.user import (
 from app.infrastructure.persistence.database import get_db
 from app.infrastructure.persistence.user_repository import AsyncpgUserRepository
 from app.infrastructure.persistence.item_repository import AsyncpgItemRepository
+from app.domain.entities.tarif import TarifInResponse, TarifInDB
+from app.infrastructure.persistence.tarif_repository import (
+    AbstractTarifRepository,
+    AsyncpgTarifRepository,
+)
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
-
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
     scopes={"me": "Read information about the current user", "items": "Read items"},
@@ -52,6 +58,7 @@ def get_user(repo, username: str):
     try:
         return repo.get_by_username(username)
     except Exception as e:
+        logger.error(f"Error getting user: {e}")
         return None
 
 
@@ -146,14 +153,54 @@ async def read_users_me(
     return current_user
 
 
+# Tarif Plan for user
+
+
+@router.post(
+    "/users/me/tarif-plan/",
+    status_code=status.HTTP_201_CREATED,
+    tags=["tarif plan"],
+)
+async def assigne_tarif_plan(
+    current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
+    repo: AsyncpgUserRepository = Depends(get_user_repository),
+    tarif_id: int = Body(...),
+):
+    """Assign tarif plan for user (me)"""
+    return await repo.assigne_tarif_plan(current_active_user.id, tarif_id)
+
+
+@router.get("/users/me/tarif-plan/", tags=["tarif plan"])
+async def get_tarif_plan(
+    current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
+    repo: AsyncpgUserRepository = Depends(get_user_repository),
+):
+    """Get tarif plan for user (me)"""
+    return await repo.get_tarif_plan(current_active_user.id)
+
+
+@router.put("/users/me/tarif-plan/", tags=["tarif plan"])
+async def update_tarif_plan(
+    tarif_id: int,
+    current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
+    repo: AsyncpgUserRepository = Depends(get_user_repository),
+):
+    """Update tarif plan for user (me)"""
+    return await repo.update_tarif_plan(current_active_user.id, tarif_id)
+
+
+# Items for user
+
+
 @router.get(
     "/users/me/items/", response_model=list[UserInResponse], tags=["users items"]
 )
 async def read_own_items(
-    current_user: Annotated[UserInResponse, Depends(get_current_active_user)],
+    current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
     repo: AsyncpgItemRepository = Depends(get_item_repository),
 ):
-    return await repo.get_items_by_user_id(current_user.id)
+    """Get all items for the current user (me)"""
+    return await repo.get_items_by_user_id(current_active_user.id)
 
 
 @router.post(
@@ -176,14 +223,113 @@ async def create_user(
     return await repo.create(user_to_db)
 
 
-@router.get("/users/", response_model=list[UserInResponse], tags=["users"])
+@router.get(
+    "/users/",
+    response_model=list[UserInResponse],
+    status_code=status.HTTP_200_OK,
+    tags=["users"],
+)
 async def read_users(repo: AsyncpgUserRepository = Depends(get_user_repository)):
     return await repo.get_all()
 
 
-@router.get("/users/{user_id}", response_model=UserInResponse, tags=["users"])
+@router.get(
+    "/users/{user_id}",
+    response_model=UserInResponse,
+    status_code=status.HTTP_200_OK,
+    tags=["users"],
+)
 async def read_user(
     user_id: int,
     repo: AsyncpgUserRepository = Depends(get_user_repository),
 ):
     return await repo.get_by_id(user_id)
+
+
+@router.put(
+    "/users/{user_id}",
+    response_model=UserInResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    tags=["users"],
+)
+async def update_user(
+    user_id: int,
+    user: UserInCreate,
+    current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
+    repo: AsyncpgUserRepository = Depends(get_user_repository),
+):
+    if current_active_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own user",
+        )
+    user_to_db = UserInDB(
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        hashed_password=get_password_hash(user.password),
+    )
+    return await repo.update(user_id, user_to_db)
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_200_OK, tags=["users"])
+async def delete_user(
+    user_id: int,
+    current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
+    repo: AsyncpgUserRepository = Depends(get_user_repository),
+):
+    if current_active_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own user",
+        )
+    await repo.delete(user_id)
+    return {"status": "success"}
+
+
+# Tarif routes
+
+
+def get_tarif_repository(db: Connection = Depends(get_db)) -> AsyncpgTarifRepository:
+    return AsyncpgTarifRepository(conn=db)
+
+
+@router.get(
+    "/tarifs",
+    response_model=list[TarifInResponse],
+    tags=["tarifs"],
+    status_code=status.HTTP_200_OK,
+)
+async def get_tarifs(repo: AbstractTarifRepository = Depends(get_tarif_repository)):
+    try:
+        tarifs = await repo.get_all()
+        return tarifs
+    except Exception as e:
+        logger.error(f"Error getting tarifs: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post(
+    "/tarifs",
+    response_model=TarifInResponse,
+    tags=["tarifs"],
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_tarif(
+    tarif: TarifInDB,
+    repo: AbstractTarifRepository = Depends(get_tarif_repository),
+    current_user: UserInResponse = Depends(get_current_user),
+):
+    """Create a new tarif plan. Requires authentication."""
+    # Check if the user has the necessary permissions
+    if "admin" not in current_user.roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have the necessary permissions",
+        )
+    try:
+        new_tarif = await repo.create(tarif)
+        return new_tarif
+    except Exception as e:
+        logger.error(f"Error creating tarif: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

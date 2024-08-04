@@ -27,8 +27,8 @@ class Settings(BaseSettings):
             self.DATABASE_URL = f"postgresql://{self.pguser}:{self.pgpassword}@{self.pghost}:{self.pgport}/{self.pgdatabase}"
 
     class Config:
-        # env_file = "dev.env"
-        env_file = ".env"
+        env_file = "dev.env"
+        # env_file = ".env"
         extra = "allow"
 
 
