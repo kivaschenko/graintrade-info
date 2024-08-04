@@ -3,7 +3,7 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from asyncpg import Connection
-from app.domain.entities.item import ItemInDB, ItemInResponse
+from app.domain.item import ItemInDB, ItemInResponse
 from app.infrastructure import (
     AsyncpgItemRepository,
     AsyncpgItemUserRepository,
@@ -65,7 +65,7 @@ async def verify_ownership(user_id, item_id, item_user_repo: AsyncpgItemUserRepo
 # standard CRUD operations
 
 
-@router.post("/items/", response_model=ItemInResponse, status_code=201, tags=["items"])
+@router.post("/items", response_model=ItemInResponse, status_code=201, tags=["items"])
 async def create_item(
     item: ItemInDB,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
@@ -77,7 +77,9 @@ async def create_item(
     return await repo.create(item, username)
 
 
-@router.get("/items/", response_model=List[ItemInResponse], tags=["items"])
+@router.get(
+    "/items", response_model=List[ItemInResponse], status_code=200, tags=["items"]
+)
 async def read_items(
     repo: AsyncpgItemRepository = Depends(get_item_repository),
     offset: int = 0,
@@ -86,7 +88,9 @@ async def read_items(
     return await repo.get_all(offset=offset, limit=limit)
 
 
-@router.get("/items/{item_id}", response_model=ItemInResponse, tags=["items"])
+@router.get(
+    "/items/{item_id}", response_model=ItemInResponse, status_code=200, tags=["items"]
+)
 async def read_item(
     item_id: int, repo: AsyncpgItemRepository = Depends(get_item_repository)
 ):
@@ -96,7 +100,12 @@ async def read_item(
     return db_item
 
 
-@router.put("/items/{item_id}", response_model=ItemInResponse, tags=["items"])
+@router.put(
+    "/items/{item_id}",
+    response_model=ItemInResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    tags=["items"],
+)
 async def update_item(
     item_id: int,
     item: ItemInDB,
@@ -109,7 +118,12 @@ async def update_item(
     return db_item
 
 
-@router.delete("/items/{item_id}", response_model=dict, tags=["items"])
+@router.delete(
+    "/items/{item_id}",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    tags=["items"],
+)
 async def delete_item_bound_to_user(
     item_id: int,
     item_user_repo: AsyncpgItemUserRepository = Depends(get_item_user_repository),
@@ -140,7 +154,7 @@ async def delete_item_bound_to_user(
 
 
 @router.get(
-    "/find-items-in-distance/",
+    "/find-items-in-distance",
     response_model=List[ItemInResponse],
     tags=["filter items"],
 )
@@ -154,9 +168,7 @@ async def find_items_in_radius(
     return await repo.find_in_distance(latitude, longitude, distance)
 
 
-@router.get(
-    "/filter-items/", response_model=List[ItemInResponse], tags=["filter items"]
-)
+@router.get("/filter-items", response_model=List[ItemInResponse], tags=["filter items"])
 async def filter_items(
     min_price: float = None,
     max_price: float = None,

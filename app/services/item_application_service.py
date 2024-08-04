@@ -1,9 +1,9 @@
 from fastapi import BackgroundTasks
-from app.domain.value_objects.recipient import Recipient
+from app.domain.recipient import Recipient
 from app.domain.services.item_service import ItemService
 from app.infrastructure.persistence.item_repository import AbstractItemRepository
-from app.application.services.notification_service import NotificationService
-from app.domain.entities.item import ItemInDB, ItemInResponse
+from app.services.notification_service import NotificationService
+from app.domain.item import ItemInDB, ItemInResponse
 
 
 class ItemApplicationService:

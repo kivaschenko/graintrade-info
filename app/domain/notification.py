@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ..value_objects.recipient import Recipient
+from .recipient import Recipient
 
 
 class Notification(ABC):

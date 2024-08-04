@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from datetime import date
-from app.domain.entities.item import ItemInDB, ItemInResponse
+from app.domain.item import ItemInDB, ItemInResponse
 
 
 class AbstractItemRepository(ABC):
@@ -174,42 +173,3 @@ class AsyncpgItemRepository(AbstractItemRepository):
                 region,
             )
         return [ItemInResponse(**row) for row in rows]
-
-
-class InMemoryItemRepository(AbstractItemRepository):
-    def __init__(self) -> None:
-        self.items = {}
-        self.current_id = 1
-
-    async def create(
-        self, item: ItemInDB, username: str = "test_user_123"
-    ) -> ItemInResponse:
-        item_id = self.current_id
-        self.current_id += 1
-        item_dict = item.model_dump()
-        item_dict["id"] = item_id
-        item_dict["created_at"] = date.today().isoformat()
-        self.items[item_id] = item_dict
-        return ItemInResponse(**item_dict)
-
-    async def get_all(self) -> List[ItemInResponse]:
-        return [item for item in self.items.values()]
-
-    async def get_by_id(self, item_id: int) -> ItemInResponse:
-        item = self.items.get(item_id)
-        if item:
-            return ItemInResponse(**item)
-        return None
-
-    async def update(self, item_id: int, item: ItemInDB) -> ItemInResponse:
-        if item_id not in self.items:
-            return None
-        item_dict = item.model_dump()
-        item_dict["id"] = item_id
-        item_dict["created_at"] = self.items[item_id]["created_at"]
-        self.items[item_id] = item_dict
-        return ItemInResponse(**item_dict)
-
-    async def delete(self, item_id: int) -> None:
-        if item_id in self.items:
-            del self.items[item_id]
