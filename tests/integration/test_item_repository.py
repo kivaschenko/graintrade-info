@@ -30,7 +30,7 @@ async def fake_user(db_connection=db_connection):
 
 
 @pytest.fixture(scope="module")
-async def repo(db_connection):
+async def repo(db_connection=db_connection):
     repository = AsyncpgItemRepository(db_connection)
     yield repository
 
