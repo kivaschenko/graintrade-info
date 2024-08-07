@@ -1,21 +1,21 @@
+from typing import List, Optional
+
 from fastapi import BackgroundTasks
+
+from app.domain.item import ItemInDB, ItemInResponse
 from app.domain.recipient import Recipient
-from app.domain.services.item_service import ItemService
 from app.infrastructure.persistence.item_repository import AbstractItemRepository
 from app.services.notification_service import NotificationService
-from app.domain.item import ItemInDB, ItemInResponse
 
 
 class ItemApplicationService:
     def __init__(
         self,
         item_repository: AbstractItemRepository,
-        item_service: ItemService = None,
-        notification_service: NotificationService = None,
+        notification_services: Optional[List[NotificationService]] = None,
     ):
-        self.item_service = item_service
         self.item_repository = item_repository
-        self.notification_service = notification_service
+        self.notification_services = notification_services
 
     async def create_item(
         self,
