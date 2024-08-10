@@ -3,16 +3,10 @@
 This is a favorite project for learning more about asynchronous API with the FastAPI package. The main concept of the business is to help cope with a large number of offers from small and large participants of the agricultural market, tied to geographical points. You also need different filters to search for information.
 It should be completely anonymous and transparent, storing sensitive data as cryptographically hashed.
 
-## Azure stage host
-Home page: <https://web-app-graintrade.mangosky-9dd5102f.westus2.azurecontainerapps.io>
-
-Redoc API: <https://web-app-graintrade.mangosky-9dd5102f.westus2.azurecontainerapps.io/redoc>
-
-Docs API: <https://web-app-graintrade.mangosky-9dd5102f.westus2.azurecontainerapps.io/docs>
-
 # Development
+
 ## Environment
-To install all dependencies use `poetry`. Move to `graintrade-info/` and run:
+To install all dependencies use `poetry`. Move to `graintrade-info/needeing-service-dir/` and run:
 ```
 poetry install
 ```
@@ -20,7 +14,7 @@ Make sure you have completed at least one `env` file.
 
 To run locally you can use 2 ways:
 
-1. Casually running of FastAPI and previously checked database params in `.env` or `env.dev` file and have a workinf PostgreSQL database:
+1. Casually running of FastAPI and previously checked database params in `.env` file and have a workinf PostgreSQL database:
 ```
 fastapi dev
 ```
