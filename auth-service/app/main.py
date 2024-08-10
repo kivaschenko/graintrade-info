@@ -214,7 +214,12 @@ async def read_user(
     user_id: int,
     repo: AsyncpgUserRepository = Depends(get_user_repository),
 ):
-    return await repo.get_by_id(user_id)
+    try:
+        user = await repo.get_by_id(user_id)
+        return user
+    except Exception as e:
+        logging.error(f"Error getting user: {e}")
+        raise HTTPException(status_code=404, detail="User not found")
 
 
 @app.put(
