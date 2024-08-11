@@ -1,21 +1,6 @@
 version: '3.9'
 
 services:
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile_dev
-    ports:
-      - "8000:8000"
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-    depends_on:
-      - db
-    environment:
-      - DATABASE_URL=postgresql://admin:test_password@db/postgres
-
   db:
     image: postgis/postgis:16-3.4-alpine
     environment:
@@ -23,7 +8,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: test_password
     volumes:
-      - ../data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - '172.17.0.1:5432:5432'
     healthcheck:
@@ -32,6 +17,18 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
+
+  db_init:
+    image: postgis/postgis:16-3.4-alpine
+    volumes:
+      - ./shared-libs/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: test_password
+    depends_on:
+      - db
+    command: ["psql", "-U", "admin", "-d", "postgres", "-f", "/docker-entrypoint-initdb.d/schema.sql"]
 
   pgadmin4:
     image: elestio/pgadmin:latest
@@ -43,4 +40,39 @@ services:
     ports:
       - "172.17.0.1:8080:8080"
     volumes:
-      - ../servers.json:/pgadmin4/servers.json
+      - postgis:/var/lib/pgadmin4/servers.json
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./auth-service/Dockerfile
+    ports:
+      - "8001:8000"
+    volumes:
+      - type: bind
+        source: ./auth-service
+        target: /app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://admin:test_password@db/postgres
+
+  item-service:
+    build:
+      context: .
+      dockerfile: ./item-service/Dockerfile
+    ports:
+      - "8002:8000"
+    volumes:
+      - type: bind
+        source: ./item-service
+        target: /app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://admin:test_password@db/postgres
+  
+
+volumes:
+  postgres_data:
+  postgis:

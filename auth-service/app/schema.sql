@@ -1,35 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS postgis CASCADE;
-CREATE EXTENSION IF NOT EXISTS postgis_topology CASCADE;
-CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder CASCADE;
-
-CREATE TABLE IF NOT EXISTS items (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(50) NOT NULL,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
-    currency VARCHAR(3) NOT NULL,
-    amount INTEGER NOT NULL,
-    measure VARCHAR(10) NOT NULL,
-    terms_delivery VARCHAR(50) NOT NULL,
-    country VARCHAR(150) NOT NULL,
-    region VARCHAR(150),
-    latitude DECIMAL(9, 6) NOT NULL,
-    longitude DECIMAL(9, 6) NOT NULL,
-    geom GEOMETRY(POINT, 4326),
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Drop indexes if they exist
-DROP INDEX IF EXISTS items_geom_idx;
-DROP INDEX IF EXISTS items_country_idx;
-DROP INDEX IF EXISTS items_region_idx;
-DROP INDEX IF EXISTS items_created_at_idx;
-
--- Create indexes
-CREATE INDEX items_geom_idx ON items USING GIST (geom);
-CREATE INDEX items_country_idx ON items (country);
-CREATE INDEX items_region_idx ON items (region);
-CREATE INDEX items_created_at_idx ON items (created_at);
+# schema.sql
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
