@@ -1,7 +1,13 @@
+# repository.py
+# is responsible for interacting with the database. It contains functions to create, retrieve,
+# update, and delete items from the database. It uses the asyncpg library to interact with the
+# PostgreSQL database. The repository pattern is used to separate the data access logic from the
+# business logic of the application. The repository pattern makes it easier to test the data access
+# logic in isolation from the rest of the application.
+from typing import List
 from abc import ABC, abstractmethod
 import asyncpg
-from typing import List
-from app.domain.item import ItemInDB, ItemInResponse
+from .schemas import ItemInDB, ItemInResponse
 
 
 class AbstractItemRepository(ABC):
@@ -30,7 +36,7 @@ class AsyncpgItemRepository(AbstractItemRepository):
     def __init__(self, conn: asyncpg.Connection) -> None:
         self.conn = conn
 
-    async def create(self, item: ItemInDB, username: str) -> ItemInResponse:
+    async def create(self, item: ItemInDB, user_id: int) -> ItemInResponse:
         query = """
             INSERT INTO items (title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, geom)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::numeric, $11::numeric, ST_SetSRID(ST_MakePoint($11::numeric, $10::numeric), 4326))
@@ -38,7 +44,7 @@ class AsyncpgItemRepository(AbstractItemRepository):
         """
         query2 = """
             INSERT INTO items_users (item_id, user_id)
-            VALUES ($1, (SELECT id FROM users WHERE username = $2))
+            VALUES ($1, $2)
         """
         async with self.conn as connection:
             row = await connection.fetchrow(
@@ -56,7 +62,7 @@ class AsyncpgItemRepository(AbstractItemRepository):
                 item.longitude,
             )
             item = ItemInResponse(**row)
-            await connection.execute(query2, item.id, username)
+            await connection.execute(query2, item.id, user_id)
         return item
 
     async def get_all(self, offset: int, limit: int) -> List[ItemInResponse]:
@@ -106,18 +112,21 @@ class AsyncpgItemRepository(AbstractItemRepository):
             )
         return ItemInResponse(**row)
 
-    async def delete(self, item_id: int) -> None:
+    async def delete(self, item_id: int, user_id: int) -> None:
         query = """
+            DELETE FROM items_users
+            WHERE item_id = $1, user_id = $2
+        """
+        query2 = """
             DELETE FROM items
             WHERE id = $1
         """
-        query2 = """
-            DELETE FROM items_users
-            WHERE item_id = $1
-        """
-        async with self.conn as connection:
-            await connection.execute(query, item_id)
-            await connection.execute(query2, item_id)
+        try:
+            async with self.conn as connection:
+                await connection.execute(query, item_id, user_id)
+                await connection.execute(query2, item_id)
+        except asyncpg.exceptions.ForeignKeyViolationError:
+            raise ValueError("Item does not belong to the user")
 
     async def get_items_by_user_id(self, user_id: int) -> List[ItemInResponse]:
         query = """

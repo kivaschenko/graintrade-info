@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.domain.user import UserInDB, UserInResponse
+from .schemas import UserInDB, UserInResponse
 
 
 class AbstractUserRepository(ABC):
