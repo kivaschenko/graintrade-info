@@ -9,9 +9,9 @@ class Settings(BaseSettings):
     pgdatabase: str
     pgport: int
     pghost: str
-    jwt_secret: str = "2b7e53b82f12b029f939ff1947bd5b6d4819a24fa53410ac246ebf10e4d64673"
-    jwt_expires_in: int = 60 * 60 * 24 * 7  # 1 week
-    app_name: str = "Graintrade Info API"
+    jwt_secret: str
+    jwt_expires_in: int = 60 * 24  # 1 day
+    app_name: str = "Items API | Graintrade Platform"
     DATABASE_URL: Optional[str] = None
     BASE_DIR: Path = (
         Path(__file__).resolve().parent
@@ -27,8 +27,7 @@ class Settings(BaseSettings):
             self.DATABASE_URL = f"postgresql://{self.pguser}:{self.pgpassword}@{self.pghost}:{self.pgport}/{self.pgdatabase}"
 
     class Config:
-        env_file = "dev.env"
-        # env_file = ".env"
+        env_file = ".env"
         extra = "allow"
 
 
