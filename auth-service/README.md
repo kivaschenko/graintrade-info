@@ -1,0 +1,3 @@
+### Restfull API for Authentication
+Endpoints to handle main CRUD operations and something else...
+In development yet.

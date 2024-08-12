@@ -1,6 +1,6 @@
 FROM python:3.11
 
-WORKDIR /app
+WORKDIR /auth-service
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python && \
@@ -9,12 +9,12 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python
     poetry config virtualenvs.create false
 
 # Copy poetry.lock* in case it doesn't exist in the repo
-COPY ./pyproject.toml ./poetry.lock* /app/
+COPY ./auth-service/pyproject.toml ./auth-service/poetry.lock* /auth-service/
 
-RUN poetry install --no-root --no-dev
+RUN poetry install
 
 # Project initialization:
-COPY . .
+COPY ./auth-service .
 
 # CMD ["gunicorn", "app.main:app"]
 
