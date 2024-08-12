@@ -1,12 +1,7 @@
-FROM python:3.11
+FROM python:3.11.9
 
-ENV PGHOST=${PGHOST}
-ENV PGUSER=${PGUSER}
-ENV PGPORT=${PGPORT}
-ENV PGDATABASE=${PGDATABASE}
-ENV PGPASSWORD=${PGPASSWORD}
+WORKDIR /item-service
 
-WORKDIR /app
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python && \
@@ -15,13 +10,14 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python
     poetry config virtualenvs.create false
 
 # Copy poetry.lock* in case it doesn't exist in the repo
-COPY ./pyproject.toml ./poetry.lock* /app/
+COPY ./item-service/pyproject.toml ./item-service/poetry.lock* /item-service/
 
-RUN poetry install --no-root --no-dev
+RUN poetry install
 
 # Project initialization:
-COPY . .
+COPY ./item-service .
 
-CMD ["gunicorn", "app.main:app"]
+# CMD ["gunicorn", "app.main:app"]
 
-# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application:
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

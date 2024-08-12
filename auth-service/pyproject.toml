@@ -8,6 +8,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+pydantic-settings = "^2.4.0"
+uvicorn = "^0.30.5"
+python-multipart = "^0.0.9"
 
 [tool.poetry.group.dev.dependencies]
 fastapi = "^0.112.0"

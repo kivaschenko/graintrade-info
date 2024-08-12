@@ -2,6 +2,7 @@ CREATE EXTENSION IF NOT EXISTS postgis CASCADE;
 CREATE EXTENSION IF NOT EXISTS postgis_topology CASCADE;
 CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder CASCADE;
 
+-- Items table
 CREATE TABLE IF NOT EXISTS items (
     id SERIAL PRIMARY KEY,
     title VARCHAR(50) NOT NULL,
@@ -31,6 +32,7 @@ CREATE INDEX items_country_idx ON items (country);
 CREATE INDEX items_region_idx ON items (region);
 CREATE INDEX items_created_at_idx ON items (created_at);
 
+-- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL,
@@ -40,6 +42,7 @@ CREATE TABLE IF NOT EXISTS users (
     disabled BOOLEAN DEFAULT FALSE
 );
 
+-- Create items_users table
 CREATE TABLE IF NOT EXISTS items_users (
     id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,

@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from asyncpg import Connection
 import bcrypt
 import jwt
-from config import settings
+from .config import settings
 from .schemas import (
     UserInCreate,
     UserInDB,
@@ -28,19 +28,24 @@ from .schemas import (
 from .database import Database, get_db
 from .repository import AsyncpgUserRepository
 
+SECRET_KEY = settings.jwt_secret
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_expires_in
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await Database.init()
-    try: 
+    try:
         yield
     finally:
         await Database._pool.close()
+
 
 app = FastAPI(lifespan=lifespan)
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
-    scopes={"me": "Read information about the current user", "items": "Read items"},
+    scopes={"me": "Read information about the current user", "items": "Create items"},
 )
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logging.info(f"Starting {settings.app_name}")
@@ -86,21 +91,27 @@ async def authenticate_user(repo: AsyncpgUserRepository, username: str, password
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    """Create an access token.
+    TODO: Add more information to the token. For example, the user's role.
+    Check the current tarif plan, define the user's permissions, etc.
+    For now, we only add the expiration date.
+    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=30)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm="HS256")
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
 async def get_current_user(
-    security_scopes: SecurityScopes,
     token: Annotated[str, Depends(oauth2_scheme)],
     repo: AsyncpgUserRepository = Depends(get_user_repository),
+    security_scopes: SecurityScopes = SecurityScopes(scopes=[]),
 ):
+    """Get the current user from the token."""
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:
@@ -108,30 +119,29 @@ async def get_current_user(
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+        headers={"WWW-Authenticate": authenticate_value},
     )
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             logging.error("Username not found in token")
             raise credentials_exception
         token_scopes = payload.get("scopes", [])
-        token_data = TokenData(scopes=token_scopes, sub=username)
+        token_data = TokenData(scopes=token_scopes, username=username)
     except jwt.PyJWTError as e:
         logging.error(f"Error decoding token: {e}")
         raise credentials_exception
-    user = await get_user(repo, username)
+    user = await get_user(repo, username=token_data.username)
     if user is None:
         logging.error("User not found")
         raise credentials_exception
     for scope in security_scopes.scopes:
         if scope not in token_data.scopes:
-            logging.error("User does not have enough permissions. Scope not found.")
+            logging.error("Not enough permissions")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough permissions",
-                headers={"WWW-Authenticate": authenticate_value},
             )
     return user
 
@@ -149,7 +159,7 @@ async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     repo: AsyncpgUserRepository = Depends(get_user_repository),
 ) -> Token:
-    print(form_data)
+    """Create an access token for the user."""
     user = await authenticate_user(repo, form_data.username, form_data.password)
     if not user:
         logging.error("Incorrect username or password")
@@ -171,7 +181,6 @@ async def read_users_me(
     current_user: Annotated[UserInResponse, Depends(get_current_active_user)],
 ):
     return current_user
-
 
 
 @app.post(
