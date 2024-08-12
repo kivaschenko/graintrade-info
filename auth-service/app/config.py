@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional, Any
 from pathlib import Path
 
-
+# TODO: remove this and excchange with import dotenv in root __init__.py
 class Settings(BaseSettings):
     pguser: str
     pgpassword: str

@@ -62,7 +62,7 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
 # standard CRUD operations
 
 
-@app.post("/items", response_model=ItemInResponse, status_code=201, tags=["items"])
+@app.post("/items", response_model=ItemInResponse, status_code=201, tags=["Items"])
 async def create_item(
     item: ItemInDB,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
@@ -76,7 +76,7 @@ async def create_item(
 
 
 @app.get(
-    "/items", response_model=List[ItemInResponse], status_code=200, tags=["items"]
+    "/items", response_model=List[ItemInResponse], status_code=200, tags=["Items"]
 )
 async def read_items(
     repo: AsyncpgItemRepository = Depends(get_item_repository),
@@ -87,7 +87,7 @@ async def read_items(
 
 
 @app.get(
-    "/items/{item_id}", response_model=ItemInResponse, status_code=200, tags=["items"]
+    "/items/{item_id}", response_model=ItemInResponse, status_code=200, tags=["Items"]
 )
 async def read_item(
     item_id: int, repo: AsyncpgItemRepository = Depends(get_item_repository)
@@ -103,7 +103,7 @@ async def read_item(
     "/items/{item_id}",
     response_model=ItemInResponse,
     status_code=status.HTTP_202_ACCEPTED,
-    tags=["items"],
+    tags=["Items"],
 )
 async def update_item(
     item_id: int,
@@ -126,7 +126,7 @@ async def update_item(
     "/items/{item_id}",
     response_model=dict,
     status_code=status.HTTP_200_OK,
-    tags=["items"],
+    tags=["Items"],
 )
 async def delete_item_bound_to_user(
     item_id: int,
@@ -160,7 +160,7 @@ async def delete_item_bound_to_user(
 # ---------------------
 # additional operations
 
-@app.get("/items-by-user/{user_id}", response_model=List[ItemInResponse], tags=["items"])
+@app.get("/items-by-user/{user_id}", response_model=List[ItemInResponse], tags=["Items"])
 async def read_items_by_user(
     user_id: int,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
