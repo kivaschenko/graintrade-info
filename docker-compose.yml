@@ -47,9 +47,7 @@ services:
     ports:
       - "8001:8000"
     volumes:
-      - type: bind
-        source: ./auth-service
-        target: /auth-service
+        - ./auth-service:/auth-service
     depends_on:
       - db
     environment:
@@ -62,9 +60,7 @@ services:
     ports:
       - "8002:8000"
     volumes:
-      - type: bind
-        source: ./item-service
-        target: /item-service
+      - ./item-service:/item-service
     depends_on:
       - db
     environment:
