@@ -49,7 +49,7 @@ services:
     volumes:
       - type: bind
         source: ./auth-service
-        target: /app
+        target: /auth-service
     depends_on:
       - db
     environment:
@@ -64,7 +64,7 @@ services:
     volumes:
       - type: bind
         source: ./item-service
-        target: /app
+        target: /item-service
     depends_on:
       - db
     environment:

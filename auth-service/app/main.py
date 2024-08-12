@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from asyncpg import Connection
 import bcrypt
 import jwt
-from config import settings
+from .config import settings
 from .schemas import (
     UserInCreate,
     UserInDB,
