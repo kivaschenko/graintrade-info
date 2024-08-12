@@ -207,3 +207,16 @@ async def filter_items(
         country=country,
         region=region,
     )
+
+# @app.post("/items/{item_id}/like", response_model=dict, tags=["Items"])
+# async def like_item(
+#     item_id: int,
+#     token: Annotated[str, Depends(oauth2_scheme)] = None,
+#     repo: AsyncpgItemRepository = Depends(get_item_repository),
+# ):
+#     if token is None:
+#         logging.error("No token provided")
+#         raise HTTPException(status_code=401, detail="Invalid token")
+#     user_id = await get_current_user_id(token)
+#     await repo.like_item(user_id, item_id)
+#     return {"status": "success", "message": "Item liked successfully"}
