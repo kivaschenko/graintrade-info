@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-print(BASE_DIR)
 load_dotenv(BASE_DIR / ".env")
 
 PGHOST = os.getenv("PGHOST")
