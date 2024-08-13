@@ -1,10 +1,13 @@
-FROM python:3.9-slim
+FROM python:3.11.9
+WORKDIR /telegram-bot-service
 
-WORKDIR /app
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python && \
+    cd /usr/local/bin && \
+    ln -s /opt/poetry/bin/poetry && \
+    poetry config virtualenvs.create false
 
-COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
-
-COPY . .
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+COPY ./telegram-bot-service/pyproject.toml ./telegram-bot-service/poetry.lock* /telegram-bot-service/
+RUN poetry install
+COPY ./telegram-bot-service .
+CMD [ "python", "app/main.py" ]

@@ -66,6 +66,15 @@ services:
     environment:
       - DATABASE_URL=postgresql://admin:test_password@db/postgres
   
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: ./telegram-bot-service/Dockerfile
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./telegram-bot-service:/telegram-bot-service
+  
 
 volumes:
   postgres_data:

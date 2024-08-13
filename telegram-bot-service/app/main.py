@@ -20,8 +20,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-AUTH_API_URL = "http://localhost:8001"
-ITEM_API_URL = "http://localhost:8002"
+AUTH_API_URL = "http://172.22.0.1:8001"
+ITEM_API_URL = "http://172.22.0.1:8002"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -54,7 +54,7 @@ async def get_items(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                     f"<i>Amount: </i><code>{item['amount']} {item['measure']}</code>\n"
                     f"<i>Incoterms: </i><code>{item['terms_delivery']} {item['country']} {item['region']}</code>\n"
                     f"<i>Created at: </i><code>{item['created_at']}</code>\n"
-                    "===========================\n")
+                    "=================\n")
             await update.message.reply_text(
                 "\tItems:\n\n" + "\n".join(message), parse_mode="HTML"
             )
