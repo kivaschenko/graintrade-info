@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.domain.entities.tarif import TarifInDB, TarifInResponse
+from app.domain.tarif import TarifInDB, TarifInResponse
 
 
 class AbstractTarifRepository(ABC):

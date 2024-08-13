@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.domain.entities.subscription import SubscribtionInDB, SubscribtionInResponse
+from app.domain.subscription import SubscribtionInDB, SubscribtionInResponse
 
 
 class AbstractSubscribtionRepository(ABC):
