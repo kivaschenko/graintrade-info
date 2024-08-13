@@ -182,3 +182,34 @@ class AsyncpgItemRepository(AbstractItemRepository):
                 region,
             )
         return [ItemInResponse(**row) for row in rows]
+
+    async def create_many(self, items: List[ItemInDB], user_id: int) -> List[ItemInResponse]:
+        query = """
+            INSERT INTO items (title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, geom)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::numeric, $11::numeric, ST_SetSRID(ST_MakePoint($11::numeric, $10::numeric), 4326))
+            RETURNING id, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+        """
+        query2 = """
+            INSERT INTO items_users (item_id, user_id)
+            VALUES ($1, $2)
+        """
+        async with self.conn as connection:
+            items_list = []
+            for item in items:
+                row = await connection.fetchrow(
+                    query,
+                    item.title,
+                    item.description,
+                    item.price,
+                    item.currency,
+                    item.amount,
+                    item.measure,
+                    item.terms_delivery,
+                    item.country,
+                    item.region,
+                    item.latitude,
+                    item.longitude,
+                )
+                items_list.append(ItemInResponse(**row))
+                await connection.execute(query2, row["id"], user_id)
+        return items_list
