@@ -220,3 +220,16 @@ async def filter_items(
 #     user_id = await get_current_user_id(token)
 #     await repo.like_item(user_id, item_id)
 #     return {"status": "success", "message": "Item liked successfully"}
+
+
+@app.post("items-many/", response_model=List[ItemInResponse], tags=["Items"])
+async def create_many_items(
+    items: List[ItemInDB],
+    repo: AsyncpgItemRepository = Depends(get_item_repository),
+    token: Annotated[str, Depends(oauth2_scheme)] = None,
+):
+    if token is None:
+        logging.error("No token provided")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user_id = await get_current_user_id(token)
+    return await repo.create_many(items, user_id)
