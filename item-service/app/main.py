@@ -7,19 +7,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from asyncpg import Connection
 import jwt
+import asyncio
 from .schemas import ItemInDB, ItemInResponse
 from .database import Database, get_db
 from .reposirory import AsyncpgItemRepository
 from .config import settings
+from .kafka_handlers import KafkaHandler
+from fastapi import BackgroundTasks
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await Database.init()
+    loop = asyncio.get_event_loop()
+    kafka_handler = KafkaHandler(loop)
+    app.state.kafka_handler = kafka_handler
+    await kafka_handler.start()
     try:
         yield
     finally:
+        await kafka_handler.stop()
         await Database._pool.close()
+
 
 app = FastAPI(lifespan=lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -35,6 +44,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 def get_item_repository(db: Connection = Depends(get_db)) -> AsyncpgItemRepository:
     return AsyncpgItemRepository(conn=db)
@@ -65,6 +75,7 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
 @app.post("/items", response_model=ItemInResponse, status_code=201, tags=["Items"])
 async def create_item(
     item: ItemInDB,
+    background_tasks: BackgroundTasks,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
@@ -72,12 +83,17 @@ async def create_item(
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id = await get_current_user_id(token)
-    return await repo.create(item, user_id)
+    new_item = await repo.create(item, user_id)
+    if new_item is None:
+        logging.error("Item not created")
+        raise HTTPException(status_code=400, detail="Item not created")
+    background_tasks.add_task(
+        app.state.kafka_handler.send_message, "item-service", new_item
+    )
+    return new_item
 
 
-@app.get(
-    "/items", response_model=List[ItemInResponse], status_code=200, tags=["Items"]
-)
+@app.get("/items", response_model=List[ItemInResponse], status_code=200, tags=["Items"])
 async def read_items(
     repo: AsyncpgItemRepository = Depends(get_item_repository),
     offset: int = 0,
@@ -160,7 +176,10 @@ async def delete_item_bound_to_user(
 # ---------------------
 # additional operations
 
-@app.get("/items-by-user/{user_id}", response_model=List[ItemInResponse], tags=["Items"])
+
+@app.get(
+    "/items-by-user/{user_id}", response_model=List[ItemInResponse], tags=["Items"]
+)
 async def read_items_by_user(
     user_id: int,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
@@ -180,7 +199,9 @@ async def find_items_in_radius(
     repo: AsyncpgItemRepository = Depends(get_item_repository),
 ):
     """Find all items within a given distance from a given point. The distance is in meters."""
-    return await repo.find_in_distance(longitude=longitude, latitude=latitude, distance=distance)
+    return await repo.find_in_distance(
+        longitude=longitude, latitude=latitude, distance=distance
+    )
 
 
 @app.get("/filter-items", response_model=List[ItemInResponse], tags=["filter items"])
@@ -207,6 +228,7 @@ async def filter_items(
         country=country,
         region=region,
     )
+
 
 # @app.post("/items/{item_id}/like", response_model=dict, tags=["Items"])
 # async def like_item(
