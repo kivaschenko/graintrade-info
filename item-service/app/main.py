@@ -2,7 +2,7 @@
 from typing import List, Annotated
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from asyncpg import Connection
@@ -13,7 +13,6 @@ from .database import Database, get_db
 from .reposirory import AsyncpgItemRepository
 from .config import settings
 from .kafka_handlers import KafkaHandler
-from fastapi import BackgroundTasks
 
 
 @asynccontextmanager
@@ -88,7 +87,7 @@ async def create_item(
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
     background_tasks.add_task(
-        app.state.kafka_handler.send_message, "item-service", new_item
+        app.state.kafka_handler.send_message, "new-item", new_item
     )
     return new_item
 
