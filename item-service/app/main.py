@@ -131,7 +131,7 @@ async def update_item(
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id = await get_current_user_id(token)
-    db_item = await repo.update(item_id, item)
+    db_item = await repo.update(item_id, user_id, item)
     if db_item is None:
         logging.error(f"Item with id {item_id} not found")
         raise HTTPException(status_code=404, detail="Item not found")
