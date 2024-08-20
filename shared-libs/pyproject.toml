@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "shared-libs"
+version = "0.1.0"
+description = "The utils for whole projects"
+authors = ["Kostiantyn Ivashchenko <kivaschenko@protonmail.com>"]
+license = "MIT"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+psycopg = "^3.2.1"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

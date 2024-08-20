@@ -8,8 +8,10 @@ from aiokafka.errors import KafkaError
 class KafkaHandler:
     def __init__(self, loop):
         self.loop = loop
-        self.consumer = AIOKafkaConsumer("my_topic", loop=self.loop)
-        self.producer = AIOKafkaProducer(loop=self.loop)
+        self.consumer = AIOKafkaConsumer(
+            "my_topic", loop=self.loop, bootstrap_servers="kafka:9092"
+        )
+        self.producer = AIOKafkaProducer(loop=self.loop, bootstrap_servers="kafka:9092")
 
     async def start(self):
         await self.consumer.start()
