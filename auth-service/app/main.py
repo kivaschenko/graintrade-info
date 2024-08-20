@@ -15,7 +15,6 @@ from fastapi.security import (
 from fastapi.middleware.cors import CORSMiddleware
 
 from asyncpg import Connection
-import asyncio
 import bcrypt
 import jwt
 from .config import settings
@@ -38,14 +37,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_expires_in
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await Database.init()
-    loop = asyncio.get_event_loop()
-    kafka_handler = KafkaHandler(loop)
-    app.state.kafka_handler = kafka_handler
-    await kafka_handler.start()
     try:
         yield
     finally:
-        await kafka_handler.stop()
         await Database._pool.close()
 
 
@@ -70,6 +64,9 @@ app.add_middleware(
 def get_user_repository(db: Connection = Depends(get_db)) -> AsyncpgUserRepository:
     return AsyncpgUserRepository(conn=db)
 
+
+def get_kafka_handler():
+    return KafkaHandler()
 
 def verify_password(plain_password, hashed_password):
     return bcrypt.checkpw(
@@ -200,6 +197,7 @@ async def read_users_me(
 async def create_user(
     user: UserInCreate,
     background_tasks: BackgroundTasks,
+    kafka_handler: KafkaHandler = Depends(get_kafka_handler),
     repo: AsyncpgUserRepository = Depends(get_user_repository),
 ):
     hashed_password = get_password_hash(user.password)
@@ -213,7 +211,7 @@ async def create_user(
     if new_user is None:
         raise HTTPException(status_code=400, detail="User already exists")
     background_tasks.add_task(
-        app.state.kafka_handler.send_message, "new-user", new_user
+        kafka_handler.send_message, "new-user", new_user
     )
     return new_user
 
