@@ -4,8 +4,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import httpx
-from telegram import Bot
-from telegram.error import TelegramError
 from abc import ABC, abstractmethod
 from .schemas import Recipient  # Import the Recipient class from the .schemas module
 
@@ -47,17 +45,6 @@ class SMSNotificationHandler(NotificationHandler):
                 json={"to": recipient.phone, "message": message},
             )
         return response.status_code == 200
-
-
-class TelegramNotificationHandler(NotificationHandler):
-    @classmethod
-    async def send(cls, recipient: Recipient, message: str) -> bool:
-        bot = Bot(token=TELEGRAM_API_KEY)
-        try:
-            await bot.send_message(chat_id=recipient.telegram_id, text=message)
-            return True
-        except TelegramError:
-            return False
 
 
 # class NotificationService:

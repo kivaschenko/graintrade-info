@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.domain.tarif import TarifInDB, TarifInResponse
+from app.schemas import TarifInDB, TarifInResponse
 
 
 class AbstractTarifRepository(ABC):
@@ -66,6 +66,8 @@ class AsyncpgTarifRepository(AbstractTarifRepository):
         """
         async with self.conn as connection:
             row = await connection.fetchrow(query, tarif_id)
+            if row is None:
+                return None
             return TarifInResponse(**row)
 
     async def update(self, tarif_id: int, tarif: TarifInDB) -> TarifInResponse:
