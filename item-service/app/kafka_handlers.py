@@ -1,4 +1,5 @@
 import asyncio
+import os
 import json
 import logging
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
@@ -8,10 +9,13 @@ from aiokafka.errors import KafkaError
 class KafkaHandler:
     def __init__(self, loop):
         self.loop = loop
+        self.bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
         self.consumer = AIOKafkaConsumer(
-            "my_topic", loop=self.loop, bootstrap_servers="kafka:9092"
+            "my_topic", loop=self.loop, bootstrap_servers=self.bootstrap_servers
         )
-        self.producer = AIOKafkaProducer(loop=self.loop, bootstrap_servers="kafka:9092")
+        self.producer = AIOKafkaProducer(
+            loop=self.loop, bootstrap_servers=self.bootstrap_servers
+        )
 
     async def start(self):
         await self.consumer.start()

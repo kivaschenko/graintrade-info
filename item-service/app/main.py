@@ -9,7 +9,7 @@ from asyncpg import Connection
 import jwt
 from .schemas import ItemInDB, ItemInResponse
 from .database import Database, get_db
-from .reposirory import AsyncpgItemRepository
+from .reposirory import AsyncpgItemRepository, AsyncpgItemUserRepository
 from .config import settings
 
 
@@ -42,6 +42,12 @@ def get_item_repository(db: Connection = Depends(get_db)) -> AsyncpgItemReposito
     return AsyncpgItemRepository(conn=db)
 
 
+def get_item_user_repository(
+    db: Connection = Depends(get_db),
+) -> AsyncpgItemUserRepository:
+    return AsyncpgItemUserRepository(conn=db)
+
+
 async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = None):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -51,13 +57,14 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user_id: str = payload.get("user_id")
+        scopes: str = payload.get("scopes")
         if user_id is None:
             logging.error("No user_id found in token")
             raise credentials_exception
     except jwt.PyJWTError as e:
         logging.error(e)
         raise credentials_exception
-    return user_id
+    return user_id, scopes
 
 
 # ------------------------
@@ -74,8 +81,13 @@ async def create_item(
     if token is None:
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
-    user_id = await get_current_user_id(token)
-    new_item = await repo.create(item, user_id)
+    user_id, scopes = await get_current_user_id(token)
+    print(f"User ID: {user_id}, Scopes: {scopes}")
+    # check scope and permissions here
+    if "create:item" not in scopes:
+        logging.error("Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    new_item = await repo.create(item)
     if new_item is None:
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
@@ -103,7 +115,9 @@ async def read_item(
     db_item = await repo.get_by_id(item_id)
     if db_item is None:
         logging.error(f"Item with id {item_id} not found")
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
     return db_item
 
 

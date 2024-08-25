@@ -1,6 +1,3 @@
-# main.py
-# Description: FastAPI application for the auth service.
-
 from contextlib import asynccontextmanager
 from datetime import timedelta, datetime, timezone
 from typing import Annotated
@@ -27,7 +24,7 @@ from .schemas import (
 )
 from .database import Database, get_db
 from .repository import AsyncpgUserRepository
-from .kafka_handlers import KafkaHandler
+from .kafka_handlers import send_message_to_kafka_about_new_user
 
 SECRET_KEY = settings.jwt_secret
 ALGORITHM = "HS256"
@@ -47,7 +44,7 @@ app = FastAPI(lifespan=lifespan)
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
-    scopes={"me": "Read information about the current user", "items": "Create items"},
+    scopes=["me", "create:item", "read:item", "update:item", "delete:item"],
 )
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logging.info(f"Starting {settings.app_name}")
@@ -64,9 +61,6 @@ app.add_middleware(
 def get_user_repository(db: Connection = Depends(get_db)) -> AsyncpgUserRepository:
     return AsyncpgUserRepository(conn=db)
 
-
-def get_kafka_handler():
-    return KafkaHandler()
 
 def verify_password(plain_password, hashed_password):
     return bcrypt.checkpw(
@@ -174,8 +168,12 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=settings.jwt_expires_in)
+    # TODO: Add more information to the token. For example, the user's role.
+    # Check the current tarif plan, define the user's permissions, etc.
     access_token = create_access_token(
-        data={"sub": user.username, "scopes": form_data.scopes, "user_id": user.id},
+        data={"sub": user.username, 
+              "scopes": ["me", "create:item", "read:item", "update:item", "delete:item"], 
+              "user_id": user.id},
         expires_delta=access_token_expires,
     )
     return Token(access_token=access_token, token_type="bearer")
@@ -197,7 +195,6 @@ async def read_users_me(
 async def create_user(
     user: UserInCreate,
     background_tasks: BackgroundTasks,
-    kafka_handler: KafkaHandler = Depends(get_kafka_handler),
     repo: AsyncpgUserRepository = Depends(get_user_repository),
 ):
     hashed_password = get_password_hash(user.password)
@@ -210,9 +207,7 @@ async def create_user(
     new_user = await repo.create(user_to_db)
     if new_user is None:
         raise HTTPException(status_code=400, detail="User already exists")
-    background_tasks.add_task(
-        kafka_handler.send_message, "new-user", new_user
-    )
+    background_tasks.add_task(send_message_to_kafka_about_new_user, new_user)
     return new_user
 
 

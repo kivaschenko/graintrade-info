@@ -9,13 +9,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - '172.17.0.1:5432:5432'
+      - '5432:5432'
     healthcheck:
       test: CMD-SHELL ["executable", "arg"]
       interval: 1m30s
       timeout: 30s
       retries: 5
       start_period: 30s
+    networks:
+      - graintraide-net
 
   pgadmin4:
     image: elestio/pgadmin:latest
@@ -25,9 +27,14 @@ services:
       PGADMIN_DEFAULT_PASSWORD: test_password
       PGADMIN_LISTEN_PORT: 8080
     ports:
-      - "8080:8080"
+      - "5050:8080"
     volumes:
       - postgis:/var/lib/pgadmin4/servers.json
+    networks:
+      - graintraide-net
+    depends_on:
+      db:
+        condition: service_healthy
 
   auth-service:
     build: ./auth-service
@@ -36,10 +43,14 @@ services:
     volumes:
       - ./auth-service:/auth-service
     depends_on:
-      - db
-      - kafka
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://admin:test_password@db/postgres
+    networks:
+      - graintraide-net
 
   item-service:
     build: ./item-service
@@ -48,25 +59,55 @@ services:
     volumes:
       - ./item-service:/item-service
     depends_on:
-      - db
-      - kafka
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://admin:test_password@db/postgres
-  
-  telegram-bot:
-    build: ./telegram-service
+    networks:
+      - graintraide-net
+
+  subscription-service:
+    build: ./subscription-service
     ports:
       - "8003:8000"
-    depends_on:
-      - db
-      - kafka
     volumes:
-      - ./telegram-service:/telegram-service
+      - ./subscription-service:/subscription-service
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://admin:test_password@db/postgres
+    networks:
+      - graintraide-net
 
   kafka:
-    image: apache/kafka:3.8.0
+    image: apache/kafka
+    container_name: kafka
+    restart: "no"
     ports:
       - "9092:9092"
+    environment:
+      KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:9092"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: nc -z localhost 29092 || exit
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks:
+      - graintraide-net
+
+networks:
+  graintraide-net:
+    external: true
+
 
 volumes:
   postgres_data:

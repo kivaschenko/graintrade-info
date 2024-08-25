@@ -1,43 +1,32 @@
 import asyncio
+import os
 import json
 import logging
 from aiokafka import AIOKafkaProducer
 from aiokafka.errors import KafkaError, KafkaConnectionError
-from confluent_kafka.admin import AdminClient, NewTopic
 import time
 from pydantic import BaseModel
 
 class KafkaHandler:
-    def __init__(self):
-        self.bootstrap_servers = "localhost:9092"
+    def __init__(self, loop):
+        self.loop = loop
+        self.bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
         self.topic = "auth-service"
-        # self.create_topic(self.topic)
-        self.loop = asyncio.get_event_loop()
         self.producer = AIOKafkaProducer(
             loop=self.loop,
             bootstrap_servers=self.bootstrap_servers
         )
 
-    def create_topic(self, topic_name):
-        admin_client = AdminClient({'bootstrap.servers': self.bootstrap_servers})
-        topic_list = [NewTopic(topic_name, num_partitions=1, replication_factor=1)]
-        fs = admin_client.create_topics(topic_list)
-        
-        for topic, f in fs.items():
-            try:
-                f.result()  # The result itself is None
-                logging.info(f"Topic {topic} created")
-            except Exception as e:
-                logging.error(f"Failed to create topic {topic}: {e}")
-
     async def start(self):
-        """start the consumer"""
+        """Start the producer"""
         await self.producer.start()
 
     async def stop(self):
+        """Stop the producer"""
         await self.producer.stop()
 
     async def send_message(self, topic, message):
+        """Send a message to the specified topic"""
         if isinstance(message, BaseModel):
             message = message.model_dump()
             print("Jsonify message: ", message)
@@ -51,6 +40,7 @@ class KafkaHandler:
             raise e
 
     async def retry_start(self, retries=5, delay=5):
+        """Retry starting the producer with a specified number of retries and delay"""
         for attempt in range(retries):
             try:
                 await self.start()
@@ -62,12 +52,32 @@ class KafkaHandler:
                 else:
                     raise e
 
-async def produce():
-    kafka_handler = KafkaHandler()
+async def initialize_kafka_handler():
+    """Initialize the Kafka handler"""
+    loop = asyncio.get_event_loop()
+    kafka_handler = KafkaHandler(loop)
     await kafka_handler.retry_start()
-    await kafka_handler.send_message("auth-service", {"message": "Hello, Kafka!"})
+    return kafka_handler
+
+async def produce_message(kafka_handler, topic, message):
+    """Produce a message using the Kafka handler"""
+    await kafka_handler.send_message(topic, message)
+
+
+async def send_message_to_kafka_about_new_user(new_user):
+    """Send a message to Kafka about a new user"""
+    kafka_handler = await initialize_kafka_handler()
+    message = {"message": "New user created", "user": new_user.model_dump_json()}
+    print("Message: ", message)
+    await produce_message(kafka_handler, "new-user", message)
+    await kafka_handler.stop()
+
+async def main():
+    """Main function to run the Kafka producer"""
+    kafka_handler = await initialize_kafka_handler()
+    await produce_message(kafka_handler, "auth-service", {"message": "New message..."}) 
     await kafka_handler.stop()
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-    asyncio.run(produce())
+    asyncio.run(main())
