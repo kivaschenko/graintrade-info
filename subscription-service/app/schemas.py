@@ -41,3 +41,19 @@ class TarifInResponse(TarifInDB):
 
     class ConfigDict:
         from_attributes = True
+
+
+class PaymentInDB(BaseModel):
+    user_id: int
+    tarif_id: int
+    amount: float
+    currency: str
+
+
+class PaymentInResponse(PaymentInDB):
+    id: int
+    created_at: datetime = Field(alias="created_at")
+
+    @property
+    def formatted_created_at(self) -> str:
+        return self.created_at.isoformat()
