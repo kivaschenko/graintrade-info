@@ -10,8 +10,7 @@ butch = [
         "country": "Ukraine",
         "region": "Cherkasy Oblast",
         "latitude": 49.305825,
-        "longitude": 31.946946,
-        # "id": 1
+        "longitude": 31.946946
     },
     {
         "title": "Buy wheat 2 grade",
@@ -24,8 +23,7 @@ butch = [
         "country": "Ukraine",
         "region": "Odesa Oblast",
         "latitude": 45.34172,
-        "longitude": 28.800218,
-        # "id": 2
+        "longitude": 28.800218
     },
     {
         "title": "Buy wheat 2 grade",
@@ -38,8 +36,7 @@ butch = [
         "country": "Ukraine",
         "region": "Odesa Oblast",
         "latitude": 45.34172,
-        "longitude": 28.800218,
-        # "id": 3
+        "longitude": 28.800218
     },
     {
         "title": "Buy wheat 3 grade",
@@ -52,8 +49,7 @@ butch = [
         "country": "Ukraine",
         "region": "Odesa Oblast",
         "latitude": 45.34172,
-        "longitude": 28.800218,
-        # "id": 4
+        "longitude": 28.800218
     },
     {
         "title": "Sell wheat 2 grade",
@@ -66,8 +62,7 @@ butch = [
         "country": "Ukraine",
         "region": "Kyiv Oblast",
         "latitude": 49.659466,
-        "longitude": 30.974681,
-        # "id": 5
+        "longitude": 30.974681
     },
     {
         "title": "Sell wheat 2 grade",
@@ -80,7 +75,6 @@ butch = [
         "country": "Ukraine",
         "region": "Kyiv Oblast",
         "latitude": 49.659466,
-        "longitude": 30.974681,
-        # "id": 6
-    },
+        "longitude": 30.974681
+    }
 ]
