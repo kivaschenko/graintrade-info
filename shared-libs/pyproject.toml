@@ -1,22 +1,16 @@
 [tool.poetry]
-name = "item-service"
+name = "shared-libs"
 version = "0.1.0"
-description = "API for CRUD operations with Items"
+description = "The utils for whole projects"
 authors = ["Kostiantyn Ivashchenko <kivaschenko@protonmail.com>"]
 license = "MIT"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = {extras = ["standard"], version = "^0.113.0"}
-uvicorn = "^0.30.5"
-asyncpg = "^0.29.0"
-gunicorn = "^22.0.0"
-black = "^24.8.0"
+psycopg = "^3.2.1"
 python-dotenv = "^1.0.1"
-pyjwt = "^2.9.0"
-pydantic-settings = "^2.4.0"
-aiokafka = "^0.11.0"
 
 
 [build-system]
