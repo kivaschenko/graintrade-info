@@ -25,6 +25,33 @@ Note, check what `env` file is using in `config.py` `Settings` previuosly as wel
 docker compose up --build
 ```
 
+### Kafka and infrastructure
+#### Create images for Kafka
+
+```
+docker pull ubuntu/kafka
+docker pull ubuntu/zookeeper
+docker pull provectuslabs/kafka-ui
+```
+#### Make a network
+```
+docker network create -d bridge kafka-network
+```
+Launch the zookeeper image locally
+```
+docker run --detach  --name zookeeper-container --network kafka-network ubuntu/zookeeper:3.8-22.04_edge
+```
+[more about  zookeeper dockerized here](https://hub.docker.com/r/ubuntu/zookeeper)
+
+Launch Kafka in container
+
+```
+docker run --detach --name kafka-container --network kafka-network -p 9092:9092 ubuntu/kafka:latest
+```
+[more about kafka dockerized here](https://hub.docker.com/r/ubuntu/kafka)
+
+
+
 # Production
 ## Deployment
 To deploy in Azure container app service:
