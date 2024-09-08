@@ -2,14 +2,14 @@
 from typing import List, Annotated
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from asyncpg import Connection
 import jwt
 from .schemas import ItemInDB, ItemInResponse
 from .database import Database, get_db
-from .reposirory import AsyncpgItemRepository
+from .reposirory import AsyncpgItemRepository, AsyncpgItemUserRepository
 from .config import settings
 
 
@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await Database._pool.close()
+
 
 app = FastAPI(lifespan=lifespan)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -36,8 +37,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 def get_item_repository(db: Connection = Depends(get_db)) -> AsyncpgItemRepository:
     return AsyncpgItemRepository(conn=db)
+
+
+def get_item_user_repository(
+    db: Connection = Depends(get_db),
+) -> AsyncpgItemUserRepository:
+    return AsyncpgItemUserRepository(conn=db)
 
 
 async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = None):
@@ -49,13 +57,14 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user_id: str = payload.get("user_id")
+        scopes: str = payload.get("scopes")
         if user_id is None:
             logging.error("No user_id found in token")
             raise credentials_exception
     except jwt.PyJWTError as e:
         logging.error(e)
         raise credentials_exception
-    return user_id
+    return user_id, scopes
 
 
 # ------------------------
@@ -65,19 +74,30 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
 @app.post("/items", response_model=ItemInResponse, status_code=201, tags=["Items"])
 async def create_item(
     item: ItemInDB,
+    background_tasks: BackgroundTasks,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     if token is None:
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
-    user_id = await get_current_user_id(token)
-    return await repo.create(item, user_id)
+    user_id, scopes = await get_current_user_id(token)
+    print(f"User ID: {user_id}, Scopes: {scopes}")
+    # check scope and permissions here
+    if "create:item" not in scopes:
+        logging.error("Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    new_item = await repo.create(item)
+    if new_item is None:
+        logging.error("Item not created")
+        raise HTTPException(status_code=400, detail="Item not created")
+    # background_tasks.add_task(
+    #     app.state.kafka_handler.send_message, "new-item", new_item
+    # )
+    return new_item
 
 
-@app.get(
-    "/items", response_model=List[ItemInResponse], status_code=200, tags=["Items"]
-)
+@app.get("/items", response_model=List[ItemInResponse], status_code=200, tags=["Items"])
 async def read_items(
     repo: AsyncpgItemRepository = Depends(get_item_repository),
     offset: int = 0,
@@ -95,7 +115,9 @@ async def read_item(
     db_item = await repo.get_by_id(item_id)
     if db_item is None:
         logging.error(f"Item with id {item_id} not found")
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
     return db_item
 
 
@@ -115,7 +137,7 @@ async def update_item(
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id = await get_current_user_id(token)
-    db_item = await repo.update(item_id, item)
+    db_item = await repo.update(item_id, user_id, item)
     if db_item is None:
         logging.error(f"Item with id {item_id} not found")
         raise HTTPException(status_code=404, detail="Item not found")
@@ -160,7 +182,10 @@ async def delete_item_bound_to_user(
 # ---------------------
 # additional operations
 
-@app.get("/items-by-user/{user_id}", response_model=List[ItemInResponse], tags=["Items"])
+
+@app.get(
+    "/items-by-user/{user_id}", response_model=List[ItemInResponse], tags=["Items"]
+)
 async def read_items_by_user(
     user_id: int,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
@@ -180,7 +205,9 @@ async def find_items_in_radius(
     repo: AsyncpgItemRepository = Depends(get_item_repository),
 ):
     """Find all items within a given distance from a given point. The distance is in meters."""
-    return await repo.find_in_distance(longitude=longitude, latitude=latitude, distance=distance)
+    return await repo.find_in_distance(
+        longitude=longitude, latitude=latitude, distance=distance
+    )
 
 
 @app.get("/filter-items", response_model=List[ItemInResponse], tags=["filter items"])
@@ -208,6 +235,7 @@ async def filter_items(
         region=region,
     )
 
+
 # @app.post("/items/{item_id}/like", response_model=dict, tags=["Items"])
 # async def like_item(
 #     item_id: int,
@@ -220,3 +248,16 @@ async def filter_items(
 #     user_id = await get_current_user_id(token)
 #     await repo.like_item(user_id, item_id)
 #     return {"status": "success", "message": "Item liked successfully"}
+
+
+@app.post("items-many/", response_model=List[ItemInResponse], tags=["Items"])
+async def create_many_items(
+    items: List[ItemInDB],
+    repo: AsyncpgItemRepository = Depends(get_item_repository),
+    token: Annotated[str, Depends(oauth2_scheme)] = None,
+):
+    if token is None:
+        logging.error("No token provided")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user_id = await get_current_user_id(token)
+    return await repo.create_many(items, user_id)

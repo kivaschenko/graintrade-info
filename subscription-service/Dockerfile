@@ -1,5 +1,5 @@
 # FROM python:3.11-slim
-# WORKDIR /item-service
+# WORKDIR /subscription-service
 # # Install curl and Poetry
 # RUN apt-get update && apt-get install -y curl && \
 #     curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python && \

@@ -1,0 +1,63 @@
+TARIFS
+--------------------------------------
+# Create new tarif
+http POST localhost:8000/tarifs \
+    name=Basic  \
+    description:='"Basic" "plan"' \
+    price:=9.99  \
+    currency=USD  \
+    scope:='"me" "create:item" "read:item" "delete:item"'  \
+    terms=monthly
+
+
+# Get current tarif
+http localhost:8000/tarifs/1
+
+# Get all tarifs
+http localhost:8000/tarifs
+
+# Update tarif
+http PUT localhost:8000/tarifs/1  \
+    name=Basic   \
+    description="Basic monthly plan"  \
+    price:=9.99   \
+    currency=USD   \
+    scope="me create:item read:item update:item delete:item"  \
+    terms=monthly
+
+# Delete tarif
+http DELETE localhost:8000/tarifs/1
+
+# Check deleting tarif
+http localhost:8000/tarifs/1
+
+
+SUBSCRIPTIONS
+-------------------------------------
+# Create subscription
+http POST localhost:8000/subscriptions 
+    user_id:=1  \
+    tarif_id:=2  \
+    start_date='2024-08-25T20:05:11.036414'  \
+    end_date='2024-09-25T20:05:11.036414'  \
+    status="Active"
+
+# Get all subscriptions
+http localhost:8000/subscriptions
+
+# Get certain subscription
+http localhost:8000/subscriptions/3
+
+# Update certain subscription
+http PUT localhost:8000/subscriptions/3 
+    user_id:=1  \
+    tarif_id:=2  \
+    start_date='2024-08-25T20:05:11.036414'  \
+    end_date='2024-09-25T20:05:11.036414'  \
+    status="Not Active"
+
+# Delete certain subscription
+http DELETE localhost:8000/subscriptions/3
+
+# Check deleted 
+http localhost:8000/subscriptions/3
