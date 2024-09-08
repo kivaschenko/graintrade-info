@@ -99,3 +99,25 @@ class AsyncpgSubscriptionRepository(AbstractSubscriptionRepository):
         """
         async with self.conn as connection:
             await connection.execute(query, subscription_id)
+    
+    async def get_by_user_id(self, user_id: int) -> List[SubscriptionInResponse]:
+        query = """
+            SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
+            FROM subscriptions
+            WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
+            ORDER BY created_at DESC
+        """
+        async with self.conn as connection:
+            rows = await connection.fetch(query, user_id)
+            return [SubscriptionInResponse(**row) for row in rows]
+
+    async def get_by_tarif_id(self, tarif_id: int) -> List[SubscriptionInResponse]:
+        query = """
+            SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
+            FROM subscriptions
+            WHERE tarif_id = $1 AND status = 'active' AND end_date > NOW()
+            ORDER BY created_at DESC
+        """
+        async with self.conn as connection:
+            rows = await connection.fetch(query, tarif_id)
+            return [SubscriptionInResponse(**row) for row in rows]

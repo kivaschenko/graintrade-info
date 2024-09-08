@@ -171,4 +171,16 @@ async def delete_subscription(
     await subscription_repo.delete(subscription_id)
 
 
-# Compare this snippet from subscription-service/app/schemas.py:
+@app.get("/subscriptions/{user_id}", tags=["subscriptions"])
+async def get_subscriptions_by_user(
+    user_id: int, subscription_repo: AsyncpgSubscriptionRepository = Depends(get_subscription_repository)
+):
+    subscriptions = await subscription_repo.get_by_user_id(user_id)
+    return subscriptions
+
+@app.get("/subscriptions/{tarif_id}", tags=["subscriptions"])
+async def get_subscriptions_by_tarif(
+    tarif_id: int, subscription_repo: AsyncpgSubscriptionRepository = Depends(get_subscription_repository)
+):
+    subscriptions = await subscription_repo.get_by_tarif_id(tarif_id)
+    return subscriptions

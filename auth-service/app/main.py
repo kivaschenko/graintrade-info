@@ -44,7 +44,12 @@ app = FastAPI(lifespan=lifespan)
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
-    scopes=["me", "create:item", "read:item", "update:item", "delete:item"],
+    scopes={"me": "Read information about the current user.", 
+            "basic_tarif": "Read and write items, limited access to features.",
+            "premium_tarif": "Read and write items, full access to features.",
+            "enterprise_tarif": "Read and write items, full access to features.",
+            "admin": "Full access to all features.",
+        },
 )
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logging.info(f"Starting {settings.app_name}")
@@ -57,6 +62,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ==========
+# Dependency
 
 def get_user_repository(db: Connection = Depends(get_db)) -> AsyncpgUserRepository:
     return AsyncpgUserRepository(conn=db)
@@ -152,6 +159,8 @@ async def get_current_active_user(
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+#=======
+# Routes
 
 @app.post("/token", response_model=Token, tags=["login"])
 async def login_for_access_token(
