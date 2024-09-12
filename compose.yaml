@@ -34,7 +34,7 @@ services:
     #   - graintraide-net
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
 
   auth-service:
     build: ./auth-service
@@ -44,7 +44,7 @@ services:
       - ./auth-service:/app
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
       # kafka:
       #   condition: service_healthy
     environment:
@@ -60,7 +60,7 @@ services:
       - ./item-service:/app
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
       # kafka:
       #   condition: service_healthy
     environment:
@@ -76,7 +76,7 @@ services:
       - ./notification-service:/app
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
       # kafka:
       #   condition: service_healthy
     environment:
@@ -92,7 +92,7 @@ services:
       - ./subscription-service:/app
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_started
       # kafka:
       #   condition: service_healthy
     environment:
