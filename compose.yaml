@@ -1,7 +1,7 @@
 name: graintraide
 services:
   db:
-    image: postgis/postgis:16-3.4-alpine
+    image: postgis/postgis:latest
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: admin
@@ -16,8 +16,6 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
-    # networks:
-    #   - graintraide-net
 
   pgadmin4:
     image: elestio/pgadmin:latest

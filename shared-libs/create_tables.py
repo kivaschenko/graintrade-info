@@ -16,7 +16,7 @@ PGPORT = os.getenv("PGPORT")
 PGPASSWORD = os.getenv("PGPASSWORD")
 PGDATABASE = os.getenv("PGDATABASE")
 # DSN = f"dbname={PGDATABASE} user={PGUSER} password={PGPASSWORD} host={PGHOST} port={PGPORT}"
-DSN = "postgresql://admin:test_password@localhost/postgres"
+DSN = "postgresql://admin:test_password@localhost:35432/postgres"
 
 
 def create_tables():

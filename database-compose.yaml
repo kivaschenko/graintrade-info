@@ -1,7 +1,8 @@
-name: graintraide-database
+name: graintraide-infrastructure
 services:
+
   db:
-    image: postgis/postgis:16-3.4-alpine
+    image: postgis/postgis:latest
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: admin
@@ -16,7 +17,7 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
-
+  # pgAdmin Service
   pgadmin4:
     image: elestio/pgadmin:latest
     restart: always
@@ -31,13 +32,24 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-  kafka:
-    image: apache/kafka:3.8.0
-    container_name: kafka
+  # RabbitMQ Service
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: rabbitmq
     ports:
-      - "9092:9092"
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
+      - rabbitmq_config:/etc/rabbitmq
 
 volumes:
+  rabbitmq_data:
+  rabbitmq_logs:
+  rabbitmq_config:
   postgres_data:
   postgis:
