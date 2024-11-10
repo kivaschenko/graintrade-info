@@ -25,6 +25,13 @@ Note, check what `env` file is using in `config.py` `Settings` previuosly as wel
 docker compose up --build
 ```
 
+3. Create tables
+```
+cd shared-libs/
+poetry shell
+python create_tables.py
+```
+
 ### Kafka and infrastructure
 #### Create images for Kafka
 

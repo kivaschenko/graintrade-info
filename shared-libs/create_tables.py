@@ -15,7 +15,8 @@ PGUSER = os.getenv("PGUSER")
 PGPORT = os.getenv("PGPORT")
 PGPASSWORD = os.getenv("PGPASSWORD")
 PGDATABASE = os.getenv("PGDATABASE")
-DSN = f"dbname={PGDATABASE} user={PGUSER} password={PGPASSWORD} host={PGHOST} port={PGPORT}"
+# DSN = f"dbname={PGDATABASE} user={PGUSER} password={PGPASSWORD} host={PGHOST} port={PGPORT}"
+DSN = "postgresql://admin:test_password@localhost/postgres"
 
 
 def create_tables():
@@ -45,4 +46,5 @@ def create_tables():
 
 
 if __name__ == "__main__":
+    print(f"DSN: {DSN}")
     create_tables()
