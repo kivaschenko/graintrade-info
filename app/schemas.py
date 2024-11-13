@@ -31,9 +31,22 @@ class ItemInDB(BaseModel):
     longitude: float
 
 
-class ItemInResponse(ItemInDB):
+class ItemInResponse(BaseModel):
     id: int
     uuid: str
+    category_id: int
+    offer_type: str
+    title: str
+    description: str | None
+    price: float
+    currency: str
+    amount: int
+    measure: str
+    terms_delivery: str
+    country: str
+    region: str | None
+    latitude: float
+    longitude: float
     created_at: datetime = Field(alias="created_at")
 
     @property
@@ -42,6 +55,26 @@ class ItemInResponse(ItemInDB):
 
     class ConfigDict:
         from_attributes = True
+
+    # add example json response
+    # {
+    # "amount": 360,
+    # "category_id": 1,
+    # "country": "Ukraine",
+    # "created_at": "2024-11-13T13:08:31.158762",
+    # "currency": "USD",
+    # "description": "protein 45%",
+    # "id": 3,
+    # "latitude": 49.305825,
+    # "longitude": 31.946946,
+    # "measure": "metric ton",
+    # "offer_type": "sell",
+    # "price": 234.58,
+    # "region": "Cherkasy Oblast",
+    # "terms_delivery": "FCA",
+    # "title": "Sell wheat 2 grade",
+    # "uuid": "e73fec4b-0ec5-4ca1-b174-c03b47983cc6"
+    # }
 
 
 class Token(BaseModel):
