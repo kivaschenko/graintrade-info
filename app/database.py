@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+SCHEMA_SQL_FILE = BASE_DIR / "shared_libs" / "schema.sql"
 load_dotenv(BASE_DIR / ".env")
 
 PGHOST = os.getenv("PGHOST")
@@ -46,7 +47,7 @@ class Database:
     @classmethod
     async def create_tables(cls):
         print("Creating tables")
-        file_path = BASE_DIR / "app" / "schema.sql"
+        file_path = SCHEMA_SQL_FILE
         file_ = open(file_path, "r")
         SCHEMA_SQL = file_.read()
         async with cls.get_connection() as connection:
