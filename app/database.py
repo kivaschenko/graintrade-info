@@ -18,7 +18,7 @@ PGPORT = os.getenv("PGPORT")
 PGPASSWORD = os.getenv("PGPASSWORD")
 PGDATABASE = os.getenv("PGDATABASE")
 # DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
-DATABASE_URL = "postgresql://admin:test_password@db/postgres"
+DATABASE_URL = "postgresql://admin:test_password@localhost:35432/postgres"
 print(f"DATABASE_URL: {DATABASE_URL}")
 
 
