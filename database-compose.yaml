@@ -32,24 +32,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-  # RabbitMQ Service
-  rabbitmq:
-    image: rabbitmq:latest
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-      - rabbitmq_logs:/var/log/rabbitmq
-      - rabbitmq_config:/etc/rabbitmq
 
 volumes:
-  rabbitmq_data:
-  rabbitmq_logs:
-  rabbitmq_config:
   postgres_data:
   postgis:
