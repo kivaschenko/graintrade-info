@@ -1,7 +1,7 @@
 name: graintraide
 services:
   db:
-    image: postgis/postgis:16-3.4-alpine
+    image: postgis/postgis:latest
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: admin
@@ -16,8 +16,6 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
-    # networks:
-    #   - graintraide-net
 
   pgadmin4:
     image: elestio/pgadmin:latest
@@ -30,64 +28,38 @@ services:
       - "5050:8080"
     volumes:
       - postgis:/var/lib/pgadmin4/servers.json
-    # networks:
-    #   - graintraide-net
     depends_on:
       db:
         condition: service_started
 
-  auth-service:
-    build: ./auth-service
+  app-service:
+    build: ./app
     ports:
-      - "8001:8000"
+      - "8000:8000"
     volumes:
-      - ./auth-service:/app
+      - ./app:/app
     depends_on:
       db:
         condition: service_started
-      # kafka:
-      #   condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://admin:test_password@db/postgres
-    # networks:
-    #   - graintraide-net
-
-  item-service:
-    build: ./item-service
-    ports:
-      - "8002:8000"
-    volumes:
-      - ./item-service:/app
-    depends_on:
-      db:
-        condition: service_started
-      # kafka:
-      #   condition: service_healthy
-    environment:
-      - DATABASE_URL=postgresql://admin:test_password@db/postgres
-    # networks:
-    #   - graintraide-net
   
   notification-service:
     build: ./notification-service
     ports:
-      - "8004:8000"
+      - "8001:8000"
     volumes:
       - ./notification-service:/app
     depends_on:
       db:
         condition: service_started
-      # kafka:
-      #   condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://admin:test_password@db/postgres
-    # networks:
-    #   - graintraide-net
 
   subscription-service:
     build: ./subscription-service
     ports:
-      - "8003:8000"
+      - "8002:8000"
     volumes:
       - ./subscription-service:/app
     depends_on:
@@ -100,30 +72,26 @@ services:
     # networks:
     #   - graintraide-net
 
-  # kafka:
-  #   image: apache/kafka
-  #   container_name: kafka
-  #   restart: "no"
-  #   ports:
-  #     - "9092:9092"
-  #   environment:
-  #     KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:9092"
-  #     KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://localhost:9092"
-  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
-  #     KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
-  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-  #   healthcheck:
-  #     test: nc -z localhost 29092 || exit
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 15
-  #   networks:
-  #     - graintraide-net
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
 
-networks:
-  graintraide-net:
-    external: true
-
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
 volumes:
   postgres_data:

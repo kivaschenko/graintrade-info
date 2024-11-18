@@ -8,7 +8,10 @@ import asyncpg
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent
+print(f"BASE_DIR: {BASE_DIR}")
+SCHEMA_SQL_FILE = BASE_DIR.parent / "shared_libs" / "schema.sql"
+print(f"SCHEMA_SQL_FILE: {SCHEMA_SQL_FILE}")
 load_dotenv(BASE_DIR / ".env")
 
 PGHOST = os.getenv("PGHOST")
@@ -16,8 +19,8 @@ PGUSER = os.getenv("PGUSER")
 PGPORT = os.getenv("PGPORT")
 PGPASSWORD = os.getenv("PGPASSWORD")
 PGDATABASE = os.getenv("PGDATABASE")
-# DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
-DATABASE_URL = "postgresql://admin:test_password@db/postgres"
+DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
+# DATABASE_URL = "postgresql://admin:test_password@db:5432/postgres"
 print(f"DATABASE_URL: {DATABASE_URL}")
 
 
@@ -46,7 +49,7 @@ class Database:
     @classmethod
     async def create_tables(cls):
         print("Creating tables")
-        file_path = BASE_DIR / "app" / "schema.sql"
+        file_path = SCHEMA_SQL_FILE
         file_ = open(file_path, "r")
         SCHEMA_SQL = file_.read()
         async with cls.get_connection() as connection:
