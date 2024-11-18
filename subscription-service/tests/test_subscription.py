@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytest
 import asyncpg
-from app.schemas import SubscriptionInDB, SubscriptionInResponse
+from app.routers.schemas import SubscriptionInDB, SubscriptionInResponse
 from app.subscription_repository import AsyncpgSubscriptionRepository
 
 

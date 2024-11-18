@@ -25,14 +25,14 @@ from asyncpg import Connection
 import bcrypt
 import jwt
 from .config import settings
-from .schemas import (
+from .routers.schemas import (
     UserInCreate,
     UserInDB,
     UserInResponse,
     TokenData,
     Token,
 )
-from .database import Database, get_db
+from .infrastructure.database import Database, get_db
 from .repository import (
     AsyncpgUserRepository,
     AsyncpgItemRepository,
@@ -40,7 +40,7 @@ from .repository import (
 )
 
 # from .kafka_handlers import send_message_to_kafka_about_new_user
-from .schemas import ItemInDB, ItemInResponse
+from .routers.schemas import ItemInDB, ItemInResponse
 
 SECRET_KEY = settings.jwt_secret
 ALGORITHM = "HS256"

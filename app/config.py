@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings
 from typing import Optional, Any
 from pathlib import Path
 
+BASE_DIR: Path = Path(__file__).resolve().parent.parent
+ENV_FILE: Path = BASE_DIR / ".env"
+
 
 # TODO: remove this and excchange with import dotenv in root __init__.py
 class Settings(BaseSettings):
@@ -15,10 +18,6 @@ class Settings(BaseSettings):
     app_name: str = "Authentiaon and Items API | Graintrade Platform"
     app_version: str = "0.1.0"
     DATABASE_URL: Optional[str] = None
-    BASE_DIR: Path = (
-        Path(__file__).resolve().parent
-    )  # Path to the directory where the settings file is located
-    dev_mode: bool = True
 
     def model_post_init(self, __context: Any) -> None:
         """Override this method to perform additional initialization after `__init__`
@@ -29,7 +28,7 @@ class Settings(BaseSettings):
             self.DATABASE_URL = f"postgresql://{self.pguser}:{self.pgpassword}@{self.pghost}:{self.pgport}/{self.pgdatabase}"
 
     class Config:
-        env_file = ".env"
+        env_file = ENV_FILE
         extra = "allow"
 
 
