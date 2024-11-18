@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "app"
+name = "graintrade-api"
 version = "0.1.0"
 description = "Graintrade API"
 authors = ["Kostiantyn Ivashchenko <kivaschenko@protonmail.com>"]
