@@ -1,7 +1,7 @@
 from typing import List
 from abc import ABC, abstractmethod
 import asyncpg
-from .routers.schemas import ItemInDB, ItemInResponse, UserInDB, UserInResponse
+from app.routers.schemas import UserInDB, UserInResponse
 
 # User repositories
 # The AbstractUserRepository class defines the interface for interacting with users in the database.

@@ -8,11 +8,12 @@ import asyncpg
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 print(f"BASE_DIR: {BASE_DIR}")
-SCHEMA_SQL_FILE = BASE_DIR.parent / "shared_libs" / "schema.sql"
+SCHEMA_SQL_FILE = BASE_DIR / "infrastructure" / "schema.sql"
 print(f"SCHEMA_SQL_FILE: {SCHEMA_SQL_FILE}")
-load_dotenv(BASE_DIR / ".env")
+CATEGORY_FILE = BASE_DIR / "infrastructure" / "insert_categories.sql"
+load_dotenv(BASE_DIR.parent / ".env")
 
 PGHOST = os.getenv("PGHOST")
 PGUSER = os.getenv("PGUSER")
@@ -57,6 +58,17 @@ class Database:
             print("Tables created successfully")
         file_.close()
         print("Finished creating tables")
+
+    @classmethod
+    async def insert_category(cls):
+        print("Inserting categories")
+        file_ = open(CATEGORY_FILE, "r")
+        INSERT_CATEGORIES_SQL = file_.read()
+        async with cls.get_connection() as connection:
+            await connection.execute(INSERT_CATEGORIES_SQL)
+            print("Categories inserted successfully")
+        file_.close()
+        print("Finished inserting categories")
 
 
 @asynccontextmanager
