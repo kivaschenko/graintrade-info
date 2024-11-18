@@ -11,6 +11,8 @@ from fastapi import (
     status,
     BackgroundTasks,
     Query,
+    WebSocket,
+    WebSocketDisconnect,
 )
 from fastapi.security import (
     OAuth2PasswordBearer,
@@ -513,6 +515,20 @@ async def filter_items(
         region,
     )
     return items
+
+
+# Websocket
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(f"Message text was: {data}")
+    except WebSocketDisconnect:
+        logging.info("Client disconnected")
 
 
 # @app.post("/items/{item_id}/like", response_model=dict, tags=["Items"])
