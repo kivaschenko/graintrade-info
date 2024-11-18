@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional, Any
 from pathlib import Path
 
+
 # TODO: remove this and excchange with import dotenv in root __init__.py
 class Settings(BaseSettings):
     pguser: str
@@ -11,7 +12,8 @@ class Settings(BaseSettings):
     pghost: str
     jwt_secret: str
     jwt_expires_in: int = 60 * 24  # 1 day
-    app_name: str = "Authentiaon API | Graintrade Platform"
+    app_name: str = "Authentiaon and Items API | Graintrade Platform"
+    app_version: str = "0.1.0"
     DATABASE_URL: Optional[str] = None
     BASE_DIR: Path = (
         Path(__file__).resolve().parent

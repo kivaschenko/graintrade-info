@@ -8,8 +8,10 @@ import asyncpg
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-SCHEMA_SQL_FILE = BASE_DIR / "shared_libs" / "schema.sql"
+BASE_DIR = Path(__file__).resolve().parent
+print(f"BASE_DIR: {BASE_DIR}")
+SCHEMA_SQL_FILE = BASE_DIR.parent / "shared_libs" / "schema.sql"
+print(f"SCHEMA_SQL_FILE: {SCHEMA_SQL_FILE}")
 load_dotenv(BASE_DIR / ".env")
 
 PGHOST = os.getenv("PGHOST")
@@ -18,7 +20,7 @@ PGPORT = os.getenv("PGPORT")
 PGPASSWORD = os.getenv("PGPASSWORD")
 PGDATABASE = os.getenv("PGDATABASE")
 DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
-# DATABASE_URL = "postgresql://admin:test_password@localhost:35432/postgres"
+# DATABASE_URL = "postgresql://admin:test_password@db:5432/postgres"
 print(f"DATABASE_URL: {DATABASE_URL}")
 
 

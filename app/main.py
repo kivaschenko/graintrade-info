@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
         await Database._pool.close()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, title=settings.app_name, version=settings.app_version)
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",

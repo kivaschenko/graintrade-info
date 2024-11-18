@@ -1,13 +1,12 @@
-# repository.py
-# is responsible for interacting with the database. It contains functions to create, retrieve,
-# update, and delete items from the database. It uses the asyncpg library to interact with the
-# PostgreSQL database. The repository pattern is used to separate the data access logic from the
-# business logic of the application. The repository pattern makes it easier to test the data access
-# logic in isolation from the rest of the application.
 from typing import List
 from abc import ABC, abstractmethod
 import asyncpg
 from .schemas import ItemInDB, ItemInResponse, UserInDB, UserInResponse
+
+# -------------------repository.py-------------------
+# Item repositories
+# The AbstractItemRepository class defines the interface for interacting with items in the database.
+# It contains abstract methods for creating, retrieving, updating, and deleting items. The AsyncpgItemRepository
 
 
 class AbstractItemRepository(ABC):
@@ -185,6 +184,11 @@ class AsyncpgItemRepository(AbstractItemRepository):
         return [ItemInResponse(**row) for row in rows]
 
 
+# User repositories
+# The AbstractUserRepository class defines the interface for interacting with users in the database.
+# It contains abstract methods for creating, retrieving, updating, and deleting users. The AsyncpgUserRepository
+
+
 class AbstractUserRepository(ABC):
     @abstractmethod
     async def create(self, user: UserInDB) -> UserInResponse:
@@ -317,6 +321,9 @@ class AsyncpgUserRepository(AbstractUserRepository):
 
 
 # User and Item repositories
+# The AbstractItemUserRepository class defines the interface for interacting with the items_users table in the database.
+# It contains abstract methods for adding and removing items from users, getting items by user ID, and deleting all items.
+# The AsyncpgItemUserRepository class implements the methods defined in the AbstractItemUserRepository class.
 
 
 class AbstractItemUserRepository(ABC):
