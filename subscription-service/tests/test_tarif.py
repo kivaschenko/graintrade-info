@@ -1,6 +1,6 @@
 import pytest
 import asyncpg
-from app.schemas import TarifInDB, TarifInResponse
+from app.routers.schemas import TarifInDB, TarifInResponse
 from app.tarif_repository import AsyncpgTarifRepository
 
 

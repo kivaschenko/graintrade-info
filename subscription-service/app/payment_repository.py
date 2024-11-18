@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.schemas import PaymentInDB, PaymentInResponse
+from app.routers.schemas import PaymentInDB, PaymentInResponse
 
 
 class AbstractPaymentRepository(ABC):

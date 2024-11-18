@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.schemas import SubscriptionInDB, SubscriptionInResponse
+from app.routers.schemas import SubscriptionInDB, SubscriptionInResponse
 
 
 class AbstractSubscriptionRepository(ABC):
@@ -99,7 +99,7 @@ class AsyncpgSubscriptionRepository(AbstractSubscriptionRepository):
         """
         async with self.conn as connection:
             await connection.execute(query, subscription_id)
-    
+
     async def get_by_user_id(self, user_id: int) -> List[SubscriptionInResponse]:
         query = """
             SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
