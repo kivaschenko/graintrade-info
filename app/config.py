@@ -11,8 +11,9 @@ class Settings(BaseSettings):
     pgport: int
     pghost: str
     jwt_secret: str
-    jwt_expires_in: int
-    app_name: str = "Items API | Graintrade Platform"
+    jwt_expires_in: int = 60 * 24  # 1 day
+    app_name: str = "Authentiaon and Items API | Graintrade Platform"
+    app_version: str = "0.1.0"
     DATABASE_URL: Optional[str] = None
     BASE_DIR: Path = (
         Path(__file__).resolve().parent

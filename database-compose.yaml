@@ -1,7 +1,8 @@
-name: graintraide-database
+name: graintraide-infrastructure
 services:
+
   db:
-    image: postgis/postgis:16-3.4-alpine
+    image: postgis/postgis:latest
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: admin
@@ -16,7 +17,7 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
-
+  # pgAdmin Service
   pgadmin4:
     image: elestio/pgadmin:latest
     restart: always
@@ -31,12 +32,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-  kafka:
-    image: apache/kafka:3.8.0
-    container_name: kafka
-    ports:
-      - "9092:9092"
 
 volumes:
   postgres_data:

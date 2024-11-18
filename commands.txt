@@ -1,0 +1,118 @@
+
+
+
+# --------
+# User
+
+# Create a new user \
+http POST http://localhost:8000/users/ username="testuser" email="testuser@example.com" full_name="Test User" password="password123"
+
+# Login to get an access token \
+http -f POST http://localhost:8000/token username="testuser" password="password123"
+
+3. Get the current user's information:
+http GET http://localhost:8000/users/me "Authorization: Bearer <ACCESS_TOKEN>"
+
+4. Get all users:
+http GET http://localhost:8000/users/ "Authorization: Bearer <ACCESS_TOKEN>"
+
+5. Get a specific user by ID:
+http GET http://localhost:8000/users/1 "Authorization: Bearer <ACCESS_TOKEN>"
+
+6. Update a user:
+http PUT http://localhost:8000/users/1 username="updateduser" email="updateduser@example.com" full_name="Updated User" password="newpassword123" "Authorization: Bearer <ACCESS_TOKEN>"
+
+7. Delete a user:
+http DELETE http://localhost:8000/users/1 "Authorization: Bearer <ACCESS_TOKEN>"
+
+
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsInNjb3BlcyI6WyJtZSIsImNyZWF0ZTppdGVtIiwicmVhZDppdGVtIiwidXBkYXRlOml0ZW0iLCJkZWxldGU6aXRlbSJdLCJ1c2VyX2lkIjoyLCJleHAiOjE3MzE1MDQzMjh9.XWj6GeSu4jwqxWhFejHeVux27VCkMRBNT-VocgsSHSU",
+    "token_type": "bearer"
+}
+
+# --------
+# Items
+
+# Create a new Item \
+http POST http://localhost:8000/items \
+    user_id:=2 \
+    category_id:=1 \
+    offer_type="sell" \
+    title="Sell wheat 2 grade" \
+    description="protein 45%" \
+    price:=234.58 \
+    currency="USD" \
+    amount:=360 \
+    measure="metric ton" \
+    terms_delivery="FCA" \
+    country="Ukraine" \
+    region="Cherkasy Oblast" \
+    latitude:=49.305825 \
+    longitude:=31.946946 \
+    "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsInNjb3BlcyI6WyJtZSIsImNyZWF0ZTppdGVtIiwicmVhZDppdGVtIiwidXBkYXRlOml0ZW0iLCJkZWxldGU6aXRlbSJdLCJ1c2VyX2lkIjoyLCJleHAiOjE3MzE1MDQzMjh9.XWj6GeSu4jwqxWhFejHeVux27VCkMRBNT-VocgsSHSU"
+
+# Get all items \
+http GET http://localhost:8000/items \
+    offset:=0 \
+    limit:=10 \
+    "Authorization: Bearer <ACCESS_TOKEN>"
+
+# Get a specific item by ID \
+http GET http://localhost:8000/items/1 \
+    "Authorization: Bearer <ACCESS_TOKEN>"
+
+# Update an item
+http PUT http://localhost:8000/items/4 \
+    user_id:=2 \
+    category_id:=1 \
+    offer_type="sell" \
+    title="Updated wheat 2 grade" \
+    description="updated protein 45%" \
+    price:=350.00 \
+    currency="USD" \
+    amount:=400 \
+    measure="metric ton" \
+    terms_delivery="FCA" \
+    country="Ukraine" \
+    region="Cherkasy Oblast" \
+    latitude:=49.305825 \
+    longitude:=31.946946 \
+    "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsInNjb3BlcyI6WyJtZSIsImNyZWF0ZTppdGVtIiwicmVhZDppdGVtIiwidXBkYXRlOml0ZW0iLCJkZWxldGU6aXRlbSJdLCJ1c2VyX2lkIjoyLCJleHAiOjE3MzE1MTM5NDd9.mZ7V5WvyFUjTAD49tTtnwBNcpP92o7WjELdacGe2zxA"
+
+# Delete an item
+http DELETE http://localhost:8000/items/1 \
+    "Authorization: Bearer <ACCESS_TOKEN>"
+
+# Get item by user ID
+http GET http://localhost:8000/items-by-user/1 \
+    "Authorization: Bearer <ACCESS_TOKEN>"
+
+# Find items within a given distance from a point
+http GET http://localhost:8000/find-items-in-distance \
+    latitude==49.305825 \
+    longitude==31.946946 \
+    distance==10000 \
+    "Authorization: Bearer <ACCESS_TOKEN>"
+
+# Filter items
+http GET http://localhost:8000/filter-items \
+    min_price:=200.00 \
+    max_price:=300.00 \
+    currency="USD" \
+    min_amount:=100 \
+    max_amount:=500 \
+    measure="metric ton" \
+    terms_delivery="FCA" \
+    country="Ukraine" \
+    region="Cherkasy Oblast" \
+    "Authorization: Bearer <ACCESS_TOKEN>"
+
+http GET http://localhost:8000/filter-items \
+    min_price==300.00 \
+    min_amount==390 \
+    measure=="metric ton" \
+    terms_delivery=="FCA" \
+    country=="Ukraine" \
+    region=="Cherkasy Oblast" \
+    "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsInNjb3BlcyI6WyJtZSIsImNyZWF0ZTppdGVtIiwicmVhZDppdGVtIiwidXBkYXRlOml0ZW0iLCJkZWxldGU6aXRlbSJdLCJ1c2VyX2lkIjoyLCJleHAiOjE3MzE1MTM5NDd9.mZ7V5WvyFUjTAD49tTtnwBNcpP92o7WjELdacGe2zxA"

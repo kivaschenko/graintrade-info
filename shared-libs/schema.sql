@@ -1,11 +1,39 @@
 CREATE EXTENSION IF NOT EXISTS postgis CASCADE;
 CREATE EXTENSION IF NOT EXISTS postgis_topology CASCADE;
 CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder CASCADE;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Drop table if it exists and create it
+DROP TABLE IF EXISTS categories CASCADE;
+
+-- Categoy table
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    ua_name VARCHAR(50),
+    ua_description TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Drop indexes if they exist
+DROP INDEX IF EXISTS categories_name_idx;
+DROP INDEX IF EXISTS categories_ua_name_idx;
+
+-- Create indexes
+CREATE INDEX categories_name_idx ON categories (name);
+CREATE INDEX categories_ua_name_idx ON categories (ua_name);
+
+-- Drop table if it exists and create it
+DROP TABLE IF EXISTS items CASCADE;
 
 -- Items table
 CREATE TABLE IF NOT EXISTS items (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(50) NOT NULL,
+    uuid VARCHAR NOT NULL DEFAULT uuid_generate_v4(),
+    category_id INTEGER NOT NULL,
+    offer_type VARCHAR(50) NOT NULL,  -- sell, buy, exchange
+    title VARCHAR(150) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
     currency VARCHAR(3) NOT NULL,
@@ -17,16 +45,19 @@ CREATE TABLE IF NOT EXISTS items (
     latitude DECIMAL(9, 6) NOT NULL,
     longitude DECIMAL(9, 6) NOT NULL,
     geom GEOMETRY(POINT, 4326),
-    created_at TIMESTAMP DEFAULT NOW()
-);
+    created_at TIMESTAMP DEFAULT NOW(),
+    FOREIGN KEY (category_id) REFERENCES categories (id)
+    );
 
 -- Drop indexes if they exist
 DROP INDEX IF EXISTS items_geom_idx;
 DROP INDEX IF EXISTS items_country_idx;
 DROP INDEX IF EXISTS items_region_idx;
 DROP INDEX IF EXISTS items_created_at_idx;
+DROP INDEX IF EXISTS items_offer_type_idx;
 
 -- Create indexes
+CREATE INDEX items_offer_type_idx ON items (offer_type);
 CREATE INDEX items_geom_idx ON items USING GIST (geom);
 CREATE INDEX items_country_idx ON items (country);
 CREATE INDEX items_region_idx ON items (region);
@@ -38,6 +69,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) NOT NULL,
     email VARCHAR(100) NOT NULL,
     full_name VARCHAR(100),
+    phone VARCHAR(20),
     hashed_password VARCHAR(100) NOT NULL,
     disabled BOOLEAN DEFAULT FALSE
 );
@@ -63,6 +95,10 @@ CREATE TABLE IF NOT EXISTS tarifs (
     terms VARCHAR(50) NOT NULL DEFAULT 'monthly',
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Drop indexes if they exist
+DROP INDEX IF EXISTS tarifs_scope_idx;
+DROP INDEX IF EXISTS tarifs_terms_idx;
 
 -- Create indexes
 CREATE INDEX tarifs_scope_idx ON tarifs (scope);
