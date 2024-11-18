@@ -12,7 +12,7 @@
 # CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 # Stage 1: Build stage
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 WORKDIR /app
 
 # Install curl and Poetry
