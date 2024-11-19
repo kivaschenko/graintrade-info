@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 import os
 import httpx
 from abc import ABC, abstractmethod
-from .schemas import Recipient  # Import the Recipient class from the .schemas module
+from app.routers.schemas import (
+    Recipient,
+)  # Import the Recipient class from the .schemas module
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env_path = BASE_DIR / ".env"
@@ -54,3 +56,25 @@ class SMSNotificationHandler(NotificationHandler):
 #     async def send_notification(self, recipient: Recipient, message: str) -> None:
 #         for notification in self.notifications:
 #             await notification.send(recipient, message)
+
+
+class TelegramNotificationHandler(NotificationHandler):
+    @classmethod
+    async def send(cls, recipient: Recipient, message: str) -> bool:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendMessage",
+                json={"chat_id": recipient.chat_id, "text": message},
+            )
+        return response.status_code == 200
+
+
+class WhatsAppNotificationHandler(NotificationHandler):
+    @classmethod
+    async def send(cls, recipient: Recipient, message: str) -> bool:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"https://api.whatsapp.com/send",
+                json={"phone": recipient.phone, "message": message},
+            )
+        return response.status_code == 200

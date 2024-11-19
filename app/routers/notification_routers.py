@@ -5,6 +5,7 @@ from app.service_layer.notification_services import (
     EmailNotificationHandler,
     SMSNotificationHandler,
     TelegramNotificationHandler,
+    WhatsAppNotificationHandler,
     # NotificationService,
 )
 
@@ -14,6 +15,7 @@ HANDLERS = {
     "email": EmailNotificationHandler,
     "sms": SMSNotificationHandler,
     "telegram": TelegramNotificationHandler,
+    "whatsapp": WhatsAppNotificationHandler,
 }
 
 logger = logging.getLogger("app_logger")
