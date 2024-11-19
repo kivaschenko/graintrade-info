@@ -36,7 +36,6 @@ def get_tarif_repository(db: Connection = Depends(get_db)) -> AsyncpgTarifReposi
     "/tarifs",
     response_model=TarifInResponse,
     status_code=status.HTTP_201_CREATED,
-    tags=["tarifs"],
 )
 async def create_tarif(
     tarif: TarifInDB, tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository)
@@ -45,7 +44,7 @@ async def create_tarif(
     return await tarif_repo.create(tarif)
 
 
-@router.get("/tarifs", response_model=List[TarifInResponse], tags=["tarifs"])
+@router.get("/tarifs", response_model=List[TarifInResponse])
 async def get_all_tarifs(
     tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository),
 ):
@@ -53,7 +52,7 @@ async def get_all_tarifs(
     return await tarif_repo.get_all()
 
 
-@router.get("/tarifs/{tarif_id}", response_model=TarifInResponse, tags=["tarifs"])
+@router.get("/tarifs/{tarif_id}", response_model=TarifInResponse)
 async def get_tarif(
     tarif_id: int, tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository)
 ):
@@ -66,7 +65,7 @@ async def get_tarif(
     return current_tarif
 
 
-@router.put("/tarifs/{tarif_id}", response_model=TarifInResponse, tags=["tarifs"])
+@router.put("/tarifs/{tarif_id}", response_model=TarifInResponse)
 async def update_tarif(
     tarif_id: int,
     tarif: TarifInDB,
@@ -76,7 +75,7 @@ async def update_tarif(
     return await tarif_repo.update(tarif_id, tarif)
 
 
-@router.delete("/tarifs/{tarif_id}", tags=["tarifs"])
+@router.delete("/tarifs/{tarif_id}")
 async def delete_tarif(
     tarif_id: int, tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository)
 ):
@@ -89,7 +88,6 @@ async def delete_tarif(
     "/subscriptions",
     response_model=SubscriptionInResponse,
     status_code=status.HTTP_201_CREATED,
-    tags=["subscriptions"],
 )
 async def create_subscription(
     subscription: SubscriptionInDB,
@@ -104,7 +102,6 @@ async def create_subscription(
 @router.get(
     "/subscriptions",
     response_model=List[SubscriptionInResponse],
-    tags=["subscriptions"],
 )
 async def get_all_subscriptions(
     subscription_repo: AsyncpgSubscriptionRepository = Depends(
@@ -118,7 +115,6 @@ async def get_all_subscriptions(
 @router.get(
     "/subscriptions/{subscription_id}",
     response_model=SubscriptionInResponse,
-    tags=["subscriptions"],
 )
 async def get_subscription(
     subscription_id: int,
@@ -138,7 +134,6 @@ async def get_subscription(
 @router.put(
     "/subscriptions/{subscription_id}",
     response_model=SubscriptionInResponse,
-    tags=["subscriptions"],
 )
 async def update_subscription(
     subscription_id: int,
@@ -153,7 +148,7 @@ async def update_subscription(
     return await subscription_repo.update(subscription_id, subscription)
 
 
-@router.delete("/subscriptions/{subscription_id}", tags=["subscriptions"])
+@router.delete("/subscriptions/{subscription_id}")
 async def delete_subscription(
     subscription_id: int,
     subscription_repo: AsyncpgSubscriptionRepository = Depends(
@@ -164,7 +159,7 @@ async def delete_subscription(
     await subscription_repo.delete(subscription_id)
 
 
-@router.get("/subscriptions/user/{user_id}", tags=["subscriptions"])
+@router.get("/subscriptions/user/{user_id}")
 async def get_subscriptions_by_user(
     user_id: int,
     subscription_repo: AsyncpgSubscriptionRepository = Depends(
@@ -176,7 +171,7 @@ async def get_subscriptions_by_user(
     return subscriptions
 
 
-@router.get("/subscriptions/tarif/{tarif_id}", tags=["subscriptions"])
+@router.get("/subscriptions/tarif/{tarif_id}")
 async def get_subscriptions_by_tarif(
     tarif_id: int,
     subscription_repo: AsyncpgSubscriptionRepository = Depends(

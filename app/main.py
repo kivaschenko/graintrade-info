@@ -15,6 +15,8 @@ from .config import settings
 from .infrastructure.database import Database
 from .routers import user_routers
 from .routers import item_routers
+from .routers import notification_routers
+from .routers import subscription_routers
 
 
 SECRET_KEY = settings.jwt_secret
@@ -56,6 +58,8 @@ app.add_middleware(
 
 app.include_router(item_routers.router)
 app.include_router(user_routers.router)
+app.include_router(notification_routers.router)
+app.include_router(subscription_routers.router)
 
 
 # ----------------
