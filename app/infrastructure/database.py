@@ -4,10 +4,12 @@
 # from the pool.
 from pathlib import Path
 import os
+import logging
 import asyncpg
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
+logger = logging.getLogger("app_logger")
 BASE_DIR = Path(__file__).resolve().parent.parent
 print(f"BASE_DIR: {BASE_DIR}")
 SCHEMA_SQL_FILE = BASE_DIR / "infrastructure" / "schema.sql"
@@ -30,8 +32,14 @@ class Database:
 
     @classmethod
     async def init(cls):
-        cls._pool = await asyncpg.create_pool(dsn=DATABASE_URL, min_size=1, max_size=10)
-        print("Database connection pool created")
+        try:
+            cls._pool = await asyncpg.create_pool(
+                dsn=DATABASE_URL, min_size=1, max_size=10, timeout=60
+            )
+            logger.info("Database connection pool created")
+        except Exception as e:
+            logger.error(f"Error creating database connection pool: {e}")
+            raise e
 
     @classmethod
     async def release_connection(cls, connection):

@@ -13,7 +13,7 @@
 
 # Stage 1: Build stage
 FROM python:3.12-slim AS builder
-WORKDIR /app
+WORKDIR /graintrade-api
 
 # Install curl and Poetry
 RUN apt-get update && apt-get install -y curl && \
@@ -31,11 +31,11 @@ COPY . .
 
 # Stage 2: Final stage
 FROM python:3.12-slim
-WORKDIR /app
+WORKDIR /graintrade-api
 
 # Copy the installed dependencies from the builder stage
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /app /app
-
+COPY --from=builder /graintrade-api /graintrade-api/
+EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
