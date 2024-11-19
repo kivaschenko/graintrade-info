@@ -13,8 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .infrastructure.database import Database
-from .routers import item_routers
 from .routers import user_routers
+from .routers import item_routers
 
 
 SECRET_KEY = settings.jwt_secret
