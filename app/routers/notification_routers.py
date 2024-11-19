@@ -1,14 +1,14 @@
-from fastapi import FastAPI, HTTPException
+import logging
+from fastapi import APIRouter, HTTPException
 from .schemas import Recipient, Notification
-from .services import (
+from app.service_layer.notification_services import (
     EmailNotificationHandler,
     SMSNotificationHandler,
     TelegramNotificationHandler,
     # NotificationService,
 )
 
-
-app = FastAPI()
+router = APIRouter(tags=["notification"])
 
 HANDLERS = {
     "email": EmailNotificationHandler,
@@ -16,16 +16,22 @@ HANDLERS = {
     "telegram": TelegramNotificationHandler,
 }
 
+logger = logging.getLogger("app_logger")
 
-@app.post("/notify")
+
+@router.post("/notify")
 async def notify(notification: Notification):
     recipient = Recipient(**notification.recipient)
     message = notification.message
     method = notification.method
 
+    logger.info(f"Received notification request: {notification}")
+
     if method not in HANDLERS:
+        logger.error(f"Invalid notification method: {method}")
         raise HTTPException(status_code=400, detail="Invalid notification method")
 
     handler = HANDLERS[method]
     await handler.send(recipient, message)
+    logger.info(f"Notification sent successfully to {recipient} via {method}")
     return {"message": "Notification sent successfully"}
