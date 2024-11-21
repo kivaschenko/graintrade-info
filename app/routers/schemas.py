@@ -1,6 +1,6 @@
 # Desc: Schemas for the item service
 
-from typing import Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 
@@ -64,25 +64,9 @@ class ItemInResponse(BaseModel):
     class ConfigDict:
         from_attributes = True
 
-    # add example json response
-    # {
-    # "amount": 360,
-    # "category_id": 1,
-    # "country": "Ukraine",
-    # "created_at": "2024-11-13T13:08:31.158762",
-    # "currency": "USD",
-    # "description": "protein 45%",
-    # "id": 3,
-    # "latitude": 49.305825,
-    # "longitude": 31.946946,
-    # "measure": "metric ton",
-    # "offer_type": "sell",
-    # "price": 234.58,
-    # "region": "Cherkasy Oblast",
-    # "terms_delivery": "FCA",
-    # "title": "Sell wheat 2 grade",
-    # "uuid": "e73fec4b-0ec5-4ca1-b174-c03b47983cc6"
-    # }
+
+class CategoryInResponseWithItems(CategoryInResponse):
+    items: List[Dict[str, Any]]
 
 
 # -------------------------------

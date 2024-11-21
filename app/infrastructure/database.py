@@ -13,7 +13,7 @@ logger = logging.getLogger("app_logger")
 BASE_DIR = Path(__file__).resolve().parent.parent
 print(f"BASE_DIR: {BASE_DIR}")
 SCHEMA_SQL_FILE = BASE_DIR / "infrastructure" / "schema.sql"
-print(f"SCHEMA_SQL_FILE: {SCHEMA_SQL_FILE}")
+# print(f"SCHEMA_SQL_FILE: {SCHEMA_SQL_FILE}")
 CATEGORY_FILE = BASE_DIR / "infrastructure" / "insert_categories.sql"
 load_dotenv(BASE_DIR.parent / ".env")
 
@@ -24,7 +24,7 @@ PGPASSWORD = os.getenv("PGPASSWORD")
 PGDATABASE = os.getenv("PGDATABASE")
 DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
 # DATABASE_URL = "postgresql://admin:test_password@db:5432/postgres"
-print(f"DATABASE_URL: {DATABASE_URL}")
+# print(f"DATABASE_URL: {DATABASE_URL}")
 
 
 class Database:

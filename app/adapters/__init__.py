@@ -4,6 +4,7 @@ from .item_user_repository import AsyncpgItemUserRepository
 from .subscription_repository import AsyncpgSubscriptionRepository
 from .payment_repository import AsyncpgPaymentRepository
 from .tarif_repository import AsyncpgTarifRepository
+from .category_repository import AsyncpgCategoryRepository
 
 __all__ = [
     "AsyncpgItemRepository",
@@ -12,4 +13,5 @@ __all__ = [
     "AsyncpgSubscriptionRepository",
     "AsyncpgPaymentRepository",
     "AsyncpgTarifRepository",
+    "AsyncpgCategoryRepository",
 ]
