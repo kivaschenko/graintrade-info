@@ -1,7 +1,7 @@
 from typing import List
 from abc import ABC, abstractmethod
 import asyncpg
-from app.routers.schemas import ItemInDB, ItemInResponse, UserInDB, UserInResponse
+from app.routers.schemas import ItemInDB, ItemInResponse
 
 # -------------------repository.py-------------------
 # Item repositories
