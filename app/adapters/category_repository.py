@@ -4,8 +4,10 @@ import asyncpg
 from app.routers.schemas import (
     CategoryInDB,
     CategoryInResponse,
-    CategoryInResponseWithItems,
+    CategoryWithItems,
+    ItemInResponse,
 )
+from app.infrastructure.database import get_db
 
 
 class AbstractCategoryRepository(ABC):
@@ -33,7 +35,7 @@ class AbstractCategoryRepository(ABC):
 
 
 class AsyncpgCategoryRepository(AbstractCategoryRepository):
-    def __init__(self, conn: asyncpg.Connection) -> None:
+    def __init__(self, conn: asyncpg.Connection = get_db()) -> None:
         self.conn = conn
 
     async def create(self, category: CategoryInDB) -> CategoryInResponse:
@@ -107,23 +109,34 @@ class AsyncpgCategoryRepository(AbstractCategoryRepository):
             await connection.execute(query, category_id)
 
     async def get_by_id_with_items(
-        self, category_id: int
-    ) -> CategoryInResponseWithItems:
+        self, category_id: int, offset: int, limit: int
+    ) -> CategoryWithItems:
         query = """
             SELECT c.id, c.name, c.description, c.ua_name, c.ua_description, i.id, i.title
             FROM categories c
             JOIN items i ON c.id = i.category_id
             WHERE c.id = $1
         """
+        query2 = """
+            SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+            FROM items
+            WHERE category_id = $1
+            ORDER BY id DESC
+            OFFSET $2
+            LIMIT $3
+        """
         async with self.conn as connection:
             row = await connection.fetchrow(query, category_id)
             if row is None:
                 raise ValueError("Category not found")
-            return CategoryInResponseWithItems(
+            category = CategoryWithItems(
                 id=row["id"],
                 name=row["name"],
                 description=row["description"],
                 ua_name=row["ua_name"],
                 ua_description=row["ua_description"],
-                items=[{"id": row["id"], "title": row["title"]}],
+                items=[],
             )
+            items = await connection.fetch(query2, category_id, offset, limit)
+            category.items = [ItemInResponse(**item) for item in items]
+            return category
