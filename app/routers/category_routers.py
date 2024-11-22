@@ -21,7 +21,7 @@ from app.config import settings
 from .schemas import (
     CategoryInDB,
     CategoryInResponse,
-    CategoryInResponseWithItems,
+    CategoryWithItems,
     UserInResponse,
     TokenData,
 )
@@ -221,14 +221,16 @@ async def read_item(
 
 @router.get(
     "/categories/{category_id}/items",
-    response_model=CategoryInResponseWithItems,
+    response_model=CategoryWithItems,
     status_code=200,
 )
 async def read_items_by_category(
     category_id: int,
+    offeset: int = 0,
+    limit: int = 10,
     repo: AsyncpgCategoryRepository = Depends(get_category_repository),
 ):
-    category_with_items = await repo.get_by_id_with_items(category_id)
+    category_with_items = await repo.get_by_id_with_items(category_id, offeset, limit)
     if category_with_items is None:
         logging.error(f"Category with id {category_id} not found")
         raise HTTPException(
