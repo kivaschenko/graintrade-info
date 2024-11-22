@@ -50,7 +50,7 @@ oauth2_scheme = OAuth2PasswordBearer(
     },
 )
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-
+logger = logging.getLogger(__name__)
 
 # ==========
 # Dependency
@@ -230,7 +230,9 @@ async def read_items_by_category(
     limit: int = 10,
     repo: AsyncpgCategoryRepository = Depends(get_category_repository),
 ):
+    logger.info(f"Getting items for category {category_id}")
     category_with_items = await repo.get_by_id_with_items(category_id, offeset, limit)
+    logger.debug(f"Category with items: {category_with_items}")
     if category_with_items is None:
         logging.error(f"Category with id {category_id} not found")
         raise HTTPException(
