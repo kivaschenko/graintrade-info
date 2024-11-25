@@ -65,8 +65,17 @@ class ItemInResponse(BaseModel):
         from_attributes = True
 
 
-class CategoryInResponseWithItems(CategoryInResponse):
-    items: List[Dict[str, Any]]
+# -------------------------------
+# Category with Items schema
+
+
+class CategoryWithItems(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    ua_name: str | None
+    ua_description: str | None
+    items: List[ItemInResponse] = []
 
 
 # -------------------------------
