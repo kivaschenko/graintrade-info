@@ -163,4 +163,92 @@ The following indicators should be taken into account here:
 - oleic acid content - from 82%.
 The presence of ticks or some other types of pests, toxic drugs is unacceptable.""",
     ),
+    (
+        "Дизельне паливо",
+        """Дизельне паливо повинно відповідати вимогам ДСТУ 3587:2015 та мати наступні базисні
+    показники:
+    - вміст сірки - не більше 0,2 %;
+    - вміст води - не більше 0,05 %;
+    - вміст механічних домішок - не більше 0,01 %;
+    - температура спалаху - не нижче 55 °С;
+    - температура застигання - не вище -5 °С;
+    - кінематична в'язкість при 20 °С - від 2,0 до 4,5 мм2/с;
+    - щільність при 15 °С - від 820 до 860 кг/м3;
+    - кількість цетану - не менше 45.
+    Відбір та формування проб для визначення всіх показників здійснюється згідно ДСТУ ISO 3170:2007.""",
+        "Diesel fuel",
+        """Diesel fuel must meet the requirements of DSTU 3587:2015 and have the following basic
+        indicators:
+        - sulfur content - not more than 0.2%;
+        - water content - not more than 0.05%;
+        - mechanical impurities content - not more than 0.01%;
+        - flash point - not lower than 55 °C;
+        - freezing point - not higher than -5 °C;
+        - kinematic viscosity at 20 °C - from 2.0 to 4.5 mm2/s;
+        - density at 15 °C - from 820 to 860 kg/m3;
+        - cetane number - not less than 45.
+        Sampling and sample formation for the determination of all indicators is carried out in accordance with DSTU ISO 3170:2007.""",
+    ),
+    (
+        "КАС-32",
+        """КАС-32 повинен відповідати вимогам ДСТУ 7258:2009 та мати наступні базисні
+        показники:
+        - масова частка карбаміду - не менше 32%;
+        - масова частка води - не більше 0,5%;
+        - масова частка біурету - не більше 1,5%;
+        - масова частка аміаку - не більше 0,5%;
+        - масова частка вільної аміакальної форми - не більше 0,5%;
+        - масова частка біурету - не більше 1,5%;
+        """,
+        "CAS-32",
+        """CAS-32 must meet the requirements of DSTU 7258:2009 and have the following basic
+        indicators:
+        - mass fraction of urea - not less than 32%;
+        - mass fraction of water - not more than 0.5%;
+        - mass fraction of biuret - not more than 1.5%;
+        - mass fraction of ammonia - not more than 0.5%;
+        - mass fraction of free ammonia form - not more than 0.5%;
+        - mass fraction of biuret - not more than 1.5%;
+        """,
+    ),
+    (
+        "Аміачна селітра",
+        """Аміачна селітра повинна відповідати вимогам ДСТУ 1135:2013 та мати наступні базисні
+        показники:
+        - масова частка азоту в перерахунку на суху речовину - не менше 34,4%;
+        - масова частка вологи - не більше 0,5%;
+        - масова частка водорозчинних речовин - не більше 0,1%;
+        - масова частка вуглецю в перерахунку на суху речовину - не більше 0,1%;
+        - масова частка сірки в перерахунку на суху речовину - не більше 0,1%;
+        """,
+        "Ammonium nitrate",
+        """Ammonium nitrate must meet the requirements of DSTU 1135:2013 and have the following basic
+        indicators:
+        - mass fraction of nitrogen in terms of dry matter - not less than 34.4%;
+        - mass fraction of moisture - not more than 0.5%;
+        - mass fraction of water-soluble substances - not more than 0.1%;
+        - mass fraction of carbon in terms of dry matter - not more than 0.1%;
+        """,
+    ),
+    (
+        "Карбамід",
+        """Карбамід повинен відповідати вимогам ДСТУ 1135:2013 та мати наступні базисні
+        показники:
+        - масова частка азоту в перерахунку на суху речовину - не менше 46,2%;
+        - масова частка вологи - не більше 0,5%;
+        - масова частка біурету - не більше 0,5%;
+        - масова частка водорозчинних речовин - не більше 0,1%;
+        - масова частка вуглецю в перерахунку на суху речовину - не більше 0,1%;
+        - масова частка сірки в перерахунку на суху речовину - не більше 0,1%;
+        """,
+        "Urea",
+        """Urea must meet the requirements of DSTU 1135:2013 and have the following basic
+        indicators:
+        - mass fraction of nitrogen in terms of dry matter - not less than 46.2%;
+        - mass fraction of moisture - not more than 0.5%;
+        - mass fraction of biuret - not more than 0.5%;
+        - mass fraction of water-soluble substances - not more than 0.1%;
+        - mass fraction of carbon in terms of dry matter - not more than 0.1%;
+        """,
+    ),
 ]

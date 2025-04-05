@@ -229,7 +229,12 @@ async def read_items_by_category(
     offeset: int = 0,
     limit: int = 10,
     repo: AsyncpgCategoryRepository = Depends(get_category_repository),
+    token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
+    if token is None:
+        logging.error("No token provided")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user_id, scopes = await get_current_user_id(token)
     logger.info(f"Getting items for category {category_id}")
     category_with_items = await repo.get_by_id_with_items(category_id, offeset, limit)
     logger.debug(f"Category with items: {category_with_items}")
