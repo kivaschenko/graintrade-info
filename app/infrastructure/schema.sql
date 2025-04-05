@@ -71,7 +71,8 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(100),
     phone VARCHAR(20),
     hashed_password VARCHAR(100) NOT NULL,
-    disabled BOOLEAN DEFAULT FALSE
+    disabled BOOLEAN DEFAULT FALSE,
+    map_views INTEGER DEFAULT 0
 );
 
 -- Create items_users table

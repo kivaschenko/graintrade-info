@@ -137,3 +137,14 @@ class AsyncpgUserRepository(AbstractUserRepository):
         async with self.conn as connection:
             row = await connection.fetchrow(query, username, email)
         return UserInResponse(**row)
+
+    async def increment_map_views(self, user_id: int):
+        query = """
+            UPDATE users
+            SET map_views = map_views + 1
+            WHERE id = $1
+            RETURNING map_views
+        """
+        async with self.conn as connection:
+            row = await connection.execute(query, user_id)
+        return row["map_views"]

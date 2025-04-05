@@ -270,4 +270,31 @@ The presence of ticks or some other types of pests, toxic drugs is unacceptable.
 - зернові домішки – до 5%,
 - натура – базис 580г/л, мін. 550г/л.
 Не можна допускати наявність кліщів або деяких інших видів шкідників, токсичних препаратів.'
-    );
+    ),
+(
+        'Diesel fuel',
+        'Diesel fuel must meet the requirements of DSTU 3587:2015 and have the following basic
+        indicators:
+        - sulfur content - not more than 0.2%;
+        - water content - not more than 0.05%;
+        - mechanical impurities content - not more than 0.01%;
+        - flash point - not lower than 55 °C;
+        - freezing point - not higher than -5 °C;
+        - kinematic viscosity at 20 °C - from 2.0 to 4.5 mm2/s;
+        - density at 15 °C - from 820 to 860 kg/m3;
+        - cetane number - not less than 45.
+        Sampling and sample formation for the determination of all indicators is carried out in accordance with DSTU ISO 3170:2007.',
+        'Дизельне паливо',
+        'Дизельне паливо повинно відповідати вимогам ДСТУ 3587:2015 та мати наступні базисні
+    показники:
+    - вміст сірки - не більше 0,2 %;
+    - вміст води - не більше 0,05 %;
+    - вміст механічних домішок - не більше 0,01 %;
+    - температура спалаху - не нижче 55 °С;
+    - температура застигання - не вище -5 °С;
+    - кінематична в`язкість при 20 °С - від 2,0 до 4,5 мм2/с;
+    - щільність при 15 °С - від 820 до 860 кг/м3;
+    - кількість цетану - не менше 45.
+    Відбір та формування проб для визначення всіх показників здійснюється згідно ДСТУ ISO 3170:2007.'
+)
+;
