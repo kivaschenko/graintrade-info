@@ -11,20 +11,20 @@ from contextlib import asynccontextmanager
 
 logger = logging.getLogger("app_logger")
 BASE_DIR = Path(__file__).resolve().parent.parent
-print(f"BASE_DIR: {BASE_DIR}")
+logger.info(f"BASE_DIR: {BASE_DIR}")
 SCHEMA_SQL_FILE = BASE_DIR / "infrastructure" / "schema.sql"
-# print(f"SCHEMA_SQL_FILE: {SCHEMA_SQL_FILE}")
+logger.info(f"SCHEMA_SQL_FILE: {SCHEMA_SQL_FILE}")
 CATEGORY_FILE = BASE_DIR / "infrastructure" / "insert_categories.sql"
 load_dotenv(BASE_DIR.parent / ".env")
 
-PGHOST = os.getenv("PGHOST")
-PGUSER = os.getenv("PGUSER")
-PGPORT = os.getenv("PGPORT")
-PGPASSWORD = os.getenv("PGPASSWORD")
-PGDATABASE = os.getenv("PGDATABASE")
-# DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
-DATABASE_URL = "postgresql://admin:test_password@localhost:35432/postgres"
-print(f"DATABASE_URL: {DATABASE_URL}")
+PGHOST = os.getenv("POSTGRES_HOST")
+PGUSER = os.getenv("POSTGRES_USER")
+PGPORT = os.getenv("POSTGRES_PORT")
+PGPASSWORD = os.getenv("POSTGRES_PASSWORD")
+PGDATABASE = os.getenv("POSTGRES_DATABASE")
+DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
+# DATABASE_URL = "postgresql://admin:test_password@localhost:35432/postgres"
+logger.debug(f"DATABASE_URL: {DATABASE_URL}")
 
 
 class Database:
@@ -44,7 +44,10 @@ class Database:
     @classmethod
     async def release_connection(cls, connection):
         await cls._pool.release(connection)
-        print("Connection released")
+        logger.info(
+            f"Connection {connection} released. Connection pool size: %s",
+            len(cls._pool),
+        )
 
     @classmethod
     @asynccontextmanager
@@ -57,26 +60,26 @@ class Database:
 
     @classmethod
     async def create_tables(cls):
-        print("Creating tables")
+        logger.info("Creating tables")
         file_path = SCHEMA_SQL_FILE
         file_ = open(file_path, "r")
         SCHEMA_SQL = file_.read()
         async with cls.get_connection() as connection:
             await connection.execute(SCHEMA_SQL)
-            print("Tables created successfully")
+            logger.info("Tables created successfully")
         file_.close()
-        print("Finished creating tables")
+        logger.info("Finished creating tables")
 
     @classmethod
     async def insert_category(cls):
-        print("Inserting categories")
+        logger.info("Inserting categories")
         file_ = open(CATEGORY_FILE, "r")
         INSERT_CATEGORIES_SQL = file_.read()
         async with cls.get_connection() as connection:
             await connection.execute(INSERT_CATEGORIES_SQL)
-            print("Categories inserted successfully")
+            logger.info("Categories inserted successfully")
         file_.close()
-        print("Finished inserting categories")
+        logger.info("Finished inserting categories")
 
 
 @asynccontextmanager
