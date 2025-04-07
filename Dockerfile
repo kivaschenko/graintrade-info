@@ -28,6 +28,7 @@ RUN poetry install --no-root
 
 # Copy the rest of the application code
 COPY . .
+COPY .env .env
 
 # Stage 2: Final stage
 FROM python:3.12-slim
