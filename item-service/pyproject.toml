@@ -5,6 +5,7 @@ description = "API for CRUD operations with Items"
 authors = ["Kostiantyn Ivashchenko <kivaschenko@protonmail.com>"]
 license = "MIT"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
