@@ -15,15 +15,17 @@ logger.info(f"BASE_DIR: {BASE_DIR}")
 SCHEMA_SQL_FILE = BASE_DIR / "infrastructure" / "schema.sql"
 logger.info(f"SCHEMA_SQL_FILE: {SCHEMA_SQL_FILE}")
 CATEGORY_FILE = BASE_DIR / "infrastructure" / "insert_categories.sql"
-load_dotenv(BASE_DIR.parent / ".env")
+load_dotenv(BASE_DIR / ".env")
 
-PGHOST = os.getenv("POSTGRES_HOST")
-PGUSER = os.getenv("POSTGRES_USER")
-PGPORT = os.getenv("POSTGRES_PORT")
-PGPASSWORD = os.getenv("POSTGRES_PASSWORD")
-PGDATABASE = os.getenv("POSTGRES_DATABASE")
-DATABASE_URL = f"postgresql://{PGUSER}:{PGPASSWORD}@{PGHOST}:{PGPORT}/{PGDATABASE}"
-# DATABASE_URL = "postgresql://admin:test_password@localhost:35432/postgres"
+# Load environment variables from .env file
+if os.path.exists(BASE_DIR / ".env"):
+    load_dotenv(BASE_DIR / ".env")
+    logger.info("Loading environment variables")
+    DATABASE_URL = os.getenv("DATABASE_URL")
+else:
+    logger.warning("No .env file found. Using default values.")
+
+DATABASE_URL = "postgresql://admin:test_password@localhost:35432/postgres"
 logger.debug(f"DATABASE_URL: {DATABASE_URL}")
 
 
