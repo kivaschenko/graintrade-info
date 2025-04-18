@@ -4,6 +4,3 @@ README.md
 *.egg-info/**
 *.egg
 *.pyc
-database-compose.yaml
-docs/
-tests/
