@@ -1,6 +1,6 @@
 # Stage 1: Build stage
-FROM python:3.12-slim AS builder
-WORKDIR /app
+FROM python:3.12 AS builder
+WORKDIR /backend
 
 # Install curl and Poetry
 RUN apt-get update && apt-get install -y curl && \
@@ -17,16 +17,16 @@ RUN poetry install --no-interaction --no-ansi --no-root
 COPY . .
 
 # Stage 2: Final stage
-FROM python:3.12-slim
+FROM python:3.12
 
 # Set the working directory
-WORKDIR /app
+WORKDIR /backend
 
 # Copy the installed dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /app /app
+COPY --from=builder /backend /backend
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

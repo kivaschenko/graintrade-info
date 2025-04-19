@@ -4,3 +4,5 @@ README.md
 *.egg-info/**
 *.egg
 *.pyc
+# avoid tests in the image
+tests/**
