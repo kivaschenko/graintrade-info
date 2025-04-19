@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime, timezone
 import logging
+import os
 from typing import Annotated
 
 from fastapi import (
@@ -16,9 +17,9 @@ from fastapi.security import (
     SecurityScopes,
 )
 from asyncpg import Connection
+from dotenv import load_dotenv
 import bcrypt
 import jwt
-from app.config import settings
 from app.routers.schemas import (
     UserInCreate,
     UserInDB,
@@ -29,10 +30,10 @@ from app.routers.schemas import (
 from app.infrastructure.database import get_db
 from app.adapters import AsyncpgUserRepository
 
-
-SECRET_KEY = settings.jwt_secret
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_expires_in
+load_dotenv("../.env")
+JWT_SECRET = os.getenv("JWT_SECRET")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 
 router = APIRouter(tags=["users"])
 

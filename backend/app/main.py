@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 import logging
+import os
 
+from dotenv import load_dotenv
 from fastapi import (
     FastAPI,
     WebSocket,
@@ -11,7 +13,6 @@ from fastapi.security import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import settings
 from .infrastructure.database import Database
 from .routers import user_routers
 from .routers import item_routers
@@ -20,9 +21,10 @@ from .routers import subscription_routers
 from .routers import category_routers
 
 
-SECRET_KEY = settings.jwt_secret
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_expires_in
+load_dotenv()
+JWT_SECRET = os.getenv("JWT_SECRET")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 
 
 @asynccontextmanager
@@ -37,7 +39,7 @@ async def lifespan(app: FastAPI):
         await Database._pool.close()
 
 
-app = FastAPI(lifespan=lifespan, title=settings.app_name, version=settings.app_version)
+app = FastAPI(lifespan=lifespan, title="GraintradeInfo, version=0.1")
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
@@ -50,7 +52,7 @@ oauth2_scheme = OAuth2PasswordBearer(
     },
 )
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-logging.info(f"Starting {settings.app_name}")
+logging.info(f"Starting App...")
 
 app.add_middleware(
     CORSMiddleware,

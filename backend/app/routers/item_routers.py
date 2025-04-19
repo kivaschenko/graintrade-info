@@ -1,5 +1,6 @@
 from typing import Annotated, List
 import logging
+import os
 
 from fastapi import (
     Depends,
@@ -18,7 +19,7 @@ from fastapi.security import (
 from asyncpg import Connection
 import bcrypt
 import jwt
-from app.config import settings
+from dotenv import load_dotenv
 from .schemas import (
     ItemInDB,
     ItemInResponse,
@@ -32,12 +33,10 @@ from app.adapters import (
     AsyncpgItemUserRepository,
 )
 
-# from .kafka_handlers import send_message_to_kafka_about_new_user
-
-
-SECRET_KEY = settings.jwt_secret
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_expires_in
+load_dotenv("../.env")
+JWT_SECRET = os.getenv("JWT_SECRET")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 
 router = APIRouter(tags=["Items"])
 oauth2_scheme = OAuth2PasswordBearer(
