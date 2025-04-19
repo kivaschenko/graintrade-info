@@ -53,11 +53,20 @@ services:
       start_period: 30s
 
   app-backend:
-    build: ./app
+    build: ./backend
+    image: graintraide-backend
+    restart: always
+    environment:
+      DATABASE_URL: postgres://admin:test_password@db:5432/postgres
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBITMQ_QUEUE: graintraide_queue
+      RABBITMQ_EXCHANGE: graintraide_exchange
+      RABBITMQ_ROUTING_KEY: graintraide_routing_key
+      RABBITMQ_CONSUMER_TAG: graintraide_consumer
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/app
+      - ./backend:/backend
     depends_on:
       db:
         condition: service_healthy

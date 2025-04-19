@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
 logger = logging.getLogger("app_logger")
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent
 logger.info(f"BASE_DIR: {BASE_DIR}")
 SCHEMA_SQL_FILE = BASE_DIR / "infrastructure" / "schema.sql"
 logger.info(f"SCHEMA_SQL_FILE: {SCHEMA_SQL_FILE}")
@@ -25,8 +25,23 @@ if os.path.exists(BASE_DIR / ".env"):
 else:
     logger.warning("No .env file found. Using default values.")
 
-DATABASE_URL = "postgresql://admin:test_password@localhost:5432/postgres"
-logger.debug(f"DATABASE_URL: {DATABASE_URL}")
+# DATABASE_URL = "postgresql://admin:test_password@localhost:5432/postgres"  # Debug only
+if DATABASE_URL is None:
+    logger.error("DATABASE_URL is not set in the environment variables")
+    raise ValueError("DATABASE_URL is not set in the environment variables")
+if DATABASE_URL == "":
+    logger.error("DATABASE_URL is empty")
+    raise ValueError("DATABASE_URL is empty")
+if DATABASE_URL == "postgresql://admin:test_password@localhost:5432/postgres":
+    logger.error(
+        "DATABASE_URL is set to the default value. Please set it to a valid value."
+    )
+    raise ValueError(
+        "DATABASE_URL is set to the default value. Please set it to a valid value."
+    )
+else:
+    logger.info("DATABASE_URL is set to a valid value")
+    logger.debug("DATABASE_URL: %s", DATABASE_URL)
 
 
 class Database:
