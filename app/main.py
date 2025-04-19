@@ -31,8 +31,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 async def lifespan(app: FastAPI):
     await Database.init()
     # first run the database setup
-    await Database.create_tables()
-    await Database.insert_category()
+    # await Database.create_tables()
+    # await Database.insert_category()
     try:
         yield
     finally:

@@ -25,7 +25,7 @@ if os.path.exists(BASE_DIR / ".env"):
 else:
     logger.warning("No .env file found. Using default values.")
 
-DATABASE_URL = "postgresql://admin:test_password@localhost:35432/postgres"
+DATABASE_URL = "postgresql://admin:test_password@localhost:5432/postgres"
 logger.debug(f"DATABASE_URL: {DATABASE_URL}")
 
 
@@ -48,7 +48,7 @@ class Database:
         await cls._pool.release(connection)
         logger.info(
             f"Connection {connection} released. Connection pool size: %s",
-            len(cls._pool),
+            cls._pool.get_size(),
         )
 
     @classmethod
