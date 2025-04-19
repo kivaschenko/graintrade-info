@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from asyncpg import Connection
 from app.adapters import AsyncpgUserRepository
 from app.infrastructure.database import get_db
-from app.config import settings
+
+MAP_VIEW_LIMIT = 5
 
 router = APIRouter(tags=["map"])
 
@@ -22,7 +23,7 @@ async def increment_map_view(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    if user.map_views >= settings.map_view_limit:
+    if user.map_views >= MAP_VIEW_LIMIT:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Map view limit reached"
         )
