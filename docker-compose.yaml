@@ -73,6 +73,18 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  app-frontend:
+    build: ./frontend
+    image: graintraide-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/frontend
+    depends_on:
+      app-backend:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   postgis:
