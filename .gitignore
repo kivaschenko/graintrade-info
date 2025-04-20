@@ -164,3 +164,30 @@ cython_debug/
 # VS Code
 #  Add .vscode/ to the .gitignore file if you are using Visual Studio Code
 .vscode/
+
+
+## FRONTEND
+# Ignore build output
+/dist
+.DS_Store
+node_modules
+
+# Ignore local env files
+.env.local
+.env.*.local
+.env
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
