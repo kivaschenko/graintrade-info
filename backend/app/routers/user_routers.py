@@ -1,6 +1,6 @@
 from datetime import timedelta, datetime, timezone
 import logging
-import os
+
 from typing import Annotated
 
 from fastapi import (
@@ -17,7 +17,6 @@ from fastapi.security import (
     SecurityScopes,
 )
 from asyncpg import Connection
-from dotenv import load_dotenv
 import bcrypt
 import jwt
 from app.routers.schemas import (
@@ -30,10 +29,38 @@ from app.routers.schemas import (
 from app.infrastructure.database import get_db
 from app.adapters import AsyncpgUserRepository
 
-load_dotenv("../.env")
+# ==========================================================
+# Import environment variables
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / ".env")
+
+# Load environment variables from .env file
 JWT_SECRET = os.getenv("JWT_SECRET")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
+MAP_VIEW_LIMIT = os.getenv("MAP_VIEW_LIMIT")
+
+if JWT_SECRET is None:
+    raise ValueError("JWT_SECRET not found in .env file")
+if ALGORITHM is None:
+    raise ValueError("ALGORITHM not found in .env file")
+if ACCESS_TOKEN_EXPIRE_MINUTES is None:
+    raise ValueError("ACCESS_TOKEN_EXPIRE_MINUTES not found in .env file")
+if MAP_VIEW_LIMIT is None:
+    raise ValueError("MAP_VIEW_LIMIT not found in .env file")
+if not JWT_SECRET or not ALGORITHM or not ACCESS_TOKEN_EXPIRE_MINUTES:
+    raise ValueError(
+        "JWT_SECRET, ALGORITHM, or ACCESS_TOKEN_EXPIRE_MINUTES not found in .env file"
+    )
+logging.info(
+    f"Environment variables loaded successfully from {BASE_DIR / '.env'} into item_routers.py"
+)
+# ==========================================================
 
 router = APIRouter(tags=["users"])
 
@@ -47,6 +74,8 @@ oauth2_scheme = OAuth2PasswordBearer(
         "admin": "Full access to all features.",
     },
 )
+
+# Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 
@@ -97,7 +126,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=30)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -117,7 +146,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": authenticate_value},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             logging.error("Username not found in token")
@@ -156,7 +185,7 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user_id: str = payload.get("user_id")
         scopes: str = payload.get("scopes")
         if user_id is None:
@@ -186,7 +215,7 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=settings.jwt_expires_in)
+    access_token_expires = timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
     # TODO: Add more information to the token. For example, the user's role.
     # Check the current tarif plan, define the user's permissions, etc.
     access_token = create_access_token(
@@ -322,7 +351,8 @@ async def increment_map_view(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    if user.map_views >= settings.map_view_limit:
+    if user.map_views >= MAP_VIEW_LIMIT:
+        logging.error("Map view limit reached")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Map view limit reached"
         )

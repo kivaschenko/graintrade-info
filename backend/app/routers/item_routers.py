@@ -1,6 +1,5 @@
 from typing import Annotated, List
 import logging
-import os
 
 from fastapi import (
     Depends,
@@ -19,7 +18,7 @@ from fastapi.security import (
 from asyncpg import Connection
 import bcrypt
 import jwt
-from dotenv import load_dotenv
+
 from .schemas import (
     ItemInDB,
     ItemInResponse,
@@ -33,10 +32,38 @@ from app.adapters import (
     AsyncpgItemUserRepository,
 )
 
-load_dotenv("../.env")
+# ==========================================================
+# Import environment variables
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / ".env")
+
+# Load environment variables from .env file
 JWT_SECRET = os.getenv("JWT_SECRET")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
+MAP_VIEW_LIMIT = os.getenv("MAP_VIEW_LIMIT")
+
+if JWT_SECRET is None:
+    raise ValueError("JWT_SECRET not found in .env file")
+if ALGORITHM is None:
+    raise ValueError("ALGORITHM not found in .env file")
+if ACCESS_TOKEN_EXPIRE_MINUTES is None:
+    raise ValueError("ACCESS_TOKEN_EXPIRE_MINUTES not found in .env file")
+if MAP_VIEW_LIMIT is None:
+    raise ValueError("MAP_VIEW_LIMIT not found in .env file")
+if not JWT_SECRET or not ALGORITHM or not ACCESS_TOKEN_EXPIRE_MINUTES:
+    raise ValueError(
+        "JWT_SECRET, ALGORITHM, or ACCESS_TOKEN_EXPIRE_MINUTES not found in .env file"
+    )
+logging.info(
+    f"Environment variables loaded successfully from {BASE_DIR / '.env'} into item_routers.py"
+)
+# ==========================================================
 
 router = APIRouter(tags=["Items"])
 oauth2_scheme = OAuth2PasswordBearer(
@@ -49,8 +76,9 @@ oauth2_scheme = OAuth2PasswordBearer(
         "admin": "Full access to all features.",
     },
 )
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
+# Logging configuration
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 # ==========
 # Dependency
@@ -103,7 +131,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": authenticate_value},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             logging.error("Username not found in token")
@@ -152,7 +180,7 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
         user_id: str = payload.get("user_id")
         scopes: str = payload.get("scopes")
         if user_id is None:
