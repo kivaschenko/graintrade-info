@@ -170,7 +170,7 @@ cython_debug/
 # Ignore build output
 /dist
 .DS_Store
-node_modules
+frontend/node_modules
 
 # Ignore local env files
 .env.local
