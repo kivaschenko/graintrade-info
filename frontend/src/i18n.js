@@ -9,7 +9,7 @@ const messages = {
       logout: 'Logout',
     },
     common_text: {
-      offers: 'Offers',
+      offers: 'Offers latest',
       categories: 'Categories',
       search: 'Search',
       title: 'Title',
@@ -101,7 +101,7 @@ const messages = {
       logout: 'Вийти',
     },
     common_text: {
-      offers: 'Пропозиції',
+      offers: 'Пропозиції останні',
       categories: 'Категорії',
       search: 'Пошук',
       title: 'Назва',
