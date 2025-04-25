@@ -56,7 +56,7 @@ logging.info(f"Starting App...")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:8080"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,13 +72,17 @@ app.include_router(subscription_routers.router)
 # ----------------
 # Websocket
 
+# In-memory WebSocket connection pool
+connections = set()
 
-@app.websocket("/ws")
+@app.websocket("/ws/items")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    connections.add(websocket)
     try:
         while True:
             data = await websocket.receive_text()
             await websocket.send_text(f"Message text was: {data}")
     except WebSocketDisconnect:
         logging.info("Client disconnected")
+        connections.remove(websocket)
