@@ -1,17 +1,14 @@
 <template>
   <div class="container mt-5">
-    <h1 class="mb-4">{{ $t('common_text.categories') }}</h1>
-    <div class="row">
-      <div class="col-md-4 mb-4" v-for="category in categories" :key="category.id">
-        <div class="card h-100">
-          <div class="card-body">
-            <h5 class="card-title">{{ getCategoryName(category) }}</h5>
-            <p class="card-text">{{ getCategoryDescription(category) }}</p>
-            <router-link :to="{ name: 'Category', params: { id: category.id } }" class="btn btn-primary">
-              {{ $t('common_text.offers') }}
-            </router-link>
-          </div>
-        </div>
+    <h1 class="mb-4 text-center">{{ $t('common_text.categories') }}</h1>
+    <div class="row justify-content-center">
+      <div class="col-md-3 mb-3" v-for="category in categories" :key="category.id">
+        <button
+          class="btn btn-primary btn-block category-button"
+          @click="navigateToCategory(category.id)"
+        >
+          {{ getCategoryName(category) }}
+        </button>
       </div>
     </div>
   </div>
@@ -34,27 +31,31 @@ export default {
   methods: {
     getCategoryName(category) {
       const currentLocale = this.$store.state.currentLocale;
-      console.log('currentLocale', currentLocale);
       return currentLocale === 'ua' ? category.ua_name : category.name;
     },
-    getCategoryDescription(category) {
-      const currentLocale = this.$store.state.currentLocale;
-      return currentLocale === 'ua' ? category.ua_description : category.description;
+    async fetchCategories() {
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories`);
+        this.categories = response.data;
+      } catch (error) {
+        console.log('Error fetching categories', error);
+      }
+    },
+    navigateToCategory(categoryId) {
+      this.$router.push({ name: 'Category', params: { id: categoryId } });
     },
   },
   async created() {
-    try {
-      const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories`);
-      this.categories = response.data;
-    } catch (error) {
-      console.log('Error fetching categories', error);
-    }
+    await this.fetchCategories();
   },
 };
 </script>
 
 <style scoped>
-.card {
-  height: 100%;
+.category-button {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.2rem;
+  text-transform: capitalize;
 }
 </style>
