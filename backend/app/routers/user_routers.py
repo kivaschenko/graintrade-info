@@ -27,6 +27,7 @@ from app.routers.schemas import (
 )
 from app.infrastructure.database import get_db
 from app.adapters import AsyncpgUserRepository
+from app.service_layer.user_services import send_user_to_rabbitmq
 
 # ==========================================================
 # Import environment variables
@@ -256,7 +257,9 @@ async def create_user(
     new_user = await repo.create(user_to_db)
     if new_user is None:
         raise HTTPException(status_code=400, detail="User already exists")
-    # background_tasks.add_task(send_message_to_kafka_about_new_user, new_user)
+    background_tasks.add_task(
+        send_user_to_rabbitmq, user=UserInResponse.model_validate(new_user)
+    )
     return new_user
 
 

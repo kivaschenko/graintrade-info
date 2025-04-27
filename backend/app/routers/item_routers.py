@@ -32,7 +32,6 @@ from app.adapters import (
 )
 from app.service_layer.item_services import (
     send_message_to_queue,
-    publish_new_item_message_to_topic_exchange,
 )
 
 
