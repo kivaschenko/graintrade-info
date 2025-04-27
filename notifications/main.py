@@ -1,3 +1,4 @@
+import logging
 import aio_pika
 import asyncio
 from fastapi import FastAPI, WebSocket
@@ -11,6 +12,13 @@ USER_RABBITMQ_QUEUE = "user_notifications"
 
 app = FastAPI()
 
+logging.basicConfig(
+    level=logging.INFO,
+    filename=__name__ + ".log",
+    filemode="a",
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
 clients = set()
 
 
@@ -18,7 +26,7 @@ clients = set()
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     clients.add(websocket)
-    print(f"Client connected: {websocket.client}")
+    logging.info(f"Client connected: {websocket.client}")
     try:
         while True:
             await asyncio.sleep(1)  # Keep the connection alive
@@ -43,12 +51,11 @@ async def rabbit_listener():
         await channel.set_qos(prefetch_count=1)
         queue = await channel.declare_queue(ITEM_RABBITMQ_QUEUE, durable=True)
         await queue.bind(ITEM_RABBITMQ_EXCHANGE)
-        print("Waiting for messages...")
+        logging.info("Waiting for messages...")
         async with queue.iterator() as queue_iter:
             async for message in queue_iter:
                 async with message.process():
-                    print("Received:", message.body.decode())
-                    # await notify_clients(message.body.decode())
+                    logging.info(f"Received: {message.body.decode()}")
 
 
 # Listner RabbitMQ for user notifications
@@ -62,11 +69,11 @@ async def user_rabbit_listener():
         await channel.set_qos(prefetch_count=1)
         queue = await channel.declare_queue(USER_RABBITMQ_QUEUE, durable=True)
         await queue.bind(USER_RABBITMQ_EXCHANGE)
-        print("Waiting for user messages...")
+        logging.info("Waiting for user messages...")
         async with queue.iterator() as queue_iter:
             async for message in queue_iter:
                 async with message.process():
-                    print("Received user message:", message.body.decode())
+                    logging.info(f"Received user message: {message.body.decode()}")
 
 
 # Run the RabbitMQ listener in the background
