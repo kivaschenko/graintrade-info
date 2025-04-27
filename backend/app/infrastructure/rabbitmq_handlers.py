@@ -21,7 +21,7 @@ class RabbitMQHandler:
 
             # Declare an exchange and a queue
             self.exchange = await self.channel.declare_exchange(
-                "direct_exchange", ExchangeType.DIRECT
+                "item_exchange", ExchangeType.DIRECT
             )
             self.queue = await self.channel.declare_queue(self.queue_name, durable=True)
 
@@ -63,7 +63,7 @@ class RabbitMQHandler:
 async def main():
     loop = asyncio.get_running_loop()
     rabbitmq_handler = RabbitMQHandler(
-        loop, "amqp://guest:guest@localhost/", "my_queue"
+        loop, "amqp://guest:guest@localhost/", "item_notifications"
     )
 
     await rabbitmq_handler.start()
@@ -71,8 +71,13 @@ async def main():
     # Example of sending a message
     await rabbitmq_handler.send_message("Hello, RabbitMQ!")
 
-    # Example of consuming messages
-    await rabbitmq_handler.consume_messages()
+    sample_item_notification = {
+        "item_id": 123,
+        "item_name": "Sample Item",
+        "item_price": 19.99,
+    }
+    await rabbitmq_handler.send_message(str(sample_item_notification))
+    logging.info("Message sent to RabbitMQ")
 
     await rabbitmq_handler.stop()
 
