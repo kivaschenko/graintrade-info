@@ -77,6 +77,12 @@ CREATE TABLE IF NOT EXISTS users (
     disabled BOOLEAN DEFAULT FALSE,
     map_views INTEGER DEFAULT 0
 );
+-- Add unique constraint to email and username columns
+-- This constraint ensures that the email address and username are unique across all users
+ALTER TABLE IF EXISTS public.users
+    ADD CONSTRAINT email_unique_constraint UNIQUE (email);
+ALTER TABLE IF EXISTS public.users
+    ADD CONSTRAINT users_username_unique_constraint UNIQUE (username);
 
 -- Create items_users table
 CREATE TABLE IF NOT EXISTS items_users (
