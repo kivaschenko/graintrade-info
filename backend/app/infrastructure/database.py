@@ -25,7 +25,7 @@ if os.path.exists(BASE_DIR / ".env"):
 else:
     logger.warning("No .env file found. Using default values.")
 
-DATABASE_URL = "postgresql://admin:test_password@localhost:5432/postgres"  # Debug only
+# DATABASE_URL = "postgresql://admin:test_password@localhost:5432/postgres"  # Debug only
 
 if DATABASE_URL is None:
     logger.error("DATABASE_URL is not set in the environment variables")

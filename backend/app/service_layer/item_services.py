@@ -4,7 +4,7 @@ import aio_pika
 import aio_pika.abc
 from app.routers.schemas import ItemInResponse
 
-RABBITMQ_URL = "amqp://guest:guest@localhost/"
+RABBITMQ_URL = "amqp://guest:guest@rabbitmq/"
 RABBITMQ_QUEUE = "item_notifications"
 
 # -------------------------------------------------------
@@ -30,4 +30,4 @@ async def send_message_to_queue(item: ItemInResponse):
     except Exception as e:
         logging.error(f"Failed to send item to RabbitMQ: {e}")
     finally:
-        await connection.close()    # Ensure the connection is closed
+        await connection.close()  # Ensure the connection is closed
