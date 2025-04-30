@@ -4,7 +4,7 @@ set -e
 
 REMOTE_USER="kivaschenko"
 REMOTE_HOST="65.108.68.57"
-REMOTE_PATH="/home/kivaschenko/project"
+REMOTE_PATH="/home/kivaschenko/graintrade-info"
 
 COMMIT_HASH=$(git rev-parse --short HEAD)
 
@@ -34,7 +34,7 @@ fi
 
 if [[ -n "$NOTIFY_CHANGED" ]]; then
     echo "📦 Building notifications image..."
-    docker build -t notifications:ci notifications
+    docker build -t notifications:ci -t notifications:latest notifications
     docker save notifications:ci | gzip > notifications.tar.gz
 fi
 
@@ -48,9 +48,9 @@ echo "🚀 Deploying on remote server..."
 
 ssh "$REMOTE_USER@$REMOTE_HOST" <<EOF
   cd "$REMOTE_PATH"
-  [ -f backend.tar.gz ] && gunzip -c backend.tar.gz | docker load && rm backend.tar.gz
-  [ -f frontend.tar.gz ] && gunzip -c frontend.tar.gz | docker load && rm frontend.tar.gz
-  [ -f notifications.tar.gz ] && gunzip -c notifications.tar.gz | docker load && rm notifications.tar.gz
+  [ -f backend.tar.gz ] && gunzip -c backend.tar.gz | sudo docker load && rm backend.tar.gz
+  [ -f frontend.tar.gz ] && gunzip -c frontend.tar.gz | sudo docker load && rm frontend.tar.gz
+  [ -f notifications.tar.gz ] && gunzip -c notifications.tar.gz | sudo docker load && rm notifications.tar.gz
   docker-compose up -d
 EOF
 
