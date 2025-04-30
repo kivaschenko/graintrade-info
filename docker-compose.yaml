@@ -92,10 +92,6 @@ services:
     environment:
       DATABASE_URL: postgres://admin:test_password@db:5432/postgres
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      RABBITMQ_QUEUE: graintraide_queue
-      RABBITMQ_EXCHANGE: graintraide_exchange
-      RABBITMQ_ROUTING_KEY: graintraide_routing_key
-      RABBITMQ_CONSUMER_TAG: graintraide_consumer
     ports:
       - "8001:8000"
     volumes:
