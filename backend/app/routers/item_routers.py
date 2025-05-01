@@ -31,6 +31,9 @@ from app.adapters import (
     AsyncpgItemRepository,
     AsyncpgItemUserRepository,
 )
+from app.service_layer.item_services import (
+    send_message_to_queue,
+)
 
 # ==========================================================
 # Import environment variables
@@ -79,6 +82,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+
 
 # ==========
 # Dependency
@@ -207,7 +211,7 @@ async def create_item(
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id, scopes = await get_current_user_id(token)
-    print(f"User ID: {user_id}, Scopes: {scopes}")
+    logging.info(f"User ID: {user_id}, Scopes: {scopes}")
     # check scope and permissions here
     if "create:item" not in scopes:
         logging.error("Not enough permissions")
@@ -216,9 +220,14 @@ async def create_item(
     if new_item is None:
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
-    # background_tasks.add_task(
-    #     app.state.kafka_handler.send_message, "new-item", new_item
-    # )
+    logging.info(f"New item created: {new_item}")
+    # Notify RabbitMQ about the new item
+    try:
+        # Send the message to RabbitMQ on background
+        background_tasks.add_task(send_message_to_queue, new_item)
+        logging.info("New item notification sent to RabbitMQ")
+    except Exception as e:
+        logging.error(f"Error sending message to RabbitMQ: {e}")
     return new_item
 
 
@@ -366,18 +375,3 @@ async def filter_items(
         region,
     )
     return items
-
-
-# TODO: Implement like_item
-# @router.post("/items/{item_id}/like", response_model=dict, tags=["Items"])
-# async def like_item(
-#     item_id: int,
-#     token: Annotated[str, Depends(oauth2_scheme)] = None,
-#     repo: AsyncpgItemRepository = Depends(get_item_repository),
-# ):
-#     if token is None:
-#         logging.error("No token provided")
-#         raise HTTPException(status_code=401, detail="Invalid token")
-#     user_id = await get_current_user_id(token)
-#     await repo.like_item(user_id, item_id)
-#     return {"status": "success", "message": "Item liked successfully"}
