@@ -35,13 +35,6 @@ if DATABASE_URL is None:
 if DATABASE_URL == "":
     logger.error("DATABASE_URL is empty")
     raise ValueError("DATABASE_URL is empty")
-if DATABASE_URL == "postgresql://admin:test_password@localhost:5432/postgres":
-    logger.error(
-        "DATABASE_URL is set to the default value. Please set it to a valid value."
-    )
-    raise ValueError(
-        "DATABASE_URL is set to the default value. Please set it to a valid value."
-    )
 else:
     logger.info("DATABASE_URL is set to a valid value")
     logger.debug("DATABASE_URL: %s", DATABASE_URL)

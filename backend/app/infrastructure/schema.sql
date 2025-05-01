@@ -67,13 +67,18 @@ CREATE INDEX items_created_at_idx ON items (created_at);
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL,
-    email VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
     full_name VARCHAR(100),
     phone VARCHAR(20),
     hashed_password VARCHAR(100) NOT NULL,
     disabled BOOLEAN DEFAULT FALSE,
     map_views INTEGER DEFAULT 0
 );
+
+ALTER TABLE IF EXISTS public.users
+    ADD CONSTRAINT email_unique_constraint UNIQUE (email);
+ALTER TABLE IF EXISTS public.users
+    ADD CONSTRAINT users_username_unique_constraint UNIQUE (username);
 
 -- Create items_users table
 CREATE TABLE IF NOT EXISTS items_users (

@@ -170,7 +170,7 @@ cython_debug/
 # Ignore build output
 /dist
 .DS_Store
-node_modules
+frontend/node_modules
 
 # Ignore local env files
 .env.local
@@ -191,3 +191,12 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Ignore gzip files
+*.gz
+*.gzip
+*.tgz
+# Ignore tar files
+*.tar
+# Ignore zip files
+*.zip
