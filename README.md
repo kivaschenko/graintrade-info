@@ -87,6 +87,12 @@ docker run -d --name jenkins \
 Go to [http://localhost:8080](http://localhost:8080)  
 Unlock Jenkins (password from `docker logs jenkins`)
 
+Get admin password:
+```
+docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+```
+Paste password into browser → click Continue
+
 ### 3. Install required plugins:
 
 - Docker

@@ -3,6 +3,9 @@ name: graintrade
 services:
   db:
     image: postgis/postgis:latest
+    env_file:
+      - ./.env.prod
+    restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -19,18 +22,41 @@ services:
       retries: 5
       start_period: 30s
 
+  pgadmin4:
+    image: dpage/pgadmin:latest
+    restart: always
+    env_file:
+      - ./.env.prod
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_LISTEN_PORT: ${PGADMIN_LISTEN_PORT}
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "True"
+      PGADMIN_CONFIG_LOGIN_BANNER: "Authorised Access Only"
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 10
+    ports:
+      - "5050:${PGADMIN_LISTEN_PORT}"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin4/servers.json
+      - pgadmin_config:/var/lib/pgadmin4
+    depends_on:
+      db:
+        condition: service_healthy
+
   rabbitmq:
     image: rabbitmq:3-management
     restart: always
+    env_file:
+      - ./.env.prod
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - rabbitmq_config:/etc/rabbitmq
     ports:
       - "5672:5672" # RabbitMQ messaging port
       - "15672:15672" # RabbitMQ management UI
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 30s
@@ -65,6 +91,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file:
+      - ./.env.prod
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:35432/${POSTGRES_DB}
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
@@ -86,6 +114,8 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    env_file:
+      - ./.env.prod
     environment:
       VUE_APP_BACKEND_URL: ${VUE_APP_BACKEND_URL}
       VUE_APP_MAPBOX_TOKEN: ${VUE_APP_MAPBOX_TOKEN}
@@ -100,6 +130,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    env_file:
+      - ./.env.prod
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
@@ -110,3 +142,5 @@ volumes:
   rabbitmq_data:
   rabbitmq_config:
   redis_data:
+  pgadmin_data:
+  pgadmin_config:

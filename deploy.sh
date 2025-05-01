@@ -22,20 +22,20 @@ NOTIFY_CHANGED=true
 
 if [[ -n "$BACKEND_CHANGED" ]]; then
     echo "📦 Building backend image..."
-    docker build -t backend:ci backend
-    docker save backend:ci | gzip > backend.tar.gz
+    docker build -t backend:ci -t backend:latest ./backend
+    docker save backend:latest | gzip > backend.tar.gz
 fi
 
 if [[ -n "$FRONTEND_CHANGED" ]]; then
     echo "📦 Building frontend image..."
-    docker build -t frontend:ci frontend
-    docker save frontend:ci | gzip > frontend.tar.gz
+    docker build -t frontend:ci -t frontend:latest ./frontend
+    docker save frontend:latest | gzip > frontend.tar.gz
 fi
 
 if [[ -n "$NOTIFY_CHANGED" ]]; then
     echo "📦 Building notifications image..."
-    docker build -t notifications:ci -t notifications:latest notifications
-    docker save notifications:ci | gzip > notifications.tar.gz
+    docker build -t notifications:ci -t notifications:latest ./notifications
+    docker save notifications:latest | gzip > notifications.tar.gz
 fi
 
 echo "📤 Uploading images to remote server..."
@@ -48,10 +48,10 @@ echo "🚀 Deploying on remote server..."
 
 ssh "$REMOTE_USER@$REMOTE_HOST" <<EOF
   cd "$REMOTE_PATH"
-  [ -f backend.tar.gz ] && gunzip -c backend.tar.gz | sudo docker load && rm backend.tar.gz
-  [ -f frontend.tar.gz ] && gunzip -c frontend.tar.gz | sudo docker load && rm frontend.tar.gz
-  [ -f notifications.tar.gz ] && gunzip -c notifications.tar.gz | sudo docker load && rm notifications.tar.gz
-  docker-compose up -d
+  [ -f backend.tar.gz ] && gunzip -c backend.tar.gz | docker load && rm backend.tar.gz
+  [ -f frontend.tar.gz ] && gunzip -c frontend.tar.gz | docker load && rm frontend.tar.gz
+  [ -f notifications.tar.gz ] && gunzip -c notifications.tar.gz | docker load && rm notifications.tar.gz
+  docker-compose -f docker-compose.prod.yml up -d
 EOF
 
 rm -f backend.tar.gz frontend.tar.gz notifications.tar.gz
