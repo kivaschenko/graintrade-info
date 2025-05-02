@@ -1,15 +1,12 @@
 import logging
 import aio_pika
 import asyncio
-from dotenv import load_dotenv
-import os
 from fastapi import FastAPI, WebSocket
 from fastapi.websockets import WebSocketDisconnect
 
-# Load environment variables from .env file
-load_dotenv()
-# RabbitMQ configuration
-RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
+RABBITMQ_USER = "rabbit_user"
+RABBITMQ_PASSWORD = "SoYjysnlhorTtzj"
+RABBITMQ_URL = f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@rabbitmq/"
 # RabbitMQ exchange and queue names
 ITEM_RABBITMQ_EXCHANGE = "item_exchange"
 ITEM_RABBITMQ_QUEUE = "item_notifications"
