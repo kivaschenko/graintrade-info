@@ -1,4 +1,5 @@
-name: CI/CD Deploy to Server
+name: Deploy to Remote Server
+
 on:
   push:
     branches:
@@ -6,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     env:
       REMOTE_HOST: 65.108.68.57
@@ -14,65 +15,20 @@ jobs:
       REMOTE_PATH: /home/kivaschenko/graintrade-info
 
     steps:
-      - name: Checkout code
+      - name: Checkout source
         uses: actions/checkout@v3
 
-      - name: Setup Docker
-        uses: docker/setup-buildx-action@v3
-
-      - name: Detect backend change
-        id: backend_check
+      - name: Copy project to remote Server
         run: |
-          echo "::set-output name=changed::$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | grep '^backend/' || true)"
+          rsync -avz --delete \
+            -e "ssh -p 22 -o StrictHostKeyChecking=no" \
+            ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/
 
-      - name: Detect frontend change
-        id: frontend_check
+      - name: Remote build and up
         run: |
-          echo "::set-output name=changed::$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | grep '^frontend/' || true)"
-
-      - name: Detect notifications change
-        id: notify_check
-        run: |
-          echo "::set-output name=changed::$(git diff-tree --no-commit-id --name -r ${{ github.sha }} | grep '^notifications/' || true)"
-
-      - name: Build & export Docker images
-        run: |
-          mkdir images
-          if [ "${{ steps.backend_check.outputs.changed }}" ]; then
-            docker build -t backend:ci backend
-            docker save backend:ci | gzip > images/backend.tar.gz
-          fi
-          if [ "${{ steps.frontend_check.outputs.changed }}" ]; then
-            docker build -t frontend:ci frontend
-            docker save frontend:ci | gzip > images/frontend.tar.gz
-          fi
-          if [ "${{ steps.notify_check.outputs.changed }}" ]; then
-            docker build -t notifications:ci notifications
-            docker save notifications:ci | gzip > images/notifications.tar.gz
-          fi
-
-      - name: Upload images via scp
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.REMOTE_HOST }}
-          username: ${{ env.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "images/*.tar.gz"
-          target: ${{ env.REMOTE_PATH }}
-
-      - name: Run remote deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ env.REMOTE_HOST }}
-          username: ${{ env.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd $REMOTE_PATH
-            [ -f images/backend.tar.gz ] && gunzip -c images/backend.tar.gz | docker load && rm images/backend.tar.gz
-            [ -f images/frontend.tar.gz ] && gunzip -c images/frontend.tar.gz | docker load && rm images/frontend.tar.gz
-            [ -f images/notifications.tar.gz ] && gunzip -c images/notifications.tar.gz | docker load && rm images/notifications.tar.gz
-            # Stop and remove old containers
-            docker compose down
-            # Start new containers
-            docker compose up -d --build
-
+          ssh ${REMOTE_USER}@${REMOTE_HOST} <<'EOF'
+            cd ${REMOTE_PATH}
+            docker compose build
+            docker compose up -d
+          EOF
+        
