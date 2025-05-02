@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: test_password
+      POSTGRES_PASSWORD: A82mLC96RcvuEtZ5JRmFg
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d
@@ -22,8 +22,8 @@ services:
     image: elestio/pgadmin:latest
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@email.com
-      PGADMIN_DEFAULT_PASSWORD: test_password
+      PGADMIN_DEFAULT_EMAIL: kivaschenko@protonmail.com
+      PGADMIN_DEFAULT_PASSWORD: eo9IeDl4+795lI90
       PGADMIN_LISTEN_PORT: 8080
     ports:
       - "5050:8080"
@@ -43,8 +43,8 @@ services:
       - "5672:5672" # RabbitMQ messaging port
       - "15672:15672" # RabbitMQ management UI
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_USER: rabbit_user
+      RABBITMQ_PASS: SoYjysnlhorTtzj
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 30s
@@ -57,18 +57,20 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
-  app-backend:
+  backend:
     build: ./backend
-    image: graintraide-backend
+    image: backend:ci
     restart: always
-    environment:
-      DATABASE_URL: postgres://admin:test_password@db:5432/postgres
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      RABBITMQ_QUEUE: graintraide_queue
-      RABBITMQ_EXCHANGE: graintraide_exchange
-      RABBITMQ_ROUTING_KEY: graintraide_routing_key
-      RABBITMQ_CONSUMER_TAG: graintraide_consumer
     ports:
       - "8000:8000"
     volumes:
@@ -78,44 +80,35 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
 
-  app-notification:
+  notifications:
     build: ./notifications
-    image: graintraide-notification
+    image: notifications:ci
     restart: always
-    environment:
-      DATABASE_URL: postgres://admin:test_password@db:5432/postgres
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
     ports:
       - "8001:8000"
     volumes:
       - ./notifications:/notifications
     depends_on:
-      db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  app-frontend:
+      - db
+      - rabbitmq
+      - backend
+      - redis
+  
+  frontend:
     build: ./frontend
-    image: graintraide-frontend
+    image: frontend:ci
     restart: always
     ports:
       - "3000:80"
     volumes:
       - ./frontend:/frontend
     depends_on:
-      app-backend:
-        condition: service_healthy
+      - backend
 
 volumes:
   postgres_data:
   postgis:
   rabbitmq_data:
   rabbitmq_config:
+  redis_data:
