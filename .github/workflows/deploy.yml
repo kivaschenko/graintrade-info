@@ -18,17 +18,40 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
       - name: Copy project to remote Server
         run: |
           rsync -avz --delete \
             -e "ssh -p 22 -o StrictHostKeyChecking=no" \
+            --exclude '.git' \
+            --exclude '.github' \
             ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/
+        continue-on-error: false
 
       - name: Remote build and up
         run: |
-          ssh ${REMOTE_USER}@${REMOTE_HOST} <<'EOF'
+          ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} <<'EOF'
             cd ${REMOTE_PATH}
-            docker compose build
+            docker compose down || true
+            docker compose build --no-cache
             docker compose up -d
+
+            # Wait for the containers to be healthy
+            timeout=60
+            while ! docker inspect --format '{{ .State.Health.Status }}' backend; do
+              echo "Waiting for backend to be healthy..."
+              sleep 5
+              timeout=$((timeout - 5))
+              if [ $timeout -le 0 ]; then
+                echo "Timeout waiting for backend to be healthy"
+                exit 1
+              fi
+            done
+            echo "Backend is healthy"
+            exit 1
           EOF
         
