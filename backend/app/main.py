@@ -52,11 +52,15 @@ oauth2_scheme = OAuth2PasswordBearer(
     },
 )
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-logging.info(f"Starting App...")
+logging.info(f"Starting App {app}...")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8080"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "frontend:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,6 +78,7 @@ app.include_router(subscription_routers.router)
 
 # In-memory WebSocket connection pool
 connections = set()
+
 
 @app.websocket("/ws/items")
 async def websocket_endpoint(websocket: WebSocket):

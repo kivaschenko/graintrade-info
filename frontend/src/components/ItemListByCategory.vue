@@ -41,6 +41,10 @@ export default {
   async created() {
     try {
       const category_id = this.$route.params.id;
+      console.log('category_id', category_id);
+      console.log('VUE_APP_BACKEND_URL', process.env.VUE_APP_BACKEND_URL);
+      console.log('access_token', localStorage.getItem('access_token'));
+      console.log('currentLocale', this.currentLocale);
       const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories/${category_id}/items`, {
         params: {
           offset: 0,

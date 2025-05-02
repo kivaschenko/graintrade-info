@@ -1,10 +1,20 @@
 import logging
-import asyncio
+import os
+from dotenv import load_dotenv
 import aio_pika
 import aio_pika.abc
 from app.routers.schemas import UserInResponse
 
-RABBITMQ_URL = "amqp://guest:guest@localhost/"
+# Load environment variables from .env file
+load_dotenv("../.env")
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+# RabbitMQ configuration
+# These values should be set in your .env file or environment variables
+RABBITMQ_URL = os.getenv("RABBITMQ_URL")
+# RABBITMQ_URL = "amqp://guest:guest@localhost/"
 RABBITMQ_QUEUE = "user_notifications"
 
 
