@@ -43,8 +43,8 @@ services:
       - "5672:5672" # RabbitMQ messaging port
       - "15672:15672" # RabbitMQ management UI
     environment:
-      RABBITMQ_USER: rabbit_user
-      RABBITMQ_PASS: SoYjysnlhorTtzj
+      RABBITMQ_DEFAULT_USER: rabbit_user
+      RABBITMQ_DEFAULT_PASS: SoYjysnlhorTtzj
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 30s
