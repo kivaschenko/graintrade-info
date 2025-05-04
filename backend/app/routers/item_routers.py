@@ -1,5 +1,6 @@
 from typing import Annotated, List
 import logging
+import os
 
 from fastapi import (
     Depends,
@@ -35,9 +36,9 @@ from app.service_layer.item_services import (
     send_message_to_queue,
 )
 
-JWT_SECRET = "Avy8XuxvccZkogNVOi7DSeKIb+VxTc1Wwspits6rs0I7cUFTYngnwlC1xJioUVyX6bP7xVf/VQkp0Cal8mJhJA=="
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+JWT_SECRET = os.getenv("JWT_SECRET")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 MAP_VIEW_LIMIT = 100
 
 router = APIRouter(tags=["Items"])

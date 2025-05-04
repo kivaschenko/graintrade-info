@@ -1,4 +1,5 @@
 import logging
+import os
 from fastapi import APIRouter, HTTPException
 from .schemas import Recipient, Notification
 from app.service_layer.notification_services import (
@@ -8,6 +9,10 @@ from app.service_layer.notification_services import (
     WhatsAppNotificationHandler,
     # NotificationService,
 )
+
+JWT_SECRET = os.getenv("JWT_SECRET")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 
 router = APIRouter(tags=["notification"])
 
