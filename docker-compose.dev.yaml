@@ -1,46 +1,64 @@
 name: graintraide-dev
 services:
   db:
-    extends:
-      file: docker-compose.yaml
-      service: db
+    image: postgis/postgis:latest
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: dev_password
     ports:
       - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   pgadmin4:
-    extends:
-      file: docker-compose.yaml
-      service: pgadmin4
+    image: elestio/pgadmin:latest
     environment:
       PGADMIN_DEFAULT_EMAIL: dev@example.com
       PGADMIN_DEFAULT_PASSWORD: dev_password
       PGADMIN_LISTEN_PORT: 8080
+    ports:
+      - "5050:8080"
+    depends_on:
+      db:
+        condition: service_healthy
 
   rabbitmq:
-    extends:
-      file: docker-compose.yaml
-      service: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    image: rabbitmq:3-management
     environment:
       RABBITMQ_DEFAULT_USER: dev_user
       RABBITMQ_DEFAULT_PASS: dev_password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   redis:
-    extends:
-      file: docker-compose.yaml
-      service: redis
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   backend:
     build: ./backend
-    # image: backend:dev
     restart: always
     ports:
       - "8000:8000"
@@ -83,22 +101,20 @@ services:
       - ALGORITHM=HS256
       - REDIS_URL=redis://redis:6379/0
       - DEBUG=true
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     depends_on:
       - db
       - rabbitmq
       - backend
       - redis
-  
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   frontend:
     build: 
       context: ./frontend
-      # dockerfile: Dockerfile.dev
-    # image: frontend:dev
     restart: always
     ports:
       - "8080:80"
@@ -111,6 +127,9 @@ services:
       - VUE_APP_RABBITMQ_URL=amqp://dev_user:dev_password@rabbitmq:5672/
       - VUE_APP_RABBITMQ_VHOST=/
       - VUE_APP_MAPBOX_TOKEN=pk.eyJ1Ijoia2l2YXNjaGVua28iLCJhIjoiY20zb2l1bTl4MDRrazJscXRxZ3YwMXdycyJ9.S915p8_E1L5u8yB3dypUpw
-    # command: command sh -c "npm install && npm run serve"
     depends_on:
       - backend
+
+volumes:
+  postgres_data:
+  redis_data:
