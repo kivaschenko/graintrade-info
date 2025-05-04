@@ -101,7 +101,7 @@ services:
     # image: frontend:dev
     restart: always
     ports:
-      - "8080:8080"
+      - "8080:80"
     volumes:
       - ./frontend:/frontend
     environment:
@@ -111,6 +111,6 @@ services:
       - VUE_APP_RABBITMQ_URL=amqp://dev_user:dev_password@rabbitmq:5672/
       - VUE_APP_RABBITMQ_VHOST=/
       - VUE_APP_MAPBOX_TOKEN=pk.eyJ1Ijoia2l2YXNjaGVua28iLCJhIjoiY20zb2l1bTl4MDRrazJscXRxZ3YwMXdycyJ9.S915p8_E1L5u8yB3dypUpw
-    command: command sh -c "npm install && npm run serve"
+    # command: command sh -c "npm install && npm run serve"
     depends_on:
       - backend
