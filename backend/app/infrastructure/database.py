@@ -1,3 +1,4 @@
+import os
 import logging
 import asyncpg
 from contextlib import asynccontextmanager
@@ -6,8 +7,8 @@ logger = logging.getLogger("app_logger")
 logger.setLevel(logging.INFO)
 
 
-# DATABASE_URL = "postgresql://admin:A82mLC96RcvuEtZ5JRmFg@localhost:5432/postgres"
-DATABASE_URL = "postgresql://admin:A82mLC96RcvuEtZ5JRmFg@db:5432/postgres"
+DATABASE_URL = os.getenv("DATABASE_URL")
+# DATABASE_URL = "postgresql://admin:A82mLC96RcvuEtZ5JRmFg@db:5432/postgres"
 logger.info(f"Using DATABASE_URL: {DATABASE_URL}")
 
 

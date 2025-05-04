@@ -17,6 +17,310 @@ It includes:
 - **Messaging**: RabbitMQ (event-driven architecture)
 - **CI/CD**: Jenkins (local) → Docker Hub → Remote Deploy
 
+##   Docker compose using
+- Devlopment:
+```
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+- Production:
+```
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+I'll help you create separate Docker Compose files for production and development environments. I notice some security concerns in the current file and will suggest improvements.
+
+1. First, let's create a base Docker Compose file that will contain common configurations:
+
+````yaml
+# Base configuration
+name: graintraide
+services:
+  db:
+    image: postgis/postgis:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  pgadmin4:
+    image: elestio/pgadmin:latest
+    restart: always
+    ports:
+      - "5050:8080"
+    volumes:
+      - postgis:/var/lib/pgadmin4/servers.json
+    depends_on:
+      db:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_config:/etc/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgres_data:
+  postgis:
+  rabbitmq_data:
+  rabbitmq_config:
+  redis_data:
+````
+
+2. Create a development-specific compose file:
+
+````yaml
+name: graintraide-dev
+services:
+  db:
+    extends:
+      file: docker-compose.yml
+      service: db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - '5432:5432'
+
+  pgadmin4:
+    extends:
+      file: docker-compose.yml
+      service: pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dev@example.com
+      PGADMIN_DEFAULT_PASSWORD: dev_password
+      PGADMIN_LISTEN_PORT: 8080
+
+  rabbitmq:
+    extends:
+      file: docker-compose.yml
+      service: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: dev_user
+      RABBITMQ_DEFAULT_PASS: dev_password
+
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: 
+      context: ./backend
+      target: development
+    volumes:
+      - ./backend:/backend
+      - /backend/node_modules
+    environment:
+      NODE_ENV: development
+      DEBUG: 'true'
+    ports:
+      - "8000:8000"
+    command: npm run dev
+
+  notifications:
+    build:
+      context: ./notifications
+      target: development
+    volumes:
+      - ./notifications:/notifications
+      - /notifications/node_modules
+    environment:
+      NODE_ENV: development
+      DEBUG: 'true'
+    ports:
+      - "8001:8000"
+    command: npm run dev
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    volumes:
+      - ./frontend:/frontend
+      - /frontend/node_modules
+    environment:
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    command: npm run dev
+````
+
+3. Create a production-specific compose file:
+
+````yaml
+name: graintraide-prod
+services:
+  db:
+    extends:
+      file: docker-compose.yml
+      service: db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '5432:5432'
+
+  pgadmin4:
+    extends:
+      file: docker-compose.yml
+      service: pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: 8080
+
+  rabbitmq:
+    extends:
+      file: docker-compose.yml
+      service: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: 
+      context: ./backend
+      target: production
+    restart: always
+    environment:
+      NODE_ENV: production
+    ports:
+      - "8000:8000"
+
+  notifications:
+    build:
+      context: ./notifications
+      target: production
+    restart: always
+    environment:
+      NODE_ENV: production
+    ports:
+      - "8001:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/dist:/var/www/frontend/dist:ro
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - backend
+      - frontend
+````
+
+4. Create an .env file for production secrets:
+
+````plaintext
+POSTGRES_DB=postgres
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=secure_password_here
+PGADMIN_EMAIL=admin@example.com
+PGADMIN_PASSWORD=secure_password_here
+RABBITMQ_USER=rabbit_user
+RABBITMQ_PASSWORD=secure_password_here
+````
+
+To use these files:
+
+- Development:
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d
+```
+
+- Production:
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d
+```
+
+Key improvements:
+- Separated development and production configurations
+- Removed hardcoded credentials
+- Added environment variables for sensitive data
+- Added development-specific volumes for hot reloading
+- Improved security for production setup
+- Added proper targeting for build stages
+- Added SSL support in production nginx
+
+Remember to:
+1. Add .env to .gitignore
+2. Create proper .env file for production
+3. Set up SSL certificates for production
+4. Use secrets management in production
+5. Configure proper logging in production
+6. Set up monitoring for production services
+
+Create `.env` file for production secrets:
+```
+POSTGRES_DB=postgres
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=secure_password_here
+PGADMIN_EMAIL=admin@example.com
+PGADMIN_PASSWORD=secure_password_here
+RABBITMQ_USER=rabbit_user
+RABBITMQ_PASSWORD=secure_password_here
+```
+
+Runthe following command to obtain the initial SSL certificates usig Certbot:
+```
+docker-compose run --rm certbot certonly --webroot --webroot-path=/var/www/certbot -d yourdomain.com -d www.yourdomain.com
+```
+After obtaining the certificates , restart `ngnx` serice toapply the SSL configuration:
+```
+docker-compose up -d nginx
+```
+
 ---
 
 ## 🚀 Setup: Remote Server

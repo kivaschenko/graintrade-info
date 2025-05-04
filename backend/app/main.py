@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 import logging
 import os
 
-from dotenv import load_dotenv
 from fastapi import (
     FastAPI,
     WebSocket,
@@ -21,10 +20,16 @@ from .routers import subscription_routers
 from .routers import category_routers
 
 
-load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
+
+
+app_env = os.getenv("APP_ENV", "production")
+debug_mode = os.getenv("DEBUG", "false").lower() == "true"
+
+if app_env == "development":
+    print("Running in development mode")
 
 
 @asynccontextmanager
@@ -57,9 +62,14 @@ logging.info(f"Starting App {app}...")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:8080",
-        "frontend:3000",
+        "http://localhost:3000",  # Development with frontend on localhost in docker
+        "http://localhost:8080",  # Development with frontend on localhost as standalone
+        "http://graintrade.info",
+        "https://graintrade.info",
+        "http://www.graintrade.info",
+        "https://www.graintrade.info",
+        "http://65.108.68.57",
+        "https://65.108.68.57",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -71,6 +81,16 @@ app.include_router(item_routers.router)
 app.include_router(user_routers.router)
 app.include_router(notification_routers.router)
 app.include_router(subscription_routers.router)
+
+
+# ----------------
+# Health check
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint.
+    """
+    return {"status": "ok"}
 
 
 # ----------------
