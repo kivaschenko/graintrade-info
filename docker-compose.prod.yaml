@@ -16,8 +16,8 @@ services:
       file: docker-compose.yaml
       service: pgadmin4
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_LISTEN_PORT: 8080
 
   rabbitmq:
@@ -29,7 +29,7 @@ services:
       - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
 
   redis:
     extends:
@@ -41,16 +41,17 @@ services:
   backend:
     build: 
       context: ./backend
-      target: production
     image: backend:prod
     restart: always
     ports:
       - "8000:8000"
     environment:
-      - APP_ENV=production
-      - DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - REDIS_URL: redis://redis:6379
-      - RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      ALGORITHM: ${ALGORITHM}
     depends_on:
       db:
         condition: service_healthy
@@ -65,11 +66,12 @@ services:
   notifications:
     build:
       context: ./notifications
-      target: production
-    image: notifications:ci
+    image: notifications:prod
     restart: always
     environment:
-      - APP_ENV=production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
     ports:
       - "8001:8000"
     depends_on:
@@ -81,9 +83,11 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: production
     image: frontend:prod
     restart: always
+    environment:
+      VUE_APP_BACKEND_URL: ${VUE_APP_BACKEND_URL}
+      VUE_APP_MAPBOX_TOKEN: ${VUE_APP_MAPBOX_TOKEN}
 
   nginx:
     image: nginx:alpine
@@ -95,7 +99,7 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
     depends_on:
-      - frontend
+      - backend
 
   certbot:
     image: certbot/certbot
