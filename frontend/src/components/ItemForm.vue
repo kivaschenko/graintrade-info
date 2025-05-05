@@ -48,6 +48,7 @@
             <div class="col-md-6">
               <label for="currency" class="form-label">{{ $t( 'common_text.currency' ) }}</label>
               <select class="form-control" id="currency" v-model="currency" required>
+                <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
                 <option value="UAH">UAH</option>
               </select>

@@ -471,9 +471,9 @@ BEGIN
 	-- Insert default tarifs
 	INSERT INTO tarifs (name, description, price, currency, scope, terms)
 	VALUES
-	    ('Basic', 'Basic subscription plan', 10.00, 'USD', 'basic', 'monthly'),
-	    ('Premium', 'Premium subscription plan', 20.00, 'USD', 'premium', 'monthly'),
-	    ('Pro', 'Pro subscription plan', 30.00, 'USD', 'pro', 'monthly');
+	    ('Basic', 'Basic subscription plan', 10.00, 'EUR', 'basic', 'monthly'),
+	    ('Premium', 'Premium subscription plan', 20.00, 'EUR', 'premium', 'monthly'),
+	    ('Pro', 'Pro subscription plan', 30.00, 'EUR', 'pro', 'monthly');
     END IF;
 END $$;
 
