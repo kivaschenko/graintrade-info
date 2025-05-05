@@ -64,12 +64,16 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Development with frontend on localhost in docker
         "http://localhost:8080",  # Development with frontend on localhost as standalone
-        "http://graintrade.info",
-        "https://graintrade.info",
-        "http://www.graintrade.info",
-        "https://www.graintrade.info",
-        "http://65.108.68.57",
-        "https://65.108.68.57",
+        "http://backend:8000",  # Development with frontend on localhost in docker
+        "http://127.0.0.1:8000",  # Development with frontend on localhost as standalone
+        # "http://graintrade.info",
+        # "https://graintrade.info",
+        # "http://www.graintrade.info",
+        # "https://www.graintrade.info",
+        # "http://65.108.68.57",
+        # "https://65.108.68.57",
+        "*",
+        # Allow all origins for development purposes
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -97,17 +101,17 @@ async def health_check():
 # Websocket
 
 # In-memory WebSocket connection pool
-connections = set()
+# connections = set()
 
 
-@app.websocket("/ws/items")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    connections.add(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Message text was: {data}")
-    except WebSocketDisconnect:
-        logging.info("Client disconnected")
-        connections.remove(websocket)
+# @app.websocket("/ws/items")
+# async def websocket_endpoint(websocket: WebSocket):
+#     await websocket.accept()
+#     connections.add(websocket)
+#     try:
+#         while True:
+#             data = await websocket.receive_text()
+#             await websocket.send_text(f"Message text was: {data}")
+#     except WebSocketDisconnect:
+#         logging.info("Client disconnected")
+#         connections.remove(websocket)
