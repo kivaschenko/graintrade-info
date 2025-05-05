@@ -4,6 +4,7 @@ import ItemForm from '@/components/ItemForm.vue';
 import HomePage from '@/components/HomePage.vue';
 import ItemListByCategory from '@/components/ItemListByCategory.vue';
 import ItemDetails from '@/components/ItemDetails.vue';
+import RegistrationForm from '@/components/RegistrationForm.vue';
 
 
 const routes = [
@@ -16,6 +17,11 @@ const routes = [
       path: '/login',
       name: 'Login',
       component: Login,
+    },
+    {
+      path: '/register',
+      name: 'Register',
+      component: RegistrationForm,
     },
     {
       path: '/items/new',

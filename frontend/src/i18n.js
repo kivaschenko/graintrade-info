@@ -7,6 +7,12 @@ const messages = {
       addNew: 'Add new',
       login: 'Login',
       logout: 'Logout',
+      register: 'Register',
+      profile: 'Profile',
+      offers: 'Offers',
+      myOffers: 'My Offers',
+      myProfile: 'My Profile',
+      settings: 'Settings',
     },
     common_text: {
       offers: 'Offers latest',
@@ -92,6 +98,19 @@ const messages = {
       kg: 'Kg',
       liter: 'Liter',
     },
+    registration: {
+      "title": "Create Account",
+      "username": "Username",
+      "email": "Email",
+      "fullName": "Full Name",
+      "phone": "Phone",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Register",
+      "submitting": "Registering...",
+      "success": "Registration successful!",
+      "error": "Registration failed"
+    }
   },
   ua: {
     navbar: {
@@ -99,6 +118,12 @@ const messages = {
       addNew: 'Додати нове',
       login: 'Увійти',
       logout: 'Вийти',
+      register: 'Реєстрація',
+      profile: 'Профіль',
+      offers: 'Пропозиції',
+      myOffers: 'Мої пропозиції',
+      myProfile: 'Мій профіль',
+      settings: 'Налаштування',
     },
     common_text: {
       offers: 'Пропозиції останні',
@@ -184,6 +209,19 @@ const messages = {
       kg: 'Кг',
       liter: 'Літр',
     },
+    registration: {
+      "title": "Створити обліковий запис",
+      "username": "Ім'я користувача",
+      "email": "Електронна пошта",
+      "fullName": "Повне ім'я",
+      "phone": "Телефон",
+      "password": "Пароль",
+      "confirmPassword": "Підтвердіть пароль",
+      "submit": "Зареєструватися",
+      "submitting": "Реєстрація...",
+      "success": "Реєстрація успішна!",
+      "error": "Помилка реєстрації"
+    }
   },
 };
 
