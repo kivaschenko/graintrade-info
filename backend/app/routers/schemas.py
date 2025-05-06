@@ -164,7 +164,7 @@ class SubscriptionInDB(BaseModel):
 class SubscriptionInResponse(SubscriptionInDB):
     id: int
     created_at: datetime = Field(alias="created_at")
-    tarif: TarifInResponse
+    tarif: TarifInResponse | None = None
 
     @property
     def formatted_created_at(self) -> str:
