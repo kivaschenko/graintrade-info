@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.routers.schemas import SubscriptionInDB, SubscriptionInResponse
+from app.routers.schemas import (
+    SubscriptionInDB,
+    SubscriptionInResponse,
+    TarifInResponse,
+)
 
 
 class AbstractSubscriptionRepository(ABC):
@@ -65,11 +69,20 @@ class AsyncpgSubscriptionRepository(AbstractSubscriptionRepository):
             FROM subscriptions
             WHERE id = $1
         """
+        query_tarif = """
+            SELECT id, name, description, price, currency, scope, terms
+            FROM tarifs
+            WHERE id = $1
+        """
         async with self.conn as connection:
             row = await connection.fetchrow(query, subscription_id)
             if row is None:
                 return None
-            return SubscriptionInResponse(**row)
+            subscription = SubscriptionInResponse(**row)
+            tarif_row = await connection.fetchrow(query_tarif, subscription.tarif_id)
+            if tarif_row is not None:
+                subscription.tarif = TarifInResponse(**tarif_row)
+            return subscription
 
     async def update(
         self, subscription_id: int, subscription: SubscriptionInDB
@@ -100,16 +113,28 @@ class AsyncpgSubscriptionRepository(AbstractSubscriptionRepository):
         async with self.conn as connection:
             await connection.execute(query, subscription_id)
 
-    async def get_by_user_id(self, user_id: int) -> List[SubscriptionInResponse]:
+    async def get_by_user_id(self, user_id: int) -> SubscriptionInResponse:
         query = """
             SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
             FROM subscriptions
             WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
             ORDER BY created_at DESC
+            LIMIT 1
+        """
+        query_tarif = """
+            SELECT id, name, description, price, currency, scope, terms
+            FROM tarifs
+            WHERE id = $1
         """
         async with self.conn as connection:
-            rows = await connection.fetch(query, user_id)
-            return [SubscriptionInResponse(**row) for row in rows]
+            row = await connection.fetch(query, user_id)
+            if row is None:
+                return None
+            subscription = SubscriptionInResponse(**row)
+            tarif_row = await connection.fetchrow(query_tarif, subscription.tarif_id)
+            if tarif_row is not None:
+                subscription.tarif = TarifInResponse(**tarif_row)
+            return subscription
 
     async def get_by_tarif_id(self, tarif_id: int) -> List[SubscriptionInResponse]:
         query = """

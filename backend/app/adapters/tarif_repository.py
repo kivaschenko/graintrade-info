@@ -97,3 +97,15 @@ class AsyncpgTarifRepository(AbstractTarifRepository):
         """
         async with self.conn as connection:
             await connection.execute(query, tarif_id)
+
+    async def get_tarif_by_scope(self, scope: str) -> TarifInResponse:
+        query = """
+            SELECT id, name, description, price, currency, scope, terms, created_at
+            FROM tarifs
+            WHERE scope = $1
+        """
+        async with self.conn as connection:
+            row = await connection.fetchrow(query, scope)
+            if row is None:
+                return None
+            return TarifInResponse(**row)
