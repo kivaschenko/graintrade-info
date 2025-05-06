@@ -26,9 +26,13 @@ from app.routers.schemas import (
     UserInResponse,
     TokenData,
     Token,
+    SubscriptionInResponse,
 )
 from app.infrastructure.database import get_db
-from app.adapters import AsyncpgUserRepository
+from app.adapters import (
+    AsyncpgUserRepository,
+    AsyncpgSubscriptionRepository,
+)
 from app.service_layer.user_services import send_user_to_rabbitmq
 
 
@@ -43,9 +47,9 @@ oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
     scopes={
         "me": "Read information about the current user.",
-        "basic_tarif": "Read and write items, limited access to features.",
-        "premium_tarif": "Read and write items, full access to features.",
-        "enterprise_tarif": "Read and write items, full access to features.",
+        "basic": "Read and write items, limited access to features.",
+        "premium": "Read and write items, full access to features.",
+        "pro": "Read and write items, full access to features.",
         "admin": "Full access to all features.",
     },
 )
@@ -172,6 +176,23 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
     return user_id, scopes
 
 
+async def get_user_subscription(user_id: int):
+    """Get the user's subscription from the database."""
+    try:
+        async with get_db() as conn:
+            repo = AsyncpgSubscriptionRepository(conn=conn)
+            user_subscription = await repo.get_by_user_id(user_id)
+            if user_subscription is None:
+                logging.error("User subscription not found")
+                raise HTTPException(
+                    status_code=404, detail="User subscription not found"
+                )
+            return user_subscription
+    except Exception as e:
+        logging.error(f"Error getting user subscription: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 # =======
 # Routes
 
@@ -182,7 +203,17 @@ async def login_for_access_token(
     repo: AsyncpgUserRepository = Depends(get_user_repository),
 ) -> Token:
     """Create an access token for the user."""
+    logging.info(f"User {form_data.username} is trying to log in")
+
+    if not form_data.username or not form_data.password:
+        logging.error("Username or password not provided")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username and password are required",
+        )
+
     user = await authenticate_user(repo, form_data.username, form_data.password)
+
     if not user:
         logging.error("Incorrect username or password")
         raise HTTPException(
@@ -190,17 +221,43 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    if user.disabled:
+        logging.error("User is disabled")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Inactive user",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Get the user's tariff
+    user_sub: SubscriptionInResponse = await get_user_subscription(user_id=user.id)
+    logging.info(f"User {user.username} has tariff {user_sub.tarif.name}")
+
+    if user_sub is None or user_sub.tarif.scope not in ["basic", "premium", "pro"]:
+        logging.error("User tariff not found")
+        user_sub.tarif.scope = "basic"
+
+    # Create the access token
     access_token_expires = timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
-    # TODO: Add more information to the token. For example, the user's role.
-    # Check the current tarif plan, define the user's permissions, etc.
     access_token = create_access_token(
         data={
             "sub": user.username,
-            "scopes": ["me", "create:item", "read:item", "update:item", "delete:item"],
+            "scopes": [
+                "me",
+                f"{user_sub.tarif.scope}",
+            ],
             "user_id": user.id,
         },
         expires_delta=access_token_expires,
     )
+    if not access_token:
+        logging.error("Failed to create access token")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create access token",
+        )
+    logging.info(f"Access token created for user {user.username}")
+
     return Token(access_token=access_token, token_type="bearer")
 
 
@@ -228,6 +285,7 @@ async def create_user(
         username=user.username,
         email=user.email,
         full_name=user.full_name,
+        phone=user.phone,
     )
     new_user = await repo.create(user_to_db)
     if new_user is None:
