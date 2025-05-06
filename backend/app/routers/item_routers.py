@@ -31,6 +31,7 @@ from app.adapters import (
     AsyncpgUserRepository,
     AsyncpgItemRepository,
     AsyncpgItemUserRepository,
+    AsyncpgSubscriptionRepository,
 )
 from app.service_layer.item_services import (
     send_message_to_queue,
@@ -46,9 +47,9 @@ oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
     scopes={
         "me": "Read information about the current user.",
-        "basic_tarif": "Read and write items, limited access to features.",
-        "premium_tarif": "Read and write items, full access to features.",
-        "enterprise_tarif": "Read and write items, full access to features.",
+        "basic": "Read and write items, limited access to features.",
+        "premium": "Read and write items, full access to features.",
+        "pro": "Read and write items, full access to features.",
         "admin": "Full access to all features.",
     },
 )
@@ -169,6 +170,12 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
     return user_id, scopes
 
 
+def get_subscription_repository(
+    db: Connection = Depends(get_db),
+) -> AsyncpgSubscriptionRepository:
+    return AsyncpgSubscriptionRepository(conn=db)
+
+
 # ------------------------
 # standard CRUD operations
 
@@ -178,22 +185,29 @@ async def create_item(
     item: ItemInDB,
     background_tasks: BackgroundTasks,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
+    sub_repo: AsyncpgSubscriptionRepository = Depends(get_subscription_repository),
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     if token is None:
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
+
     user_id, scopes = await get_current_user_id(token)
     logging.info(f"User ID: {user_id}, Scopes: {scopes}")
-    # check scope and permissions here
-    if "create:item" not in scopes:
-        logging.error("Not enough permissions")
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    # Get user's subscription and check status
+    subscription = await get_user_subscription(user_id=user_id, repo=sub_repo)
+    await check_subscription_status(subscription)
+
+    # Check if user reached their limits
+    await check_user_limits(user_id, subscription, repo)
+
     new_item = await repo.create(item, user_id)
     if new_item is None:
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
     logging.info(f"New item created: {new_item}")
+
     # Notify RabbitMQ about the new item
     try:
         # Send the message to RabbitMQ on background
@@ -201,6 +215,7 @@ async def create_item(
         logging.info("New item notification sent to RabbitMQ")
     except Exception as e:
         logging.error(f"Error sending message to RabbitMQ: {e}")
+
     return new_item
 
 
