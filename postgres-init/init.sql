@@ -100,11 +100,17 @@ CREATE TABLE IF NOT EXISTS tarifs (
     name VARCHAR(50) NOT NULL,
     description TEXT NOT NULL,
     price DECIMAL(10, 2) NOT NULL DEFAULT 10.00,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+    currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
     scope VARCHAR(100) NOT NULL DEFAULT 'basic',
     terms VARCHAR(50) NOT NULL DEFAULT 'monthly',
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Add unique constraint to tarifs table
+ALTER TABLE IF EXISTS public.tarifs
+    ADD CONSTRAINT tarifs_name_unique_constraint UNIQUE (name);
+ALTER TABLE IF EXISTS public.tarifs
+    ADD CONSTRAINT tarifs_scope_unique_constraint UNIQUE (scope);
 
 -- Drop indexes if they exist
 DROP INDEX IF EXISTS tarifs_scope_idx;
