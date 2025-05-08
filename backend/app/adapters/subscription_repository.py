@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.routers.schemas import (
+from ..routers.schemas import (
     SubscriptionInDB,
     SubscriptionInResponse,
     TarifInResponse,
@@ -146,3 +146,14 @@ class AsyncpgSubscriptionRepository(AbstractSubscriptionRepository):
         async with self.conn as connection:
             rows = await connection.fetch(query, tarif_id)
             return [SubscriptionInResponse(**row) for row in rows]
+
+    async def get_subscription_usage_for_user(
+        self, user_id: int
+    ) -> List[SubscriptionInResponse]:
+        query = """
+            SELECT * FROM get_subscription_usage($1)
+        """
+        async with self.conn as connection:
+            row = await connection.fetchrow(query, user_id)
+            print(f"Row: {row} ")
+            return row
