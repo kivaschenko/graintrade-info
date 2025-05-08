@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import api from '@/services/api';
+import publicApi from '@/services/publicApi';
 import CategoryCards from './CategoryCards.vue';
 import ItemTable from './ItemTable.vue';
 
@@ -25,7 +25,7 @@ export default {
   methods: {
     async fetchItems() {
       try {
-        const response = await api.get('/items', {
+        const response = await publicApi.get('/items', {
           params: {
             offset: 0,
             limit: 10,

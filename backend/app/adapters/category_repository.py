@@ -1,13 +1,13 @@
 from typing import List
 from abc import ABC, abstractmethod
 import asyncpg
-from app.routers.schemas import (
+from ..routers.schemas import (
     CategoryInDB,
     CategoryInResponse,
     CategoryWithItems,
     ItemInResponse,
 )
-from app.infrastructure.database import get_db
+from ..infrastructure.database import get_db
 
 
 class AbstractCategoryRepository(ABC):

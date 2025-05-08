@@ -1,7 +1,7 @@
 from typing import List
 from abc import ABC, abstractmethod
 import asyncpg
-from app.routers.schemas import UserInDB, UserInResponse
+from ..routers.schemas import UserInDB, UserInResponse
 
 # User repositories
 # The AbstractUserRepository class defines the interface for interacting with users in the database.
@@ -40,9 +40,9 @@ class AsyncpgUserRepository(AbstractUserRepository):
 
     async def create(self, user: UserInDB) -> UserInResponse:
         query = """
-            INSERT INTO users (username, email, full_name, hashed_password)
+            INSERT INTO users (username, email, full_name, phone, hashed_password)
             VALUES ($1, $2, $3, $4)
-            RETURNING id, username, email, full_name, hashed_password, disabled
+            RETURNING id, username, email, full_name, phone, hashed_password, disabled
         """
         async with self.conn as connection:
             row = await connection.fetchrow(
@@ -50,6 +50,7 @@ class AsyncpgUserRepository(AbstractUserRepository):
                 user.username,
                 user.email,
                 user.full_name,
+                user.phone,
                 user.hashed_password,
             )
         return UserInResponse(**row)

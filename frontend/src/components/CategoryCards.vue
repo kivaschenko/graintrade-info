@@ -4,7 +4,7 @@
     <div class="row justify-content-center">
       <div class="col-md-3 mb-3" v-for="category in categories" :key="category.id">
         <button
-          class="btn btn-primary btn-block category-button"
+          class="btn btn-outline-secondary btn-block category-button"
           @click="navigateToCategory(category.id)"
         >
           {{ getCategoryName(category) }}

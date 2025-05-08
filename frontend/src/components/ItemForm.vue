@@ -7,7 +7,7 @@
         <div id="map" class="map mb-3"></div>
       </div>
       <div class="col-lg-6">
-        <form @submit.prevent="createItem" style="background-color: #3FB1CE; padding: 1rem;">
+        <form @submit.prevent="createItem" style="background-color:aquamarine; padding: 1rem;">
           <div v-if="successMessage" class="alert alert-success" role="alert">
             {{ successMessage }}
           </div>

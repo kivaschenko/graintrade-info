@@ -223,3 +223,16 @@ Here's an example:
 ```
 --env-vars AZURE_POSTGRESQL_HOST="my-postgres-server.postgres.database.azure.com" AZURE_POSTGRESQL_DATABASE="restaurants_reviews" AZURE_POSTGRESQL_USERNAME="demoadmin" AZURE_POSTGRESQL_PASSWORD="somepassword" RUNNING_IN_PRODUCTION="1" AZURE_SECRET_KEY=asdfasdfasdf
 ```
+# Additions
+
+SQL Functions
+```
+-- Increment item count
+SELECT increment_items_count(user_id);
+
+-- Increment map views
+SELECT increment_map_views(user_id);
+
+-- Check usage
+SELECT * FROM get_subscription_usage(user_id);
+```
