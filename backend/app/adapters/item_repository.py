@@ -1,7 +1,7 @@
 from typing import List
 from abc import ABC, abstractmethod
 import asyncpg
-from app.routers.schemas import ItemInDB, ItemInResponse
+from ..routers.schemas import ItemInDB, ItemInResponse
 
 # -------------------repository.py-------------------
 # Item repositories
@@ -182,3 +182,10 @@ class AsyncpgItemRepository(AbstractItemRepository):
                 region,
             )
         return [ItemInResponse(**row) for row in rows]
+
+    async def items_count(self, user_id: int) -> int:
+        query = """SELECT * FROM increment_items_count($1)"""
+        async with self.conn as connection:
+            items_count = await connection.fetchrow(query, user_id)
+            print(f"Items count for user {user_id}: {items_count}")
+            return items_count
