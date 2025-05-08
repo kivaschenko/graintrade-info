@@ -2,6 +2,12 @@ import { createStore } from 'vuex';
 import axios from 'axios';
 
 const backendUrl = process.env.VUE_APP_BACKEND_URL;
+console.log('Backend URL:', backendUrl);
+if (!backendUrl) {
+  console.error('VUE_APP_BACKEND_URL is not defined. Please set it in your .env file.');
+}
+// import publicApi from '@/services/publicApi';
+// import api from '@/services/api';
 
 export default createStore({
   state: {

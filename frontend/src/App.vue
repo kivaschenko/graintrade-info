@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <nav class="navbar navbar-expand-lg navbar-light"  style="background-color: #3FB1CE;">
+    <nav class="navbar navbar-expand-lg navbar-light"  style="background-color:aquamarine;">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">Graintrade.Info</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">

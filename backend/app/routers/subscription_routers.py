@@ -11,9 +11,9 @@ from .schemas import (
     TarifInDB,
     TarifInResponse,
 )
-from app.infrastructure.database import get_db
-from app.adapters.subscription_repository import AsyncpgSubscriptionRepository
-from app.adapters.tarif_repository import AsyncpgTarifRepository
+from ..infrastructure.database import get_db
+from ..adapters.subscription_repository import AsyncpgSubscriptionRepository
+from ..adapters.tarif_repository import AsyncpgTarifRepository
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")

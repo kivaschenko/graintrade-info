@@ -26,20 +26,20 @@ from .schemas import (
     UserInResponse,
     TokenData,
 )
-from app.infrastructure.database import get_db
-from app.adapters import (
+from ..infrastructure.database import get_db
+from ..adapters import (
     AsyncpgUserRepository,
     AsyncpgItemRepository,
     AsyncpgItemUserRepository,
     AsyncpgSubscriptionRepository,
 )
-from app.service_layer.item_services import (
+from ..service_layer.item_services import (
     send_message_to_queue,
 )
 
 JWT_SECRET = os.getenv("JWT_SECRET")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN", 3600)
 MAP_VIEW_LIMIT = 100
 
 router = APIRouter(tags=["Items"])
@@ -82,15 +82,6 @@ def get_user(repo, username: str):
     except Exception as e:
         logging.error(f"Error getting user: {e}")
         return None
-
-
-async def authenticate_user(repo: AsyncpgUserRepository, username: str, password: str):
-    user = await get_user(repo, username)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
 
 
 async def get_current_user(
@@ -194,13 +185,6 @@ async def create_item(
 
     user_id, scopes = await get_current_user_id(token)
     logging.info(f"User ID: {user_id}, Scopes: {scopes}")
-
-    # Get user's subscription and check status
-    subscription = await get_user_subscription(user_id=user_id, repo=sub_repo)
-    await check_subscription_status(subscription)
-
-    # Check if user reached their limits
-    await check_user_limits(user_id, subscription, repo)
 
     new_item = await repo.create(item, user_id)
     if new_item is None:

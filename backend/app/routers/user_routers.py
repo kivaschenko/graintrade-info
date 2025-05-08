@@ -20,26 +20,31 @@ from fastapi.security import (
 from asyncpg import Connection
 import bcrypt
 import jwt
-from app.routers.schemas import (
+from .schemas import (
     UserInCreate,
     UserInDB,
     UserInResponse,
     TokenData,
     Token,
     SubscriptionInResponse,
+    TarifInResponse,
 )
-from app.infrastructure.database import get_db
-from app.adapters import (
+from ..infrastructure.database import get_db
+from ..adapters import (
     AsyncpgUserRepository,
     AsyncpgSubscriptionRepository,
 )
-from app.service_layer.user_services import send_user_to_rabbitmq
+from ..service_layer.user_services import send_user_to_rabbitmq
 
 
 JWT_SECRET = os.getenv("JWT_SECRET")
-ALGORITHM = os.getenv("ALGORITHM")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 MAP_VIEW_LIMIT = 100
+
+logging.debug(f"JWT_SECRET: {JWT_SECRET}")
+logging.debug(f"ALGORITHM: {ALGORITHM}")
+logging.debug(f"ACCESS_TOKEN_EXPIRE_MINUTES: {ACCESS_TOKEN_EXPIRE_MINUTES}")
 
 router = APIRouter(tags=["users"])
 
@@ -58,8 +63,9 @@ oauth2_scheme = OAuth2PasswordBearer(
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 
-# ==========
-# Dependency
+# =================
+# User repository
+# Dependency for user repository
 
 
 def get_user_repository(db: Connection = Depends(get_db)) -> AsyncpgUserRepository:
@@ -94,11 +100,7 @@ async def authenticate_user(repo: AsyncpgUserRepository, username: str, password
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    """Create an access token.
-    TODO: Add more information to the token. For example, the user's role.
-    Check the current tarif plan, define the user's permissions, etc.
-    For now, we only add the expiration date.
-    """
+    """Create an access token."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -152,6 +154,8 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: Annotated[UserInResponse, Security(get_current_user, scopes=["me"])],
 ):
+    """Get the current active user."""
+    logging.info(f"Current user: {current_user.username}")
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -176,21 +180,81 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
     return user_id, scopes
 
 
-async def get_user_subscription(user_id: int):
+# ==========================================
+# Subscription repository dependency
+
+
+def get_subscription_repository(
+    db: Connection = Depends(get_db),
+) -> AsyncpgSubscriptionRepository:
+    return AsyncpgSubscriptionRepository(conn=db)
+
+
+async def get_subscription(repo: AsyncpgSubscriptionRepository, user_id: int):
+    """Get subscription with proper error handling and default values."""
+    try:
+        subscription = await repo.get_by_user_id(user_id)
+        logging.info(f"Got subscription for user {user_id}: {subscription}")
+        return subscription
+    except Exception as e:
+        logging.error(f"Error getting subscription: {e}")
+        # Return default basic subscription with all required fields
+        current_date = datetime.now(timezone.utc)
+        return SubscriptionInResponse(
+            id=0,
+            user_id=user_id,
+            tarif_id=0,  # Add this required field
+            tarif=TarifInResponse(
+                id=0,
+                name="Basic",
+                description="Basic tariff",
+                scope="basic",
+                price=0,
+                currency="EUR",
+                terms="monthly",
+                created_at=current_date,
+            ),
+            status="active",
+            start_date=current_date,  # Add this required field
+            end_date=current_date + timedelta(days=365),  # Add this required field
+            created_at=current_date,
+        )
+
+
+async def get_user_subscription(
+    user_id: int,
+    repo: AsyncpgSubscriptionRepository = Depends(get_subscription_repository),
+):
     """Get the user's subscription from the database."""
     try:
-        async with get_db() as conn:
-            repo = AsyncpgSubscriptionRepository(conn=conn)
-            user_subscription = await repo.get_by_user_id(user_id)
-            if user_subscription is None:
-                logging.error("User subscription not found")
-                raise HTTPException(
-                    status_code=404, detail="User subscription not found"
-                )
-            return user_subscription
+        user_subscription = await get_subscription(repo=repo, user_id=user_id)
+        logging.info(
+            f"Got subscription for user {user_id}: {user_subscription.tarif.name}"
+        )
+        return user_subscription
     except Exception as e:
         logging.error(f"Error getting user subscription: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        # Return default basic subscription with all required fields
+        current_date = datetime.now(timezone.utc)
+        return SubscriptionInResponse(
+            id=0,
+            user_id=user_id,
+            tarif_id=0,  # Add this required field
+            tarif=TarifInResponse(
+                id=0,
+                name="Basic",
+                description="Basic tariff",
+                scope="basic",
+                price=0,
+                currency="EUR",
+                terms="monthly",
+                created_at=current_date,
+            ),
+            status="active",
+            start_date=current_date,  # Add this required field
+            end_date=current_date + timedelta(days=365),  # Add this required field
+            created_at=current_date,
+        )
 
 
 # =======
@@ -201,6 +265,7 @@ async def get_user_subscription(user_id: int):
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     repo: AsyncpgUserRepository = Depends(get_user_repository),
+    sub_repo: AsyncpgSubscriptionRepository = Depends(get_subscription_repository),
 ) -> Token:
     """Create an access token for the user."""
     logging.info(f"User {form_data.username} is trying to log in")
@@ -229,42 +294,47 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Get the user's tariff
-    user_sub: SubscriptionInResponse = await get_user_subscription(user_id=user.id)
-    logging.info(f"User {user.username} has tariff {user_sub.tarif.name}")
+    try:
+        # Get the user's tariff (will return basic subscription if none exists)
+        user_sub = await get_user_subscription(user_id=user.id, repo=sub_repo)
+        logging.info(f"User {user.username} has tariff {user_sub.tarif.name}")
 
-    if user_sub is None or user_sub.tarif.scope not in ["basic", "premium", "pro"]:
-        logging.error("User tariff not found")
-        user_sub.tarif.scope = "basic"
+        # Create the access token
+        access_token_expires = timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
+        access_token = create_access_token(
+            data={
+                "sub": user.username,
+                "scopes": ["me", user_sub.tarif.scope],
+                "user_id": user.id,
+            },
+            expires_delta=access_token_expires,
+        )
 
-    # Create the access token
-    access_token_expires = timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
-    access_token = create_access_token(
-        data={
-            "sub": user.username,
-            "scopes": [
-                "me",
-                f"{user_sub.tarif.scope}",
-            ],
-            "user_id": user.id,
-        },
-        expires_delta=access_token_expires,
-    )
-    if not access_token:
-        logging.error("Failed to create access token")
+        if not access_token:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create access token",
+            )
+
+        logging.info(f"Access token created for user {user.username}")
+        print(f"Access token: {access_token}")
+        return Token(access_token=access_token, token_type="bearer")
+
+    except Exception as e:
+        logging.error(f"Error during token creation: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create access token",
+            detail="Internal server error during authentication",
         )
-    logging.info(f"Access token created for user {user.username}")
-
-    return Token(access_token=access_token, token_type="bearer")
 
 
 @router.get("/users/me", response_model=UserInResponse, tags=["users"])
 async def read_users_me(
     current_user: Annotated[UserInResponse, Depends(get_current_active_user)],
 ):
+    logging.info(f"Current user within users/me: {current_user.username}")
+    if current_user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 

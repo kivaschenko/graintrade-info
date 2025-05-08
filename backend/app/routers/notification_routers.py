@@ -2,7 +2,7 @@ import logging
 import os
 from fastapi import APIRouter, HTTPException
 from .schemas import Recipient, Notification
-from app.service_layer.notification_services import (
+from ..service_layer.notification_services import (
     EmailNotificationHandler,
     SMSNotificationHandler,
     TelegramNotificationHandler,

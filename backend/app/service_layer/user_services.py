@@ -2,7 +2,7 @@ import logging
 import os
 import aio_pika
 import aio_pika.abc
-from app.routers.schemas import UserInResponse
+from ..routers.schemas import UserInResponse
 
 # RabbitMQ configuration
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")

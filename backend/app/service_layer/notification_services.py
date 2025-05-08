@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os
 import httpx
 from abc import ABC, abstractmethod
-from app.routers.schemas import (
+from ..routers.schemas import (
     Recipient,
 )  # Import the Recipient class from the .schemas module
 

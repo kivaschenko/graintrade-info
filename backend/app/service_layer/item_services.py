@@ -2,10 +2,10 @@ import logging
 import os
 import aio_pika
 import aio_pika.abc
-from app.routers.schemas import ItemInResponse
+from ..routers.schemas import ItemInResponse
 
 # RabbitMQ configuration
-RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
+RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://dev_user:dev_password@localhost/")
 RABBITMQ_QUEUE = "item_notifications"
 
 # -------------------------------------------------------
@@ -19,6 +19,7 @@ async def send_message_to_queue(item: ItemInResponse):
     """Send a message about a new Item to the RabbitMQ queue."""
     try:
         # Create a connection to RabbitMQ
+        logging.info(f"Connecting to RabbitMQ at {RABBITMQ_URL}")
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
         async with connection:
             # Create a channel
