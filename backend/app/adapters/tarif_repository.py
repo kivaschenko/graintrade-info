@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import asyncpg
 from typing import List
-from app.routers.schemas import TarifInDB, TarifInResponse
+from ..routers.schemas import TarifInDB, TarifInResponse
 
 
 class AbstractTarifRepository(ABC):

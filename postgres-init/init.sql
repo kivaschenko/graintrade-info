@@ -75,7 +75,6 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     hashed_password VARCHAR(100) NOT NULL,
     disabled BOOLEAN DEFAULT FALSE,
-    map_views INTEGER DEFAULT 0
 );
 -- Add unique constraint to email and username columns
 -- This constraint ensures that the email address and username are unique across all users
@@ -111,6 +110,11 @@ ALTER TABLE IF EXISTS public.tarifs
     ADD CONSTRAINT tarifs_name_unique_constraint UNIQUE (name);
 ALTER TABLE IF EXISTS public.tarifs
     ADD CONSTRAINT tarifs_scope_unique_constraint UNIQUE (scope);
+
+-- Add counter columns to subscriptions table
+ALTER TABLE IF EXISTS subscriptions
+    ADD COLUMN IF NOT EXISTS items_count INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS map_views INTEGER DEFAULT 0;
 
 -- Drop indexes if they exist
 DROP INDEX IF EXISTS tarifs_scope_idx;
@@ -163,6 +167,66 @@ CREATE OR REPLACE TRIGGER update_geom_trigger
 BEFORE INSERT OR UPDATE ON items
 FOR EACH ROW
 EXECUTE FUNCTION update_geometry_from_lat_lon();
+
+
+-- Function to increment item count
+CREATE OR REPLACE FUNCTION increment_items_count(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_current_count INTEGER;
+BEGIN
+    -- Update the counter and return new value
+    UPDATE subscriptions
+    SET items_count = items_count + 1
+    WHERE user_id = p_user_id
+    AND status = 'active'
+    AND end_date > NOW()
+    RETURNING items_count INTO v_current_count;
+    
+    RETURN COALESCE(v_current_count, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to increment map views
+CREATE OR REPLACE FUNCTION increment_map_views(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_current_views INTEGER;
+BEGIN
+    -- Update the counter and return new value
+    UPDATE subscriptions
+    SET map_views = map_views + 1
+    WHERE user_id = p_user_id
+    AND status = 'active'
+    AND end_date > NOW()
+    RETURNING map_views INTO v_current_views;
+    
+    RETURN COALESCE(v_current_views, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get current usage
+CREATE OR REPLACE FUNCTION get_subscription_usage(p_user_id INTEGER)
+RETURNS TABLE (
+    items_count INTEGER,
+    map_views INTEGER,
+    tarif_scope VARCHAR,
+    is_active BOOLEAN
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        s.items_count,
+        s.map_views,
+        t.scope as tarif_scope,
+        (s.status = 'active' AND s.end_date > NOW()) as is_active
+    FROM subscriptions s
+    JOIN tarifs t ON s.tarif_id = t.id
+    WHERE s.user_id = p_user_id
+    AND s.status = 'active'
+    AND s.end_date > NOW();
+END;
+$$ LANGUAGE plpgsql;
 
 -- Check if the categories table is empty
 DO $$

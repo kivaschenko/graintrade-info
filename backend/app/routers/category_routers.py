@@ -26,8 +26,8 @@ from .schemas import (
     UserInResponse,
     TokenData,
 )
-from app.infrastructure.database import get_db
-from app.adapters import (
+from ..infrastructure.database import get_db
+from ..adapters import (
     AsyncpgUserRepository,
     AsyncpgCategoryRepository,
 )
