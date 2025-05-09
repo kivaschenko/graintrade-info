@@ -45,6 +45,16 @@ const routes = [
         requiresAuth: true,
       },
     },
+    { path: '/tariffs',
+      name: 'Tariffs',
+      component: () => import('@/components/TariffPlans.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+
+    }
   ];
 
 const router = createRouter({

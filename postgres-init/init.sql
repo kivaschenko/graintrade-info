@@ -111,6 +111,24 @@ ALTER TABLE IF EXISTS public.tarifs
 ALTER TABLE IF EXISTS public.tarifs
     ADD CONSTRAINT tarifs_scope_unique_constraint UNIQUE (scope);
 
+-- Add limit columns to tarifs table
+ALTER TABLE IF EXISTS public.tarifs
+    ADD COLUMN IF NOT EXISTS items_limit INTEGER NOT NULL DEFAULT 5,
+    ADD COLUMN IF NOT EXISTS map_views_limit INTEGER NOT NULL DEFAULT 10;
+
+-- Update default tarifs with limits
+UPDATE tarifs 
+SET items_limit = CASE 
+        WHEN scope = 'basic' THEN 5
+        WHEN scope = 'premium' THEN 20
+        WHEN scope = 'pro' THEN -1  -- unlimited
+    END,
+    map_views_limit = CASE 
+        WHEN scope = 'basic' THEN 10
+        WHEN scope = 'premium' THEN 50
+        WHEN scope = 'pro' THEN -1  -- unlimited
+    END;
+
 -- Add counter columns to subscriptions table
 ALTER TABLE IF EXISTS subscriptions
     ADD COLUMN IF NOT EXISTS items_count INTEGER DEFAULT 0,

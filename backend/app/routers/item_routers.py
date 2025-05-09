@@ -176,7 +176,6 @@ async def create_item(
     item: ItemInDB,
     background_tasks: BackgroundTasks,
     repo: AsyncpgItemRepository = Depends(get_item_repository),
-    sub_repo: AsyncpgSubscriptionRepository = Depends(get_subscription_repository),
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     if token is None:
@@ -193,12 +192,9 @@ async def create_item(
     logging.info(f"New item created: {new_item}")
 
     # Notify RabbitMQ about the new item
-    try:
-        # Send the message to RabbitMQ on background
-        background_tasks.add_task(send_message_to_queue, new_item)
-        logging.info("New item notification sent to RabbitMQ")
-    except Exception as e:
-        logging.error(f"Error sending message to RabbitMQ: {e}")
+    # Send the message to RabbitMQ on background
+    background_tasks.add_task(send_message_to_queue, new_item)
+    logging.info("New item notification sent to RabbitMQ")
 
     return new_item
 

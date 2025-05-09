@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
-from typing import Optional
+
 from fastapi import HTTPException, status
 import logging
 
-from app.adapters import AsyncpgItemRepository, AsyncpgSubscriptionRepository
+from app.adapters import AsyncpgItemRepository
 from app.routers.schemas import SubscriptionInResponse
 
 TARIFF_LIMITS = {
@@ -19,9 +19,6 @@ async def check_user_limits(
     item_repo: AsyncpgItemRepository,
 ) -> None:
     """Check if user has reached their limits based on subscription."""
-    logging.info(
-        f"Checking limits for user {user_id} with subscription {subscription.id}"
-    )
     if subscription.tarif.scope == "pro":
         return  # Pro users have no limits
 
@@ -29,21 +26,14 @@ async def check_user_limits(
     user_items = await item_repo.get_items_by_user_id(user_id)
     current_item_count = len(user_items)
 
-    tariff_limits = TARIFF_LIMITS.get(subscription.tarif.scope, TARIFF_LIMITS["basic"])
-
     if (
-        tariff_limits["items_limit"] != -1
-        and current_item_count >= tariff_limits["items_limit"]
+        subscription.tarif.items_limit != -1
+        and current_item_count >= subscription.tarif.items_limit
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"You have reached your items limit ({tariff_limits['items_limit']}) for {subscription.tarif.name} plan",
+            detail=f"You have reached your items limit ({subscription.tarif.items_limit}) for {subscription.tarif.name} plan",
         )
-    logging.info(
-        f"User {user_id} has {current_item_count} items, limit is {tariff_limits['items_limit']}.\n"
-        "Creating new item is allowed."
-    )
-    return True
 
 
 async def check_map_view_limit(
@@ -51,15 +41,13 @@ async def check_map_view_limit(
     subscription: SubscriptionInResponse,
 ) -> bool:
     """Check if user can view map based on their subscription."""
-    tariff_limits = TARIFF_LIMITS.get(subscription.tarif.scope, TARIFF_LIMITS["basic"])
-
-    if tariff_limits["map_views"] == -1:  # unlimited views
+    if subscription.tarif.map_views_limit == -1:  # unlimited views
         return True
 
-    if subscription.map_views >= tariff_limits["map_views"]:
+    if subscription.map_views >= subscription.tarif.map_views_limit:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"You have reached your map views limit ({tariff_limits['map_views']}) for {subscription.tarif.name} plan",
+            detail=f"You have reached your map views limit ({subscription.tarif.map_views_limit}) for {subscription.tarif.name} plan",
         )
     return True
 
