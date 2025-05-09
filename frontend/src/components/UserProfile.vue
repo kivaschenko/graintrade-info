@@ -1,0 +1,173 @@
+<template>
+  <div class="container mt-4">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h3>{{ $t('profile.title') }}</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- User Info Section -->
+          <div class="col-md-6">
+            <h4>{{ $t('profile.userInfo') }}</h4>
+            <div class="mb-3">
+              <strong>{{ $t('profile.username') }}:</strong> {{ user.username }}
+            </div>
+						<div class="mb-3">
+							<strong>{{ $t('profile.fullName') }}:</strong> {{ user.full_name }}
+						</div>
+            <div class="mb-3">
+              <strong>{{ $t('profile.email') }}:</strong> {{ user.email }}
+            </div>
+						<div class="mb-3">
+							<strong>{{ $t('profile.phone') }}:</strong> {{ user.phone }}
+						</div>
+          </div>
+          
+          <!-- Subscription Info Section -->
+          <div class="col-md-6">
+            <h4>{{ $t('profile.subscription') }}</h4>
+            <div class="subscription-details">
+              <div class="mb-2">
+                <strong>{{ $t('profile.plan') }}:</strong> 
+                <span class="badge bg-primary">{{ subscription.tarif.name }}</span>
+              </div>
+              <div class="mb-2">
+                <strong>{{ $t('profile.status') }}:</strong>
+                <span :class="['badge', subscription.status === 'active' ? 'bg-success' : 'bg-warning']">
+                  {{ subscription.status }}
+                </span>
+              </div>
+              <div class="mb-2">
+                <strong>{{ $t('profile.price') }}:</strong> 
+                {{ subscription.tarif.price }} {{ subscription.tarif.currency }}
+              </div>
+              <div class="mb-2">
+                <strong>{{ $t('profile.startDate') }}:</strong>
+                {{ formatDate(subscription.start_date) }}
+              </div>
+              <div class="mb-2">
+                <strong>{{ $t('profile.endDate') }}:</strong>
+                {{ formatDate(subscription.end_date) }}
+              </div>
+              <div class="mb-2">
+                <strong>{{ $t('profile.features') }}:</strong>
+                <ul class="list-unstyled">
+                  <li><i class="bi bi-check-circle text-success"></i> {{ $t('profile.basicFeatures') }}</li>
+                  <li v-if="subscription.tarif.scope !== 'basic'">
+                    <i class="bi bi-check-circle text-success"></i> {{ $t('profile.advancedFeatures') }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+            
+            <!-- Upgrade Button -->
+            <button v-if="subscription.tarif.scope === 'basic'" 
+                    class="btn btn-warning mt-3"
+                    @click="upgradePlan">
+              {{ $t('profile.upgrade') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { mapState } from 'vuex';
+import api from '@/services/api';
+
+export default {
+  name: 'UserProfile',
+  data() {
+    return {
+      isLoading: false,
+      error: null,
+      user: {},
+      subscription: {
+        tarif: {
+          name: '',
+          description: '',
+          price: 0,
+          currency: 'EUR',
+          scope: '',
+          terms: ''
+        },
+        status: '',
+        start_date: '',
+        end_date: ''
+      }
+    }
+  },
+  computed: {
+    ...mapState(['isAuthenticated'])
+  },
+  methods: {
+    formatDate(date) {
+      return new Date(date).toLocaleDateString(this.$i18n.locale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    },
+    async fetchUserData() {
+      try {
+        const response = await api.get('/users/me');
+        this.user = response.data;
+        console.log('User data:', this.user);
+        // Fetch subscription data after user data
+        await this.fetchSubscription();
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        this.error = 'Failed to load user data';
+      }
+    },
+    async fetchSubscription() {
+      try {
+        // Make sure we have user data before fetching subscription
+        if (!this.user.id) {
+          throw new Error('User ID is not available');
+        }
+        const response = await api.get(`/subscriptions/user/${this.user.id}`);
+        this.subscription = response.data;
+        console.log('Subscription data:', this.subscription);
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+        this.error = 'Failed to load subscription data';
+      }
+    },
+    async upgradePlan() {
+      // Implement upgrade logic here
+      this.$router.get('/subscriptions/');
+    }
+  },
+  async created() {
+    if (this.isAuthenticated) {
+      await Promise.all([
+        this.fetchUserData(),
+        this.fetchSubscription()
+      ]);
+    } else {
+      this.$router.push('/login');
+    }
+  }
+}
+</script>
+
+<style scoped>
+.subscription-details {
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+}
+
+.badge {
+  font-size: 0.9em;
+  padding: 8px;
+  margin-left: 5px;
+}
+
+.bi {
+  margin-right: 5px;
+}
+</style>
