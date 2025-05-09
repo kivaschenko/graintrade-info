@@ -139,6 +139,11 @@ class TarifInDB(BaseModel):
     currency: str
     scope: str  # e.g. "basic", "premium", "enterprise"
     terms: str  # e.g. "monthly", "annual", "yearly"
+    items_limit: int = 5
+    map_views_limit: int = 10
+
+    class ConfigDict:
+        from_attributes = True
 
 
 class TarifInResponse(TarifInDB):
