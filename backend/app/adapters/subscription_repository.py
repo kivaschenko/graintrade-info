@@ -127,7 +127,7 @@ class AsyncpgSubscriptionRepository(AbstractSubscriptionRepository):
             WHERE id = $1
         """
         async with self.conn as connection:
-            row = await connection.fetch(query, user_id)
+            row = await connection.fetchrow(query, user_id)
             if row is None:
                 return None
             subscription = SubscriptionInResponse(**row)
@@ -135,17 +135,6 @@ class AsyncpgSubscriptionRepository(AbstractSubscriptionRepository):
             if tarif_row is not None:
                 subscription.tarif = TarifInResponse(**tarif_row)
             return subscription
-
-    async def get_by_tarif_id(self, tarif_id: int) -> List[SubscriptionInResponse]:
-        query = """
-            SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
-            FROM subscriptions
-            WHERE tarif_id = $1 AND status = 'active' AND end_date > NOW()
-            ORDER BY created_at DESC
-        """
-        async with self.conn as connection:
-            rows = await connection.fetch(query, tarif_id)
-            return [SubscriptionInResponse(**row) for row in rows]
 
     async def get_subscription_usage_for_user(
         self, user_id: int
