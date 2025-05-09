@@ -42,6 +42,10 @@
                 {{ subscription.tarif.price }} {{ subscription.tarif.currency }}
               </div>
               <div class="mb-2">
+                <strong>{{ $t('profile.description') }}:</strong>
+                {{ subscription.tarif.description }}
+              </div>
+              <div class="mb-2">
                 <strong>{{ $t('profile.startDate') }}:</strong>
                 {{ formatDate(subscription.start_date) }}
               </div>
