@@ -32,16 +32,16 @@ def get_tarif_repository(db: Connection = Depends(get_db)) -> AsyncpgTarifReposi
 
 
 # Tarifs routes
-@router.post(
-    "/tarifs",
-    response_model=TarifInResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_tarif(
-    tarif: TarifInDB, tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository)
-):
-    logging.info(f"Creating tarif with data: {tarif}")
-    return await tarif_repo.create(tarif)
+# @router.post(
+#     "/tarifs",
+#     response_model=TarifInResponse,
+#     status_code=status.HTTP_201_CREATED,
+# )
+# async def create_tarif(
+#     tarif: TarifInDB, tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository)
+# ):
+#     logging.info(f"Creating tarif with data: {tarif}")
+#     return await tarif_repo.create(tarif)
 
 
 @router.get("/tarifs", response_model=List[TarifInResponse])
@@ -65,22 +65,22 @@ async def get_tarif(
     return current_tarif
 
 
-@router.put("/tarifs/{tarif_id}", response_model=TarifInResponse)
-async def update_tarif(
-    tarif_id: int,
-    tarif: TarifInDB,
-    tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository),
-):
-    logging.info(f"Updating tarif with ID: {tarif_id} and data: {tarif}")
-    return await tarif_repo.update(tarif_id, tarif)
+# @router.put("/tarifs/{tarif_id}", response_model=TarifInResponse)
+# async def update_tarif(
+#     tarif_id: int,
+#     tarif: TarifInDB,
+#     tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository),
+# ):
+#     logging.info(f"Updating tarif with ID: {tarif_id} and data: {tarif}")
+#     return await tarif_repo.update(tarif_id, tarif)
 
 
-@router.delete("/tarifs/{tarif_id}")
-async def delete_tarif(
-    tarif_id: int, tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository)
-):
-    logging.info(f"Deleting tarif with ID: {tarif_id}")
-    await tarif_repo.delete(tarif_id)
+# @router.delete("/tarifs/{tarif_id}")
+# async def delete_tarif(
+#     tarif_id: int, tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository)
+# ):
+#     logging.info(f"Deleting tarif with ID: {tarif_id}")
+#     await tarif_repo.delete(tarif_id)
 
 
 # Subscriptions routes
@@ -131,21 +131,21 @@ async def get_subscription(
     return subscription
 
 
-@router.put(
-    "/subscriptions/{subscription_id}",
-    response_model=SubscriptionInResponse,
-)
-async def update_subscription(
-    subscription_id: int,
-    subscription: SubscriptionInDB,
-    subscription_repo: AsyncpgSubscriptionRepository = Depends(
-        get_subscription_repository
-    ),
-):
-    logging.info(
-        f"Updating subscription with ID: {subscription_id} and data: {subscription}"
-    )
-    return await subscription_repo.update(subscription_id, subscription)
+# @router.put(
+#     "/subscriptions/{subscription_id}",
+#     response_model=SubscriptionInResponse,
+# )
+# async def update_subscription(
+#     subscription_id: int,
+#     subscription: SubscriptionInDB,
+#     subscription_repo: AsyncpgSubscriptionRepository = Depends(
+#         get_subscription_repository
+#     ),
+# ):
+#     logging.info(
+#         f"Updating subscription with ID: {subscription_id} and data: {subscription}"
+#     )
+#     return await subscription_repo.update(subscription_id, subscription)
 
 
 @router.delete("/subscriptions/{subscription_id}")
@@ -159,7 +159,18 @@ async def delete_subscription(
     await subscription_repo.delete(subscription_id)
 
 
-@router.get("/subscriptions/user/{user_id}")
+@router.get("/subscriptions/usage/{user_id}")
+async def get_subscription_usage(
+    user_id: int,
+    subscription_repo: AsyncpgSubscriptionRepository = Depends(
+        get_subscription_repository
+    ),
+):
+    """Get usage of current subscription for a user."""
+    return await subscription_repo.get_subscription_usage_for_user(user_id)
+
+
+@router.get("/subscriptions/user/{user_id}", response_model=SubscriptionInResponse)
 async def get_subscriptions_by_user(
     user_id: int,
     subscription_repo: AsyncpgSubscriptionRepository = Depends(
@@ -167,17 +178,5 @@ async def get_subscriptions_by_user(
     ),
 ):
     logging.info(f"Fetching subscriptions for user ID: {user_id}")
-    subscriptions = await subscription_repo.get_by_user_id(user_id)
-    return subscriptions
-
-
-@router.get("/subscriptions/tarif/{tarif_id}")
-async def get_subscriptions_by_tarif(
-    tarif_id: int,
-    subscription_repo: AsyncpgSubscriptionRepository = Depends(
-        get_subscription_repository
-    ),
-):
-    logging.info(f"Fetching subscriptions for tarif ID: {tarif_id}")
-    subscriptions = await subscription_repo.get_by_tarif_id(tarif_id)
-    return subscriptions
+    subscription = await subscription_repo.get_by_user_id(user_id)
+    return subscription

@@ -143,7 +143,6 @@ class TarifInDB(BaseModel):
 
 class TarifInResponse(TarifInDB):
     id: int
-    created_at: datetime = Field(alias="created_at")
 
     @property
     def formatted_created_at(self) -> str:
