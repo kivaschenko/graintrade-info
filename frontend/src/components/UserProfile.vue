@@ -63,6 +63,58 @@
                 </ul>
               </div>
             </div>
+            <!-- Usage Info Section -->
+            <div class="usage-details mt-4">
+              <h5>{{ $t('profile.usageTitle') }}</h5>
+              <div class="card">
+                <div class="card-body">
+                  <div class="mb-2">
+                    <strong>{{ $t('profile.itemsUsage') }}:</strong>
+                    <div class="progress">
+                      <div 
+                        class="progress-bar" 
+                        role="progressbar"
+                        :style="{ width: (usage.items_count / subscription.tarif.items_limit * 100) + '%' }"
+                        :class="{
+                          'bg-success': usage.items_count < subscription.tarif.items_limit * 0.7,
+                          'bg-warning': usage.items_count >= subscription.tarif.items_limit * 0.7 && usage.items_count < subscription.tarif.items_limit,
+                          'bg-danger': usage.items_count >= subscription.tarif.items_limit
+                        }"
+                      >
+                        {{ usage.items_count }} / {{ subscription.tarif.items_limit }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-2">
+                    <strong>{{ $t('profile.mapViewsUsage') }}:</strong>
+                    <div class="progress">
+                      <div 
+                        class="progress-bar" 
+                        role="progressbar"
+                        :style="{ width: (usage.map_views / subscription.tarif.map_views_limit * 100) + '%' }"
+                        :class="{
+                          'bg-success': usage.map_views < subscription.tarif.map_views_limit * 0.7,
+                          'bg-warning': usage.map_views >= subscription.tarif.map_views_limit * 0.7 && usage.map_views < subscription.tarif.map_views_limit,
+                          'bg-danger': usage.map_views >= subscription.tarif.map_views_limit
+                        }"
+                      >
+                        {{ usage.map_views }} / {{ subscription.tarif.map_views_limit }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="usage-warnings mt-3">
+                    <div v-if="usage.items_count >= subscription.tarif.items_limit" class="alert alert-danger">
+                      {{ $t('profile.itemLimitReached') }}
+                    </div>
+                    <div v-if="usage.map_views >= subscription.tarif.map_views_limit" class="alert alert-danger">
+                      {{ $t('profile.mapViewsLimitReached') }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             
             <!-- Upgrade Button -->
             <button v-if="subscription.tarif.scope === 'basic'" 
@@ -100,6 +152,12 @@ export default {
         status: '',
         start_date: '',
         end_date: ''
+      },
+      usage: {
+        items_count: 0,
+        map_views: 0,
+        tarif_scope: '',
+        is_active: false
       }
     }
   },
@@ -121,6 +179,7 @@ export default {
         console.log('User data:', this.user);
         // Fetch subscription data after user data
         await this.fetchSubscription();
+        await this.fetchUsageData();
       } catch (error) {
         console.error('Error fetching user data:', error);
         this.error = 'Failed to load user data';
@@ -140,6 +199,19 @@ export default {
         this.error = 'Failed to load subscription data';
       }
     },
+    async fetchUsageData() {
+      try {
+        if (!this.user.id) {
+          throw new Error('User ID is not available');
+        }
+        const response = await api.get(`/subscriptions/usage/${this.user.id}`);
+        this.usage = response.data;
+        console.log('Usage data:', this.usage);
+      } catch (error) {
+        console.error('Error fetching usage data:', error);
+        this.error = 'Failed to load usage data';
+      }
+    },
     async upgradePlan() {
       // Implement upgrade logic here
       this.$router.get('/subscriptions/');
@@ -147,10 +219,17 @@ export default {
   },
   async created() {
     if (this.isAuthenticated) {
-      await Promise.all([
-        this.fetchUserData(),
-        this.fetchSubscription()
-      ]);
+      this.isLoading = true;
+      try {
+        await this.fetchUserData();
+        await this.fetchSubscription(),
+        await this.fetchUsageData()
+      } catch (error) {
+        console.error('Error during created lifecycle:', error);
+        this.error = 'Failed to load data';
+      } finally {
+        this.isLoading = false;
+      }
     } else {
       this.$router.push('/login');
     }
@@ -173,5 +252,19 @@ export default {
 
 .bi {
   margin-right: 5px;
+}
+
+.usage-details {
+  margin-top: 20px;
+}
+
+.progress {
+  height: 25px;
+  margin-top: 8px;
+}
+
+.progress-bar {
+  line-height: 25px;
+  font-weight: bold;
 }
 </style>

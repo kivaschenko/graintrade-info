@@ -13,6 +13,7 @@ const messages = {
       myOffers: 'My Offers',
       myProfile: 'My Profile',
       settings: 'Settings',
+      tariffs: 'Tariff Plans',
     },
     common_text: {
       offers: 'Offers latest',
@@ -131,7 +132,27 @@ const messages = {
       basicFeatures: 'Basic Features',
       advancedFeatures: 'Advanced Features',
       upgrade: 'Upgrade Plan',
+      usageTitle: 'Current Usage',
+      itemsUsage: 'Items Created',
+      mapViewsUsage: 'Map Views',
+      itemLimitReached: 'You have reached your items limit',
+      mapViewsLimitReached: 'You have reached your map views limit'
     },
+    tariff: {
+      basic: "Basic",
+      premium: "Premium",
+      pro: "Pro",
+    },
+    tariffs: {
+      itemsLimit: "Items limit: {limit}",
+      mapViewsLimit: "Map views: {limit}",
+      unlimited: "Unlimited",
+      currentPlan: "Current Plan",
+      subscribe: "Subscribe",
+      subscribeSuccess: "Successfully subscribed!",
+      subscribeError: "Error subscribing to plan",
+      errorFetching: "Error loading tariff plans",
+    }
   },
   ua: {
     navbar: {
@@ -145,6 +166,7 @@ const messages = {
       myOffers: 'Мої пропозиції',
       myProfile: 'Мій профіль',
       settings: 'Налаштування',
+      tariffs: 'Тарифні плани',
     },
     common_text: {
       offers: 'Пропозиції останні',
@@ -263,6 +285,26 @@ const messages = {
       basicFeatures: 'Основні функції',
       advancedFeatures: 'Розширені функції',
       upgrade: 'Оновити план',
+      usageTitle: 'Поточне використання',
+      itemsUsage: 'Створено товарів',
+      mapViewsUsage: 'Перегляди карти',
+      itemLimitReached: 'Ви досягли ліміту товарів',
+      mapViewsLimitReached: 'Ви досягли ліміту переглядів карти'
+    },
+    tariff: {
+      basic: "Базовий",
+      premium: "Преміум",
+      pro: "Професійний",
+    },
+    tariffs: {
+      itemsLimit: "Ліміт товарів: {limit}",
+      mapViewsLimit: "Ліміт переглядів карти: {limit}",
+      unlimited: "Без обмежень",
+      currentPlan: "Поточний план",
+      subscribe: "Підписатися",
+      subscribeSuccess: "Успішно підписано!",
+      subscribeError: "Помилка підписки на план",
+      errorFetching: "Помилка завантаження тарифних планів",
     }
   },
 };

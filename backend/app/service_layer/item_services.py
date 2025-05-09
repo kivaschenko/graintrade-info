@@ -7,6 +7,8 @@ from ..routers.schemas import ItemInResponse
 # RabbitMQ configuration
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://dev_user:dev_password@localhost/")
 RABBITMQ_QUEUE = "item_notifications"
+# For development, use the default RabbitMQ URL
+# RABBITMQ_URL = "amqp://dev_user:dev_password@localhost/"
 
 # -------------------------------------------------------
 # BASE Implementation
@@ -32,4 +34,8 @@ async def send_message_to_queue(item: ItemInResponse):
     except Exception as e:
         logging.error(f"Failed to send item to RabbitMQ: {e}")
     finally:
-        await connection.close()  # Ensure the connection is closed
+        await connection.close()
+        # Ensure the connection is closed
+
+
+# -------------------------------------------------------

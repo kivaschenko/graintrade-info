@@ -32,9 +32,13 @@ class AsyncpgTarifRepository(AbstractTarifRepository):
 
     async def create(self, tarif: TarifInDB) -> TarifInResponse:
         query = """
-            INSERT INTO tarifs (name, description, price, currency, scope, terms)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, name, description, price, currency, scope, terms, created_at
+            INSERT INTO tarifs (
+                name, description, price, currency, 
+                scope, terms, items_limit, map_views_limit
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, name, description, price, currency, 
+                    scope, terms, items_limit, map_views_limit
         """
         async with self.conn as connection:
             row = await connection.fetchrow(
@@ -45,13 +49,16 @@ class AsyncpgTarifRepository(AbstractTarifRepository):
                 tarif.currency,
                 tarif.scope,
                 tarif.terms,
+                tarif.items_limit,
+                tarif.map_views_limit,
             )
             tarif = TarifInResponse(**row)
             return tarif
 
     async def get_all(self) -> List[TarifInResponse]:
         query = """
-            SELECT id, name, description, price, currency, scope, terms, created_at
+            SELECT id, name, description, price, currency, 
+                    scope, terms, items_limit, map_views_limit
             FROM tarifs
         """
         async with self.conn as connection:
@@ -73,9 +80,11 @@ class AsyncpgTarifRepository(AbstractTarifRepository):
     async def update(self, tarif_id: int, tarif: TarifInDB) -> TarifInResponse:
         query = """
             UPDATE tarifs
-            SET name = $1, description = $2, price = $3, currency = $4, scope = $5, terms = $6
-            WHERE id = $7
-            RETURNING id, name, description, price, currency, scope, terms, created_at
+            SET name = $1, description = $2, price = $3, currency = $4, 
+                scope = $5, terms = $6, items_limit = $7, map_views_limit = $8
+            WHERE id = $9
+            RETURNING id, name, description, price, currency, 
+                scope, terms, items_limit, map_views_limit
         """
         async with self.conn as connection:
             row = await connection.fetchrow(
@@ -86,6 +95,8 @@ class AsyncpgTarifRepository(AbstractTarifRepository):
                 tarif.currency,
                 tarif.scope,
                 tarif.terms,
+                tarif.items_limit,
+                tarif.map_views_limit,
                 tarif_id,
             )
             return TarifInResponse(**row)

@@ -8,7 +8,6 @@ from asyncpg import Connection
 from .schemas import (
     SubscriptionInDB,
     SubscriptionInResponse,
-    TarifInDB,
     TarifInResponse,
 )
 from ..infrastructure.database import get_db
@@ -44,15 +43,15 @@ def get_tarif_repository(db: Connection = Depends(get_db)) -> AsyncpgTarifReposi
 #     return await tarif_repo.create(tarif)
 
 
-@router.get("/tarifs", response_model=List[TarifInResponse])
+@router.get("/tariffs", response_model=List[TarifInResponse])
 async def get_all_tarifs(
     tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository),
 ):
-    logging.info("Fetching all tarifs")
+    logging.info("Fetching all tariffs")
     return await tarif_repo.get_all()
 
 
-@router.get("/tarifs/{tarif_id}", response_model=TarifInResponse)
+@router.get("/tariffs/{tarif_id}", response_model=TarifInResponse)
 async def get_tarif(
     tarif_id: int, tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository)
 ):
