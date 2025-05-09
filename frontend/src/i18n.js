@@ -92,6 +92,7 @@ const messages = {
     currency: {
       USD: 'USD',
       UAH: 'UAH',
+      EUR: 'EUR',
     },
     measure: {
       metric_ton: 'Metric Ton',
@@ -203,6 +204,7 @@ const messages = {
     currency: {
       USD: 'долл.',
       UAH: 'грн.',
+      EUR: 'євро',
     },
     measure: {
       metric_ton: 'Метрична тонна',
