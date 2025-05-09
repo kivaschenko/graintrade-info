@@ -111,7 +111,25 @@ const messages = {
       "submitting": "Registering...",
       "success": "Registration successful!",
       "error": "Registration failed"
-    }
+    },
+    profile: {
+      title: 'User Profile',
+      userInfo: 'User Information',
+      username: 'Username',
+      fullName: 'Full Name',
+      phone: 'Phone',
+      email: 'Email',
+      subscription: 'Subscription Details',
+      plan: 'Current Plan',
+      status: 'Status',
+      price: 'Price',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      features: 'Features',
+      basicFeatures: 'Basic Features',
+      advancedFeatures: 'Advanced Features',
+      upgrade: 'Upgrade Plan',
+    },
   },
   ua: {
     navbar: {
@@ -223,6 +241,24 @@ const messages = {
       "submitting": "Реєстрація...",
       "success": "Реєстрація успішна!",
       "error": "Помилка реєстрації"
+    },
+    profile: {
+      title: 'Профіль користувача',
+      userInfo: 'Інформація про користувача',
+      username: 'Ім\'я користувача',
+      fullName: 'Повне ім\'я',
+      phone: 'Телефон',
+      email: 'Електронна пошта',
+      subscription: 'Деталі підписки',
+      plan: 'Поточний план',
+      status: 'Статус',
+      price: 'Ціна',
+      startDate: 'Дата початку',
+      endDate: 'Дата закінчення',
+      features: 'Особливості',
+      basicFeatures: 'Основні функції',
+      advancedFeatures: 'Розширені функції',
+      upgrade: 'Оновити план',
     }
   },
 };

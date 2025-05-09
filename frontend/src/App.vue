@@ -21,6 +21,9 @@
               <router-link class="btn btn-warning" to="/register">{{ $t('navbar.register') }}</router-link>
             </li>
             <li class="nav-item" v-if="isAuthenticated">
+              <a class="btn btn-primary" href="#" @click="$router.push('/profile')">{{ $t('navbar.profile') }}</a>
+            </li>
+            <li class="nav-item" v-if="isAuthenticated">
               <a class="btn btn-dark" href="#" @click="logout">{{ $t('navbar.logout') }}</a>
             </li>
             <li class="nav-item">

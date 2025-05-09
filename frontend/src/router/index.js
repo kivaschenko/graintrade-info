@@ -5,6 +5,7 @@ import HomePage from '@/components/HomePage.vue';
 import ItemListByCategory from '@/components/ItemListByCategory.vue';
 import ItemDetails from '@/components/ItemDetails.vue';
 import RegistrationForm from '@/components/RegistrationForm.vue';
+import UserProfile from '@/components/UserProfile.vue';
 
 
 const routes = [
@@ -36,6 +37,13 @@ const routes = [
     { path: '/items/:id',
       name: 'ItemDetails',
       component: ItemDetails,
+    },
+    { path: '/profile',
+      name: 'UserProfile',
+      component: UserProfile,
+      meta: {
+        requiresAuth: true,
+      },
     },
   ];
 
