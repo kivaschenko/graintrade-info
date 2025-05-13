@@ -8,7 +8,7 @@ logger.setLevel(logging.INFO)
 
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-# DATABASE_URL = "postgresql://admin:dev_password@localhost:5432/postgres"
+DATABASE_URL = "postgresql://admin:dev_password@localhost:5432/postgres"
 logger.info(f"Using DATABASE_URL: {DATABASE_URL}")
 
 
