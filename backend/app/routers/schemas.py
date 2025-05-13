@@ -192,3 +192,8 @@ class PaymentInResponse(PaymentInDB):
     @property
     def formatted_created_at(self) -> str:
         return self.created_at.isoformat()
+
+
+class PaymentResponse(BaseModel):
+    checkout_url: str
+    order_id: str
