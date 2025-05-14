@@ -287,5 +287,5 @@ async def read_items_by_category(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
             )
         return category_with_items
-    except:
+    finally:
         raise HTTPException(status.HTTP_404_NOT_FOUND)
