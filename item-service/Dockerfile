@@ -13,7 +13,7 @@
 
 # Stage 1: Build stage
 FROM python:3.12-slim AS builder
-WORKDIR /app
+WORKDIR /item-service
 
 # Install curl and Poetry
 RUN apt-get update && apt-get install -y curl && \
@@ -31,11 +31,11 @@ COPY . .
 
 # Stage 2: Final stage
 FROM python:3.12-slim
-WORKDIR /app
+WORKDIR /item-service
 
 # Copy the installed dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /app /app
+COPY --from=builder /item-service /item-service
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
