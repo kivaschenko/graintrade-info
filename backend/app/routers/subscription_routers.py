@@ -1,6 +1,6 @@
-# main.py
-from typing import List, Annotated
+from typing import List
 import logging
+import uuid
 
 from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from asyncpg import Connection
@@ -13,6 +13,9 @@ from .schemas import (
 from ..infrastructure.database import get_db
 from ..adapters.subscription_repository import AsyncpgSubscriptionRepository
 from ..adapters.tarif_repository import AsyncpgTarifRepository
+from ..adapters.user_repository import AsyncpgUserRepository
+from ..service_layer.payment_service import FondyPaymentService
+from .schemas import PaymentResponse
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -28,6 +31,10 @@ def get_subscription_repository(
 
 def get_tarif_repository(db: Connection = Depends(get_db)) -> AsyncpgTarifRepository:
     return AsyncpgTarifRepository(conn=db)
+
+
+def get_user_repository(db: Connection = Depends(get_db)):
+    return AsyncpgUserRepository(conn=db)
 
 
 # Tarifs routes
@@ -179,3 +186,71 @@ async def get_subscriptions_by_user(
     logging.info(f"Fetching subscriptions for user ID: {user_id}")
     subscription = await subscription_repo.get_by_user_id(user_id)
     return subscription
+
+
+# ---------------
+# Payment routes
+
+
+@router.post("/subscriptions/{tarif_id}/payment", response_model=PaymentResponse)
+async def create_subscription_payment(
+    tarif_id: int,
+    user_id: int,
+    tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository),
+    user_repo: AsyncpgUserRepository = Depends(get_user_repository),
+):
+    """Create recurring payment for subscription"""
+    tarif = await tarif_repo.get_by_id(tarif_id)
+    if not tarif:
+        raise HTTPException(status_code=404, detail="Tarif not found")
+
+    user = await user_repo.get_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    payment_service = FondyPaymentService()
+    order_id = str(uuid.uuid4())
+
+    payment_data = await payment_service.create_subscription_payment(
+        amount=tarif.price,
+        currency=tarif.currency,
+        order_id=order_id,
+        subscription_id=f"sub_{user_id}_{tarif_id}",
+        email=user.email,
+    )
+
+    return PaymentResponse(
+        checkout_url=payment_data["response"]["checkout_url"], order_id=order_id
+    )
+
+
+@router.post("/subscriptions/payment/callback")
+async def payment_callback(
+    payment_data: dict,
+    subscription_repo: AsyncpgSubscriptionRepository = Depends(
+        get_subscription_repository
+    ),
+):
+    """Handle payment callback from Fondy"""
+    payment_service = FondyPaymentService()
+
+    if not payment_service.verify_payment(payment_data):
+        raise HTTPException(status_code=400, detail="Invalid payment signature")
+
+    if payment_data["status"] == "success":
+        # Activate or extend subscription
+        subscription_id = payment_data["subscription_id"]
+        user_id, tarif_id = subscription_id.replace("sub_", "").split("_")
+
+        print(f"User ID: {user_id}, Tarif ID: {tarif_id}")
+        # Here you can add logic to activate or extend the subscription
+        # For example, you can call a method to update the subscription status
+        # in the database
+        # subscription = await subscription_repo.get_by_id(subscription_id)
+        # if subscription:
+        #     await subscription_repo.extend(subscription_id)
+        # await subscription_repo.create_or_extend(
+        #     user_id=int(user_id), tarif_id=int(tarif_id)
+        # )
+
+    return {"status": "success"}

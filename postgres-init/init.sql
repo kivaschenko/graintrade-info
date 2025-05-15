@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(100),
     phone VARCHAR(20),
     hashed_password VARCHAR(100) NOT NULL,
-    disabled BOOLEAN DEFAULT FALSE,
+    disabled BOOLEAN DEFAULT FALSE
 );
 -- Add unique constraint to email and username columns
 -- This constraint ensures that the email address and username are unique across all users
@@ -129,11 +129,6 @@ SET items_limit = CASE
         WHEN scope = 'pro' THEN -1  -- unlimited
     END;
 
--- Add counter columns to subscriptions table
-ALTER TABLE IF EXISTS subscriptions
-    ADD COLUMN IF NOT EXISTS items_count INTEGER DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS map_views INTEGER DEFAULT 0;
-
 -- Drop indexes if they exist
 DROP INDEX IF EXISTS tarifs_scope_idx;
 DROP INDEX IF EXISTS tarifs_terms_idx;
@@ -154,6 +149,11 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (tarif_id) REFERENCES tarifs (id)
 );
+
+-- Add counter columns to subscriptions table
+ALTER TABLE IF EXISTS subscriptions
+    ADD COLUMN IF NOT EXISTS items_count INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS map_views INTEGER DEFAULT 0;
 
 -- Create table for user's payments
 CREATE TABLE IF NOT EXISTS payments (
