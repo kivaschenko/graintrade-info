@@ -12,7 +12,7 @@ from fastapi.security import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 
-from .infrastructure.database import Database
+from app.database import database
 from .routers import user_routers
 from .routers import item_routers
 from .routers import notification_routers
@@ -34,28 +34,28 @@ if app_env == "development":
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await Database.init()
-    # first run the database setup
-    # await Database.create_tables()
-    # await Database.insert_category()
+    await database.connect()
     try:
         yield
     finally:
-        await Database._pool.close()
+        await database.disconnect()
 
 
 app = FastAPI(lifespan=lifespan, title="GraintradeInfo, version=0.1")
+
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
     scopes={
         "me": "Read information about the current user.",
-        "basic_tarif": "Read and write items, limited access to features.",
-        "premium_tarif": "Read and write items, full access to features.",
-        "enterprise_tarif": "Read and write items, full access to features.",
-        "admin": "Full access to all features.",
+        "create:item": "Allowed to create a new Item",
+        "read:item": "Allowed to read items.",
+        "delete:item": "Allowed to delete item.",
+        "add:category": "Allowed to add a new Category",
+        "view:map": "Allowed to view map.",
     },
 )
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logging.info(f"Starting App {app}...")
 

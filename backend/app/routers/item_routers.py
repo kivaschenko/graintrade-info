@@ -1,56 +1,36 @@
 from typing import Annotated, List
 import logging
-import os
 
 from fastapi import (
     Depends,
     HTTPException,
-    Security,
     status,
     BackgroundTasks,
-    Query,
     APIRouter,
 )
 from fastapi.security import (
     OAuth2PasswordBearer,
-    SecurityScopes,
 )
 
-from asyncpg import Connection
-import bcrypt
 import jwt
 
 from .schemas import (
     ItemInDB,
     ItemInResponse,
-    UserInResponse,
-    TokenData,
 )
-from ..infrastructure.database import get_db
-from ..adapters import (
-    AsyncpgUserRepository,
-    AsyncpgItemRepository,
-    AsyncpgItemUserRepository,
-    AsyncpgSubscriptionRepository,
-)
-from ..service_layer.item_services import (
-    send_message_to_queue,
-)
-
-JWT_SECRET = os.getenv("JWT_SECRET")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN", 3600)
-MAP_VIEW_LIMIT = 100
+from app import items_model
+from . import JWT_SECRET
 
 router = APIRouter(tags=["Items"])
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
     scopes={
         "me": "Read information about the current user.",
-        "basic": "Read and write items, limited access to features.",
-        "premium": "Read and write items, full access to features.",
-        "pro": "Read and write items, full access to features.",
-        "admin": "Full access to all features.",
+        "create:item": "Allowed to create a new Item",
+        "read:item": "Allowed to read items.",
+        "delete:item": "Allowed to delete item.",
+        "add:category": "Allowed to add a new Category",
+        "view:map": "Allowed to view map.",
     },
 )
 
@@ -62,86 +42,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 # Dependency
 
 
-def get_user_repository(db: Connection = Depends(get_db)) -> AsyncpgUserRepository:
-    return AsyncpgUserRepository(conn=db)
-
-
-def verify_password(plain_password, hashed_password):
-    return bcrypt.checkpw(
-        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
-    )
-
-
-def get_password_hash(password):
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-
-def get_user(repo, username: str):
-    try:
-        return repo.get_by_username(username)
-    except Exception as e:
-        logging.error(f"Error getting user: {e}")
-        return None
-
-
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    repo: AsyncpgUserRepository = Depends(get_user_repository),
-    security_scopes: SecurityScopes = SecurityScopes(scopes=[]),
-):
-    """Get the current user from the token."""
-    if security_scopes.scopes:
-        authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
-    else:
-        authenticate_value = "Bearer"
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": authenticate_value},
-    )
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            logging.error("Username not found in token")
-            raise credentials_exception
-        token_scopes = payload.get("scopes", [])
-        token_data = TokenData(scopes=token_scopes, username=username)
-    except jwt.PyJWTError as e:
-        logging.error(f"Error decoding token: {e}")
-        raise credentials_exception
-    user = await get_user(repo, username=token_data.username)
-    if user is None:
-        logging.error("User not found")
-        raise credentials_exception
-    for scope in security_scopes.scopes:
-        if scope not in token_data.scopes:
-            logging.error("Not enough permissions")
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not enough permissions",
-            )
-    return user
-
-
-async def get_current_active_user(
-    current_user: Annotated[UserInResponse, Security(get_current_user, scopes=["me"])],
-):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
-
-
-def get_item_repository(db: Connection = Depends(get_db)) -> AsyncpgItemRepository:
-    return AsyncpgItemRepository(conn=db)
-
-
-def get_item_user_repository(
-    db: Connection = Depends(get_db),
-) -> AsyncpgItemUserRepository:
-    return AsyncpgItemUserRepository(conn=db)
-
-
 async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = None):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -149,7 +49,7 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user_id: str = payload.get("user_id")
         scopes: str = payload.get("scopes")
         if user_id is None:
@@ -161,40 +61,33 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
     return user_id, scopes
 
 
-def get_subscription_repository(
-    db: Connection = Depends(get_db),
-) -> AsyncpgSubscriptionRepository:
-    return AsyncpgSubscriptionRepository(conn=db)
-
-
-# ------------------------
-# standard CRUD operations
+# ------------------
+# Items endpoints
 
 
 @router.post("/items", response_model=ItemInResponse, status_code=201, tags=["Items"])
 async def create_item(
     item: ItemInDB,
-    background_tasks: BackgroundTasks,
-    repo: AsyncpgItemRepository = Depends(get_item_repository),
+    # background_tasks: BackgroundTasks,
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     if token is None:
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
-
     user_id, scopes = await get_current_user_id(token)
     logging.info(f"User ID: {user_id}, Scopes: {scopes}")
-
-    new_item = await repo.create(item, user_id)
+    # check scope and permissions here
+    if "create:item" not in scopes:
+        logging.error("Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    new_item = await items_model.create(item=item, user_id=user_id)
     if new_item is None:
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
     logging.info(f"New item created: {new_item}")
-
-    # Notify RabbitMQ about the new item
-    # Send the message to RabbitMQ on background
-    background_tasks.add_task(send_message_to_queue, new_item)
-    logging.info("New item notification sent to RabbitMQ")
+    # background_tasks.add_task(
+    #     app.state.kafka_handler.send_message, "new-item", new_item
+    # )
 
     return new_item
 
@@ -203,20 +96,20 @@ async def create_item(
     "/items", response_model=List[ItemInResponse], status_code=200, tags=["Items"]
 )
 async def read_items(
-    repo: AsyncpgItemRepository = Depends(get_item_repository),
     offset: int = 0,
     limit: int = 10,
 ):
-    return await repo.get_all(offset=offset, limit=limit)
+    return await items_model.get_all(offset=offset, limit=limit)
 
 
 @router.get(
     "/items/{item_id}", response_model=ItemInResponse, status_code=200, tags=["Items"]
 )
-async def read_item(
-    item_id: int, repo: AsyncpgItemRepository = Depends(get_item_repository)
-):
-    db_item = await repo.get_by_id(item_id)
+async def read_item(item_id: int, token: Annotated[str, Depends(oauth2_scheme)] = None):
+    _, scopes = get_current_user_id(token)
+    if "read:item" not in scopes:
+        raise HTTPException(status.HTTP_403_FORBIDDEN)
+    db_item = await items_model.get_by_id(item_id)
     if db_item is None:
         logging.error(f"Item with id {item_id} not found")
         raise HTTPException(
@@ -225,54 +118,24 @@ async def read_item(
     return db_item
 
 
-@router.put("/items/{item_id}", response_model=ItemInResponse, tags=["Items"])
-async def update_item(
+@router.delete(
+    "/items/{item_id}",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    tags=["Items"],
+)
+async def delete_item_bound_to_user(
     item_id: int,
-    item: ItemInDB,
-    background_tasks: BackgroundTasks,
-    repo: AsyncpgItemRepository = Depends(get_item_repository),
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
-    if token is None:
-        logging.error("No token provided")
-        raise HTTPException(status_code=401, detail="Invalid token")
-    user_id, scopes = await get_current_user_id(token)
-    print(f"User ID: {user_id}, Scopes: {scopes}")
-    if "update:item" not in scopes:
-        logging.error("Not enough permissions")
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    updated_item = await repo.update(item_id, user_id, item)
-    if updated_item is None:
-        logging.error("Item not updated")
-        raise HTTPException(status_code=400, detail="Item not updated")
-    return updated_item
-
-
-@router.delete("/items/{item_id}", status_code=200, tags=["Items"])
-async def delete_item(
-    item_id: int,
-    repo: AsyncpgItemRepository = Depends(get_item_repository),
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
-):
-    if token is None:
-        logging.error("No token provided")
-        raise HTTPException(status_code=401, detail="Invalid token")
-    user_id, scopes = await get_current_user_id(token)
-    print(f"User ID: {user_id}, Scopes: {scopes}")
-    # check scope and permissions here
-    if "delete:item" not in scopes:
-        logging.error("Not enough permissions")
-        raise HTTPException(status_code=403, detail="Not enough permissions")
     try:
-        await repo.delete(item_id, user_id)
-    except ValueError as e:
-        logging.error(e)
-        raise HTTPException(status_code=400, detail=str(e))
-    return {"status": "success", "message": "Item deleted successfully"}
-
-
-# ---------------------
-# additional operations
+        user_id, scopes = get_current_user_id(token)
+        if "delete:item" not in scopes:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        await items_model.delete(user_id, item_id)
+        return {"status": "success", "message": "Item deleted successfully"}
+    except Exception as e:
+        return {"status": "error", "message": f"Something went wrong: {e}"}
 
 
 @router.get(
@@ -280,66 +143,50 @@ async def delete_item(
 )
 async def read_items_by_user(
     user_id: int,
-    repo: AsyncpgItemRepository = Depends(get_item_repository),
+    token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
-    return await repo.get_items_by_user_id(user_id)
+    _, scopes = get_current_user_id(token)
+    if "read:item" not in scopes:
+        raise HTTPException(status.HTTP_403_FORBIDDEN)
+    return await items_model.get_items_by_user_id(user_id)
 
 
 @router.get(
-    "/find-items-in-distance", response_model=List[ItemInResponse], tags=["Items"]
+    "/find-items-in-distance",
+    response_model=List[ItemInResponse],
+    tags=["filter items"],
 )
-async def find_items_in_distance(
-    latitude: float = Query(..., description="Latitude of the point"),
-    longitude: float = Query(..., description="Longitude of the point"),
-    distance: int = Query(..., description="Distance in meters"),
-    repo: AsyncpgItemRepository = Depends(get_item_repository),
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
+async def find_items_in_radius(
+    latitude: float,
+    longitude: float,
+    distance: int,  # in meters
 ):
-    if token is None:
-        logging.error("No token provided")
-        raise HTTPException(status_code=401, detail="Invalid token")
-    user_id, scopes = await get_current_user_id(token)
-    print(f"User ID: {user_id}, Scopes: {scopes}")
-    # check scope and permissions here
-    if "read:item" not in scopes:
-        logging.error("Not enough permissions")
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    items = await repo.find_in_distance(longitude, latitude, distance)
-    return items
-
-
-@router.get("/filter-items", response_model=List[ItemInResponse], tags=["Items"])
-async def filter_items(
-    min_price: float = Query(None, description="Minimum price"),
-    max_price: float = Query(None, description="Maximum price"),
-    currency: str = Query(None, description="Currency"),
-    min_amount: int = Query(None, description="Minimum amount"),
-    max_amount: int = Query(None, description="Maximum amount"),
-    measure: str = Query(None, description="Measure"),
-    terms_delivery: str = Query(None, description="Terms of delivery"),
-    country: str = Query(None, description="Country"),
-    region: str = Query(None, description="Region"),
-    repo: AsyncpgItemRepository = Depends(get_item_repository),
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
-):
-    if token is None:
-        logging.error("No token provided")
-        raise HTTPException(status_code=401, detail="Invalid token")
-    user_id, scopes = await get_current_user_id(token)
-    print(f"User ID: {user_id}, Scopes: {scopes}")
-    # check scope and permissions here
-    if "read:item" not in scopes:
-        logging.error("Not enough permissions")
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    items = await repo.get_filtered_items(
-        min_price,
-        max_price,
-        currency,
-        min_amount,
-        max_amount,
-        measure,
-        terms_delivery,
-        country,
-        region,
+    """Find all items within a given distance from a given point. The distance is in meters."""
+    return await items_model.find_in_distance(
+        longitude=longitude, latitude=latitude, distance=distance
     )
-    return items
+
+
+@router.get("/filter-items", response_model=List[ItemInResponse], tags=["filter items"])
+async def filter_items(
+    min_price: float = None,
+    max_price: float = None,
+    currency: str = None,
+    min_amount: int = None,
+    max_amount: int = None,
+    measure: str = None,
+    terms_delivery: str = None,
+    country: str = None,
+    region: str = None,
+):
+    return await items_model.get_filtered_items(
+        min_price=min_price,
+        max_price=max_price,
+        currency=currency,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        measure=measure,
+        terms_delivery=terms_delivery,
+        country=country,
+        region=region,
+    )
