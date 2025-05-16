@@ -18,7 +18,7 @@ from .schemas import (
     ItemInDB,
     ItemInResponse,
 )
-from app import items_model
+from ..models import items_model
 from . import JWT_SECRET
 
 router = APIRouter(tags=["Items"])
@@ -106,7 +106,8 @@ async def read_items(
     "/items/{item_id}", response_model=ItemInResponse, status_code=200, tags=["Items"]
 )
 async def read_item(item_id: int, token: Annotated[str, Depends(oauth2_scheme)] = None):
-    _, scopes = get_current_user_id(token)
+    """Return certain item's info."""
+    user_id, scopes = await get_current_user_id(token)
     if "read:item" not in scopes:
         raise HTTPException(status.HTTP_403_FORBIDDEN)
     db_item = await items_model.get_by_id(item_id)
@@ -115,6 +116,8 @@ async def read_item(item_id: int, token: Annotated[str, Depends(oauth2_scheme)] 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
         )
+    # Increment map views counter for the user
+    await items_model.map_views_increment(user_id)
     return db_item
 
 
@@ -129,7 +132,7 @@ async def delete_item_bound_to_user(
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     try:
-        user_id, scopes = get_current_user_id(token)
+        user_id, scopes = await get_current_user_id(token)
         if "delete:item" not in scopes:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         await items_model.delete(user_id, item_id)
@@ -145,7 +148,7 @@ async def read_items_by_user(
     user_id: int,
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
-    _, scopes = get_current_user_id(token)
+    _, scopes = await get_current_user_id(token)
     if "read:item" not in scopes:
         raise HTTPException(status.HTTP_403_FORBIDDEN)
     return await items_model.get_items_by_user_id(user_id)
