@@ -1,7 +1,7 @@
 import asyncpg
 from typing import List
-from app.database import database
-from app.schemas import (
+from ..database import database
+from ..schemas import (
     CategoryInDB,
     CategoryInResponse,
     CategoryWithItems,
@@ -15,9 +15,9 @@ async def create(category: CategoryInDB) -> CategoryInResponse:
         VALUES ($1, $2, $3, $4)
         RETURNING id, name, description, ua_name, ua_description
     """
-    async with database.pool.acquire() as connection:
+    async with database.pool.acquire() as conn:
         try:
-            row = await connection.fetchrow(
+            row = await conn.fetchrow(
                 query,
                 category.name,
                 category.description,
@@ -34,8 +34,8 @@ async def get_all() -> List[CategoryInResponse]:
         SELECT id, name, description, ua_name, ua_description
         FROM categories
     """
-    async with database.pool.acquire() as connection:
-        rows = await connection.fetch(query)
+    async with database.pool.acquire() as conn:
+        rows = await conn.fetch(query)
         return [CategoryInResponse(**row) for row in rows]
 
 
@@ -45,8 +45,8 @@ async def get_by_id(category_id: int) -> CategoryInResponse:
         FROM categories
         WHERE id = $1
     """
-    async with database.pool.acquire() as connection:
-        row = await connection.fetchrow(query, category_id)
+    async with database.pool.acquire() as conn:
+        row = await conn.fetchrow(query, category_id)
         if row is None:
             raise ValueError("Category not found")
         return CategoryInResponse(**row)
@@ -59,8 +59,8 @@ async def update(category_id: int, category: CategoryInDB) -> CategoryInResponse
         WHERE id = $1
         RETURNING id, name, description, ua_name, ua_description
     """
-    async with database.pool.acquire() as connection:
-        row = await connection.fetchrow(
+    async with database.pool.acquire() as conn:
+        row = await conn.fetchrow(
             query,
             category_id,
             category.name,
@@ -78,8 +78,8 @@ async def delete(category_id: int) -> None:
         DELETE FROM categories
         WHERE id = $1
     """
-    async with database.pool.acquire() as connection:
-        await connection.execute(query, category_id)
+    async with database.pool.acquire() as conn:
+        await conn.execute(query, category_id)
 
 
 async def get_by_id_with_items(
@@ -99,8 +99,8 @@ async def get_by_id_with_items(
         OFFSET $2
         LIMIT $3
     """
-    async with database.pool.acquire() as connection:
-        row = await connection.fetchrow(query, category_id)
+    async with database.pool.acquire() as conn:
+        row = await conn.fetchrow(query, category_id)
         if row is None:
             raise ValueError("Category not found")
         category = CategoryWithItems(
@@ -111,7 +111,7 @@ async def get_by_id_with_items(
             ua_description=row["ua_description"],
             items=[],
         )
-        items = await connection.fetch(query2, category_id, offset, limit)
+        items = await conn.fetch(query2, category_id, offset, limit)
         print(f"Items within category query: {items}")
         if items:
             category.items = [ItemInResponse(**item) for item in items]

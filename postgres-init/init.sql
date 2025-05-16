@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     end_date TIMESTAMP,
     status VARCHAR(50) NOT NULL DEFAULT 'active',
     created_at TIMESTAMP DEFAULT NOW(),
-    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (tarif_id) REFERENCES tarifs (id)
 );
 

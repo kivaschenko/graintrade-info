@@ -241,6 +241,7 @@ export default {
       // Fetch categories from the backend.
     try {
       const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories`);
+      console.log("Categories response:", response);
       this.categories = response.data;
     } catch (error) {
       console.error('Error fetching categories:', error);

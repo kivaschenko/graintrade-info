@@ -17,13 +17,9 @@ from .schemas import (
     CategoryInResponse,
     CategoryWithItems,
 )
-from app import category_model
+from ..models import category_model
 from . import JWT_SECRET
 
-# JWT_SECRET = os.getenv("JWT_SECRET")
-# ALGORITHM = os.getenv("ALGORITHM", "HS256")
-# ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN", 60)
-# MAP_VIEW_LIMIT = 100
 
 router = APIRouter(tags=["Categories"])
 
