@@ -34,17 +34,10 @@ from ..adapters import (
     AsyncpgUserRepository,
     AsyncpgSubscriptionRepository,
 )
+from .. import user_model
 from ..service_layer.user_services import send_user_to_rabbitmq
+from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
-
-JWT_SECRET = os.getenv("JWT_SECRET")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
-MAP_VIEW_LIMIT = 100
-
-logging.debug(f"JWT_SECRET: {JWT_SECRET}")
-logging.debug(f"ALGORITHM: {ALGORITHM}")
-logging.debug(f"ACCESS_TOKEN_EXPIRE_MINUTES: {ACCESS_TOKEN_EXPIRE_MINUTES}")
 
 router = APIRouter(tags=["users"])
 
@@ -52,10 +45,11 @@ oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
     scopes={
         "me": "Read information about the current user.",
-        "basic": "Read and write items, limited access to features.",
-        "premium": "Read and write items, full access to features.",
-        "pro": "Read and write items, full access to features.",
-        "admin": "Full access to all features.",
+        "create:item": "Allowed to create a new Item",
+        "read:item": "Allowed to read items.",
+        "delete:item": "Allowed to delete item.",
+        "add:category": "Allowed to add a new Category",
+        "view:map": "Allowed to view map.",
     },
 )
 
@@ -357,12 +351,8 @@ async def create_user(
         full_name=user.full_name,
         phone=user.phone,
     )
-    new_user = await repo.create(user_to_db)
-    if new_user is None:
-        raise HTTPException(status_code=400, detail="User already exists")
-    background_tasks.add_task(
-        send_user_to_rabbitmq, user=UserInResponse.model_validate(new_user)
-    )
+    new_user = await user_model.create(user_to_db)
+    logging.info(f"Created a new User: {new_user}")
     return new_user
 
 
