@@ -2,6 +2,7 @@
   <div>
     <ItemTable :items="items" />
     <CategoryCards />
+    <FilterItemsForm />
   </div>
 </template>
 
@@ -9,12 +10,14 @@
 import publicApi from '@/services/publicApi';
 import CategoryCards from './CategoryCards.vue';
 import ItemTable from './ItemTable.vue';
+import FilterItemsForm from './FilterItemsForm.vue';
 
 export default {
   name: 'HomePage',
   components: {
     CategoryCards,
     ItemTable,
+    // FilterItemsForm,
   },
   data() {
     return {
