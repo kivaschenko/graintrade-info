@@ -6,6 +6,7 @@ import ItemListByCategory from '@/components/ItemListByCategory.vue';
 import ItemDetails from '@/components/ItemDetails.vue';
 import RegistrationForm from '@/components/RegistrationForm.vue';
 import UserProfile from '@/components/UserProfile.vue';
+import TariffPlans from '@/components/TariffPlans.vue';
 
 
 const routes = [
@@ -46,8 +47,8 @@ const routes = [
       },
     },
     { path: '/tariffs',
-      name: 'Tariffs',
-      component: () => import('@/components/TariffPlans.vue'),
+      name: 'TariffPlans',
+      component: TariffPlans,
       meta: {
         requiresAuth: true,
       },

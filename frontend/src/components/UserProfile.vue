@@ -214,7 +214,7 @@ export default {
     },
     async upgradePlan() {
       // Implement upgrade logic here
-      this.$router.get('/subscriptions/');
+      this.$router.get('/tarifs');
     }
   },
   async created() {
