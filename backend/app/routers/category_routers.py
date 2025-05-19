@@ -35,7 +35,6 @@ oauth2_scheme = OAuth2PasswordBearer(
     },
 )
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-logger = logging.getLogger(__name__)
 
 # ==========
 # Dependency

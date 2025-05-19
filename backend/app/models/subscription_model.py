@@ -8,7 +8,7 @@ async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
     query = """
         INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, status)
         VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, user_id, tarif_id, start_date, end_date, status, created_at
+        RETURNING id, user_id, tarif_id, start_date, end_date, status, created_at, order_id
     """
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(
@@ -23,9 +23,33 @@ async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
         return subscription
 
 
+async def update_status(status: str, id: int):
+    query = """
+        UPDATE subscriptions
+        SET status = $1
+        WHERE id = $2
+        RETURNING id, status
+"""
+    async with database.pool.acquire() as conn:
+        row = await conn.fetchrow(query, status, id)
+        return row
+
+
+async def update_payment_id(payment_id: str, id: int):
+    query = """
+        UPDATE subscriptions
+        SET payment_id = $1
+        WHERE id = $2
+        RETURNING id, payment_id
+"""
+    async with database.pool.acquire() as conn:
+        row = await conn.fetchrow(query, payment_id, id)
+        return row
+
+
 async def get_by_id(subscription_id: int) -> SubscriptionInResponse:
     query = """
-        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
+        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at, order_id
         FROM subscriptions
         WHERE id = $1
     """
@@ -51,7 +75,7 @@ async def delete(subscription_id: int) -> None:
 
 async def get_by_user_id(user_id: int) -> SubscriptionInResponse:
     query = """
-        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
+        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at, order_id
         FROM subscriptions
         WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
         ORDER BY created_at DESC
