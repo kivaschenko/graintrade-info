@@ -1,6 +1,7 @@
 # Desc: Schemas for the item service
 
-from typing import List, Optional, Dict, Any
+from datetime import date
+from typing import List, Optional
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 
@@ -94,10 +95,10 @@ class TokenData(BaseModel):
 
 class User(BaseModel):
     username: str
-    email: EmailStr = None
-    full_name: str | None = None
-    phone: str | None = None
-    disabled: bool | None = None
+    email: EmailStr = ""
+    full_name: str | None
+    phone: str | None
+    disabled: bool | None
 
 
 class UserInCreate(User):
@@ -148,10 +149,11 @@ class TarifInDB(BaseModel):
 
 class TarifInResponse(TarifInDB):
     id: int
+    created_at: date | None
 
     @property
     def formatted_created_at(self) -> str:
-        return self.created_at.isoformat()
+        return self.created_at.isoformat()  # type: ignore
 
     class ConfigDict:
         from_attributes = True
@@ -160,14 +162,15 @@ class TarifInResponse(TarifInDB):
 class SubscriptionInDB(BaseModel):
     user_id: int
     tarif_id: int
-    start_date: datetime
-    end_date: datetime
-    status: str
+    start_date: date | None
+    end_date: date | None
+    status: str | None = "inactive"
 
 
 class SubscriptionInResponse(SubscriptionInDB):
     id: int
     created_at: datetime = Field(alias="created_at")
+    order_id: str | None
     tarif: TarifInResponse | None = None
 
     @property

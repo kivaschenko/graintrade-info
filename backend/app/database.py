@@ -1,5 +1,8 @@
 import os
 import asyncpg
+from contextlib import contextmanager
+
+import redis
 
 
 DATABASE_URL = os.getenv(
@@ -19,7 +22,26 @@ class Database:
         )
 
     async def disconnect(self):
-        self.pool.close()
+        await self.pool.close()
 
 
 database = Database(DATABASE_URL)
+
+# ---------------------
+# Redis connector
+
+REDIS_URL = "redis://localhost:6379"
+# REDIS_URL = "redis://localhost"
+
+
+redis_pool = redis.ConnectionPool().from_url(REDIS_URL)
+
+
+@contextmanager
+def redis_connect():
+    try:
+        # Iterate redis connection
+        r = redis.Redis().from_pool(redis_pool)
+        yield r
+    finally:
+        r.close()

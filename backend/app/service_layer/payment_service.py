@@ -1,17 +1,42 @@
 import hashlib
 import asyncio
-import requests
+import httpx
 import logging
 import uuid
-from typing import Optional
-from datetime import datetime
+from typing import Optional, Any, Dict
+from datetime import date, timedelta
+
+from ..models import subscription_model, tarif_model, user_model
+from ..schemas import (
+    SubscriptionInDB,
+    SubscriptionInResponse,
+    TarifInResponse,
+    UserInResponse,
+)
 
 FONDY_MERCHANT_ID = "1555037"
-FONDY_MERCHANT_KEY = "z0LvpvmJZOXo14ezf3oL43Fs5p18XNbQ"
+FONDY_MERCHANT_KEY = "test"
+# FONDY_MERCHANT_KEY = "z0LvpvmJZOXo14ezf3oL43Fs5p18XNbQ"
 
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("payment_service")
+
+
+ORDER_DESCRIPTION = """
+    Subscription_{tarif_name}_{start_date}_{end_date}_{user_id}_{subscription_id}.
+    Payment for using web site: graintrade.info according tariff plan: {tarif_name}.
+    User: {full_name}.
+    """
+
+# -------------------
+# Helpers
+
+
+def make_start_end_dates_for_monthly_case() -> tuple[date, date]:
+    start_date = date.today()
+    end_date = start_date + timedelta(days=31)
+    return start_date, end_date
 
 
 class FondyPaymentService:
@@ -33,41 +58,153 @@ class FondyPaymentService:
 
     async def create_subscription_payment(
         self,
-        amount: float,
-        currency: str,
-        order_id: str,
-        subscription_id: str,
+        amount: float,  # Value just from DB tarifs table
+        order_id: str | None,
+        order_desc: str,
+        currency: str = "EUR",
         email: Optional[str] = None,
-    ) -> dict:
+        server_callback_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Create recurring payment for subscription"""
         params = {
             "order_id": order_id,
             "merchant_id": self.merchant_id,
-            "order_desc": f"Subscription {subscription_id}",
+            "order_desc": order_desc,
             "amount": str(int(amount * 100)),  # Convert to cents
             "currency": currency,
-            # "response_url": "http://localhost:8000/payment/callback",  # Replace with your callback URL
         }
-
         if email:
             params["sender_email"] = email
-
+        if server_callback_url:
+            params["server_callback_url"] = server_callback_url
         params["signature"] = self._generate_signature(params)
+        return params
 
+    async def send_request_to_fondy_api(self, params: Dict[str, Any]):
         # Send request to Fondy API
         logger.info(f"Sending payment request to Fondy: {params}")
-        response = requests.post(self.API_URL, json={"request": params})
-        if response.status_code != 200:
-            logger.error(f"Error from Fondy API: {response.text}")
+        async with httpx.AsyncClient() as client:
+            r = await client.post(url=self.API_URL, json={"request": params})
+        if r.status_code != 200:
+            logger.error(f"Error from Fondy API: {r.text}")
             raise Exception("Error from Fondy API")
-        logger.info(f"Response from Fondy API: {response.json()}")
-        return response.json()
+        logger.info(f"Response from Fondy API: {r.json()}")
+        return r.json()
 
     def verify_payment(self, payment_data: dict) -> bool:
         """Verify payment callback from Fondy"""
         received_signature = payment_data.pop("signature", "")
         calculated_signature = self._generate_signature(payment_data)
         return received_signature == calculated_signature
+
+    def _extract_checkout_url(
+        self, r: Dict[str, Dict[str, str]]
+    ) -> tuple[str | bool, str | bool]:
+        checkout_url = False
+        payment_id = False
+
+        # {'response': {
+        #   'checkout_url': 'https://pay.fondy.eu/merchants/5ad6b888f4becb0c33d543d54e57d86c/default/index.html?token=9e16b2695d48e06519c24aac4bb5f3bed4800439',
+        #   'payment_id': '862387020',
+        # 'response_status': 'success'
+        # }}
+        response_body: dict = r.get("response", {})
+        response_status = response_body.get("response_status", " ")
+        if response_status == "success":
+            payment_id = response_body.get("payment_id", " ")
+            logger.info(f"Payment ID: {payment_id}")
+            checkout_url = response_body.get("checkout_url", " ")
+            logger.info(f"Checkout URL: {checkout_url}")
+        elif response_status == "failure":
+            error_code = response_body.get("error_code", " ")
+            error_message = response_body.get("error_message", " ")
+            raise ValueError(
+                f"Invalid response from payment service:  {error_code} - {error_message}"
+            )
+        return checkout_url, payment_id
+
+    def _create_order_description(
+        self,
+        tarif_name: str,
+        start_date: date,
+        end_date: date,
+        user_id: int,
+        subscription_id: int,
+        full_name: str | None,
+    ) -> str:
+        """Create description string for payment service"""
+        return ORDER_DESCRIPTION.format(
+            tarif_name=tarif_name,
+            start_date=start_date,
+            end_date=end_date,
+            user_id=user_id,
+            subscription_id=subscription_id,
+            full_name=full_name,
+        )
+
+    async def get_checkout_url_from_payment_api(
+        self, user_id: int, tarif_id: int
+    ) -> str | bool:
+        """Send all needing payment data to Fondy API and recieve the checkout URL to pass to frondend."""
+        try:
+            # Prepare start and end dates for current Subscription
+            start_date, end_date = make_start_end_dates_for_monthly_case()
+
+            # Create a new subscription record in DB with status 'inactive'
+            subscribtion_to_db = SubscriptionInDB(
+                user_id=user_id,
+                tarif_id=tarif_id,
+                start_date=start_date,
+                end_date=end_date,
+            )
+            subscription: SubscriptionInResponse = await subscription_model.create(
+                subscribtion_to_db
+            )
+
+            # Get needing Tariff Plan
+            current_tarif: TarifInResponse = await tarif_model.get_by_id(
+                tarif_id=tarif_id
+            )
+
+            # Get info about current User
+            current_user: UserInResponse = await user_model.get_by_id(user_id=user_id)
+
+            # Create order description
+            order_desc = self._create_order_description(
+                tarif_name=current_tarif.name,
+                start_date=start_date,
+                end_date=end_date,
+                user_id=user_id,
+                subscription_id=subscription.id,
+                full_name=current_user.full_name,
+            )
+
+            # Create payment data for payload
+            payment_data = await self.create_subscription_payment(
+                amount=current_tarif.price,
+                order_id=subscription.order_id,
+                order_desc=order_desc,
+                currency=current_tarif.currency,
+                email=current_user.email,
+                # server_callback_url="my-server-callback-url",
+            )
+            logger.info(f"Payment created: {payment_data}")
+
+            # Send request to Fondy API
+            r = await self.send_request_to_fondy_api(payment_data)
+
+            # Get checkout URL and payment_id
+            checkout_url, payment_id = self._extract_checkout_url(r)
+            if isinstance(checkout_url, str) and isinstance(payment_id, str):
+                logger.info(f"Got checkout URL: {checkout_url}")
+                # Update subscription and add payment_id to DB
+                await subscription_model.update_payment_id(payment_id, subscription.id)
+                return checkout_url
+
+        except Exception as e:
+            logger.error(f"Error testing payment service: {str(e)}")
+            raise e
+        return False
 
 
 async def test_payment_service():
@@ -79,32 +216,34 @@ async def test_payment_service():
         order_id = str(uuid.uuid4())
         # Create test payment
         payment_data = await payment_service.create_subscription_payment(
-            amount=10.0,
+            amount=5.0,
             currency="EUR",
             order_id=order_id,
-            subscription_id="sub-112358-1325",
+            order_desc="sub-112358-1325",
             email="kivaschenko@protonmail.com",
         )
         logger.info(f"Payment created: {payment_data}")
 
-        if "response" not in payment_data and payment_data.get("response", {}).get(
-            "error_code"
-        ):
-            raise ValueError(
-                f"Invalid response from payment service: {payment_data['response']['error_message']}"
-            )
-        if payment_data.get("response", {}).get("checkout_url"):
-            logger.info(f"Checkout URL: {payment_data['response']['checkout_url']}")
-
-        # Verify payment
-        is_valid = payment_service.verify_payment(payment_data)
-        logger.info(f"Payment valid: {is_valid}")
-
-        return payment_data, is_valid
+        r = await payment_service.send_request_to_fondy_api(payment_data)
+        checkout_url = payment_service._extract_checkout_url(r)
+        print("Result:", checkout_url)
 
     except Exception as e:
         logger.error(f"Error testing payment service: {str(e)}")
         raise
+
+
+# --------------------------------------
+# Handle user and subscription incoming
+# --------------------------------------
+
+# - Create a new subscription with status inactive
+# - Get info from Tariff by id
+# - Get info about User by id
+# - Pass data to payment service reload
+# - Try to pay by payment service
+# - Get response about success payment
+# - Update status for new subscription and old subscription
 
 
 if __name__ == "__main__":
