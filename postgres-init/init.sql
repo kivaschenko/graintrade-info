@@ -145,15 +145,14 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     start_date TIMESTAMP DEFAULT NOW(),
     end_date TIMESTAMP,
     status VARCHAR(50) NOT NULL DEFAULT 'active',
+    items_count INTEGER DEFAULT 0,
+    map_views INTEGER DEFAULT 0,
+    order_id VARCHAR NOT NULL DEFAULT uuid_generate_v4(),
+    payment_id VARCHAR(50),
     created_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (tarif_id) REFERENCES tarifs (id)
 );
-
--- Add counter columns to subscriptions table
-ALTER TABLE IF EXISTS subscriptions
-    ADD COLUMN IF NOT EXISTS items_count INTEGER DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS map_views INTEGER DEFAULT 0;
 
 -- Create table for user's payments
 CREATE TABLE IF NOT EXISTS payments (
@@ -559,8 +558,8 @@ BEGIN
 	-- Insert default tarifs
 	INSERT INTO tarifs (name, description, price, currency, scope, terms)
 	VALUES
-	    ('Basic', 'Basic subscription plan', 10.00, 'EUR', 'basic', 'monthly'),
-	    ('Premium', 'Premium subscription plan', 20.00, 'EUR', 'premium', 'monthly'),
+	    ('Basic', 'Basic subscription plan', 5.00, 'EUR', 'basic', 'monthly'),
+	    ('Premium', 'Premium subscription plan', 10.00, 'EUR', 'premium', 'monthly'),
 	    ('Pro', 'Pro subscription plan', 30.00, 'EUR', 'pro', 'monthly');
     END IF;
 END $$;

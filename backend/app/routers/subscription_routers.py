@@ -1,7 +1,7 @@
 from typing import List
 import logging
 
-from fastapi import APIRouter, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, HTTPException, status
 
 from ..schemas import (
     SubscriptionInDB,
@@ -9,7 +9,6 @@ from ..schemas import (
     TarifInResponse,
 )
 from ..service_layer.payment_service import FondyPaymentService
-from ..schemas import PaymentResponse
 from ..models import subscription_model, tarif_model
 
 
@@ -47,7 +46,23 @@ async def get_tarif(tarif_id: int):
 )
 async def create_subscription(subscription: SubscriptionInDB):
     logging.info(f"Creating subscription with data: {subscription}")
-    return await subscription_model.create(subscription)
+    try:
+        payment_service = FondyPaymentService()
+        checkout_url = await payment_service.get_checkout_url_from_payment_api(
+            user_id=subscription.user_id, tarif_id=subscription.tarif_id
+        )
+        if checkout_url:
+            return {
+                "status": "success",
+                "checkout_url": checkout_url,
+                "message": "Successful payment attemp",
+            }
+        else:
+            return {"status": "error", "message": "Error during payment attemp"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}"
+        )
 
 
 @router.get(
