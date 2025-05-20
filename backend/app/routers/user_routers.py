@@ -283,7 +283,7 @@ async def create_user(
         full_name=user.full_name,
         phone=user.phone,
     )
-    new_user = await user_model.create(user_to_db: UserInDB)
+    new_user = await user_model.create(user_to_db)
     logging.info(f"Created a new User: {new_user}")
     return new_user
 

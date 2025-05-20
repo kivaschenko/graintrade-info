@@ -33,12 +33,12 @@ DROP TABLE IF EXISTS items CASCADE;
 -- Items table
 CREATE TABLE IF NOT EXISTS items (
     id SERIAL PRIMARY KEY,
-    uuid VARCHAR NOT NULL DEFAULT uuid_generate_v4(),
+    uuid UUID NOT NULL DEFAULT uuid_generate_v4(),
     category_id INTEGER NOT NULL,
     offer_type VARCHAR(50) NOT NULL,  -- sell, buy, exchange
     title VARCHAR(150) NOT NULL,
     description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL CONSTRAINT positive_price CHECK (price>0),
     currency VARCHAR(3) NOT NULL,
     amount INTEGER NOT NULL,
     measure VARCHAR(10) NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS items (
     longitude DECIMAL(9, 6) NOT NULL,
     geom GEOMETRY(POINT, 4326),
     created_at TIMESTAMP DEFAULT NOW(),
-    FOREIGN KEY (category_id) REFERENCES categories (id)
+    FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
     );
 
 -- Drop indexes if they exist
@@ -98,10 +98,14 @@ CREATE TABLE IF NOT EXISTS tarifs (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     description TEXT NOT NULL,
-    price DECIMAL(10, 2) NOT NULL DEFAULT 10.00,
+    price DECIMAL(10, 2) NOT NULL DEFAULT 5.00,
     currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
     scope VARCHAR(100) NOT NULL DEFAULT 'basic',
     terms VARCHAR(50) NOT NULL DEFAULT 'monthly',
+    items_limit INTEGER CONSTRAINT positive_items_limit CHECK (items_limit>=0),
+    map_views_limit INTEGER CONSTRAINT positive_map_views_limit CHECK (map_views_limit>=0),
+    geo_search_limit INTEGER CONSTRAINT positive_geo_search_limit CHECK (geo_search_limit>=0),
+    navigation_limit INTEGER CONSTRAINT positive_navigation_limit CHECK (navigation_limit>=0),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -111,23 +115,6 @@ ALTER TABLE IF EXISTS public.tarifs
 ALTER TABLE IF EXISTS public.tarifs
     ADD CONSTRAINT tarifs_scope_unique_constraint UNIQUE (scope);
 
--- Add limit columns to tarifs table
-ALTER TABLE IF EXISTS public.tarifs
-    ADD COLUMN IF NOT EXISTS items_limit INTEGER NOT NULL DEFAULT 5,
-    ADD COLUMN IF NOT EXISTS map_views_limit INTEGER NOT NULL DEFAULT 10;
-
--- Update default tarifs with limits
-UPDATE tarifs 
-SET items_limit = CASE 
-        WHEN scope = 'basic' THEN 5
-        WHEN scope = 'premium' THEN 20
-        WHEN scope = 'pro' THEN -1  -- unlimited
-    END,
-    map_views_limit = CASE 
-        WHEN scope = 'basic' THEN 10
-        WHEN scope = 'premium' THEN 50
-        WHEN scope = 'pro' THEN -1  -- unlimited
-    END;
 
 -- Drop indexes if they exist
 DROP INDEX IF EXISTS tarifs_scope_idx;
@@ -140,30 +127,34 @@ CREATE INDEX tarifs_terms_idx ON tarifs (terms);
 -- Create table for user's subscriptions
 CREATE TABLE IF NOT EXISTS subscriptions (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    tarif_id INTEGER NOT NULL,
+    user_id INTEGER,
+    tarif_id INTEGER,
     start_date TIMESTAMP DEFAULT NOW(),
     end_date TIMESTAMP,
     status VARCHAR(50) NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT NOW(),
+    payment_id VARCHAR(20),
     items_count INTEGER DEFAULT 0,
     map_views INTEGER DEFAULT 0,
-    order_id VARCHAR NOT NULL DEFAULT uuid_generate_v4(),
-    payment_id VARCHAR(50),
-    created_at TIMESTAMP DEFAULT NOW(),
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    FOREIGN KEY (tarif_id) REFERENCES tarifs (id)
+    geo_search_count INTEGER DEFAULT 0,
+    navigation_count INTEGER DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL,
+    FOREIGN KEY (tarif_id) REFERENCES tarifs (id) ON DELETE SET NULL
 );
 
 -- Create table for user's payments
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    tarif_id INTEGER NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+    payment_id VARCHAR(100),
+    order_id TEXT NOT NULL,
+    order_status VARCHAR(30),
+    currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
+    amount INTEGER NOT NULL,
+    card_type VARCHAR(20),
+    masked_card TEXT,
+    sender_email TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (tarif_id) REFERENCES tarifs (id)
+    data JSONB
 );
 
 -- Drop the function if it exists
@@ -222,11 +213,49 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Functon to increment navigation count
+CREATE OR REPLACE FUNCTION increment_navigation_count(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_current_count INTEGER;
+BEGIN
+    -- Update the counter and return new value
+    UPDATE subscriptions
+    SET navigation_count = navigation_count + 1
+    WHERE user_id = p_user_id
+    AND status = 'active'
+    AND end_date > NOW()
+    RETURNING navigation_count INTO v_current_count;
+
+    RETURN COALESCE(v_current_count, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Functon to increment geo_search count
+CREATE OR REPLACE FUNCTION increment_geo_search_count(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_current_count INTEGER;
+BEGIN
+    -- Update the counter and return new value
+    UPDATE subscriptions
+    SET geo_search_count = geo_search_count + 1
+    WHERE user_id = p_user_id
+    AND status = 'active'
+    AND end_date > NOW()
+    RETURNING geo_search_count INTO v_current_count;
+
+    RETURN COALESCE(v_current_count, 0);
+END;
+$$ LANGUAGE plpgsql;
+
 -- Function to get current usage
 CREATE OR REPLACE FUNCTION get_subscription_usage(p_user_id INTEGER)
 RETURNS TABLE (
     items_count INTEGER,
     map_views INTEGER,
+    geo_search_count INTEGER,
+    navigation_count INTEGER,
     tarif_scope VARCHAR,
     is_active BOOLEAN
 ) AS $$
@@ -235,6 +264,8 @@ BEGIN
     SELECT 
         s.items_count,
         s.map_views,
+        s.geo_search_count,
+        s.navigation_count,
         t.scope as tarif_scope,
         (s.status = 'active' AND s.end_date > NOW()) as is_active
     FROM subscriptions s
@@ -551,19 +582,40 @@ The presence of ticks or some other types of pests, toxic drugs is unacceptable.
 ;
     END IF;
 END $$;
+
+-- Update default tarifs with limits
+-- UPDATE tarifs 
+-- SET items_limit = CASE 
+--         WHEN scope = 'basic' THEN 50
+--         WHEN scope = 'premium' THEN 150
+--         WHEN scope = 'pro' THEN 500
+--     END,
+--     map_views_limit = CASE 
+--         WHEN scope = 'basic' THEN 100
+--         WHEN scope = 'premium' THEN 300
+--         WHEN scope = 'pro' THEN 1000
+--     END,
+--     geo_search_limit = CASE
+--         WHEN scope = 'basic' THEN 100
+--         WHEN scope = 'premium' THEN 300
+--         WHEN scope = 'pro' THEN 1000
+--     END,
+--     navigation_limit = CASE
+--         WHEN scope = 'basic' THEN 100
+--         WHEN scope = 'premium' THEN 300
+--         WHEN scope = 'pro' THEN 1000
+--     END;
+
 -- Check if the tarifs table is empty
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM tarifs) THEN
 	-- Insert default tarifs
-	INSERT INTO tarifs (name, description, price, currency, scope, terms)
+	INSERT INTO tarifs (name, description, price, currency, scope, terms, items_limit, map_views_limit, geo_search_limit, navigation_limit)
 	VALUES
-	    ('Basic', 'Basic subscription plan', 10.00, 'EUR', 'basic', 'monthly'),
-	    ('Premium', 'Premium subscription plan', 20.00, 'EUR', 'premium', 'monthly'),
-	    ('Pro', 'Pro subscription plan', 30.00, 'EUR', 'pro', 'monthly');
-	    ('Базовий', 'Базовий пакет на 1 місяць', 450.00, 'UAH', 'basic', 'місяць'),
-	    ('Преміум', 'Преміум пакет на 1 місяць', 900.00, 'UAH', 'premium', 'місяць'),
-	    ('Професійний', 'Професійний пакет на 1 місяць', 1350.00, 'UAH', 'pro', 'місяць');
+        ('Free', 'Free probation plan', 0.00, 'EUR', 'free', 'monthly', 5, 10, 10, 10),
+	    ('Basic', 'Basic subscription plan', 4.99, 'EUR', 'basic', 'monthly', 50, 100, 100, 100),
+        ('Premium', 'Premium subscription plan', 9.99, 'EUR', 'premium', 'monthly', 150, 300, 300, 300),
+        ('Pro', 'Pro subscription plan', 24.99, 'EUR', 'pro', 'monthly', 500, 1000, 1000, 1000);
     END IF;
 END $$;
-
