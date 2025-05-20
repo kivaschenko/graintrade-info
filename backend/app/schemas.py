@@ -97,8 +97,8 @@ class User(BaseModel):
     username: str
     email: EmailStr = ""
     full_name: str | None
-    phone: str | None
-    disabled: bool | None
+    phone: str | None = None
+    disabled: bool | None = None
 
 
 class UserInCreate(User):
@@ -182,10 +182,15 @@ class SubscriptionInResponse(SubscriptionInDB):
 
 
 class PaymentInDB(BaseModel):
-    user_id: int
-    tarif_id: int
-    amount: float
+    payment_id: str
+    order_id: str
+    order_status: str
     currency: str
+    amount: int
+    card_type: str
+    masked_card: str
+    sender_email: str
+    data: str
 
 
 class PaymentInResponse(PaymentInDB):
@@ -195,8 +200,3 @@ class PaymentInResponse(PaymentInDB):
     @property
     def formatted_created_at(self) -> str:
         return self.created_at.isoformat()
-
-
-class PaymentResponse(BaseModel):
-    checkout_url: str
-    order_id: str
