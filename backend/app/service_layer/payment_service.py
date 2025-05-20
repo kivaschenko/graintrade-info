@@ -6,13 +6,18 @@ import uuid
 from typing import Optional, Any, Dict
 from datetime import date, timedelta
 
-from ..models import subscription_model, tarif_model, user_model
+import redis
+
+from ..models import subscription_model, tarif_model, user_model, payment_model
 from ..schemas import (
     SubscriptionInDB,
     SubscriptionInResponse,
     TarifInResponse,
     UserInResponse,
+    PaymentInDB,
+    PaymentInResponse,
 )
+from ..database import redis_db
 
 FONDY_MERCHANT_ID = "1555037"
 FONDY_MERCHANT_KEY = "test"
@@ -64,7 +69,7 @@ class FondyPaymentService:
         currency: str = "EUR",
         email: Optional[str] = None,
         server_callback_url: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> tuple[Dict[str, Any], str]:
         """Create recurring payment for subscription"""
         params = {
             "order_id": order_id,
@@ -77,8 +82,9 @@ class FondyPaymentService:
             params["sender_email"] = email
         if server_callback_url:
             params["server_callback_url"] = server_callback_url
-        params["signature"] = self._generate_signature(params)
-        return params
+        signature = self._generate_signature(params)
+        params["signature"] = signature
+        return params, signature
 
     async def send_request_to_fondy_api(self, params: Dict[str, Any]):
         # Send request to Fondy API
@@ -180,7 +186,7 @@ class FondyPaymentService:
             )
 
             # Create payment data for payload
-            payment_data = await self.create_subscription_payment(
+            payment_data, signature = await self.create_subscription_payment(
                 amount=current_tarif.price,
                 order_id=subscription.order_id,
                 order_desc=order_desc,
@@ -195,16 +201,29 @@ class FondyPaymentService:
 
             # Get checkout URL and payment_id
             checkout_url, payment_id = self._extract_checkout_url(r)
-            if isinstance(checkout_url, str) and isinstance(payment_id, str):
-                logger.info(f"Got checkout URL: {checkout_url}")
-                # Update subscription and add payment_id to DB
-                await subscription_model.update_payment_id(payment_id, subscription.id)
-                return checkout_url
+            assert isinstance(checkout_url, str)
+            assert isinstance(payment_id, str)
+            logger.info(f"Got checkout URL: {checkout_url}")
+            # Update subscriptions table table in DB and add payment_id value
+            await subscription_model.update_payment_id(
+                payment_id=payment_id, id=subscription.id
+            )
+            # Save signature in cache by payment_id name
+            save_signature_to_cache(payment_id=payment_id, signature=signature)
+            return checkout_url
 
         except Exception as e:
             logger.error(f"Error testing payment service: {str(e)}")
             raise e
         return False
+
+
+def save_signature_to_cache(payment_id: str, signature: str):
+    r = redis.Redis().from_pool(redis_db.pool)
+    # Save in Redis signature for 10 minutes
+    r.set(name=payment_id, value=signature, ex=600)
+    logging.info("Saved signature for payment_id: %", payment_id)
+    r.close()
 
 
 async def test_payment_service():
@@ -215,14 +234,14 @@ async def test_payment_service():
 
         order_id = str(uuid.uuid4())
         # Create test payment
-        payment_data = await payment_service.create_subscription_payment(
+        payment_data, signature = await payment_service.create_subscription_payment(
             amount=5.0,
             currency="EUR",
             order_id=order_id,
             order_desc="sub-112358-1325",
             email="kivaschenko@protonmail.com",
         )
-        logger.info(f"Payment created: {payment_data}")
+        logger.info(f"Payment created: {payment_data} with signature: {signature}")
 
         r = await payment_service.send_request_to_fondy_api(payment_data)
         checkout_url = payment_service._extract_checkout_url(r)

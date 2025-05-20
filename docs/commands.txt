@@ -116,3 +116,38 @@ http GET http://localhost:8000/filter-items \
     country=="Ukraine" \
     region=="Cherkasy Oblast" \
     "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsInNjb3BlcyI6WyJtZSIsImNyZWF0ZTppdGVtIiwicmVhZDppdGVtIiwidXBkYXRlOml0ZW0iLCJkZWxldGU6aXRlbSJdLCJ1c2VyX2lkIjoyLCJleHAiOjE3MzE1MTM5NDd9.mZ7V5WvyFUjTAD49tTtnwBNcpP92o7WjELdacGe2zxA"
+
+http POST http://127.0.0.1:8000/payments/confirm \
+    rrn=429417347068 \
+    masked_card=444455XXXXXX6666 \
+    response_signature_string='**********|3324000|EUR|3324000|027440|444455|VISA|EUR|444455XXXXXX6666|1396424|14#1500639628|approved|21.07.2017 15:20:27|51247263|card|success|0|429417347068|test@FONDY.eu|0|purchase' \
+    response_status=success \
+    sender_account= \
+    fee= \
+    reversal_amount=0 \
+    settlement_amount=0 \
+    actual_amount=3324000 \
+    order_status=approved \
+    verification_status= \
+    order_time='21.07.2017 15:20:27' \
+    actual_currency=EUR \
+    order_id='14#1500639628' \
+    parent_order_id= \
+    merchant_data= \
+    tran_type=purchase \
+    eci= \
+    settlement_date= \
+    payment_system=card \
+    rectoken= \
+    approval_code=027440 \
+    merchant_id:=1396424 \
+    settlement_currency= \
+    payment_id:=51247263 \
+    product_id= \
+    currency=EUR \
+    card_bin:=444455 \
+    response_code= \
+    card_type=VISA \
+    amount=3324000 \
+    sender_email='test@FONDY.eu' \
+    signature=47bdcaf61b99edd31e3ec7913225a14d2ce07575

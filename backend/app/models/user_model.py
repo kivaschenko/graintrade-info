@@ -3,11 +3,9 @@ from ..database import database
 from ..schemas import UserInDB, UserInResponse
 
 
-async def create(user: UserInDB, tarif_name: str = "Basic") -> UserInResponse:
+async def create(user, scope: str = "free") -> UserInResponse:
     start_date = date.today()
-    end_date = start_date + timedelta(days=31)
-    scope = tarif_name.lower()
-    print(f"start date: {start_date}, end date: {end_date}, scope={scope}")
+    end_date = start_date + timedelta(days=7)
     query = """
         INSERT INTO users (username, email, full_name, phone, hashed_password)
         VALUES ($1, $2, $3, $4, $5)

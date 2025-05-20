@@ -19,8 +19,8 @@ async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
             subscription.end_date,
             subscription.status,
         )
-        subscription = SubscriptionInResponse(**row)
-        return subscription
+        new_subscription = SubscriptionInResponse(**row)
+        return new_subscription
 
 
 async def update_status(status: str, id: int):
