@@ -12,7 +12,7 @@ from fastapi.security import (
 )
 
 import jwt
-from .schemas import (
+from ..schemas import (
     CategoryInDB,
     CategoryInResponse,
     CategoryWithItems,

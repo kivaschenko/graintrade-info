@@ -51,3 +51,10 @@ class RedisDB:
 
 
 redis_db = RedisDB(redis_url=REDIS_URL)
+
+if __name__ == "__main__":
+    redis_db.connect()
+    # Test connection
+    print("Redis connected:", redis_db.pool)
+    # Close connections
+    redis_db.disconnect()

@@ -5,7 +5,7 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
-    BackgroundTasks,
+    # BackgroundTasks,
     APIRouter,
 )
 from fastapi.security import (
@@ -14,7 +14,7 @@ from fastapi.security import (
 
 import jwt
 
-from .schemas import (
+from ..schemas import (
     ItemInDB,
     ItemInResponse,
 )

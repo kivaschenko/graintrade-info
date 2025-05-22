@@ -1,3 +1,4 @@
+import json
 import hashlib
 import asyncio
 import httpx
@@ -8,14 +9,12 @@ from datetime import date, timedelta
 
 import redis
 
-from ..models import subscription_model, tarif_model, user_model, payment_model
+from ..models import subscription_model, tarif_model, user_model
 from ..schemas import (
     SubscriptionInDB,
     SubscriptionInResponse,
     TarifInResponse,
     UserInResponse,
-    PaymentInDB,
-    PaymentInResponse,
 )
 from ..database import redis_db
 
@@ -97,12 +96,6 @@ class FondyPaymentService:
         logger.info(f"Response from Fondy API: {r.json()}")
         return r.json()
 
-    def verify_payment(self, payment_data: dict) -> bool:
-        """Verify payment callback from Fondy"""
-        received_signature = payment_data.pop("signature", "")
-        calculated_signature = self._generate_signature(payment_data)
-        return received_signature == calculated_signature
-
     def _extract_checkout_url(
         self, r: Dict[str, Dict[str, str]]
     ) -> tuple[str | bool, str | bool]:
@@ -162,6 +155,7 @@ class FondyPaymentService:
                 tarif_id=tarif_id,
                 start_date=start_date,
                 end_date=end_date,
+                status="inactive",
             )
             subscription: SubscriptionInResponse = await subscription_model.create(
                 subscribtion_to_db
@@ -219,11 +213,55 @@ class FondyPaymentService:
 
 
 def save_signature_to_cache(payment_id: str, signature: str):
+    """Save signature in Redis cache by payment_id name"""
+    # Connect to Redis
     r = redis.Redis().from_pool(redis_db.pool)
     # Save in Redis signature for 10 minutes
     r.set(name=payment_id, value=signature, ex=600)
     logging.info("Saved signature for payment_id: %", payment_id)
     r.close()
+
+
+def get_signature_from_cache(payment_id: str) -> str | None:
+    """Get signature from Redis cache by payment_id name"""
+    # Connect to Redis
+    r = redis.Redis().from_pool(redis_db.pool)
+    # Get signature from Redis
+    signature = r.get(name=payment_id)
+    r.close()
+    # Check if signature is found
+    if signature:
+        logging.info("Got signature % for payment_id: %", signature, payment_id)
+        return signature
+    else:
+        logging.error("Signature not found for payment_id: %", payment_id)
+        return None
+
+
+def verify_payment(payment_id: str, received_signature: str) -> bool:
+    """Verify payment callback from Fondy"""
+    calculated_signature = get_signature_from_cache(payment_id)
+    if not calculated_signature:
+        logging.error("Signature not found in cache")
+        return False
+    # Compare received signature with calculated signature
+    if isinstance(calculated_signature, bytes):
+        calculated_signature = calculated_signature.decode("utf-8")
+    if isinstance(received_signature, bytes):
+        received_signature = received_signature.decode("utf-8")
+    logging.info(
+        f"Comparing signatures: received: {received_signature}, calculated: {calculated_signature}"
+    )
+    # Compare signatures
+    return received_signature == calculated_signature
+
+
+# -------------------
+# Handlers for Fondy API
+
+
+# ----------------------------
+# Test the FondyPaymentService
 
 
 async def test_payment_service():
@@ -250,19 +288,6 @@ async def test_payment_service():
     except Exception as e:
         logger.error(f"Error testing payment service: {str(e)}")
         raise
-
-
-# --------------------------------------
-# Handle user and subscription incoming
-# --------------------------------------
-
-# - Create a new subscription with status inactive
-# - Get info from Tariff by id
-# - Get info about User by id
-# - Pass data to payment service reload
-# - Try to pay by payment service
-# - Get response about success payment
-# - Update status for new subscription and old subscription
 
 
 if __name__ == "__main__":
