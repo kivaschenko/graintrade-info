@@ -23,12 +23,12 @@ async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
         return new_subscription
 
 
-async def update_status(status: str, id: int):
+async def update_status(status: str, payment_id: str):
     query = """
         UPDATE subscriptions
         SET status = $1
-        WHERE id = $2
-        RETURNING id, status
+        WHERE payment_id = $2
+        RETURNING id, payment_id, status
 """
     async with database.pool.acquire() as conn:
         row = await conn.fetchrow(query, status, id)

@@ -8,7 +8,7 @@ from fastapi.security import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import database
+from .database import database, redis_db
 from .routers import user_routers
 from .routers import item_routers
 from .routers import subscription_routers
@@ -31,10 +31,12 @@ if app_env == "development":
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await database.connect()
+    redis_db.connect()
     try:
         yield
     finally:
         await database.disconnect()
+        redis_db.disconnect()
 
 
 app = FastAPI(lifespan=lifespan, title="GraintradeInfo, version=0.1")

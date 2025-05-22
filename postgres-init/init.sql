@@ -145,16 +145,16 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 -- Create table for user's payments
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
-    payment_id VARCHAR(100),
-    order_id TEXT NOT NULL,
-    order_status VARCHAR(30),
+    payment_id INTEGER UNIQUE NOT NULL,
+    order_id VARCHAR(50) NOT NULL,
+    order_status VARCHAR(20) NOT NULL,
     currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
     amount INTEGER NOT NULL,
     card_type VARCHAR(20),
-    masked_card TEXT,
-    sender_email TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    data JSONB
+    masked_card VARCHAR(20),
+    sender_email VARCHAR(255),
+    data JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Drop the function if it exists
@@ -582,29 +582,6 @@ The presence of ticks or some other types of pests, toxic drugs is unacceptable.
 ;
     END IF;
 END $$;
-
--- Update default tarifs with limits
--- UPDATE tarifs 
--- SET items_limit = CASE 
---         WHEN scope = 'basic' THEN 50
---         WHEN scope = 'premium' THEN 150
---         WHEN scope = 'pro' THEN 500
---     END,
---     map_views_limit = CASE 
---         WHEN scope = 'basic' THEN 100
---         WHEN scope = 'premium' THEN 300
---         WHEN scope = 'pro' THEN 1000
---     END,
---     geo_search_limit = CASE
---         WHEN scope = 'basic' THEN 100
---         WHEN scope = 'premium' THEN 300
---         WHEN scope = 'pro' THEN 1000
---     END,
---     navigation_limit = CASE
---         WHEN scope = 'basic' THEN 100
---         WHEN scope = 'premium' THEN 300
---         WHEN scope = 'pro' THEN 1000
---     END;
 
 -- Check if the tarifs table is empty
 DO $$
