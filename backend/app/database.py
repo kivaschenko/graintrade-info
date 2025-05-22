@@ -1,14 +1,14 @@
-import os
+import asyncio
 import logging
 import asyncpg
 
 import redis
 
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://admin:test_password@localhost:35432/postgres",
-)
+# DATABASE_URL = os.getenv(
+#     "DATABASE_URL",
+#     "postgresql://admin:test_password@localhost:35432/postgres",
+# )
 DATABASE_URL = "postgresql://admin:test_password@localhost:35432/postgres"  # debug mode
 logging.info(f"Using DATABASE_URL: {DATABASE_URL}")
 
@@ -58,3 +58,13 @@ if __name__ == "__main__":
     print("Redis connected:", redis_db.pool)
     # Close connections
     redis_db.disconnect()
+    # Create async loop
+    loop = asyncio.get_event_loop()
+    # Create database connection
+    database = Database(DATABASE_URL)
+    # Connect to database
+    loop.run_until_complete(database.connect())
+    # Test connection
+    print("Database connected:", database.pool)
+    # Close connections
+    loop.run_until_complete(database.disconnect())
