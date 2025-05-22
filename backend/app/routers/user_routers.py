@@ -18,7 +18,7 @@ from fastapi.security import (
 )
 import bcrypt
 import jwt
-from .schemas import (
+from ..schemas import (
     UserInCreate,
     UserInDB,
     UserInResponse,
