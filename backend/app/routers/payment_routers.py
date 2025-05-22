@@ -30,10 +30,7 @@ async def confirm_payment(request: Request):
         payment_id = r["payment_id"]
         signature = r["signature"]
 
-        print("Order ID:", r["order_id"], type(r["order_id"]))
-        if not payment_service.verify_payment(
-            payment_id=payment_id, received_signature=signature
-        ):
+        if not payment_service.verify_payment(payment_id, signature):
             return JSONResponse(
                 content={"status": "error", "message": "Signature verification failed"},
                 status_code=400,

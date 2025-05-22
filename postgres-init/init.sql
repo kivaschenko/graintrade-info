@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     end_date TIMESTAMP,
     status VARCHAR(50) NOT NULL DEFAULT 'active',
     created_at TIMESTAMP DEFAULT NOW(),
-    payment_id VARCHAR(20),
+    payment_id INTEGER,
     items_count INTEGER DEFAULT 0,
     map_views INTEGER DEFAULT 0,
     geo_search_count INTEGER DEFAULT 0,
