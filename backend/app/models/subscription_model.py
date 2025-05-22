@@ -31,7 +31,7 @@ async def update_status(status: str, payment_id: str):
         RETURNING id, payment_id, status
 """
     async with database.pool.acquire() as conn:
-        row = await conn.fetchrow(query, status, id)
+        row = await conn.fetchrow(query, status, payment_id)
         return row
 
 
