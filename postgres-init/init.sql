@@ -596,3 +596,104 @@ BEGIN
         ('Pro', 'Pro subscription plan', 24.99, 'EUR', 'pro', 'monthly', 500, 1000, 1000, 1000);
     END IF;
 END $$;
+
+-- Add parent_category column if it doesn't exist
+ALTER TABLE categories 
+ADD COLUMN IF NOT EXISTS parent_category VARCHAR(50);
+
+-- Update categories with high-level groupings
+UPDATE categories
+SET parent_category = 
+    CASE 
+        -- Grains
+        WHEN name IN (
+            'Wheat 1st grade', 'Wheat 2nd grade', 'Wheat 3rd grade', 
+            'Wheat 4th grade', 'Wheat 5th grade', 'Wheat 6th grade',
+            'Durum wheat', 'Einkorn wheat', 'Spelt wheat',
+            'Barley', 'Malting barley', 'Corn', 'Rice', 'Triticale',
+            'Rye', 'Rye 2nd grade', 'Rye 3rd grade', 'Rye 4th grade',
+            'Oats', 'Millet', 'Sorghum white', 'Sorghum red'
+        ) THEN 'Grains'
+        
+        -- Oilseeds
+        WHEN name IN (
+            'Sunflower', 'Sunflower high-oleic', 'Confectionery sunflower seeds',
+            'Rapeseed', 'Rapeseed high grade less 25mcm', 'GM rape',
+            'Rapeseed 1 grade less 35mcm', 'Rapeseed 2 grade more 35mcm',
+            'Soy', 'Soybeans', 'Soybeans GMO-free',
+            'Flax', 'Mustard seeds', 'Poppy seeds'
+        ) THEN 'Oilseeds'
+        
+        -- Pulses
+        WHEN name IN (
+            'Peas', 'Green peas', 'Vetch', 'Chick-peas',
+            'Lupine', 'Lentil', 'White kidney beans'
+        ) THEN 'Pulses'
+        
+        -- Oils
+        WHEN name IN (
+            'Sunflower oil', 'Soybean oil', 'Rape-seed oil',
+            'Corn oil', 'Linseed oil'
+        ) THEN 'Oils'
+        
+        -- Processed products
+        WHEN name IN (
+            'Wheat flour extra class', 'Wheat flour class 1',
+            'Rye flour', 'Oat flour', 'Buckwheat groats',
+            'Wheat mill offals'
+        ) THEN 'Processed products'
+        
+        -- Industrial products
+        WHEN name IN (
+            'Sugar beet pulp gran', 'Beet molasses',
+            'Soybean hulls granulated', 'Soybean lecithin',
+            'Soybean phosphatide concentrate', 'Sunflower concentrate',
+            'Sugar'
+        ) THEN 'Industrial products'
+        
+        -- Feed products
+        WHEN name IN (
+            'Sunflower seed meal', 'Soybeen meal', 'Rape-seed coarse meal',
+            'Sunflower oil cake', 'rapeseed cake'
+        ) THEN 'Feed products'
+        
+        -- Other
+        WHEN name IN (
+            'Coriander', 'Thistle', 'Buckwheat'
+        ) THEN 'Other'
+        
+        ELSE 'Uncategorized'
+    END;
+
+-- Add translations for parent categories
+CREATE TABLE IF NOT EXISTS parent_categories (
+    name VARCHAR(50) PRIMARY KEY,
+    ua_name VARCHAR(50) NOT NULL
+);
+
+INSERT INTO parent_categories (name, ua_name)
+VALUES 
+    ('Grains', 'Зернові'),
+    ('Oilseeds', 'Олійні'),
+    ('Pulses', 'Бобові'),
+    ('Oils', 'Олії'),
+    ('Processed products', 'Перероблені продукти'),
+    ('Industrial products', 'Промислові продукти'),
+    ('Feed products', 'Кормові продукти'),
+    ('Other', 'Інше'),
+    ('Uncategorized', 'Без категорії')
+ON CONFLICT (name) DO NOTHING;
+
+-- Create index for parent_category
+CREATE INDEX IF NOT EXISTS idx_categories_parent ON categories(parent_category);
+
+-- Add constraint to reference parent_categories
+ALTER TABLE categories
+DROP CONSTRAINT IF EXISTS fk_parent_category;
+
+ALTER TABLE categories
+ADD CONSTRAINT fk_parent_category 
+FOREIGN KEY (parent_category) 
+REFERENCES parent_categories(name)
+ON UPDATE CASCADE
+ON DELETE SET NULL;
