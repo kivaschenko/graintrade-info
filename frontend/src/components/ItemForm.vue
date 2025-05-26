@@ -7,7 +7,7 @@
         <div id="map" class="map mb-3"></div>
       </div>
       <div class="col-lg-6">
-        <form @submit.prevent="createItem" style="background-color: #3FB1CE; padding: 1rem;">
+        <form @submit.prevent="createItem" style="background-color:aquamarine; padding: 1rem;">
           <div v-if="successMessage" class="alert alert-success" role="alert">
             {{ successMessage }}
           </div>
@@ -48,6 +48,7 @@
             <div class="col-md-6">
               <label for="currency" class="form-label">{{ $t( 'common_text.currency' ) }}</label>
               <select class="form-control" id="currency" v-model="currency" required>
+                <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
                 <option value="UAH">UAH</option>
               </select>
@@ -240,6 +241,7 @@ export default {
       // Fetch categories from the backend.
     try {
       const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories`);
+      console.log("Categories response:", response);
       this.categories = response.data;
     } catch (error) {
       console.error('Error fetching categories:', error);

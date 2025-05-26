@@ -6,26 +6,41 @@ CREATE EXTENSION IF NOT EXISTS postgis_topology CASCADE;
 CREATE EXTENSION IF NOT EXISTS postgis_tiger_geocoder CASCADE;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Drop table if it exists and create it
+-- ---------------------------
+-- Categories related tables |
+-- ---------------------------
 DROP TABLE IF EXISTS categories CASCADE;
 
--- Categoy table
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     description TEXT,
     ua_name VARCHAR(50),
     ua_description TEXT,
+    parent_category VARCHAR(50),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Drop indexes if they exist
-DROP INDEX IF EXISTS categories_name_idx;
-DROP INDEX IF EXISTS categories_ua_name_idx;
+CREATE TABLE IF NOT EXISTS parent_categories (
+    name VARCHAR(50) PRIMARY KEY,
+    ua_name VARCHAR(50) NOT NULL
+);
 
--- Create indexes
+-- Indexes
 CREATE INDEX categories_name_idx ON categories (name);
 CREATE INDEX categories_ua_name_idx ON categories (ua_name);
+CREATE INDEX idx_categories_parent ON categories(parent_category);
+
+-- Constraints
+ALTER TABLE categories
+ADD CONSTRAINT fk_parent_category 
+FOREIGN KEY (parent_category) 
+REFERENCES parent_categories(name)
+ON UPDATE CASCADE
+ON DELETE SET NULL;
+
+
+
 
 -- Drop table if it exists and create it
 DROP TABLE IF EXISTS items CASCADE;
@@ -33,12 +48,12 @@ DROP TABLE IF EXISTS items CASCADE;
 -- Items table
 CREATE TABLE IF NOT EXISTS items (
     id SERIAL PRIMARY KEY,
-    uuid VARCHAR NOT NULL DEFAULT uuid_generate_v4(),
+    uuid UUID NOT NULL DEFAULT uuid_generate_v4(),
     category_id INTEGER NOT NULL,
     offer_type VARCHAR(50) NOT NULL,  -- sell, buy, exchange
     title VARCHAR(150) NOT NULL,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
+    description VARCHAR(600),  -- Description of the item
+    price DECIMAL(10, 2) NOT NULL CONSTRAINT positive_price CHECK (price>0),
     currency VARCHAR(3) NOT NULL,
     amount INTEGER NOT NULL,
     measure VARCHAR(10) NOT NULL,
@@ -49,7 +64,7 @@ CREATE TABLE IF NOT EXISTS items (
     longitude DECIMAL(9, 6) NOT NULL,
     geom GEOMETRY(POINT, 4326),
     created_at TIMESTAMP DEFAULT NOW(),
-    FOREIGN KEY (category_id) REFERENCES categories (id)
+    FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
     );
 
 -- Drop indexes if they exist
@@ -66,7 +81,7 @@ CREATE INDEX items_country_idx ON items (country);
 CREATE INDEX items_region_idx ON items (region);
 CREATE INDEX items_created_at_idx ON items (created_at);
 
--- Create users table
+-- Users and authentication related tables
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL,
@@ -75,16 +90,10 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     hashed_password VARCHAR(100) NOT NULL,
     disabled BOOLEAN DEFAULT FALSE,
-    map_views INTEGER DEFAULT 0
+    CONSTRAINT email_unique_constraint UNIQUE (email),
+    CONSTRAINT users_username_unique_constraint UNIQUE (username)
 );
--- Add unique constraint to email and username columns
--- This constraint ensures that the email address and username are unique across all users
-ALTER TABLE IF EXISTS public.users
-    ADD CONSTRAINT email_unique_constraint UNIQUE (email);
-ALTER TABLE IF EXISTS public.users
-    ADD CONSTRAINT users_username_unique_constraint UNIQUE (username);
 
--- Create items_users table
 CREATE TABLE IF NOT EXISTS items_users (
     id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL,
@@ -94,49 +103,56 @@ CREATE TABLE IF NOT EXISTS items_users (
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
--- Create tarifs table
+-- Subscription related tables
 CREATE TABLE IF NOT EXISTS tarifs (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     description TEXT NOT NULL,
-    price DECIMAL(10, 2) NOT NULL DEFAULT 10.00,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+    price DECIMAL(10, 2) NOT NULL DEFAULT 5.00,
+    currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
     scope VARCHAR(100) NOT NULL DEFAULT 'basic',
     terms VARCHAR(50) NOT NULL DEFAULT 'monthly',
-    created_at TIMESTAMP DEFAULT NOW()
+    items_limit INTEGER CONSTRAINT positive_items_limit CHECK (items_limit>=0),
+    map_views_limit INTEGER CONSTRAINT positive_map_views_limit CHECK (map_views_limit>=0),
+    geo_search_limit INTEGER CONSTRAINT positive_geo_search_limit CHECK (geo_search_limit>=0),
+    navigation_limit INTEGER CONSTRAINT positive_navigation_limit CHECK (navigation_limit>=0),
+    created_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT tarifs_name_unique_constraint UNIQUE (name),
+    CONSTRAINT tarifs_scope_unique_constraint UNIQUE (scope)
 );
 
--- Drop indexes if they exist
-DROP INDEX IF EXISTS tarifs_scope_idx;
-DROP INDEX IF EXISTS tarifs_terms_idx;
-
--- Create indexes
-CREATE INDEX tarifs_scope_idx ON tarifs (scope);
-CREATE INDEX tarifs_terms_idx ON tarifs (terms);
-
--- Create table for user's subscriptions
 CREATE TABLE IF NOT EXISTS subscriptions (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    tarif_id INTEGER NOT NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    tarif_id INTEGER REFERENCES tarifs(id) ON DELETE SET NULL,
     start_date TIMESTAMP DEFAULT NOW(),
     end_date TIMESTAMP,
     status VARCHAR(50) NOT NULL DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT NOW(),
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (tarif_id) REFERENCES tarifs (id)
+    payment_id INTEGER,
+    items_count INTEGER DEFAULT 0,
+    map_views INTEGER DEFAULT 0,
+    geo_search_count INTEGER DEFAULT 0,
+    navigation_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Indexes
+CREATE INDEX tarifs_scope_idx ON tarifs (scope);
+CREATE INDEX tarifs_terms_idx ON tarifs (terms);
 
 -- Create table for user's payments
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    tarif_id INTEGER NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
-    created_at TIMESTAMP DEFAULT NOW(),
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (tarif_id) REFERENCES tarifs (id)
+    payment_id INTEGER UNIQUE NOT NULL,
+    order_id VARCHAR(50) NOT NULL,
+    order_status VARCHAR(20) NOT NULL,
+    currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
+    amount INTEGER NOT NULL,
+    card_type VARCHAR(20),
+    masked_card VARCHAR(20),
+    sender_email VARCHAR(255),
+    data JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Drop the function if it exists
@@ -158,322 +174,272 @@ BEFORE INSERT OR UPDATE ON items
 FOR EACH ROW
 EXECUTE FUNCTION update_geometry_from_lat_lon();
 
--- Check if the categories table is empty
-DO $$
+
+-- Function to increment item count
+CREATE OR REPLACE FUNCTION increment_items_count(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_current_count INTEGER;
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM categories) THEN
-	-- Insert default categories
-	INSERT INTO categories (name, description, ua_name, ua_description)
-	VALUES
-    (
-	'Wheat 2nd grade',
-        'Wheat 2nd grade must meet the requirements of DSTU 3768:2019 and have the following basic indicators:
-- moisture - basis 14%;
-- trash impurity - basis 2%;
-- grain impurity - max 8%;
-including impurity of other crops: basis 1% max - 4%,
-including sprouted grains: max - 3%,
-including broken grains: max - 5%;
-- protein - min. 12.50%;
-- nature - min. 750g/l;
-- gluten - min. 23%;
-- IDK - max 100 pcs.;
-- damaged by bug-turtle - basis 2%, max 3%;
-- sooty grain - basis 8%;
-- falling number, s, - basis 250s, min. 220s.
-Sampling and sample formation for the determination of all indicators is carried out in accordance with DSTU ISO 13690:2003.',
-        'Пшениця 2-го класу',
-        'Пшениця 2 клас повинна відповідати вимогам ДСТУ 3768:2019 та мати наступні базисні показники:
-- вологість - базис 14%;
-- сміттєва домішка - базис 2%;
-- зернова домішка - макс 8%;
-зокрема домішка ін. культур: базис 1% макс - 4%,
-зокрема пророслі зерна: макс - 3%,
-зокрема биті зерна: макс - 5%;
-- білок - мін. 12,50%;
-- натура - мін. 750г/л.;
-- клейковина - мін. 23%;
-- ІДК - макс 100 од.;
-- пошкоджені клопом-черепашкою -базис 2%, макс 3%;
-- сажкове зерно - базис 8%;
-- число падання, с, - базис 250с, мін. 220с.
-Відбір та формування проб для визначення всіх показників здійснюється згідно ДСТУ ISO 13690:2003.'
-    ),
-    (
-        'Wheat 3rd grade',
-        'Wheat 3rd grade must meet the requirements of DSTU 3768:2019 and have the following basic indicators:
-- moisture - basis 14%;
-- trash impurity - basis 2%;
-- grain impurity - max 8 %,
-including impurity of other crops: max - 4%,
-including sprouted grains: max - 3%;
-including broken grains: max - 5%;
-- protein - min. 11.0%;
-- nature - min. 730g/l;
-- gluten - min. 18%;
-- IDK - max 100 pcs.;
-- damaged by bug-turtle - basis 3%, max 5%;
-- sooty grain basis 8%, max 10%;
-- falling number, s, - basis 220s, min. 180s.
-Sampling and sample formation for the determination of all indicators is carried out in accordance with DSTU ISO 13690:2003.',
-        'Пшениця 3-го класу',
-        'Пшениця 3 клас повинна відповідати вимогам ДСТУ 3768:2019 та мати наступні базисні показники:
-- вологість - базис 14%;
-- сміттєва домішка - базис 2%;
-- зернова домішка - макс 8 %,
-зокрема домішка ін. культур: макс - 4%,
-зокрема пророслі зерна : макс - 3%;
-зокрема биті зерна: макс - 5%;
-- білок - мін. 11,0%;
-- натура - мін. 730г/л;
-- клейковина - мін. 18%;
-- ІДК - макс 100 од.;
-- пошкоджені клопом-черепашкою -базис 3%, макс 5%;
-- сажкове зерно базис 8%, макс 10%;
-- число падання, с, - базис 220с, мін. 180с.
-Відбір та формування проб для визначення всіх показників здійснюється згідно ДСТУ ISO 13690:2003.'
-    ),
-    (
-        'Wheat 4th grade',
-        'Wheat 4th grade must meet the requirements of DSTU 3768:2019 and have the following basic indicators:
-- moisture - basis 14%;
-- trash impurity - basis 2%, max 3%;
-- grain impurity - max 15%,
-including impurity of other crops max - 5%,
-including sprouted grains: within the grain impurity;
-- protein - not limited;
-- nature - basis 720 g/l, min. 650g/l
-- gluten - not limited;
-- damaged by bug-turtle - basis 10%, max - 20%,
-- sooty grain - basis 10%, max - 20%.
-Sampling and sample formation for the determination of all indicators is carried out in accordance with DSTU ISO 13690:2003.',
-        'Пшениця 4-го класу',
-        'Пшениця 4 клас повинна відповідати вимогам ДСТУ 3768:2019 та мати наступні базисні показники:
-- вологість - базис 14%;
-- сміттєва домішка - базис 2%, макс 3%;
-- зернова домішка - макс 15%,
-зокрема домішка ін. культур макс - 5%,
-зокрема пророслі зерна: в межах зернової домішки;
-- білок - не обмежений;
-- натура - базис 720 г/л, мін. 650г/л
-- клейковина - не обмежена;
-- пошкоджені клопом-черепашкою - базис 10%, макс - 20%,
-- сажкове зерно - базис 10%, макс - 20%.
-Відбір та формування проб для визначення всіх показників здійснюється згідно ДСТУ ISO 13690:2003.'
-    ),
-    (
-        'Barley',
-        'Barley must meet the requirements of DSTU 3769-98 and have the following basic indicators:
-- moisture - 14.0 %,
-- trash impurity - 2.0 %,
-- grain impurity - not more than 15.0%, including immature grains - not more than 5.0%,
-- grains of other crops - not more than 5.0%,
-- nature basis 580g/l, min.550g/l.
-Sampling and sample formation for the determination of all indicators is carried out in accordance with DSTU ISO 13690:2003.',
-        'Ячмінь',
-        'Ячмінь повинен відповідати вимогам ДСТУ 3769-98 та мати наступні базисні показники:
-- вологість - 14,0 %,
-- сміттєва домішка - 2,0 %,
-- зернова домішка - не більше 15,0%, в т.ч. недозрілих зерен - не більше 5,0%,
-- зерна інших зернових культур - не більше 5,0%,
-- натура базис 580г/л, мін.550г/л.
-Відбір та формування проб для визначення всіх показників здійснюється згідно ДСТУ ISO 13690:2003.'
-    ),
-    (
-        'Corn',
-        'Corn must meet the requirements of DSTU 4525:2006 and have the following basic indicators:
-- moisture - 14.0%;
-- trash impurity - 2.0 %;
-- grain impurity - max. 15 %;
-- damaged grains - basis. 5.0%; max 8.0%
-- broken grains - basis 5.0%, within the grain
-Sampling and sample formation for the determination of all indicators is carried out in accordance with DSTU ISO 13690:2003.',
-        'Кукурудза',
-        'Кукурудза повинна відповідати вимогам ДСТУ 4525:2006 та мати наступні базисні показники:
-- вологість - 14,0%;
-- сміттєва домішка - 2,0 %;
-- зернова домішка - макс. 15 %;
-- пошкодженні зерна - базис. 5,0%; макс 8,0%
-- биті зерна - базис 5,0%, в межах зернової
-Відбір та формування проб для визначення всіх показників здійснюється згідно ДСТУ ISO 13690:2003.'
-    ),
-    (
-        'Sunflower',
-        'Recommended quality requirements according to DSTU 7011:2009. The following indicators should be taken into account here:
-- moisture - not more than 8%,
-- trash impurities - up to 3%,
-- oil impurities - maximum 10%,
-- oil yield - from 48% and above,
-- oleic acid content - from 82%.
-The presence of ticks or some other types of pests, toxic drugs is unacceptable.',
-        'Соняшник',
-        'Рекомендовані вимоги до якості згідно з ДСТУ 7011:2009. Тут мають враховуватися наступні показники: 
-- вологість – не більше 8%, 
-- сміттєві домішки – до 3%, 
-- олійні домішки – максимально 10%, 
-- вихід олії – від 48% і більше, 
-- вміст олеїнової кислоти – від 82%. 
-Не можна допускати наявність кліщів або деяких інших видів шкідників, токсичних препаратів.'
-    ),
-    (
-        'Soy',
-        'Recommended quality requirements according to DSTU 4962:2008. The following indicators should be taken into account here:
-- moisture - not more than 14%,
-- trash impurities - up to 2%,
-- grain impurities - up to 5%,
-- oil impurities - maximum 10%,
-- oil yield - from 18% and above,
-- protein content - from 34% and above.
-The presence of ticks or some other types of pests, toxic drugs is unacceptable.',
-        'Соя',
-        'Рекомендовані вимоги до якості згідно з ДСТУ 4962:2008. Тут мають враховуватися наступні показники:
-- вологість – не більше 14%,
-- сміттєві домішки – до 2%,
-- зернові домішки – до 5%,
-- олійні домішки – максимально 10%,
-- вихід олії – від 18% і більше,
-- вміст білка – від 34% і більше.
-Не можна допускати наявність кліщів або деяких інших видів шкідників, токсичних препаратів.'
-    ),
-    (
-        'Rapeseed',
-        'Recommended quality requirements according to DSTU 4963:2008. The following indicators should be taken into account here:
-- moisture - not more than 9%,
-- trash impurities - up to 2%,
-- grain impurities - up to 5%,
-- oil impurities - maximum 10%,
-- oil yield - from 40% and above,
-- erucic acid content - not more than 2%.
-The presence of ticks or some other types of pests, toxic drugs is unacceptable.',
-        'Рапс',
-        'Рекомендовані вимоги до якості згідно з ДСТУ 4963:2008. Тут мають враховуватися наступні показники:
-- вологість – не більше 9%,
-- сміттєві домішки – до 2%,
-- зернові домішки – до 5%,
-- олійні домішки – максимально 10%,
-- вихід олії – від 40% і більше,
-- вміст ерукової кислоти – не більше 2%.
-Не можна допускати наявність кліщів або деяких інших видів шкідників, токсичних препаратів.'
-    ),
-    (
-        'Oats',
-        'Recommended quality requirements according to DSTU 3767:2019. The following indicators should be taken into account here:
-- moisture - not more than 14%,
-- trash impurities - up to 2%,
-- grain impurities - up to 5%,
-- nature - basis 580g/l, min. 550g/l.
-The presence of ticks or some other types of pests, toxic drugs is unacceptable.',
-        'Вівсянка',
-        'Рекомендовані вимоги до якості згідно з ДСТУ 3767:2019. Тут мають враховуватися наступні показники:
-- вологість – не більше 14%,
-- сміттєві домішки – до 2%,
-- зернові домішки – до 5%,
-- натура – базис 580г/л, мін. 550г/л.
-Не можна допускати наявність кліщів або деяких інших видів шкідників, токсичних препаратів.'
-    ),
-    (
-        'Rye',
-        'Recommended quality requirements according to DSTU 3766:2019. The following indicators should be taken into account here:
-- moisture - not more than 14%,
-- trash impurities - up to 2%,
-- grain impurities - up to 5%,
-- nature - basis 580g/l, min. 550g/l.
-The presence of ticks or some other types of pests, toxic drugs is unacceptable.',
-        'Жито',
-        'Рекомендовані вимоги до якості згідно з ДСТУ 3766:2019. Тут мають враховуватися наступні показники:
-- вологість – не більше 14%,
-- сміттєві домішки – до 2%,
-- зернові домішки – до 5%,
-- натура – базис 580г/л, мін. 550г/л.
-Не можна допускати наявність кліщів або деяких інших видів шкідників, токсичних препаратів.'
-    ),
-    (
-        'Millet',
-        'Recommended quality requirements according to DSTU 3765:2019. The following indicators should be taken into account here:
-- moisture - not more than 14%,
-- trash impurities - up to 2%,
-- grain impurities - up to 5%,
-- nature - basis 580g/l, min. 550g/l.
-The presence of ticks or some other types of pests, toxic drugs is unacceptable.',
-        'Просо',
-        'Рекомендовані вимоги до якості згідно з ДСТУ 3765:2019. Тут мають враховуватися наступні показники:
-- вологість – не більше 14%,
-- сміттєві домішки – до 2%,
-- зернові домішки – до 5%,
-- натура – базис 580г/л, мін. 550г/л.
-Не можна допускати наявність кліщів або деяких інших видів шкідників, токсичних препаратів.'
-    ),
-    (
-        'Peas',
-        'Recommended quality requirements according to DSTU 3764:2019. The following indicators should be taken into account here:
-- moisture - not more than 14%,
-- trash impurities - up to 2%,
-- grain impurities - up to 5%,
-- nature - basis 580g/l, min. 550g/l.
-The presence of ticks or some other types of pests, toxic drugs is unacceptable.',
-        'Горох',
-        'Рекомендовані вимоги до якості згідно з ДСТУ 3764:2019. Тут мають враховуватися наступні показники:
-- вологість – не більше 14%,
-- сміттєві домішки – до 2%,
-- зернові домішки – до 5%,
-- натура – базис 580г/л, мін. 550г/л.
-Не можна допускати наявність кліщів або деяких інших видів шкідників, токсичних препаратів.'
-    ),
-    (
-        'Buckwheat',
-        'Recommended quality requirements according to DSTU 3763:2019. The following indicators should be taken into account here:
-- moisture - not more than 14%,
-- trash impurities - up to 2%,
-- grain impurities - up to 5%,
-- nature - basis 580g/l, min. 550g/l.
-The presence of ticks or some other types of pests, toxic drugs is unacceptable.',
-        'Гречка',
-        'Рекомендовані вимоги до якості згідно з ДСТУ 3763:2019. Тут мають враховуватися наступні показники:
-- вологість – не більше 14%,
-- сміттєві домішки – до 2%,
-- зернові домішки – до 5%,
-- натура – базис 580г/л, мін. 550г/л.
-Не можна допускати наявність кліщів або деяких інших видів шкідників, токсичних препаратів.'
-    ),
-(
-        'Diesel fuel',
-        'Diesel fuel must meet the requirements of DSTU 3587:2015 and have the following basic
-        indicators:
-        - sulfur content - not more than 0.2%;
-        - water content - not more than 0.05%;
-        - mechanical impurities content - not more than 0.01%;
-        - flash point - not lower than 55 °C;
-        - freezing point - not higher than -5 °C;
-        - kinematic viscosity at 20 °C - from 2.0 to 4.5 mm2/s;
-        - density at 15 °C - from 820 to 860 kg/m3;
-        - cetane number - not less than 45.
-        Sampling and sample formation for the determination of all indicators is carried out in accordance with DSTU ISO 3170:2007.',
-        'Дизельне паливо',
-        'Дизельне паливо повинно відповідати вимогам ДСТУ 3587:2015 та мати наступні базисні
-    показники:
-    - вміст сірки - не більше 0,2 %;
-    - вміст води - не більше 0,05 %;
-    - вміст механічних домішок - не більше 0,01 %;
-    - температура спалаху - не нижче 55 °С;
-    - температура застигання - не вище -5 °С;
-    - кінематична в`язкість при 20 °С - від 2,0 до 4,5 мм2/с;
-    - щільність при 15 °С - від 820 до 860 кг/м3;
-    - кількість цетану - не менше 45.
-    Відбір та формування проб для визначення всіх показників здійснюється згідно ДСТУ ISO 3170:2007.'
-)
-;
-    END IF;
-END $$;
+    -- Update the counter and return new value
+    UPDATE subscriptions
+    SET items_count = items_count + 1
+    WHERE user_id = p_user_id
+    AND status = 'active'
+    AND end_date > NOW()
+    RETURNING items_count INTO v_current_count;
+    
+    RETURN COALESCE(v_current_count, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to increment map views
+CREATE OR REPLACE FUNCTION increment_map_views(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_current_views INTEGER;
+BEGIN
+    -- Update the counter and return new value
+    UPDATE subscriptions
+    SET map_views = map_views + 1
+    WHERE user_id = p_user_id
+    AND status = 'active'
+    AND end_date > NOW()
+    RETURNING map_views INTO v_current_views;
+    
+    RETURN COALESCE(v_current_views, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Functon to increment navigation count
+CREATE OR REPLACE FUNCTION increment_navigation_count(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_current_count INTEGER;
+BEGIN
+    -- Update the counter and return new value
+    UPDATE subscriptions
+    SET navigation_count = navigation_count + 1
+    WHERE user_id = p_user_id
+    AND status = 'active'
+    AND end_date > NOW()
+    RETURNING navigation_count INTO v_current_count;
+
+    RETURN COALESCE(v_current_count, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Functon to increment geo_search count
+CREATE OR REPLACE FUNCTION increment_geo_search_count(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_current_count INTEGER;
+BEGIN
+    -- Update the counter and return new value
+    UPDATE subscriptions
+    SET geo_search_count = geo_search_count + 1
+    WHERE user_id = p_user_id
+    AND status = 'active'
+    AND end_date > NOW()
+    RETURNING geo_search_count INTO v_current_count;
+
+    RETURN COALESCE(v_current_count, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get current usage
+CREATE OR REPLACE FUNCTION get_subscription_usage(p_user_id INTEGER)
+RETURNS TABLE (
+    items_count INTEGER,
+    map_views INTEGER,
+    geo_search_count INTEGER,
+    navigation_count INTEGER,
+    tarif_scope VARCHAR,
+    is_active BOOLEAN
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        s.items_count,
+        s.map_views,
+        s.geo_search_count,
+        s.navigation_count,
+        t.scope as tarif_scope,
+        (s.status = 'active' AND s.end_date > NOW()) as is_active
+    FROM subscriptions s
+    JOIN tarifs t ON s.tarif_id = t.id
+    WHERE s.user_id = p_user_id
+    AND s.status = 'active'
+    AND s.end_date > NOW();
+END;
+$$ LANGUAGE plpgsql;
+
 -- Check if the tarifs table is empty
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM tarifs) THEN
 	-- Insert default tarifs
-	INSERT INTO tarifs (name, description, price, currency, scope, terms)
+	INSERT INTO tarifs (name, description, price, currency, scope, terms, items_limit, map_views_limit, geo_search_limit, navigation_limit)
 	VALUES
-	    ('Basic', 'Basic subscription plan', 10.00, 'USD', 'basic', 'monthly'),
-	    ('Premium', 'Premium subscription plan', 20.00, 'USD', 'premium', 'monthly'),
-	    ('Pro', 'Pro subscription plan', 30.00, 'USD', 'pro', 'monthly');
+        ('Free', 'Free probation plan', 0.00, 'EUR', 'free', 'monthly', 5, 10, 10, 10),
+	    ('Basic', 'Basic subscription plan', 4.99, 'EUR', 'basic', 'monthly', 50, 100, 100, 100),
+        ('Premium', 'Premium subscription plan', 9.99, 'EUR', 'premium', 'monthly', 150, 300, 300, 300),
+        ('Pro', 'Pro subscription plan', 24.99, 'EUR', 'pro', 'monthly', 500, 1000, 1000, 1000);
     END IF;
 END $$;
 
+DO $$
+BEGIN
+    -- Check if the parent_categories table is empty
+    IF NOT EXISTS (SELECT 1 FROM parent_categories) THEN
+        -- Insert default parent categories
+        INSERT INTO parent_categories (name, ua_name)
+        VALUES 
+            ('Grains', 'Зернові'),
+            ('Oilseeds', 'Олійні'),
+            ('Pulses', 'Бобові'),
+            ('Oils', 'Олії'),
+            ('Processed products', 'Перероблені продукти'),
+            ('Industrial products', 'Промислові продукти'),
+            ('Feed products', 'Кормові продукти'),
+            ('Other', 'Інше'),
+            ('Uncategorized', 'Без категорії');
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    -- First, let's insert new categories that don't exist yet
+    IF NOT EXISTS (SELECT 1 FROM categories WHERE name = 'Wheat 1st grade') THEN
+    -- Insert new categories
+    INSERT INTO categories (name, ua_name, parent_category, description, ua_description)
+    VALUES
+        -- Grains
+        ('Wheat 1st grade', 'Пшениця 1 клас', 'Grains', 'First grade wheat, suitable for high-quality flour production.', 'Пшениця 1 клас, придатна для виробництва високоякісного борошна.'),
+        ('Wheat 2nd grade', 'Пшениця 2 клас', 'Grains', 'Second grade wheat, used for standard flour.', 'Пшениця 2 клас, використовується для стандартного борошна.'),
+        ('Wheat 3rd grade', 'Пшениця 3 клас', 'Grains', 'Third grade wheat, lower quality than first and second grades.', 'Пшениця 3 клас, нижча якість ніж перший і другий класи.'),
+        ('Wheat 4th grade', 'Пшениця 4 клас', 'Grains', 'Fourth grade wheat, used for animal feed and lower quality products.', 'Пшениця 4 клас, використовується для кормів тваринам та нижчої якості продуктів.'),
+        ('Wheat 5th grade', 'Пшениця 5 клас', 'Grains', 'Fifth grade wheat, lowest quality.', 'Пшениця 5 клас, найнижча якість.'),
+        ('Wheat 6th grade', 'Пшениця 6 клас', 'Grains', 'Sixth grade wheat, typically used for animal feed.', 'Пшениця 6 клас, зазвичай використовується для кормів тваринам.'),
+        ('Barley', 'Ячмінь', 'Grains', 'Barley grain, used for animal feed and brewing.', 'Ячмінь, використовується для кормів тваринам та пивоваріння.'),
+        ('Corn', 'Кукурудза', 'Grains', 'Corn grain, widely used in food and feed industries.', 'Кукурудза, широко використовується в харчовій та кормовій промисловості.'),
+        ('Rye', 'Жито', 'Grains', 'Rye grain, used for bread and animal feed.', 'Жито, використовується для хліба та кормів тваринам.'),
+        ('Rye 2nd grade', 'Жито 2 клас', 'Grains', NULL, NULL),
+        ('Rye 3rd grade', 'Жито 3 клас', 'Grains', NULL, NULL),
+        ('Rye 4th grade', 'Жито 4 клас', 'Grains', NULL, NULL),
+        ('Oats', 'Вівсяниця', 'Grains', 'Oats, used for food and animal feed.', 'Вівсяниця, використовується для харчування та кормів тваринам.'),
+        ('Millet', 'Просо', 'Grains', 'Millet grain, used for food and bird feed.', 'Просо, використовується для харчування та кормів для птахів.'),
+        ('Buckwheat', 'Гречка', 'Grains', 'Buckwheat grain, used for food.', 'Гречка, використовується для харчування.'),
+        ('Einkorn wheat', 'Пшениця однозернянка', 'Grains', NULL, NULL),
+        ('Spelt wheat', 'Пшениця спельта', 'Grains', NULL, NULL),
+        ('Durum wheat', 'Пшениця тверда', 'Grains', NULL, NULL),
+        ('Malting barley', 'Пивоварний ячмінь', 'Grains', NULL, NULL),
+        ('Sorghum white', 'Сорго біле', 'Grains', NULL, NULL),
+        ('Sorghum red', 'Сорго червоне', 'Grains', NULL, NULL),
+        ('Rice', 'Рис', 'Grains', NULL, NULL),
+        ('Triticale', 'Тритикале', 'Grains', NULL, NULL),
+        -- Pulses
+        ('Peas', 'Горох', 'Pulses', 'Peas, used for food and animal feed.', 'Горох, використовується для харчування та кормів тваринам.'),
+        ('Vetch', 'Вика', 'Pulses', NULL, NULL),
+        ('Green peas', 'Зелений горошок', 'Pulses', NULL, NULL),
+        ('Chick-peas', 'Нут', 'Pulses', NULL, NULL),
+        ('Lupine', 'Люпин', 'Pulses', NULL, NULL),
+        ('Lentil', 'Сочевиця', 'Pulses', NULL, NULL),
+        ('White kidney beans', 'Біла квасоля', 'Pulses', NULL, NULL),
+        -- Oilseeds and Related
+        ('Sunflower', 'Соняшник', 'Oilseeds', 'Sunflower seeds, used for oil production and food.', 'Соняшникові насіння, використовується для виробництва олії та харчування.'),
+        ('Soybeans', 'Соя', 'Oilseeds', 'Soybeans, used for oil and food products.', 'Соєві боби, використовується для олії та харчових продуктів.'),
+        ('Soy', 'Соєві боби', 'Oilseeds', NULL, NULL),
+        ('Rapeseed', 'Ріпак', 'Oilseeds', NULL, NULL),
+        ('Sunflower high-oleic', 'Соняшник високоолеїновий', 'Oilseeds', NULL, NULL),
+        ('Confectionery sunflower seeds', 'Соняшник кондитерський', 'Oilseeds', NULL, NULL),
+        ('Sunflower kernel', 'Ядро соняшнику', 'Oilseeds', NULL, NULL),
+        ('Rapeseed high grade less 25mcm', 'Ріпак вищий сорт менше 25мкм', 'Oilseeds', NULL, NULL),
+        ('Rapeseed 1 grade less 35mcm', 'Ріпак 1 клас менше 35мкм', 'Oilseeds', NULL, NULL),
+        ('Rapeseed 2 grade more 35mcm', 'Ріпак 2 клас більше 35мкм', 'Oilseeds', NULL, NULL),
+        ('Flax', 'Льон', 'Oilseeds', NULL, NULL),
+        ('Mustard seeds', 'Гірчичне насіння', 'Oilseeds', NULL, NULL),
+        ('Poppy seeds', 'Макове насіння', 'Oilseeds', NULL, NULL),
+        ('Soybeans GMO-free', 'Соєві боби без ГМО', 'Oilseeds', NULL, NULL),
+        ('Rapeseed coarse meal', 'Ріпаковий шрот', 'Oilseeds', NULL, NULL),
+        -- Oils
+        ('Sunflower oil', 'Соняшникова олія', 'Oils', 'Sunflower oil, used for cooking and food production.', 'Соняшникова олія, використовується для приготування їжі та виробництва продуктів харчування.'),
+        ('Soybean oil', 'Соєва олія', 'Oils', 'Soybean oil, used for cooking and food production.', 'Соєва олія, використовується для приготування їжі та виробництва продуктів харчування.'),
+        ('Rapeseed oil', 'Ріпакова олія', 'Oils', NULL, NULL),
+        ('Flaxseed oil', 'Льняна олія', 'Oils', NULL, NULL),
+        ('Mustard oil', 'Гірчична олія', 'Oils', NULL, NULL),
+        ('Poppy seed oil', 'Макова олія', 'Oils', NULL, NULL),
+        ('Corn oil', 'Кукурудзяна олія', 'Oils', NULL, NULL),
+        ('Olive oil', 'Оливкова олія', 'Oils', NULL, NULL),
+        ('Palm oil', 'Пальмова олія', 'Oils', NULL, NULL),
+        ('Coconut oil', 'Кокосова олія', 'Oils', NULL, NULL),
+        ('Sesame oil', 'Кунжутна олія', 'Oils', NULL, NULL),
+        ('Hemp seed oil', 'Конопляна олія', 'Oils', NULL, NULL),
+        ('Grape seed oil', 'Олія виноградних кісточок', 'Oils', NULL, NULL),
+        ('Avocado oil', 'Авокадова олія', 'Oils', NULL, NULL),
+        ('Walnut oil', 'Горіхова олія', 'Oils', NULL, NULL),
+        ('Almond oil', 'Мигдальна олія', 'Oils', NULL, NULL),
+        ('Pumpkin seed oil', 'Олія гарбузового насіння', 'Oils', NULL, NULL),
+        -- Processed products
+        ('Sunflower seed meal', 'Соняшниковий шрот', 'Processed products', 'Meal from sunflower seeds, used for animal feed.', 'Шрот з соняшникових насіння, використовується для кормів тваринам.'),
+        ('Soybeen meal', 'Соєвий шрот', 'Processed products', 'Meal from soybeans, used for animal feed.', 'Шрот з соєвих бобів, використовується для кормів тваринам.'),
+        ('Rape-seed coarse meal', 'Ріпаковий шрот', 'Processed products', 'Coarse meal from rapeseed, used for animal feed.', 'Грубий шрот з ріпаку, використовується для кормів тваринам.'),
+        ('Sunflower oil cake', 'Соняшникова макуха', 'Processed products', 'Cake from sunflower oil extraction, used for animal feed.', 'Макуха з видобутку соняшникової олії, використовується для кормів тваринам.'),
+        ('rapeseed cake', 'Ріпакова макуха', 'Processed products', NULL, NULL),
+        ('Wheat flour extra class', 'Пшеничне борошно екстра', 'Processed products', NULL, NULL),
+        ('Wheat flour class 1', 'Пшеничне борошно 1 клас', 'Processed products', NULL, NULL),
+        ('Rye flour', 'Житнє борошно', 'Processed products', NULL, NULL),
+        ('Oat flour', 'Вівсяне борошно', 'Processed products', NULL, NULL),
+        ('Buckwheat groats', 'Гречана крупа', 'Processed products', NULL, NULL),
+        ('Wheat mill offals', 'Пшеничні висівки', 'Processed products', NULL, NULL),
+        -- Industrial products
+        ('Sugar beet pulp gran', 'Гранульований буряковий жом', 'Industrial products', 'Granulated sugar beet pulp, used in animal feed.', 'Гранульований буряковий жом, використовується в кормі для тварин.'),
+        ('Beet molasses', 'Бурякова меляса', 'Industrial products', 'Molasses from sugar beets, used in animal feed and food industry.', 'Меляса з цукрових буряків, використовується в кормі для тварин та харчовій промисловості.'),
+        ('Coriander', 'Коріандр', 'Industrial products', NULL, NULL),
+        ('Thistle', 'Розторопша', 'Industrial products', NULL, NULL),
+        ('Soybean hulls granulated', 'Гранульована соєва оболонка', 'Industrial products', NULL, NULL),
+        ('Soybean lecithin', 'Соєвий лецитин', 'Industrial products', NULL, NULL),
+        ('Soybean phosphatide concentrate', 'Соєвий фосфатидний концентрат', 'Industrial products', NULL, NULL),
+        ('Sunflower concentrate', 'Соняшниковий концентрат', 'Industrial products', NULL, NULL),
+        ('Sugar', 'Цукор', 'Industrial products', NULL, NULL),
+        -- Feed products
+        ('Compound feed', 'Комбікорм', 'Feed products', 'Compound feed for livestock and poultry.', 'Комбікорм для худоби та птиці.'),
+        ('Premix', 'Премікс', 'Feed products', 'Premix for animal feed, containing vitamins and minerals.', 'Премікс для кормів тваринам, що містить вітаміни та мінерали.'),
+        ('Mineral feed', 'Мінеральний корм', 'Feed products', NULL, NULL),
+        ('Vitamin feed', 'Вітамінний корм', 'Feed products', NULL, NULL),
+        ('Protein feed', 'Білковий корм', 'Feed products', NULL, NULL),
+        ('Fat feed', 'Жировий корм', 'Feed products', NULL, NULL),
+        ('Enzyme feed', 'Ферментний корм', 'Feed products', NULL, NULL),
+        ('Probiotic feed', 'Пробіотичний корм', 'Feed products', NULL, NULL),
+        ('Antibiotic feed', 'Антибіотичний корм', 'Feed products', NULL, NULL),
+        ('Mineral-vitamin feed', 'Мінерально-вітамінний корм', 'Feed products', NULL, NULL),
+        -- Other
+        ('Diesel', 'Дизельне паливо', 'Other', 'Diesel fuel for agricultural machinery.', 'Дизельне паливо для сільськогосподарської техніки.'),
+        ('Gasoline', 'Бензин', 'Other', 'Gasoline for agricultural machinery.', 'Бензин для сільськогосподарської техніки.'),
+        ('Lubricants', 'Мастила', 'Other', 'Lubricants for agricultural machinery.', 'Мастила для сільськогосподарської техніки.'),
+        ('Fertilizers', 'Добрива', 'Other', NULL, NULL),
+        ('Pesticides', 'Пестициди', 'Other', NULL, NULL),
+        ('Herbicides', 'Гербіциди', 'Other', NULL, NULL),
+        ('Insecticides', 'Інсектициди', 'Other', NULL, NULL),
+        ('Fungicides', 'Фунгіциди', 'Other', NULL, NULL),
+        ('Growth regulators', 'Регулятори росту', 'Other', NULL, NULL),
+        ('Seeds', 'Насіння', 'Other', NULL, NULL);
+    END IF;
+END $$;
+
+-- Create hierarchical view for categories
+
+CREATE OR REPLACE VIEW categories_hierarchy AS
+SELECT 
+    c.id,
+    c.name,
+    c.description,
+    c.ua_name,
+    c.ua_description,
+    c.parent_category,
+    pc.ua_name AS parent_category_ua
+FROM
+    categories c
+LEFT JOIN parent_categories pc ON c.parent_category = pc.name
+ORDER BY
+    c.parent_category, c.name;

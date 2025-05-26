@@ -16,25 +16,18 @@ from fastapi.security import (
     OAuth2PasswordRequestForm,
     SecurityScopes,
 )
-from asyncpg import Connection
 import bcrypt
 import jwt
-from app.routers.schemas import (
+from ..schemas import (
     UserInCreate,
     UserInDB,
     UserInResponse,
     TokenData,
     Token,
 )
-from app.infrastructure.database import get_db
-from app.adapters import AsyncpgUserRepository
-from app.service_layer.user_services import send_user_to_rabbitmq
+from ..models import user_model, subscription_model
+from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, MAP_VIEW_LIMIT
 
-
-JWT_SECRET = "Avy8XuxvccZkogNVOi7DSeKIb+VxTc1Wwspits6rs0I7cUFTYngnwlC1xJioUVyX6bP7xVf/VQkp0Cal8mJhJA=="
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-MAP_VIEW_LIMIT = 100
 
 router = APIRouter(tags=["users"])
 
@@ -42,23 +35,50 @@ oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="token",
     scopes={
         "me": "Read information about the current user.",
-        "basic_tarif": "Read and write items, limited access to features.",
-        "premium_tarif": "Read and write items, full access to features.",
-        "enterprise_tarif": "Read and write items, full access to features.",
-        "admin": "Full access to all features.",
+        "create:item": "Allowed to create a new Item",
+        "read:item": "Allowed to read items.",
+        "delete:item": "Allowed to delete item.",
+        "add:category": "Allowed to add a new Category",
+        "view:map": "Allowed to view map.",
     },
 )
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
-
-# ==========
-# Dependency
-
-
-def get_user_repository(db: Connection = Depends(get_db)) -> AsyncpgUserRepository:
-    return AsyncpgUserRepository(conn=db)
+# --------------------------
+# Scopes according to Tariff
+SCOPES = {
+    "free": [
+        "me",
+        "create:item",
+        "read:item",
+        "view:map",
+    ],
+    "basic": [
+        "me",
+        "create:item",
+        "read:item",
+        "delete:item",
+        "view:map",
+    ],
+    "premium": [
+        "me",
+        "create:item",
+        "read:item",
+        "delete:item",
+        "view:map",
+        "add:category",
+    ],
+    "pro": [
+        "me",
+        "create:item",
+        "read:item",
+        "delete:item",
+        "view:map",
+        "add:category",
+    ],
+}
 
 
 def verify_password(plain_password, hashed_password):
@@ -71,16 +91,16 @@ def get_password_hash(password):
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def get_user(repo, username: str):
+def get_user(username: str):
     try:
-        return repo.get_by_username(username)
+        return user_model.get_by_username(username)
     except Exception as e:
         logging.error(f"Error getting user: {e}")
         return None
 
 
-async def authenticate_user(repo: AsyncpgUserRepository, username: str, password: str):
-    user = await get_user(repo, username)
+async def authenticate_user(username: str, password: str):
+    user = await get_user(username)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -89,11 +109,7 @@ async def authenticate_user(repo: AsyncpgUserRepository, username: str, password
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    """Create an access token.
-    TODO: Add more information to the token. For example, the user's role.
-    Check the current tarif plan, define the user's permissions, etc.
-    For now, we only add the expiration date.
-    """
+    """Create an access token."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -106,7 +122,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
-    repo: AsyncpgUserRepository = Depends(get_user_repository),
     security_scopes: SecurityScopes = SecurityScopes(scopes=[]),
 ):
     """Get the current user from the token."""
@@ -130,8 +145,8 @@ async def get_current_user(
     except jwt.PyJWTError as e:
         logging.error(f"Error decoding token: {e}")
         raise credentials_exception
-    user = await get_user(repo, username=token_data.username)
-    if user is None:
+    user = await get_user(username=token_data.username)
+    if not user:
         logging.error("User not found")
         raise credentials_exception
     for scope in security_scopes.scopes:
@@ -147,6 +162,8 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: Annotated[UserInResponse, Security(get_current_user, scopes=["me"])],
 ):
+    """Get the current active user."""
+    logging.info(f"Current user: {current_user.username}")
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -178,10 +195,19 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
 @router.post("/token", response_model=Token, tags=["login"])
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    repo: AsyncpgUserRepository = Depends(get_user_repository),
 ) -> Token:
     """Create an access token for the user."""
-    user = await authenticate_user(repo, form_data.username, form_data.password)
+    logging.info(f"User {form_data.username} is trying to log in")
+
+    if not form_data.username or not form_data.password:
+        logging.error("Username or password not provided")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username and password are required",
+        )
+
+    user = await authenticate_user(form_data.username, form_data.password)
+
     if not user:
         logging.error("Incorrect username or password")
         raise HTTPException(
@@ -189,24 +215,59 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
-    # TODO: Add more information to the token. For example, the user's role.
-    # Check the current tarif plan, define the user's permissions, etc.
-    access_token = create_access_token(
-        data={
-            "sub": user.username,
-            "scopes": ["me", "create:item", "read:item", "update:item", "delete:item"],
-            "user_id": user.id,
-        },
-        expires_delta=access_token_expires,
-    )
-    return Token(access_token=access_token, token_type="bearer")
+    if user.disabled:
+        logging.error("User is disabled")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Inactive user",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    try:
+        # Get current subscription
+        scopes = [
+            "me",
+        ]
+        current_subscr = await subscription_model.get_by_user_id(user.id)
+        if current_subscr:
+            scope = current_subscr.tarif.scope
+            scopes = SCOPES[scope]
+        # Create the access token
+        access_token_expires = timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
+        access_token = create_access_token(
+            data={
+                "sub": user.username,
+                "scopes": scopes,
+                "user_id": user.id,
+            },
+            expires_delta=access_token_expires,
+        )
+
+        if not access_token:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create access token",
+            )
+
+        logging.info(f"Access token created for user {user.username}")
+        print(f"Access token: {access_token}")
+        return Token(access_token=access_token, token_type="bearer")
+
+    except Exception as e:
+        logging.error(f"Error during token creation: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during authentication",
+        )
 
 
 @router.get("/users/me", response_model=UserInResponse, tags=["users"])
 async def read_users_me(
     current_user: Annotated[UserInResponse, Depends(get_current_active_user)],
 ):
+    logging.info(f"Current user within users/me: {current_user.username}")
+    if current_user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 
@@ -219,7 +280,6 @@ async def read_users_me(
 async def create_user(
     user: UserInCreate,
     background_tasks: BackgroundTasks,
-    repo: AsyncpgUserRepository = Depends(get_user_repository),
 ):
     hashed_password = get_password_hash(user.password)
     user_to_db = UserInDB(
@@ -227,24 +287,11 @@ async def create_user(
         username=user.username,
         email=user.email,
         full_name=user.full_name,
+        phone=user.phone,
     )
-    new_user = await repo.create(user_to_db)
-    if new_user is None:
-        raise HTTPException(status_code=400, detail="User already exists")
-    background_tasks.add_task(
-        send_user_to_rabbitmq, user=UserInResponse.model_validate(new_user)
-    )
+    new_user = await user_model.create(user_to_db)
+    logging.info(f"Created a new User: {new_user}")
     return new_user
-
-
-@router.get(
-    "/users/",
-    response_model=list[UserInResponse],
-    status_code=status.HTTP_200_OK,
-    tags=["users"],
-)
-async def read_users(repo: AsyncpgUserRepository = Depends(get_user_repository)):
-    return await repo.get_all()
 
 
 @router.get(
@@ -255,10 +302,9 @@ async def read_users(repo: AsyncpgUserRepository = Depends(get_user_repository))
 )
 async def read_user(
     user_id: int,
-    repo: AsyncpgUserRepository = Depends(get_user_repository),
 ):
     try:
-        user = await repo.get_by_id(user_id)
+        user = await user_model.get_by_id(user_id)
         return user
     except Exception as e:
         logging.error(f"Error getting user: {e}")
@@ -275,7 +321,6 @@ async def update_user(
     user_id: int,
     user: UserInCreate,
     current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
-    repo: AsyncpgUserRepository = Depends(get_user_repository),
 ):
     if current_active_user.id != user_id:
         raise HTTPException(
@@ -287,22 +332,22 @@ async def update_user(
         email=user.email,
         full_name=user.full_name,
         hashed_password=get_password_hash(user.password),
+        phone=user.phone,
     )
-    return await repo.update(user_id, user_to_db)
+    return await user_model.update(user_id, user_to_db)
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_200_OK, tags=["users"])
 async def delete_user(
     user_id: int,
     current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
-    repo: AsyncpgUserRepository = Depends(get_user_repository),
 ):
     if current_active_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only delete your own user",
         )
-    await repo.delete(user_id)
+    await user_model.delete(user_id)
     return {"status": "success"}
 
 
@@ -310,28 +355,27 @@ async def delete_user(
 # Tariff counters
 
 
-@router.post("/map/view")
-async def increment_map_view(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    repo: AsyncpgUserRepository = Depends(get_user_repository),
-):
-    """Increment the map view counter for the user."""
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token not found"
-        )
-    user_id, scopes = await get_current_user_id(token)
-    user = await repo.get_by_id(user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+# @router.post("/map/view")
+# async def increment_map_view(
+#     token: Annotated[str, Depends(oauth2_scheme)],
+# ):
+#     """Increment the map view counter for the user."""
+#     if not token:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token not found"
+#         )
+#     user_id, scopes = await get_current_user_id(token)
+#     user = await repo.get_by_id(user_id)
+#     if not user:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+#         )
 
-    if user.map_views >= MAP_VIEW_LIMIT:
-        logging.error("Map view limit reached")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Map view limit reached"
-        )
+#     if user.map_views >= MAP_VIEW_LIMIT:
+#         logging.error("Map view limit reached")
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN, detail="Map view limit reached"
+#         )
 
-    new_map_views = await repo.increment_map_views(user_id)
-    return {"map_views": new_map_views}
+#     new_map_views = await repo.increment_map_views(user_id)
+#     return {"map_views": new_map_views}

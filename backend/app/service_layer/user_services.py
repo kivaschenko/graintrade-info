@@ -1,11 +1,11 @@
 import logging
+import os
 import aio_pika
 import aio_pika.abc
-from app.routers.schemas import UserInResponse
+from ..routers.schemas import UserInResponse
 
-RABBITMQ_USER = "rabbit_user"
-RABBITMQ_PASSWORD = "SoYjysnlhorTtzj"
-RABBITMQ_URL = f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@rabbitmq/"
+# RabbitMQ configuration
+RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
 RABBITMQ_QUEUE = "user_notifications"
 
 

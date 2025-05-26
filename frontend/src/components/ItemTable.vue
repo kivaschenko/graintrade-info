@@ -1,7 +1,7 @@
 <template>
   <div class="container mt-5">
     <h1 class="mb-4">{{ $t( 'common_text.offers' ) }}</h1>
-    <table class="table table-bordered border-info">
+    <table class="table table-striped table-hover">
       <thead>
         <tr>
           <th scope="col">{{ $t( 'common_text.title' ) }}</th>
