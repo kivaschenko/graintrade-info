@@ -22,7 +22,8 @@ async def create(item: ItemInDB, user_id: int) -> ItemInResponse:
     query = """
         INSERT INTO items (category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, geom)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::numeric, $13::numeric, ST_SetSRID(ST_MakePoint($13::numeric, $12::numeric), 4326))
-        RETURNING id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+        RETURNING id, uuid, category_id, offer_type, title, description, price, currency, 
+                amount, measure, terms_delivery, country, region, latitude, longitude, created_at
     """
     query2 = """INSERT INTO items_users (item_id, user_id) VALUES ($1, $2)"""
     query3 = "SELECT increment_items_count($1)"
@@ -45,10 +46,10 @@ async def create(item: ItemInDB, user_id: int) -> ItemInResponse:
                 item.latitude,
                 item.longitude,
             )
-            item = ItemInResponse(**row)
-            await conn.execute(query2, item.id, user_id)
+            new_item = ItemInResponse(**row)
+            await conn.execute(query2, new_item.id, user_id)
             await conn.execute(query3, user_id)
-            return item
+            return new_item
     return None
 
 

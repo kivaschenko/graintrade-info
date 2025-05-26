@@ -426,3 +426,20 @@ BEGIN
         ('Seeds', 'Насіння', 'Other', NULL, NULL);
     END IF;
 END $$;
+
+-- Create hierarchical view for categories
+
+CREATE OR REPLACE VIEW categories_hierarchy AS
+SELECT 
+    c.id,
+    c.name,
+    c.description,
+    c.ua_name,
+    c.ua_description,
+    c.parent_category,
+    pc.ua_name AS parent_category_ua
+FROM
+    categories c
+LEFT JOIN parent_categories pc ON c.parent_category = pc.name
+ORDER BY
+    c.parent_category, c.name;

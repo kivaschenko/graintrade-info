@@ -1,9 +1,9 @@
 # Desc: Schemas for the item service
 
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
+from uuid import UUID
 from pydantic import BaseModel, Field, EmailStr
-from datetime import datetime
 
 # -------------------------------
 # Category schemas
@@ -18,6 +18,8 @@ class CategoryInDB(BaseModel):
 
 class CategoryInResponse(CategoryInDB):
     id: int
+    parent_category: Optional[str]
+    parent_category_ua: Optional[str]
 
 
 # -------------------------------
@@ -42,7 +44,7 @@ class ItemInDB(BaseModel):
 
 class ItemInResponse(BaseModel):
     id: int
-    uuid: str
+    uuid: UUID
     category_id: int
     offer_type: str
     title: str
@@ -140,8 +142,6 @@ class TarifInDB(BaseModel):
     currency: str
     scope: str  # e.g. "basic", "premium", "enterprise"
     terms: str  # e.g. "monthly", "annual", "yearly"
-    items_limit: int = 5
-    map_views_limit: int = 10
 
     class ConfigDict:
         from_attributes = True
@@ -149,7 +149,11 @@ class TarifInDB(BaseModel):
 
 class TarifInResponse(TarifInDB):
     id: int
-    created_at: date | None
+    items_limit: int
+    map_views_limit: int
+    geo_search_limit: int
+    navigation_limit: int
+    created_at: datetime | None
 
     @property
     def formatted_created_at(self) -> str:
@@ -170,7 +174,7 @@ class SubscriptionInDB(BaseModel):
 class SubscriptionInResponse(SubscriptionInDB):
     id: int
     created_at: datetime = Field(alias="created_at")
-    order_id: str | None
+    # order_id: str | None
     tarif: TarifInResponse | None = None
 
     @property

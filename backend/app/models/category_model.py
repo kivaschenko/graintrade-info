@@ -30,9 +30,11 @@ async def create(category: CategoryInDB) -> CategoryInResponse:
 
 
 async def get_all() -> List[CategoryInResponse]:
+    """Retrive all categories from view with their parent categories."""
     query = """
-        SELECT id, name, description, ua_name, ua_description
-        FROM categories
+        SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
+        FROM categories_hierarchy
+        
     """
     async with database.pool.acquire() as conn:
         rows = await conn.fetch(query)
@@ -41,7 +43,7 @@ async def get_all() -> List[CategoryInResponse]:
 
 async def get_by_id(category_id: int) -> CategoryInResponse:
     query = """
-        SELECT id, name, description, ua_name, ua_description
+        SELECT id, name, description, ua_name, ua_description, parent_category
         FROM categories
         WHERE id = $1
     """

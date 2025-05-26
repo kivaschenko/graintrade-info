@@ -68,6 +68,7 @@
               <h5>{{ $t('profile.usageTitle') }}</h5>
               <div class="card">
                 <div class="card-body">
+                  <!-- Items Count -->
                   <div class="mb-2">
                     <strong>{{ $t('profile.itemsUsage') }}:</strong>
                     <div class="progress">
@@ -85,7 +86,7 @@
                       </div>
                     </div>
                   </div>
-
+                  <!-- Map Views Usage -->
                   <div class="mb-2">
                     <strong>{{ $t('profile.mapViewsUsage') }}:</strong>
                     <div class="progress">
@@ -103,7 +104,43 @@
                       </div>
                     </div>
                   </div>
-
+                  <!-- Geo Search Count -->
+                  <div class="mb-2">
+                    <strong>{{ $t('profile.geoSearchUsage') }}:</strong>
+                    <div class="progress">
+                      <div 
+                        class="progress-bar" 
+                        role="progressbar"
+                        :style="{ width: (usage.geo_search_count / subscription.tarif.geo_search_limit * 100) + '%' }"
+                        :class="{
+                          'bg-success': usage.geo_search_count < subscription.tarif.geo_search_limit * 0.7,
+                          'bg-warning': usage.geo_search_count >= subscription.tarif.geo_search_limit * 0.7 && usage.geo_search_count < subscription.tarif.geo_search_limit,
+                          'bg-danger': usage.geo_search_count >= subscription.tarif.geo_search_limit
+                        }"
+                      >
+                        {{ usage.geo_search_count }} / {{ subscription.tarif.geo_search_limit }}
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Navigation Count -->
+                  <div class="mb-2">
+                    <strong>{{ $t('profile.navigationUsage') }}:</strong>
+                    <div class="progress">
+                      <div 
+                        class="progress-bar" 
+                        role="progressbar"
+                        :style="{ width: (usage.navigation_count / subscription.tarif.navigation_limit * 100) + '%' }"
+                        :class="{
+                          'bg-success': usage.navigation_count < subscription.tarif.navigation_limit * 0.7,
+                          'bg-warning': usage.navigation_count >= subscription.tarif.navigation_limit * 0.7 && usage.navigation_count < subscription.tarif.navigation_limit,
+                          'bg-danger': usage.navigation_count >= subscription.tarif.navigation_limit
+                        }"
+                      >
+                        {{ usage.navigation_count }} / {{ subscription.tarif.navigation_limit }}
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Usage Warnings -->
                   <div class="usage-warnings mt-3">
                     <div v-if="usage.items_count >= subscription.tarif.items_limit" class="alert alert-danger">
                       {{ $t('profile.itemLimitReached') }}
