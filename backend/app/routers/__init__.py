@@ -1,0 +1,6 @@
+import os
+
+JWT_SECRET = os.getenv("JWT_SECRET")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN", 60)
+MAP_VIEW_LIMIT = 100

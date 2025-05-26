@@ -1,23 +1,29 @@
+import os
 import logging
 import aio_pika
 import asyncio
 from fastapi import FastAPI, WebSocket
 from fastapi.websockets import WebSocketDisconnect
 
-RABBITMQ_USER = "rabbit_user"
-RABBITMQ_PASSWORD = "SoYjysnlhorTtzj"
-RABBITMQ_URL = f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@rabbitmq/"
+app_env = os.getenv("APP_ENV", "production")
+debug_mode = os.getenv("DEBUG", "false").lower() == "true"
+
+if app_env == "development":
+    print("Running in development mode")
+
+RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
 # RabbitMQ exchange and queue names
 ITEM_RABBITMQ_EXCHANGE = "item_exchange"
 ITEM_RABBITMQ_QUEUE = "item_notifications"
 USER_RABBITMQ_EXCHANGE = "user_exchange"
 USER_RABBITMQ_QUEUE = "user_notifications"
 
+
 app = FastAPI()
 
 logging.basicConfig(
     level=logging.INFO,
-    filename=__name__ + ".log",
+    # filename=__name__ + ".log",
     filemode="a",
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
