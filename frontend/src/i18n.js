@@ -135,8 +135,13 @@ const messages = {
       usageTitle: 'Current Usage',
       itemsUsage: 'Items Created',
       mapViewsUsage: 'Map Views',
+      geoSearchUsage: 'Geo Search Usage',
+      navigationUsage: 'Navigation Usage',
       itemLimitReached: 'You have reached your items limit',
-      mapViewsLimitReached: 'You have reached your map views limit'
+      mapViewsLimitReached: 'You have reached your map views limit',
+      geoSearchLimitReached: 'You have reached your geo search limit',
+      navigationLimitReached: 'You have reached your navigation limit',
+      noSubscription: 'You do not have an active subscription',
     },
     tariff: {
       basic: "Basic",
@@ -146,6 +151,8 @@ const messages = {
     tariffs: {
       itemsLimit: "Items limit: {limit}",
       mapViewsLimit: "Map views: {limit}",
+      geoSearchLimit: "Geo search limit: {limit}",
+      navigationLimit: "Navigation limit: {limit}",
       unlimited: "Unlimited",
       currentPlan: "Current Plan",
       subscribe: "Subscribe",
@@ -255,7 +262,7 @@ const messages = {
     },
     registration: {
       "title": "Створити обліковий запис",
-      "username": "Ім'я користувача",
+      "username": "Ім'я користувача (логін)",
       "email": "Електронна пошта",
       "fullName": "Повне ім'я",
       "phone": "Телефон",
@@ -288,8 +295,13 @@ const messages = {
       usageTitle: 'Поточне використання',
       itemsUsage: 'Створено товарів',
       mapViewsUsage: 'Перегляди карти',
+      geoSearchUsage: 'Використання геопошуку',
+      navigationUsage: 'Використання навігації',
       itemLimitReached: 'Ви досягли ліміту товарів',
-      mapViewsLimitReached: 'Ви досягли ліміту переглядів карти'
+      mapViewsLimitReached: 'Ви досягли ліміту переглядів карти',
+      geoSearchLimitReached: 'Ви досягли ліміту геопошуку',
+      navigationLimitReached: 'Ви досягли ліміту навігації',
+      noSubscription: 'У вас немає активної підписки',
     },
     tariff: {
       basic: "Базовий",
@@ -299,6 +311,8 @@ const messages = {
     tariffs: {
       itemsLimit: "Ліміт товарів: {limit}",
       mapViewsLimit: "Ліміт переглядів карти: {limit}",
+      geoSearchLimit: "Ліміт геопошуку: {limit}",
+      navigationLimit: "Ліміт навігації: {limit}",
       unlimited: "Без обмежень",
       currentPlan: "Поточний план",
       subscribe: "Підписатися",

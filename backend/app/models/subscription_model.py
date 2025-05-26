@@ -8,7 +8,7 @@ async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
     query = """
         INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, status)
         VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, user_id, tarif_id, start_date, end_date, status, created_at, order_id
+        RETURNING id, user_id, tarif_id, start_date, end_date, status, created_at
     """
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(
@@ -49,7 +49,7 @@ async def update_payment_id(payment_id: str, id: int):
 
 async def get_by_id(subscription_id: int) -> SubscriptionInResponse:
     query = """
-        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at, order_id
+        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
         FROM subscriptions
         WHERE id = $1
     """
@@ -75,14 +75,15 @@ async def delete(subscription_id: int) -> None:
 
 async def get_by_user_id(user_id: int) -> SubscriptionInResponse:
     query = """
-        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at, order_id
+        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
         FROM subscriptions
         WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
         ORDER BY created_at DESC
         LIMIT 1
     """
     query_tarif = """
-        SELECT id, name, description, price, currency, scope, terms
+        SELECT id, name, description, price, currency, scope, terms, 
+        items_limit, map_views_limit, geo_search_limit, navigation_limit, created_at 
         FROM tarifs
         WHERE id = $1
     """
