@@ -92,15 +92,15 @@ async def find_in_distance(
 
 
 async def get_filtered_items(
-    min_price: float = None,
-    max_price: float = None,
-    currency: str = None,
-    min_amount: int = None,
-    max_amount: int = None,
-    measure: str = None,
-    terms_delivery: str = None,
-    country: str = None,
-    region: str = None,
+    min_price: float = 0.0,
+    max_price: float = 999999.0,
+    currency: str = "USD",
+    min_amount: int = 0,
+    max_amount: int = 999999,
+    measure: str = "metric ton",
+    terms_delivery: str = "EXW",
+    country: str = "Ukraine",
+    region: str = "",
 ) -> List[ItemInResponse]:
     query = """
         SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
