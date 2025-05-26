@@ -49,6 +49,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 # --------------------------
 # Scopes according to Tariff
 SCOPES = {
+    "free": [
+        "me",
+        "create:item",
+        "read:item",
+        "view:map",
+    ],
     "basic": [
         "me",
         "create:item",

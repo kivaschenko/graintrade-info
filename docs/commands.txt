@@ -151,3 +151,7 @@ http POST http://127.0.0.1:8000/payments/confirm \
     amount=3324000 \
     sender_email='test@FONDY.eu' \
     signature=47bdcaf61b99edd31e3ec7913225a14d2ce07575
+
+==========================================================
+
+<Record id=3 uuid=UUID('43391e8b-7e09-4d43-987b-69868791dff9') category_id=72 offer_type='sell' title='Продаю Гречана крупа' description='' price=Decimal('12000.00') currency='UAH' amount=12 measure='metric ton' terms_delivery='EXW' country='Ukraine' region='Cherkasy Oblast' latitude=Decimal('49.081490') longitude=Decimal('30.951530') created_at=datetime.datetime(2025, 5, 26, 12, 31, 44, 535834)>

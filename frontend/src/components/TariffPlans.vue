@@ -29,6 +29,14 @@
                 <i class="bi bi-check-circle text-success"></i> 
                 {{ $t('tariffs.mapViewsLimit', { limit: formatLimit(tariff.map_views_limit) }) }}
               </li>
+              <li>
+                <i class="bi bi-check-circle text-success"></i> 
+                {{ $t('tariffs.geoSearchLimit', { limit: formatLimit(tariff.geo_search_limit) }) }}
+              </li>
+              <li>
+                <i class="bi bi-check-circle text-success"></i> 
+                {{ $t('tariffs.navigationLimit', { limit: formatLimit(tariff.navigation_limit) }) }}
+              </li>
             </ul>
           </div>
           <div class="card-footer text-center">
