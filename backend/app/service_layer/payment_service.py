@@ -15,6 +15,7 @@ from ..schemas import (
     SubscriptionInResponse,
     TarifInResponse,
     UserInResponse,
+    SubscriptionStatus,
 )
 from ..database import redis_db
 
@@ -27,11 +28,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("payment_service")
 
 
-ORDER_DESCRIPTION = """
-    Subscription_{tarif_name}_{start_date}_{end_date}_{user_id}_{subscription_id}.
-    Payment for using web site: graintrade.info according tariff plan: {tarif_name}.
-    User: {full_name}.
-    """
+ORDER_DESCRIPTION = (
+    "Subs {tarif_name}_{start_date}_{end_date}_{user_id}_{subscription_id}"
+)
 
 # -------------------
 # Helpers
@@ -50,6 +49,9 @@ class FondyPaymentService:
         self,
         merchant_id: str = FONDY_MERCHANT_ID,
         merchant_key: str = FONDY_MERCHANT_KEY,
+        server_callback_url: Optional[
+            str
+        ] = "https://6f95-188-163-31-56.ngrok-free.app/payments/confirm",
     ):
         self.merchant_id = merchant_id
         self.merchant_key = merchant_key
@@ -82,6 +84,8 @@ class FondyPaymentService:
         if server_callback_url:
             params["server_callback_url"] = server_callback_url
         signature = self._generate_signature(params)
+        logger.info(f"Generated signature: {signature} for params: {params}")
+        # Add signature to params
         params["signature"] = signature
         return params, signature
 
@@ -148,6 +152,8 @@ class FondyPaymentService:
         try:
             # Prepare start and end dates for current Subscription
             start_date, end_date = make_start_end_dates_for_monthly_case()
+            # Create order_id for current Subscription
+            order_id = str(uuid.uuid4())
 
             # Create a new subscription record in DB with status 'inactive'
             subscribtion_to_db = SubscriptionInDB(
@@ -155,7 +161,7 @@ class FondyPaymentService:
                 tarif_id=tarif_id,
                 start_date=start_date,
                 end_date=end_date,
-                status="inactive",
+                status=SubscriptionStatus.INACTIVE.value,  # type: ignore
             )
             subscription: SubscriptionInResponse = await subscription_model.create(
                 subscribtion_to_db
@@ -182,11 +188,11 @@ class FondyPaymentService:
             # Create payment data for payload
             payment_data, signature = await self.create_subscription_payment(
                 amount=current_tarif.price,
-                order_id=subscription.order_id,
+                order_id=order_id,
                 order_desc=order_desc,
                 currency=current_tarif.currency,
                 email=current_user.email,
-                # server_callback_url="my-server-callback-url",
+                server_callback_url=self.server_callback_url,
             )
             logger.info(f"Payment created: {payment_data}")
 
@@ -267,7 +273,9 @@ def verify_payment(payment_id: str, received_signature: str) -> bool:
 async def test_payment_service():
     try:
         payment_service = FondyPaymentService(
-            merchant_id="1396424", merchant_key="test"
+            merchant_id="1396424",
+            merchant_key="test",
+            server_callback_url="https://6f95-188-163-31-56.ngrok-free.app/payments/confirm",  # Replace with your callback URL
         )
 
         order_id = str(uuid.uuid4())

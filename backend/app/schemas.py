@@ -4,6 +4,14 @@ from datetime import date, datetime
 from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, EmailStr
+from enum import Enum
+
+
+class SubscriptionStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    EXPIRED = "expired"
+
 
 # -------------------------------
 # Category schemas
@@ -168,7 +176,7 @@ class SubscriptionInDB(BaseModel):
     tarif_id: int
     start_date: date | None
     end_date: date | None
-    status: str | None = "inactive"
+    status: SubscriptionStatus = SubscriptionStatus.INACTIVE
 
 
 class SubscriptionInResponse(SubscriptionInDB):
