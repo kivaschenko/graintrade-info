@@ -1,7 +1,12 @@
 from typing import List
 
 from ..database import database
-from ..schemas import SubscriptionInDB, SubscriptionInResponse, TarifInResponse
+from ..schemas import (
+    SubscriptionInDB,
+    SubscriptionInResponse,
+    TarifInResponse,
+    SubscriptionStatus,
+)
 
 
 async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
