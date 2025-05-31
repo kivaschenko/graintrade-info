@@ -1,0 +1,289 @@
+{
+	"info": {
+		"_postman_id": "bf8b2329-24c4-4822-b23d-7b436c3e6b0f",
+		"name": "graintrade-info-collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36783827"
+	},
+	"item": [
+		{
+			"name": "/items/1/",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/items/1/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"items",
+						"1",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/items/",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cache-Control",
+						"value": "no-cache",
+						"name": "cache-control",
+						"type": "text"
+					},
+					{
+						"key": "Postman-Token",
+						"value": "<calculated when request is sent>",
+						"name": "postman-token",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"name": "content-type",
+						"type": "text"
+					},
+					{
+						"key": "Content-Length",
+						"value": "<calculated when request is sent>",
+						"name": "content-length",
+						"type": "text"
+					},
+					{
+						"key": "Host",
+						"value": "<calculated when request is sent>",
+						"name": "host",
+						"type": "text"
+					},
+					{
+						"key": "User-Agent",
+						"value": "PostmanRuntime/7.39.1",
+						"name": "user-agent",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "*/*",
+						"name": "accept",
+						"type": "text"
+					},
+					{
+						"key": "Accept-Encoding",
+						"value": "gzip, deflate, br",
+						"name": "accept-encoding",
+						"type": "text"
+					},
+					{
+						"key": "Connection",
+						"value": "keep-alive",
+						"name": "connection",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0X3VzZXJfMTIzIiwic2NvcGVzIjpbXSwiZXhwIjoxNzIxMjk2ODQ2fQ.ukOcl7TSqsu6aJN3kQUaGmU0wEe2W0ftjEX4H3KN7kQ",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"Sell Corn\",\n    \"description\": \"\",\n    \"price\": 595.45,\n    \"currency\": \"USD\",\n    \"amount\": 100,\n    \"measure\": \"metric ton\",\n    \"terms_delivery\": \"DAP\",\n    \"country\": \"Ukraine\",\n    \"region\": \"Kirovograd Oblast\",\n    \"latitude\": 48.55900673228889,\n    \"longitude\": 31.84879366339997\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8000/items/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"items",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/items/",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/items/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"items",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/items/6/",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"Sell wheat 2 grade\",\n    \"description\": \"protein >= 38%\",\n    \"price\": 278.23,\n    \"currency\": \"USD\",\n    \"amount\": 600,\n    \"measure\": \"metric ton\",\n    \"terms_delivery\": \"FSA\",\n    \"country\": \"Ukraine\",\n    \"region\": \"Kyiv Oblast\",\n    \"latitude\": 49.659466,\n    \"longitude\": 30.974681\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8000/items/6/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"items",
+						"6",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/items/7/",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/items/7/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"items",
+						"7",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/users/",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/users/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"users",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/users/1",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/users/1",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"users",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/users/",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"test_user_123\",\n    \"password\": \"password112358\",\n    \"email\": \"test_user_123@example.com\",\n    \"full_name\": \"Test User 123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8000/users/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"users",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/token",
+			"request": {
+				"auth": {
+					"type": "inherit"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "test_user_123",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "password112358",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:8000/token/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"token",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

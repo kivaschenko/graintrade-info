@@ -1,0 +1,9 @@
+# Docker ignore for Vue.js frontend
+# Ignore node_modules
+node_modules
+# Ignore build artifacts
+dist
+# Ignore local environment files
+.env
+# Ignore logs
+logs

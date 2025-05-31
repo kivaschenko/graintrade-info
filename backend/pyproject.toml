@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "graintrade-api"
+version = "0.1.0"
+description = "Graintrade API"
+authors = ["Kostiantyn Ivashchenko <kivaschenko@protonmail.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {extras = ["standard"], version = "^0.115.4"}
+uvicorn = "^0.32.0"
+gunicorn = "^23.0.0"
+PyJWT = "^2.9.0"
+pydantic-settings = "^2.6.1"
+asyncpg = "^0.30.0"
+bcrypt = "^4.2.0"
+psycopg2-binary = "^2.9.10"
+aio-pika = "^9.5.5"
+pytest = "^8.3.5"
+httpx = "^0.28.1"
+pytest-asyncio = "^0.26.0"
+redis = {extras = ["async"], version = "^5.2.1"}
+orjson = "^3.10.16"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

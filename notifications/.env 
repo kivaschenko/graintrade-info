@@ -1,0 +1,21 @@
+# PostgreSQL Configuration
+POSTGRES_DB=postgres
+POSTGRES_USER=admin
+POSTGRES_PASSWORD="A82mLC96RcvuEtZ5JRmFg"
+DATABASE_URL="postgresql://admin:A82mLC96RcvuEtZ5JRmFg@db:35432/postgres"
+
+# RabbitMQ Configuration
+RABBITMQ_USER=rabbit_user
+RABBITMQ_PASS=SoYjysnlhorTtzj
+
+# JWT Configuration
+JWT_SECRET="Avy8XuxvccZkogNVOi7DSeKIb+VxTc1Wwspits6rs0I7cUFTYngnwlC1xJioUVyX6bP7xVf/VQkp0Cal8mJhJA=="
+JWT_EXPIRES_IN=3600
+ALGORITHM=HS256
+
+# Redis Configuration
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASSWORD=SoYjysnlhorTtzj
+# Redis URL
+REDIS_URL="redis://:SoYjysnlhorTtzj@redis:6379/0"
