@@ -52,7 +52,7 @@ async def check_map_view_limit(
     return True
 
 
-async def check_subscription_status(subscription: SubscriptionInResponse) -> None:
+async def check_subscription_status(subscription: SubscriptionInResponse) -> bool:
     """Check if subscription is active and not expired."""
     current_date = datetime.now(timezone.utc)
     logging.info(

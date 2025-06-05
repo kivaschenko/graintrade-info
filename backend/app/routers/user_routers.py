@@ -196,27 +196,19 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
-    """Create an access token for the user."""
-    logging.info(f"User {form_data.username} is trying to log in")
-
     if not form_data.username or not form_data.password:
-        logging.error("Username or password not provided")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username and password are required",
         )
-
     user = await authenticate_user(form_data.username, form_data.password)
-
     if not user:
-        logging.error("Incorrect username or password")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user.disabled:
-        logging.error("User is disabled")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Inactive user",

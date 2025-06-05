@@ -1,15 +1,14 @@
 from typing import List
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Body
 
 from ..schemas import (
-    SubscriptionInDB,
     SubscriptionInResponse,
     TarifInResponse,
 )
-from ..service_layer.payment_service import FondyPaymentService
-from ..models import subscription_model, tarif_model
+from ..service_layer.payment_service import payment_for_subscription_handler
+from ..models import subscription_model, tarif_model, user_model
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -41,15 +40,46 @@ async def get_tarif(tarif_id: int):
 
 @router.post(
     "/subscriptions",
-    response_model=SubscriptionInResponse,
+    response_model=dict[str, str],
+    summary="Create a new subscription",
+    description="Create a new subscription for a user. This will initiate the payment process.",
+    responses={
+        status.HTTP_201_CREATED: {
+            "description": "Subscription created successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "checkout_url": "https://example.com/checkout",
+                    }
+                }
+            },
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Internal server error",
+            "content": {"application/json": {"example": {"detail": "Error message"}}},
+        },
+    },
     status_code=status.HTTP_201_CREATED,
 )
-async def create_subscription(subscription: SubscriptionInDB):
-    logging.info(f"Creating subscription with data: {subscription}")
+async def create_subscription(
+    user_id: int = Body(embed=True), tarif_id: int = Body(embed=True)
+):
+    logging.info(
+        f"Creating subscription with data: user_id={user_id}, tarif_id={tarif_id}"
+    )
     try:
-        payment_service = FondyPaymentService()
-        checkout_url = await payment_service.get_checkout_url_from_payment_api(
-            user_id=subscription.user_id, tarif_id=subscription.tarif_id
+        current_user = await user_model.get_by_id(user_id)
+        current_tarif = await tarif_model.get_by_id(tarif_id)
+        ##import pdb; pdb.set_trace()
+        amount = int(current_tarif.price)  # Make price as centes integer for Fondy API
+        checkout_url = await payment_for_subscription_handler(
+            user_id=user_id,
+            tarif_id=tarif_id,
+            tarif_name=current_tarif.name,
+            amount=amount,
+            currency=current_tarif.currency,
+            email=current_user.email,
         )
         if checkout_url:
             return {
