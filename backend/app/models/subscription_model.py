@@ -1,15 +1,23 @@
 from typing import List
 
 from ..database import database
-from ..schemas import SubscriptionInDB, SubscriptionInResponse, TarifInResponse
+from ..schemas import (
+    SubscriptionInDB,
+    SubscriptionInResponse,
+    TarifInResponse,
+)
 
 
 async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
     query = """
-        INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, status)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, user_id, tarif_id, start_date, end_date, status, created_at
+        INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, order_id, status)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status, created_at
     """
+    if subscription.order_id is None:
+        subscription.order_id = (
+            "order_" + str(subscription.user_id) + "_" + str(subscription.tarif_id)
+        )
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(
             query,
@@ -17,33 +25,38 @@ async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
             subscription.tarif_id,
             subscription.start_date,
             subscription.end_date,
+            subscription.order_id,
             subscription.status,
         )
         new_subscription = SubscriptionInResponse(**row)
         return new_subscription
 
 
-async def update_status(status: str, payment_id: str):
+async def update_status_by_order_id(status: str, order_id: str):
+    if status not in ["active", "inactive", "expired"]:
+        raise ValueError(
+            "Invalid status value. Must be 'active', 'inactive', or 'expired'."
+        )
     query = """
         UPDATE subscriptions
         SET status = $1
-        WHERE payment_id = $2
-        RETURNING id, payment_id, status
+        WHERE order_id = $2
+        RETURNING id, user_id, order_id, status
 """
-    async with database.pool.acquire() as conn:
-        row = await conn.fetchrow(query, status, payment_id)
-        return row
-
-
-async def update_payment_id(payment_id: str, id: int):
-    query = """
+    clean_query = """
         UPDATE subscriptions
-        SET payment_id = $1
-        WHERE id = $2
-        RETURNING id, payment_id
+        SET status = 'inactive'
+        WHERE user_id = $1 AND order_id <> $2
+        RETURNING id, user_id, order_id, status
 """
     async with database.pool.acquire() as conn:
-        row = await conn.fetchrow(query, payment_id, id)
+        async with conn.transaction():
+            row = await conn.fetchrow(query, status, order_id)
+            if row is None:
+                raise ValueError("Subscription with the given order_id does not exist.")
+            # Clean up other subscriptions for the same user
+            user_id = row["user_id"]
+            await conn.execute(clean_query, user_id, order_id)
         return row
 
 
@@ -75,7 +88,7 @@ async def delete(subscription_id: int) -> None:
 
 async def get_by_user_id(user_id: int) -> SubscriptionInResponse:
     query = """
-        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
+        SELECT id, user_id, tarif_id, start_date, end_date, order_id, status, created_at
         FROM subscriptions
         WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
         ORDER BY created_at DESC
