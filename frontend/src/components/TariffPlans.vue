@@ -108,11 +108,21 @@ export default {
     async subscribe(tariff) {
       this.isSubscribing = true;
       try {
-        await api.post('/subscriptions', {
+        let r = await api.post('/subscriptions', {
           user_id: this.user.id,
           tarif_id: tariff.id
         });
-        this.$toast.success(this.$t('tariffs.subscribeSuccess'));
+        // this.$toast.success(this.$t('tariffs.subscribeSuccess'));
+        // Redirect to Fondy checkout page via checkout URL if available from response
+        console.log('Subscription response:', r.data);
+        if (r.data.checkout_url) {
+          // Redirect to the checkout URL in a new tab
+          window.open(r.data.checkout_url, '_blank');
+          // Or redirect in the same tab
+          // window.location.href = r.data.checkout_url;
+        } else {
+          this.$toast.error(this.$t('tariffs.noCheckoutUrl'));
+        }
         await this.fetchCurrentSubscription();
       } catch (error) {
         console.error('Error subscribing:', error);
