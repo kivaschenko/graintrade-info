@@ -64,6 +64,7 @@ app.add_middleware(
         "http://localhost:8080",  # Development with frontend on localhost as standalone
         "http://backend:8000",  # Development with frontend on localhost in docker
         "http://127.0.0.1:8000",  # Development with frontend on localhost as standalone
+        "http://127.0.0.1:8081",  # Development with frontend on localhost in docker
         # "http://graintrade.info",
         # "https://graintrade.info",
         # "http://www.graintrade.info",

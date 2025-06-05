@@ -1,7 +1,7 @@
 # Desc: Schemas for the item service
 
 from datetime import date, datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 from pydantic import BaseModel, Field, EmailStr
 from enum import Enum
@@ -174,6 +174,7 @@ class TarifInResponse(TarifInDB):
 class SubscriptionInDB(BaseModel):
     user_id: int
     tarif_id: int
+    order_id: Optional[str] = None
     start_date: date | None
     end_date: date | None
     status: SubscriptionStatus = SubscriptionStatus.INACTIVE
@@ -182,7 +183,6 @@ class SubscriptionInDB(BaseModel):
 class SubscriptionInResponse(SubscriptionInDB):
     id: int
     created_at: datetime = Field(alias="created_at")
-    # order_id: str | None
     tarif: TarifInResponse | None = None
 
     @property
@@ -191,3 +191,38 @@ class SubscriptionInResponse(SubscriptionInDB):
 
     class ConfigDict:
         from_attributes = True
+
+
+# -------------------------------
+# Payment schemas
+
+
+# class PaymentInDB(BaseModel):
+#     """Payment data model based on Fondy payment response"""
+
+#     id: Optional[int] = None
+#     payment_id: int
+#     order_id: str
+#     order_status: str
+#     currency: str
+#     amount: int  # Amount in cents
+#     card_type: str
+#     card_bin: int
+#     masked_card: str
+#     payment_system: str
+#     sender_email: str
+#     sender_cell_phone: Optional[str] = None
+#     approval_code: str
+#     response_status: str
+#     tran_type: str
+#     eci: Optional[str] = None
+#     settlement_amount: Optional[str] = None
+#     actual_amount: str
+#     order_time: datetime
+#     additional_info: Dict[str, Any] = Field(
+#         default_factory=dict
+#     )  # JSON field for extra data
+#     created_at: datetime = Field(default_factory=datetime.now)
+
+#     class Config:
+#         from_attributes = True
