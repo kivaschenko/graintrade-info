@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import Dict, Any
+from datetime import datetime
+from typing import Dict, Any, Optional
 from ..database import database
 
 logger = logging.getLogger(__name__)
@@ -11,7 +12,7 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
     Create or update a payment record
 
     Args:
-        data (Dict[str, Any]): Payment data dictionary
+        data (Dict[str, Any]): Payment data dictionary from Fondy response
 
     Returns:
         Dict[str, Any]: Created/updated payment record
@@ -21,7 +22,7 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
         Exception: If database operation fails
     """
     try:
-        # Validate required fields
+        # Required fields according to PaymentInDB schema
         required_fields = [
             "payment_id",
             "order_id",
@@ -29,69 +30,96 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
             "currency",
             "amount",
             "card_type",
+            "card_bin",
             "masked_card",
+            "payment_system",
             "sender_email",
-            "data",
+            "approval_code",
+            "response_status",
+            "tran_type",
+            "actual_amount",
+            "order_time",
         ]
 
+        # Validate required fields and data types
         for field in required_fields:
             if field not in data:
                 raise ValueError(f"Missing required field: {field}")
             if data[field] is None:
                 raise ValueError(f"Field cannot be None: {field}")
 
-        # Convert data to string if it's not already
-        if isinstance(data["data"], (dict, list)):
-            json_data = json.dumps(data["data"])
-        else:
-            json_data = str(data["data"])
+        # Ensure numeric fields are properly typed
+        try:
+            data["amount"] = int(data["amount"])
+            data["card_bin"] = int(data["card_bin"])
+            data["payment_id"] = int(data["payment_id"])
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Invalid numeric value: {str(e)}")
 
-        payment_id = data["payment_id"]
-        order_id = data["order_id"]
-        order_status = data["order_status"]
-        currency = data["currency"]
-        amount = data["amount"]
-        card_type = data["card_type"]
-        masked_card = data["masked_card"]
-        sender_email = data["sender_email"]
+        # Convert additional_info to JSONB
+        additional_info = {
+            k: v for k, v in data.items() if k not in required_fields and k != "id"
+        }
 
         query = """
         INSERT INTO payments (
             payment_id, order_id, order_status, currency,
-            amount, card_type, masked_card, sender_email, data
+            amount, card_type, card_bin, masked_card,
+            payment_system, sender_email, sender_cell_phone,
+            approval_code, response_status, tran_type,
+            eci, settlement_amount, actual_amount,
+            order_time, additional_info
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9,
+            $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+        )
         ON CONFLICT (payment_id) DO UPDATE
-        SET order_id = EXCLUDED.order_id,
+        SET 
             order_status = EXCLUDED.order_status,
-            currency = EXCLUDED.currency,
-            amount = EXCLUDED.amount,
-            card_type = EXCLUDED.card_type,
-            masked_card = EXCLUDED.masked_card,
-            sender_email = EXCLUDED.sender_email,
-            data = EXCLUDED.data
-        RETURNING id, payment_id, order_id, order_status, currency,
-                  amount, card_type, masked_card, sender_email, data
+            response_status = EXCLUDED.response_status,
+            additional_info = payments.additional_info || EXCLUDED.additional_info
+        RETURNING *;
         """
+
+        try:
+            order_time = datetime.strptime(data["order_time"], "%d.%m.%Y %H:%M:%S")
+        except ValueError:
+            raise ValueError("Invalid order_time format. Expected DD.MM.YYYY HH:MM:SS")
+
         async with database.pool.acquire() as connection:
-            payment = await connection.fetchrow(
-                query,
-                payment_id,
-                order_id,
-                order_status,
-                currency,
-                amount,
-                card_type,
-                masked_card,
-                sender_email,
-                json_data,
-            )
+            async with connection.transaction():
+                payment = await connection.fetchrow(
+                    query,
+                    data["payment_id"],
+                    data["order_id"],
+                    data["order_status"],
+                    data["currency"],
+                    data["amount"],
+                    data["card_type"],
+                    data["card_bin"],
+                    data["masked_card"],
+                    data["payment_system"],
+                    data["sender_email"],
+                    data.get("sender_cell_phone"),  # Optional
+                    data["approval_code"],
+                    data["response_status"],
+                    data["tran_type"],
+                    data.get("eci"),  # Optional
+                    data.get("settlement_amount"),  # Optional
+                    data["actual_amount"],
+                    order_time,
+                    json.dumps(additional_info),
+                )
 
         if not payment:
             raise Exception("Payment record was not created/updated")
 
         return dict(payment)
 
+    except ValueError as e:
+        logger.error("Validation error: %s", str(e))
+        raise
     except Exception as e:
         logger.error("Database error: %s", str(e))
         raise
