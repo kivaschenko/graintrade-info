@@ -63,6 +63,29 @@ services:
       retries: 5
       start_period: 30s
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    volumes:
+      - ./mailhog:/data
+  
+  subscription-checker:
+    build:
+      context: ./cron_services
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=test_password
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 
 volumes:
   postgres_data:

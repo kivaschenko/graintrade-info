@@ -14,6 +14,7 @@ const messages = {
       myProfile: 'My Profile',
       settings: 'Settings',
       tariffs: 'Tariff Plans',
+      forgotPassword: 'Forgot Password?',
     },
     common_text: {
       offers: 'Offers latest',
@@ -174,6 +175,7 @@ const messages = {
       myProfile: 'Мій профіль',
       settings: 'Налаштування',
       tariffs: 'Тарифні плани',
+      dontHaveccount: 'Немає облікового запису?',
     },
     common_text: {
       offers: 'Пропозиції останні',
