@@ -181,3 +181,9 @@ port = 5433  # custom dev port to avoid default 5432
 
 Restart database
 `sudo systemctl restart postgresql`.
+
+# Seed data
+```
+cp ~/graintrade-info/postgres-init/init.sql /tmp/init.sql
+sudo -u postgres psql -d graintrade -f /tmp/init.sql
+```
