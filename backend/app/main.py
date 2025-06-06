@@ -14,6 +14,7 @@ from .routers import item_routers
 from .routers import subscription_routers
 from .routers import category_routers
 from .routers import payment_routers
+from .routers import password_recovery
 
 
 JWT_SECRET = os.getenv("JWT_SECRET")
@@ -84,6 +85,7 @@ app.include_router(item_routers.router)
 app.include_router(user_routers.router)
 app.include_router(subscription_routers.router)
 app.include_router(payment_routers.router)
+app.include_router(password_recovery.router)
 
 
 # ----------------

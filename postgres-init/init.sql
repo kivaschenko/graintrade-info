@@ -467,3 +467,91 @@ FROM
 LEFT JOIN parent_categories pc ON c.parent_category = pc.name
 ORDER BY
     c.parent_category, c.name;
+
+
+-- Function to handle subscription updates and renewals
+CREATE OR REPLACE FUNCTION update_expired_subscriptions()
+RETURNS void AS $$
+DECLARE
+    free_tarif_id INTEGER;
+BEGIN
+    -- Get the ID of the Free tarif
+    SELECT id INTO free_tarif_id FROM tarifs WHERE scope = 'free' LIMIT 1;
+
+    -- Update expired paid subscriptions and create new free ones
+    WITH expired_paid_subs AS (
+        UPDATE subscriptions s
+        SET status = 'expired'
+        FROM tarifs t
+        WHERE s.tarif_id = t.id
+        AND t.scope != 'free'
+        AND s.end_date < CURRENT_TIMESTAMP
+        AND s.status = 'active'
+        RETURNING s.user_id
+    )
+    INSERT INTO subscriptions (
+        user_id,
+        tarif_id,
+        start_date,
+        end_date,
+        status,
+        order_id
+    )
+    SELECT 
+        user_id,
+        free_tarif_id,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP + INTERVAL '1 month',
+        'active',
+        'auto-renewal-' || uuid_generate_v4()
+    FROM expired_paid_subs;
+
+    -- Update expired free subscriptions and create new ones
+    WITH expired_free_subs AS (
+        UPDATE subscriptions s
+        SET status = 'expired'
+        FROM tarifs t
+        WHERE s.tarif_id = t.id
+        AND t.scope = 'free'
+        AND s.end_date < CURRENT_TIMESTAMP
+        AND s.status = 'active'
+        RETURNING s.user_id
+    )
+    INSERT INTO subscriptions (
+        user_id,
+        tarif_id,
+        start_date,
+        end_date,
+        status,
+        order_id
+    )
+    SELECT 
+        user_id,
+        free_tarif_id,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP + INTERVAL '1 month',
+        'active',
+        'auto-renewal-' || uuid_generate_v4()
+    FROM expired_free_subs;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a trigger function to automatically update subscriptions
+CREATE OR REPLACE FUNCTION check_subscription_status()
+RETURNS trigger AS $$
+BEGIN
+    -- Call the update function
+    PERFORM update_expired_subscriptions();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a trigger that runs when checking subscription status
+CREATE OR REPLACE TRIGGER subscription_status_check
+    AFTER UPDATE OR INSERT ON subscriptions
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION check_subscription_status();
+
+-- Create an index to improve performance of subscription queries
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status_end_date 
+ON subscriptions(status, end_date);

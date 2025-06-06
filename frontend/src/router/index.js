@@ -7,6 +7,7 @@ import ItemDetails from '@/components/ItemDetails.vue';
 import RegistrationForm from '@/components/RegistrationForm.vue';
 import UserProfile from '@/components/UserProfile.vue';
 import TariffPlans from '@/components/TariffPlans.vue';
+import PasswordRecovery from '@/components/PasswordRecovery.vue';
 
 
 const routes = [
@@ -53,8 +54,9 @@ const routes = [
         requiresAuth: true,
       },
     },
-    {
-
+    { path: '/reset-password',
+      name: 'PasswordRecovery',
+      component: PasswordRecovery,
     }
   ];
 

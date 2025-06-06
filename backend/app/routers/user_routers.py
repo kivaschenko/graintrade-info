@@ -92,11 +92,7 @@ def get_password_hash(password):
 
 
 def get_user(username: str):
-    try:
-        return user_model.get_by_username(username)
-    except Exception as e:
-        logging.error(f"Error getting user: {e}")
-        return None
+    return user_model.get_by_username(username)
 
 
 async def authenticate_user(username: str, password: str):
