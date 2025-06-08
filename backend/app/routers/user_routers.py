@@ -26,7 +26,16 @@ from ..schemas import (
     Token,
 )
 from ..models import user_model, subscription_model
+from ..service_layer import user_services
 from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, MAP_VIEW_LIMIT
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+
+logging.info("Initializing user router...")
+logging.info(f"JWT_SECRET: {JWT_SECRET}")
+logging.info(f"ALGORITHM: {ALGORITHM}")
+logging.info(f"ACCESS_TOKEN_EXPIRE_MINUTES: {ACCESS_TOKEN_EXPIRE_MINUTES}")
 
 
 router = APIRouter(tags=["users"])
@@ -42,9 +51,6 @@ oauth2_scheme = OAuth2PasswordBearer(
         "view:map": "Allowed to view map.",
     },
 )
-
-# Set up logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 # --------------------------
 # Scopes according to Tariff
@@ -165,7 +171,7 @@ async def get_current_active_user(
     return current_user
 
 
-async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = None):
+async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
