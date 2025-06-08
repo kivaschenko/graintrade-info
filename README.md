@@ -356,6 +356,10 @@ systemctl start fail2ban
 git clone https://github.com/youruser/agrimarket.git
 cd agrimarket
 ```
+or from local machine:
+```
+rsync -avz --exclude '__pycache__' --exclude '*.pyc' ./graintrade-info/ kivaschenko@65.108.68.57:/home/kivaschenko/graintrade-info
+```
 
 ### 5. Create `.env` file (example):
 

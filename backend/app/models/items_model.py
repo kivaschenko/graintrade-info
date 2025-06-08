@@ -13,9 +13,14 @@ async def get_all(offset: int = 0, limit: int = 10) -> List[ItemInResponse]:
         OFFSET $1
         LIMIT $2
     """
-    async with database.pool.acquire() as conn:
-        rows = await conn.fetch(query, offset, limit)
-    return [ItemInResponse(**row) for row in rows]
+    try:
+        async with database.pool.acquire() as conn:
+            rows = await conn.fetch(query, offset, limit)
+            return [ItemInResponse(**row) for row in rows]
+    except asyncpg.exceptions.InvalidTextRepresentationError as e:
+        # Handle specific error for invalid text representation
+        print(f"Invalid text representation error: {e}")
+        return []
 
 
 async def create(item: ItemInDB, user_id: int) -> ItemInResponse:
