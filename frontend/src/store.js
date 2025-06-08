@@ -1,7 +1,8 @@
 import { createStore } from 'vuex';
 import axios from 'axios';
 
-const backendUrl = process.env.VUE_APP_BACKEND_URL;
+const backendUrl = process.env.VUE_APP_BACKEND_URL || 'http://localhost:8000';
+// Ensure the backend URL is set corre
 console.log('Backend URL:', backendUrl);
 if (!backendUrl) {
   console.error('VUE_APP_BACKEND_URL is not defined. Please set it in your .env file.');
@@ -11,6 +12,7 @@ if (!backendUrl) {
 
 export default createStore({
   state: {
+    backendUrl: backendUrl,
     isAuthenticated: !!localStorage.getItem('access_token'),
     accessToken: localStorage.getItem('access_token'),
     user: JSON.parse(localStorage.getItem('user')),

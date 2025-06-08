@@ -1,3 +1,4 @@
+import os
 import asyncio
 import logging
 import asyncpg
@@ -5,12 +6,10 @@ import asyncpg
 import redis
 
 
-# DATABASE_URL = os.getenv(
-#     "DATABASE_URL",
-#     "postgresql://admin:test_password@localhost:35432/postgres",
-# )
-DATABASE_URL = "postgresql://admin:test_password@localhost:35432/postgres"  # debug mode
-logging.info(f"Using DATABASE_URL: {DATABASE_URL}")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://grain:teomeo2358@65.108.68.57:5433/postgres"
+)
+print(f"Using DATABASE_URL: {DATABASE_URL}")
 
 
 class Database:
@@ -21,7 +20,7 @@ class Database:
         self.pool = await asyncpg.create_pool(
             dsn=self.database_url, min_size=10, max_size=10, max_queries=50000
         )
-        logging.info("Created Pool for DB: %", self.pool)
+        logging.info(f"Created Pool for DB: {self.pool}")
 
     async def disconnect(self):
         await self.pool.close()
@@ -33,8 +32,8 @@ database = Database(DATABASE_URL)
 # ---------------------
 # Redis connector
 
-REDIS_URL = "redis://localhost:6379"
-# REDIS_URL = "redis://localhost"
+REDIS_URL = os.getenv("REDIS_URL", "redis://:Teodorathome@65.108.68.57:6379/0")
+print(f"Using REDIS_URL: {REDIS_URL}")
 
 
 class RedisDB:
@@ -43,7 +42,7 @@ class RedisDB:
 
     def connect(self):
         self.pool = redis.ConnectionPool().from_url(self.redis_url)
-        logging.info("Created Pool for Redis: %", self.pool)
+        logging.info(f"Created Pool for Redis: {self.pool}")
 
     def disconnect(self):
         self.pool.close()
