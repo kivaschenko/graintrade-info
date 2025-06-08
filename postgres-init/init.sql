@@ -39,9 +39,6 @@ REFERENCES parent_categories(name)
 ON UPDATE CASCADE
 ON DELETE SET NULL;
 
-
-
-
 -- Drop table if it exists and create it
 DROP TABLE IF EXISTS items CASCADE;
 
@@ -306,9 +303,9 @@ BEGIN
 	INSERT INTO tarifs (name, description, price, currency, scope, terms, items_limit, map_views_limit, geo_search_limit, navigation_limit)
 	VALUES
         ('Free', 'Free probation plan', 0.00, 'EUR', 'free', 'monthly', 5, 10, 10, 10),
-	    ('Basic', 'Basic subscription plan', 4.99, 'EUR', 'basic', 'monthly', 50, 100, 100, 100),
-        ('Premium', 'Premium subscription plan', 9.99, 'EUR', 'premium', 'monthly', 150, 300, 300, 300),
-        ('Pro', 'Pro subscription plan', 24.99, 'EUR', 'pro', 'monthly', 500, 1000, 1000, 1000);
+	    ('Basic', 'Basic subscription plan', 5.00, 'EUR', 'basic', 'monthly', 50, 100, 100, 100),
+        ('Premium', 'Premium subscription plan', 10.00, 'EUR', 'premium', 'monthly', 150, 300, 300, 300),
+        ('Pro', 'Pro subscription plan', 25.00, 'EUR', 'pro', 'monthly', 500, 1000, 1000, 1000);
     END IF;
 END $$;
 
@@ -467,3 +464,79 @@ FROM
 LEFT JOIN parent_categories pc ON c.parent_category = pc.name
 ORDER BY
     c.parent_category, c.name;
+
+
+-- First, drop existing functions and triggers
+DROP TRIGGER IF EXISTS subscription_status_check ON subscriptions;
+DROP FUNCTION IF EXISTS check_subscription_status();
+DROP FUNCTION IF EXISTS update_expired_subscriptions();
+
+-- Create improved version of update_expired_subscriptions function
+CREATE OR REPLACE FUNCTION update_expired_subscriptions()
+RETURNS void AS $$
+DECLARE
+    free_tarif_id INTEGER;
+BEGIN
+    -- Get the free tarif ID once
+    SELECT id INTO free_tarif_id 
+    FROM tarifs 
+    WHERE scope = 'free' 
+    LIMIT 1;
+
+    -- Handle expired paid subscriptions in one statement
+    INSERT INTO subscriptions (
+        user_id, tarif_id, start_date, end_date, status, order_id
+    )
+    SELECT 
+        s.user_id,
+        free_tarif_id,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP + INTERVAL '1 month',
+        'active',
+        'auto-renewal-' || uuid_generate_v4()
+    FROM subscriptions s
+    JOIN tarifs t ON s.tarif_id = t.id
+    WHERE t.scope != 'free'
+        AND s.end_date < CURRENT_TIMESTAMP
+        AND s.status = 'active'
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM subscriptions active_sub
+        WHERE active_sub.user_id = s.user_id
+        AND active_sub.status = 'active'
+        AND active_sub.end_date > CURRENT_TIMESTAMP
+    );
+
+    -- Update status of expired subscriptions
+    UPDATE subscriptions s
+    SET status = 'expired'
+    WHERE s.end_date < CURRENT_TIMESTAMP
+    AND s.status = 'active';
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a safer trigger function that prevents recursive calls
+CREATE OR REPLACE FUNCTION check_subscription_status()
+RETURNS trigger AS $$
+BEGIN
+    IF (TG_OP = 'INSERT' AND NEW.status = 'active') OR
+       (TG_OP = 'UPDATE' AND NEW.status = 'active' AND OLD.status != 'active') THEN
+        -- Only update expired subscriptions when activating a new subscription
+        PERFORM update_expired_subscriptions();
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a row-level trigger instead of statement-level
+CREATE TRIGGER subscription_status_check
+    AFTER INSERT OR UPDATE ON subscriptions
+    FOR EACH ROW
+    WHEN (NEW.status = 'active')
+    EXECUTE FUNCTION check_subscription_status();
+
+-- Add necessary indexes
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status_end_date 
+ON subscriptions(status, end_date);
+CREATE INDEX IF NOT EXISTS idx_tarifs_scope 
+ON tarifs(scope);

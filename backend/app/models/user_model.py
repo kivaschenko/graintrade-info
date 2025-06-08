@@ -1,19 +1,23 @@
 from datetime import date, timedelta
+
 from ..database import database
 from ..schemas import UserInDB, UserInResponse
+
+ORDER_ID = "registration-{}"
 
 
 async def create(user, scope: str = "free") -> UserInResponse:
     start_date = date.today()
     end_date = start_date + timedelta(days=7)
+    order_id = ORDER_ID.format(user.username)
     query = """
         INSERT INTO users (username, email, full_name, phone, hashed_password)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id, username, email, full_name, phone, hashed_password, disabled
     """
     subscr_query = """
-        INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, status)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, order_id, status)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id
     """
     tarif_query = """
@@ -36,7 +40,13 @@ async def create(user, scope: str = "free") -> UserInResponse:
             user = UserInResponse(**row)
             tarif_id = await conn.fetchval(tarif_query, scope)
             subscr_id = await conn.fetchval(
-                subscr_query, user.id, tarif_id, start_date, end_date, "active"
+                subscr_query,
+                user.id,
+                tarif_id,
+                start_date,
+                end_date,
+                order_id,
+                "active",
             )
             assert subscr_id > 0
     return user
@@ -49,8 +59,12 @@ async def get_by_username(username: str) -> UserInResponse:
         WHERE username = $1
     """
     async with database.pool.acquire() as conn:
-        row = await conn.fetchrow(query, username)
-    return UserInResponse(**row)
+        try:
+            row = await conn.fetchrow(query, username)
+            return UserInResponse(**row)
+        except Exception as e:
+            print(f"Error fetching user by username: {e}")
+            return None
 
 
 async def get_by_id(user_id: int) -> UserInResponse:
@@ -90,24 +104,35 @@ async def delete(user_id: int) -> None:
         await conn.execute(query, user_id)
 
 
-# async def get_by_email(self, email: str) -> UserInResponse:
-#     query = """
-#         SELECT id, username, email, full_name, phone, disabled, hashed_password
-#         FROM users
-#         WHERE email = $1
-#     """
-#     async with self.conn as connection:
-#         row = await connection.fetchrow(query, email)
-#     return UserInResponse(**row)
+async def get_by_email(email: str) -> UserInResponse:
+    query = """
+        SELECT id, username, email, full_name, phone, disabled, hashed_password
+        FROM users
+        WHERE email = $1
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, email)
+    return UserInResponse(**row)
 
-# async def get_by_username_and_email(
-#     self, username: str, email: str
-# ) -> UserInResponse:
-#     query = """
-#         SELECT id, username, email, full_name, phone, disabled, hashed_password
-#         FROM users
-#         WHERE username = $1 AND email = $2
-#     """
-#     async with self.conn as connection:
-#         row = await connection.fetchrow(query, username, email)
-#     return UserInResponse(**row)
+
+async def get_by_username_and_email(username: str, email: str) -> UserInResponse:
+    query = """
+        SELECT id, username, email, full_name, phone, disabled, hashed_password
+        FROM users
+        WHERE username = $1 AND email = $2
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, username, email)
+    return UserInResponse(**row)
+
+
+async def update_password(user_id: int, hashed_password: str) -> UserInResponse | None:
+    query = """
+        UPDATE users
+        SET hashed_password = $1
+        WHERE id = $2
+        RETURNING id, username, email, full_name, phone, disabled, hashed_password
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, hashed_password, user_id)
+    return UserInResponse(**row) if row else None

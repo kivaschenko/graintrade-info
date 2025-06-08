@@ -15,6 +15,9 @@
               </div>
               <button type="submit" class="btn btn-primary">Login</button>
           </form>
+          <p class="mt-3">
+              <router-link to="/reset-password">{{ $t('navbar.forgotPassword') }}</router-link>
+            </p>
         </div>
       </div>
     </div>
