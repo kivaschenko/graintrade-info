@@ -1,5 +1,5 @@
 from typing import List
-
+import uuid
 from ..database import database
 from ..schemas import (
     SubscriptionInDB,
@@ -8,6 +8,8 @@ from ..schemas import (
 )
 
 
+# -------------------
+# CRUD operations for Subscription
 async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
     query = """
         INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, order_id, status)
@@ -30,6 +32,27 @@ async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
         )
         new_subscription = SubscriptionInResponse(**row)
         return new_subscription
+
+
+async def create_free_subscription(user_id: int) -> SubscriptionInResponse:
+    order_id = str(uuid.uuid4())
+    query = """
+        INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, order_id, status)
+        SELECT $1, id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', $2, 'active'
+        FROM tarifs 
+        WHERE scope = 'free'
+        LIMIT 1
+        RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status, created_at
+    """
+    async with database.pool.acquire() as connection:
+        async with connection.transaction():
+            try:
+                row = await connection.fetchrow(query, user_id, order_id)
+                if row is None:
+                    raise ValueError("No free tarif found")
+                return SubscriptionInResponse(**row)
+            except Exception as e:
+                raise ValueError(f"Failed to create subscription: {str(e)}")
 
 
 async def update_status_by_order_id(status: str, order_id: str):

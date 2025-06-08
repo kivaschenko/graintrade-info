@@ -1,8 +1,9 @@
 import logging
 import os
+from datetime import date, timedelta
 import aio_pika
 import aio_pika.abc
-from ..routers.schemas import UserInResponse
+from ..schemas import UserInResponse, SubscriptionStatus, SubscriptionInDB
 
 # RabbitMQ configuration
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
@@ -28,3 +29,18 @@ async def send_user_to_rabbitmq(user: UserInResponse):
         logging.error(f"Failed to send user to RabbitMQ: {e}")
     finally:
         await connection.close()  # Ensure the connection is closed
+
+
+async def create_free_subscription(user_id: int):
+    """
+    Create a free subscription for a user.
+    """
+    from ..models.subscription_model import (
+        create_free_subscription as create_free_subscription_model,
+    )  # Import here to avoid circular import
+
+    new_subscription = await create_free_subscription_model(user_id=user_id)
+    if new_subscription is None:
+        raise ValueError("Failed to create free subscription")
+    print(f"Free subscription created for user {user_id}: {new_subscription.id}")
+    return new_subscription
