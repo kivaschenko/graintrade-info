@@ -61,19 +61,11 @@ logging.info(f"Starting App {app}...")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # Development with frontend on localhost in docker
-        "http://localhost:8080",  # Development with frontend on localhost as standalone
-        "http://backend:8000",  # Development with frontend on localhost in docker
-        "http://127.0.0.1:8000",  # Development with frontend on localhost as standalone
-        "http://127.0.0.1:8081",  # Development with frontend on localhost in docker
-        # "http://graintrade.info",
-        # "https://graintrade.info",
-        # "http://www.graintrade.info",
-        # "https://www.graintrade.info",
-        # "http://65.108.68.57",
-        # "https://65.108.68.57",
-        "*",
-        # Allow all origins for development purposes
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost:80",
+        "http://127.0.0.1:80",
     ],
     allow_credentials=True,
     allow_methods=["*"],

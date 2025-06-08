@@ -4,6 +4,12 @@ FROM node:18-alpine AS builder
 # Set the working directory
 WORKDIR /app
 
+# Add build-time environment variables
+ARG VUE_APP_BACKEND_URL
+ENV VUE_APP_BACKEND_URL=${VUE_APP_BACKEND_URL}
+ARG VUE_APP_MAPBOX_TOKEN
+ENV VUE_APP_MAPBOX_TOKEN=${VUE_APP_MAPBOX_TOKEN}
+
 # Copy package.json and package-lock.json first to leverage Docker cache
 COPY package.json package-lock.json ./
 
@@ -21,6 +27,7 @@ FROM nginx:stable-alpine
 
 # Copy the built app from the builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose the application port
 EXPOSE 80

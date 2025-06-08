@@ -59,8 +59,12 @@ async def get_by_username(username: str) -> UserInResponse:
         WHERE username = $1
     """
     async with database.pool.acquire() as conn:
-        row = await conn.fetchrow(query, username)
-    return UserInResponse(**row)
+        try:
+            row = await conn.fetchrow(query, username)
+            return UserInResponse(**row)
+        except Exception as e:
+            print(f"Error fetching user by username: {e}")
+            return None
 
 
 async def get_by_id(user_id: int) -> UserInResponse:
