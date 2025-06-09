@@ -500,6 +500,60 @@ pipeline {
   }
 }
 ```
+---
+## Save copy to remote USB drive
+To copy files to a USB drive using `rsync`, you can follow these steps. Make sure your USB drive is connected to your computer and properly mounted.
+
+### Step 1: Identify the USB Drive
+
+First, you need to find out where your USB drive is mounted. You can do this by running the following command in the terminal:
+
+```bash
+df -h
+```
+
+Look for your USB drive in the output. It will typically be listed under `/media/username/` or `/mnt/`.
+
+### Step 2: Use `rsync` to Copy Files
+
+Once you know the mount point of your USB drive, you can use the `rsync` command to copy files. The basic syntax is:
+
+```bash
+rsync -av /path/to/source/ /path/to/usb/
+```
+
+- `-a`: Archive mode; it preserves permissions, timestamps, symbolic links, etc.
+- `-v`: Verbose; it provides detailed output of the transfer process.
+
+### Example Command
+
+If your USB drive is mounted at `/media/username/USB_DRIVE` and you want to copy files from a folder called `Documents`, the command would look like this:
+
+```bash
+rsync -av ~/Documents/ /media/username/USB_DRIVE/
+```
+
+### Step 3: Eject the USB Drive
+
+After the copying process is complete, make sure to safely eject the USB drive to avoid data corruption:
+
+```bash
+umount /media/username/USB_DRIVE
+```
+
+### Additional Options
+
+- If you want to exclude certain files or directories, you can use the `--exclude` option:
+
+```bash
+rsync -av --exclude='*.tmp' ~/Documents/ /media/username/USB_DRIVE/
+```
+
+- To perform a dry run (to see what would be copied without actually copying), add the `-n` option:
+
+```bash
+rsync -avn ~/Documents/ /media/username/USB_DRIVE/
+```
 
 ---
 
