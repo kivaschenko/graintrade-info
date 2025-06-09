@@ -1,7 +1,7 @@
 import { createStore } from 'vuex';
 import axios from 'axios';
 
-const backendUrl = process.env.VUE_APP_BACKEND_URL || 'http://localhost:8000';
+const backendUrl = process.env.VUE_APP_BACKEND_URL;
 // Ensure the backend URL is set corre
 console.log('Backend URL:', backendUrl);
 if (!backendUrl) {
