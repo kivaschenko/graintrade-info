@@ -5,7 +5,7 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
-    # BackgroundTasks,
+    BackgroundTasks,
     APIRouter,
 )
 from fastapi.security import (
@@ -19,6 +19,7 @@ from ..schemas import (
     ItemInResponse,
 )
 from ..models import items_model
+from ..service_layer import item_services
 from . import JWT_SECRET
 
 router = APIRouter(tags=["Items"])
@@ -68,7 +69,7 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
 @router.post("/items", response_model=ItemInResponse, status_code=201, tags=["Items"])
 async def create_item(
     item: ItemInDB,
-    # background_tasks: BackgroundTasks,
+    background_tasks: BackgroundTasks,
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     if token is None:
@@ -85,10 +86,7 @@ async def create_item(
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
     logging.info(f"New item created: {new_item}")
-    # background_tasks.add_task(
-    #     app.state.kafka_handler.send_message, "new-item", new_item
-    # )
-
+    background_tasks.add_task(item_services.send_item_to_queue, new_item)
     return new_item
 
 

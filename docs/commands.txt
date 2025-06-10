@@ -50,7 +50,7 @@ http POST http://localhost:8000/items \
     region="Cherkasy Oblast" \
     latitude:=49.305825 \
     longitude:=31.946946 \
-    "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsInNjb3BlcyI6WyJtZSIsImNyZWF0ZTppdGVtIiwicmVhZDppdGVtIiwidXBkYXRlOml0ZW0iLCJkZWxldGU6aXRlbSJdLCJ1c2VyX2lkIjoyLCJleHAiOjE3NDU2ODQxNjd9.Mxrq39L3rOsBMgS2j-gmUelHkicvV1xz4nyVZ1RlPyU"
+    "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsInNjb3BlcyI6WyJtZSIsImNyZWF0ZTppdGVtIiwicmVhZDppdGVtIiwidmlldzptYXAiXSwidXNlcl9pZCI6MiwiZXhwIjoxNzQ5NzYwOTk4fQ.SNilG30raGrlRKNc1K4AHNENMe6-4wNxLM0XRH9J1B8"
 
 # Get all items \
 http GET http://localhost:8000/items \

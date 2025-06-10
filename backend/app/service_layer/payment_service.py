@@ -1,11 +1,13 @@
+from pathlib import Path
+from typing import Optional, Any, Dict
+from datetime import date, timedelta
 import hashlib
 import httpx
 import requests
 import logging
 import uuid
-from typing import Optional, Any, Dict
-from datetime import date, timedelta
-
+import os
+from dotenv import load_dotenv
 import redis
 
 from ..models import subscription_model, payment_model
@@ -14,21 +16,19 @@ from ..schemas import (
     SubscriptionStatus,
 )
 from ..database import redis_db
+from ..rabbit_mq import rabbitmq, QueueName
 
-FONDY_MERCHANT_ID = "1396424"  # test mode
-FONDY_MERCHANT_KEY = "test"  # test mode
-# FONDY_MERCHANT_ID = "1555037"
-# FONDY_MERCHANT_KEY = "z0LvpvmJZOXo14ezf3oL43Fs5p18XNbQ"
-BASE_URL = (
-    "https://0f2d-188-163-31-56.ngrok-free.app"  # Replace with your actual base URL
-)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
+FONDY_MERCHANT_ID = os.getenv("FONDY_MERCHANT_ID")
+FONDY_MERCHANT_KEY = os.getenv("FONDY_MERCHANT_KEY")
+BASE_URL = os.getenv("BASE_URL")
 CALLBACK_URL = f"{BASE_URL}/payments/confirm"
+ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
 
 
 logging.basicConfig(level=logging.INFO)
 
-
-ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
 
 # -------------------
 # Helpers
@@ -265,3 +265,19 @@ async def update_subscription_and_save_payment_confirmation(
             f"Error updating subscription and saving payment confirmation: {str(e)}"
         )
         return False
+
+
+# RabbitMQ publisher
+
+
+async def send_success_payment_details_to_queue(
+    payment_dict: dict, queue: QueueName = QueueName.PAYMENT_EVENTS
+):
+    try:
+        await rabbitmq.connect()
+        await rabbitmq.publish(message=payment_dict, queue=queue)
+    except Exception as e:
+        logging.error(f"Failed to send item to RabbitMQ: {e}")
+    finally:
+        await rabbitmq.close()
+        # Ensure the connection is closed
