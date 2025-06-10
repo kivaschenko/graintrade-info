@@ -1,15 +1,16 @@
+# app/database.py
+from pathlib import Path
 import os
-import asyncio
 import logging
 import asyncpg
-
 import redis
+from dotenv import load_dotenv
 
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://grain:teomeo2358@65.108.68.57:5433/postgres"
-)
-print(f"Using DATABASE_URL: {DATABASE_URL}")
+BASE_DIR = Path(__file__).resolve().parent.parent
+print(f"BASE_DIR: {BASE_DIR}")
+load_dotenv(BASE_DIR / ".env")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 class Database:
@@ -27,13 +28,15 @@ class Database:
         logging.info("Disconnect the DB...")
 
 
-database = Database(DATABASE_URL)
+if DATABASE_URL:
+    database = Database(DATABASE_URL)
+else:
+    raise ValueError("DATABASE_URL not defined!")
 
 # ---------------------
 # Redis connector
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://:Teodorathome@65.108.68.57:6379/0")
-print(f"Using REDIS_URL: {REDIS_URL}")
+REDIS_URL = os.getenv("REDIS_URL")
 
 
 class RedisDB:
@@ -49,21 +52,7 @@ class RedisDB:
         logging.info("Closed Redis connection...")
 
 
-redis_db = RedisDB(redis_url=REDIS_URL)
-
-if __name__ == "__main__":
-    redis_db.connect()
-    # Test connection
-    print("Redis connected:", redis_db.pool)
-    # Close connections
-    redis_db.disconnect()
-    # Create async loop
-    loop = asyncio.get_event_loop()
-    # Create database connection
-    database = Database(DATABASE_URL)
-    # Connect to database
-    loop.run_until_complete(database.connect())
-    # Test connection
-    print("Database connected:", database.pool)
-    # Close connections
-    loop.run_until_complete(database.disconnect())
+if REDIS_URL:
+    redis_db = RedisDB(redis_url=REDIS_URL)
+else:
+    raise ValueError("REDIS_URL not defined!")
