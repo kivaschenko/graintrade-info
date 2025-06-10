@@ -32,12 +32,6 @@ from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, MAP_VIEW_LIMIT
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
-logging.info("Initializing user router...")
-logging.info(f"JWT_SECRET: {JWT_SECRET}")
-logging.info(f"ALGORITHM: {ALGORITHM}")
-logging.info(f"ACCESS_TOKEN_EXPIRE_MINUTES: {ACCESS_TOKEN_EXPIRE_MINUTES}")
-
-
 router = APIRouter(tags=["users"])
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -54,6 +48,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 # --------------------------
 # Scopes according to Tariff
+# TODO: Remake scopes with new logic
 SCOPES = {
     "free": [
         "me",
@@ -74,7 +69,6 @@ SCOPES = {
         "read:item",
         "delete:item",
         "view:map",
-        "add:category",
     ],
     "pro": [
         "me",
@@ -82,7 +76,6 @@ SCOPES = {
         "read:item",
         "delete:item",
         "view:map",
-        "add:category",
     ],
 }
 
@@ -138,10 +131,7 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            logging.error("Username not found in token")
-            raise credentials_exception
+        username: str = payload.get("sub") or "undefined"
         token_scopes = payload.get("scopes", [])
         token_data = TokenData(scopes=token_scopes, username=username)
     except jwt.PyJWTError as e:
@@ -285,6 +275,7 @@ async def create_user(
     )
     new_user = await user_model.create(user_to_db)
     logging.info(f"Created a new User: {new_user}")
+    background_tasks.add_task(user_services.send_user_to_rabbitmq, new_user)
     return new_user
 
 
