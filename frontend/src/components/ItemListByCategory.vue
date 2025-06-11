@@ -66,7 +66,7 @@ export default {
       const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories/${category_id}/items`, {
         params: {
           offset: 0,
-          limit: 10,
+          limit: 100,
         },
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
@@ -177,11 +177,20 @@ export default {
     },
     addMapInteractions() {
       if (!this.map) return;
+
       // Handle clicks on individual points
       this.map.on('click', 'unclustered-point', (e) => {
+        if (!e.features || !e.features[0]) return;
+
         const coordinates = e.features[0].geometry.coordinates.slice();
         const item = e.features[0].properties;
+        // Ensure coordinates are valid
+        if (!coordinates || coordinates.length !== 2) return;
 
+        // Fix for when the map is zoomed in a lot
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
         // Create popup
         new mapboxgl.Popup()
           .setLngLat(coordinates)
@@ -206,6 +215,15 @@ export default {
             });
           }
         );
+      });
+
+      // Add cursor style for unclustered points
+      this.map.on('mouseenter', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+
+      this.map.on('mouseleave', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = '';
       });
 
       // Change cursor on hover
@@ -241,17 +259,26 @@ export default {
       };
     },
     getPopupHTML(item) {
-      return ` 
+      // Get translations first to avoid undefined this.$t in template string
+      const translations = {
+        price: this.$t('common.price'),
+        amount: this.$t('common.amount'),
+        incoterms: this.$t('common.incoterms'),
+        viewDetails: this.$t('common.viewDetails')
+      };
+
+      return `
         <div class="popup-content">
-          <h5>${item.title}</h5>
-          <p>${item.description}</p>
-          <p>${this.$t('common.price')}: ${item.price} ${item.currency}</p>
-          <p>${this.$t('common.amount')}: ${item.amount} ${item.measure}</p>
-          <p>${this.$t('common.incoterms')}: ${item.terms_delivery}</p>
-          <p>${item.country} ${item.region}</p>
+          <h5>${item.title || ''}</h5>
+          <p>${item.description || ''}</p>
+          <p>${translations.price}: ${item.price || 0} ${item.currency || ''}</p>
+          <p>${translations.amount}: ${item.amount || 0} ${item.measure || ''}</p>
+          <p>${translations.incoterms}: ${item.terms_delivery || ''}</p>
+          <p>${item.country || ''} ${item.region || ''}</p>
           <a href="/items/${item.id}" class="btn btn-sm btn-primary">
-            ${this.$t('common.viewDetails')}
+            ${translations.viewDetails}
           </a>
+        </div>
       `;
     },
     // Translate Category
@@ -298,13 +325,23 @@ export default {
 .circle.medium { background-color: #f1f075; }
 .circle.large { background-color: #f28cb1; }
 
+.mapboxgl-popup {
+  max-width: 400px;
+}
+
+.mapboxgl-popup-content {
+  padding: 15px;
+}
+
 .popup-content {
   padding: 10px;
-  max-width: 200px;
+  max-width: 300px;
 }
 
 .popup-content h5 {
   margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
 }
 
 .popup-content p {
