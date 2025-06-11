@@ -100,7 +100,9 @@ export default {
     async fetchCurrentSubscription() {
       try {
         const response = await api.get(`/subscriptions/user/${this.user.id}`);
-        this.currentTariff = response.data.tarif.scope;
+        if (response.data.status === 'active') {
+            this.currentTariff = response.data.tarif.scope;
+        }
       } catch (error) {
         console.error('Error fetching current subscription:', error);
       }
@@ -120,6 +122,8 @@ export default {
           window.open(r.data.checkout_url, '_blank');
           // Or redirect in the same tab
           // window.location.href = r.data.checkout_url;
+        } else if (r.data.status === "free") {
+          alert("Your Subscription was updated to Free plan!")
         } else {
           this.$toast.error(this.$t('tariffs.noCheckoutUrl'));
         }
