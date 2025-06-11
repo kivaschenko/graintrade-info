@@ -3,28 +3,39 @@
     <div class="row">
       <div class="col-md-6 item-details">
         <h3>{{ $t('itemDetails.title', { title: item.title }) }}</h3>
-        <h4>ID: {{ item.uuid }}</h4>
+        <p><strong>ID:</strong> {{ item.uuid }}</p>
         <p><strong>{{ $t('common_text.type') }}:</strong> {{ $t(`offer_type.${item.offer_type}`) }}</p>
         <p><strong>{{ $t('common_text.description') }}:</strong> {{ item.description }}</p>
         <p><strong>{{ $t('common_text.price') }}:</strong> {{ item.price }} {{ item.currency }}</p>
         <p><strong>{{ $t('common_text.amount') }}:</strong> {{ item.amount }} {{ item.measure }}</p>
         <p><strong>{{ $t('common_text.incoterms') }}:</strong> {{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</p>
-        <div>
-          <label for="searchLocation">{{ $t('itemDetails.enterLocation') }}</label>
-          <input class="form-control" type="text" id="searchLocation" v-model="searchLocation" @change="geocodeLocation" :placeholder="$t('itemDetails.enterAddressOrCoordinates')">
+        <!-- Show full map features for registered users -->
+        <div v-if="!isAuthenticated">
+          <p>{{ $t('itemDetails.locationInfo') }}</p>
+          <a :href="googleMapsUrl" target="_blank" class="btn btn-outline-success" :disabled="!item.latitude || !item.longitude">
+            {{ $t('itemDetails.viewOnGoogleMaps') }}
+          </a>
+          <div class="mt-3 alert alert-warning">{{ $t('itemDetails.registerToAccessMap') }}</div>
         </div>
-        <div>
-          <label for="tariffRate">{{ $t('itemDetails.tariffRatePerKilometer') }}</label>
-          <input class="form-control" type="number" id="tariffRate" v-model="tariffRate" @input="calculateTariff" :placeholder="$t('itemDetails.enterTariffRate')">
-        </div>
-        <div v-if="directions">
-          <h4>{{ $t('itemDetails.directions') }}</h4>
-          <p><strong>{{ $t('itemDetails.distance') }}:</strong> {{ (directions.distance / 1000).toFixed(2) }} {{ $t('itemDetails.kilometers') }}</p>
-          <p><strong>{{ $t('itemDetails.duration') }}:</strong> {{ formatDuration(directions.duration) }}</p>
-          <p><strong>{{ $t('itemDetails.tariff') }}:</strong> {{ tariff.toFixed(2) }}</p>
+        <!-- Show full map features for registered users -->
+        <div v-if="isAuthenticated">
+          <div>
+            <label for="searchLocation">{{ $t('itemDetails.enterLocation') }}</label>
+            <input class="form-control" type="text" id="searchLocation" v-model="searchLocation" @change="geocodeLocation" :placeholder="$t('itemDetails.enterAddressOrCoordinates')">
+          </div>
+          <div>
+            <label for="tariffRate">{{ $t('itemDetails.tariffRatePerKilometer') }}</label>
+            <input class="form-control" type="number" id="tariffRate" v-model="tariffRate" @input="calculateTariff" :placeholder="$t('itemDetails.enterTariffRate')">
+          </div>
+          <div v-if="directions">
+            <h4>{{ $t('itemDetails.directions') }}</h4>
+            <p><strong>{{ $t('itemDetails.distance') }}:</strong> {{ (directions.distance / 1000).toFixed(2) }} {{ $t('itemDetails.kilometers') }}</p>
+            <p><strong>{{ $t('itemDetails.duration') }}:</strong> {{ formatDuration(directions.duration) }}</p>
+            <p><strong>{{ $t('itemDetails.tariff') }}:</strong> {{ tariff.toFixed(2) }}</p>
+          </div>
         </div>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-6" v-if="isAuthenticated">
         <div id="map" class="map"></div>
       </div>
     </div>
@@ -57,6 +68,7 @@ export default {
     },
   },
   async created() {
+    this.checkAuthentication();
     try {
       const itemId = this.$route.params.id;
       const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/items/${itemId}`, {
@@ -65,12 +77,19 @@ export default {
         },
       });
       this.item = response.data;
-      this.initializeMap();
+      // If User authenticated then send request to Mapbox 
+      if (this.isAuthenticated) { 
+        this.$nextTick(() => {this.initializeMap();})
+      }
     } catch (error) {
       console.error('Error fetching item details:', error);
     }
   },
   methods: {
+    checkAuthentication() {
+      const token = localStorage.getItem('access_token');
+      this.isAuthenticated = !!token;
+    },
     initializeMap() {
       mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
       this.map = new mapboxgl.Map({
@@ -152,6 +171,12 @@ export default {
       const minutes = Math.floor((duration % 3600) / 60);
       return `${hours} hours ${minutes} minutes`;
     },
+  },
+  computed: {
+    googleMapsUrl() {
+      if (!this.item.latitude || !this.item.longitude) return '#';
+      return `https://maps.google.com/maps/@${this.item.latitude},${this.item.longitude},14z`;
+    }
   },
 };
 </script>
