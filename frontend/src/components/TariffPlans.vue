@@ -100,7 +100,9 @@ export default {
     async fetchCurrentSubscription() {
       try {
         const response = await api.get(`/subscriptions/user/${this.user.id}`);
-        this.currentTariff = response.data.tarif.scope;
+        if (response.data.status === 'active') {
+            this.currentTariff = response.data.tarif.scope;
+        }
       } catch (error) {
         console.error('Error fetching current subscription:', error);
       }

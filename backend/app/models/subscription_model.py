@@ -113,7 +113,7 @@ async def get_by_user_id(user_id: int) -> SubscriptionInResponse:
     query = """
         SELECT id, user_id, tarif_id, start_date, end_date, order_id, status, created_at
         FROM subscriptions
-        WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
+        WHERE user_id = $1
         ORDER BY created_at DESC
         LIMIT 1
     """

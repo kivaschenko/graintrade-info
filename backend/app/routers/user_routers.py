@@ -234,7 +234,6 @@ async def login_for_access_token(
             )
 
         logging.info(f"Access token created for user {user.username}")
-        print(f"Access token: {access_token}")
         return Token(access_token=access_token, token_type="bearer")
 
     except Exception as e:
