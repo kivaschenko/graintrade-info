@@ -18,8 +18,8 @@
       <div v-else>
         <div class="map-container">
           <div class="map mt-5" id="mapContainer" ref="mapContainer"></div>
-          <div class="maplegend" v-if="mapLoaded">
-            <h6>{{ $t('map.clusterSize') }}</h6>
+          <div class="map-legend" v-if="mapLoaded">
+            <h6>{{ $t('map.clusterSizes') }}</h6>
             <div class="legend-item">
               <span class="circle small"></span> 1-10 {{ $t('map.items') }}
             </div>
@@ -83,6 +83,21 @@ export default {
     }
   },
   methods: {
+    beforeUnmount() {
+      if (this.map) {
+        // Remove event listeners
+        this.map.off('mouseenter', 'unclustered-point');
+        this.map.off('mouseleave', 'unclustered-point');
+        this.map.off('mouseenter', 'clusters');
+        this.map.off('mouseleave', 'clusters');
+        this.map.off('click', 'unclustered-point');
+        this.map.off('click', 'clusters');
+        
+        // Remove the map
+        this.map.remove();
+        this.map = null;
+      }
+    },
     initializeMap() {
       if (!this.$refs.mapContainer) {
         console.error('Map container not found');
@@ -112,12 +127,15 @@ export default {
     addMapSources() {
       if (!this.map) return;
       // Add a new source from our GeoJSON data
+      const geoJsonData = this.getGeoJsonFromItems();
+      console.log('GeoJSON data:', geoJsonData);
         this.map.addSource('items', {
           type: 'geojson',
           data: this.getGeoJsonFromItems(),
           cluster: true,
           clusterMaxZoom: 14,
-          clasterRadius: 50
+          clasterRadius: 50,
+          generateId: true
         });
     },
     addMapLayers() {
@@ -169,34 +187,100 @@ export default {
         filter: ['!', ['has', 'point_count']],
         paint: {
           'circle-color': '#11b4da',
-          'circle-radius': 8,
-          'circle-stroke-width': 1,
-          'circle-stroke-color': '#fff'
+          'circle-radius': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            12,  // hover size
+            8   // normal size
+          ],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+          // Add hover state using circle-opacity
+          'circle-opacity': 0.6,
+          // Increase hover area
+          'circle-stroke-opacity': 1,
         }
+      });
+      // Add hover effect
+      let hoveredStateId = null;
+
+      this.map.on('mousemove', 'unclustered-point', (e) => {
+        if (e.features.length > 0) {
+          if (hoveredStateId !== null) {
+            this.map.setFeatureState(
+              { source: 'items', id: hoveredStateId },
+              { hover: false }
+            );
+          }
+          hoveredStateId = e.features[0].id;
+          this.map.setFeatureState(
+            { source: 'items', id: hoveredStateId },
+            { hover: true }
+          );
+        }
+      });
+
+      this.map.on('mouseleave', 'unclustered-point', () => {
+        if (hoveredStateId !== null) {
+          this.map.setFeatureState(
+            { source: 'items', id: hoveredStateId },
+            { hover: false }
+          );
+        }
+        hoveredStateId = null;
       });
     },
     addMapInteractions() {
       if (!this.map) return;
 
+      // Add cursor style for unclustered points
+      this.map.on('mouseenter', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+
+      this.map.on('mouseleave', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = '';
+      });
+
+      // Add cursor style for clusters
+      this.map.on('mouseenter', 'clusters', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+
+      this.map.on('mouseleave', 'clusters', () => {
+        this.map.getCanvas().style.cursor = '';
+      });
+
       // Handle clicks on individual points
       this.map.on('click', 'unclustered-point', (e) => {
-        if (!e.features || !e.features[0]) return;
-
         const coordinates = e.features[0].geometry.coordinates.slice();
         const item = e.features[0].properties;
+
+        // Debug log
+        console.log('Clicked item:', item);
+        console.log('Coordinates:', coordinates);
+
         // Ensure coordinates are valid
-        if (!coordinates || coordinates.length !== 2) return;
+        if (!coordinates || coordinates.length !== 2) {
+          console.error('Invalid coordinates');
+          return;
+        }
 
         // Fix for when the map is zoomed in a lot
         while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
           coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
         }
-        // Create popup
-        new mapboxgl.Popup()
+
+        // Create and show popup
+        new mapboxgl.Popup({
+          closeButton: true,
+          closeOnClick: false,
+          maxWidth: '300px'
+        })
           .setLngLat(coordinates)
           .setHTML(this.getPopupHTML(item))
           .addTo(this.map);
-      });
+        });
 
       // Handle clicks on clusters
       this.map.on('click', 'clusters', (e) => {
@@ -253,7 +337,7 @@ export default {
           },
           geometry: {
             type: 'Point',
-            coordinates: [item.longitude, item.latitude]
+            coordinates: [parseFloat(item.longitude), parseFloat(item.latitude)]
           }
         }))
       };
@@ -326,26 +410,43 @@ export default {
 .circle.large { background-color: #f28cb1; }
 
 .mapboxgl-popup {
-  max-width: 400px;
+  max-width: 300px;
+  z-index: 1000;
 }
 
 .mapboxgl-popup-content {
   padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.mapboxgl-popup-close-button {
+  right: 5px;
+  top: 5px;
+  font-size: 16px;
+  color: #666;
 }
 
 .popup-content {
   padding: 10px;
-  max-width: 300px;
 }
 
 .popup-content h5 {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-weight: bold;
   color: #333;
 }
 
 .popup-content p {
-  margin: 4px;
+  margin: 6px 0;
   font-size: 0.9em;
+  color: #666;
+}
+
+.popup-content .btn {
+  margin-top: 12px;
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 </style>
