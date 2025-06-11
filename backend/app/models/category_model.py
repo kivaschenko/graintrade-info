@@ -86,15 +86,16 @@ async def delete(category_id: int) -> None:
 
 async def get_by_id_with_items(
     category_id: int, offset: int, limit: int
-) -> CategoryWithItems:
+) -> tuple[CategoryInResponse, List[ItemInResponse]]:
     query = """
-        SELECT c.id, c.name, c.description, c.ua_name, c.ua_description, i.id, i.title
-        FROM categories c
-        JOIN items i ON c.id = i.category_id
-        WHERE c.id = $1
+        SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
+        FROM categories_hierarchy 
+        WHERE id = $1
     """
     query2 = """
-        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+        SELECT 
+            id, uuid, category_id, offer_type, title, description, price, currency, 
+            amount, measure, terms_delivery, country, region, latitude, longitude, created_at
         FROM items
         WHERE category_id = $1
         ORDER BY id DESC
@@ -105,16 +106,8 @@ async def get_by_id_with_items(
         row = await conn.fetchrow(query, category_id)
         if row is None:
             raise ValueError("Category not found")
-        category = CategoryWithItems(
-            id=row["id"],
-            name=row["name"],
-            description=row["description"],
-            ua_name=row["ua_name"],
-            ua_description=row["ua_description"],
-            items=[],
-        )
+        category = CategoryInResponse(**row)
         items = await conn.fetch(query2, category_id, offset, limit)
-        print(f"Items within category query: {items}")
         if items:
-            category.items = [ItemInResponse(**item) for item in items]
-        return category
+            items_list = [ItemInResponse(**item) for item in items]
+        return category, items_list

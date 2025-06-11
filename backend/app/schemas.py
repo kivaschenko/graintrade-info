@@ -1,7 +1,7 @@
 # Desc: Schemas for the item service
 
 from datetime import date, datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, EmailStr
 from enum import Enum
@@ -83,10 +83,10 @@ class ItemInResponse(BaseModel):
 class CategoryWithItems(BaseModel):
     id: int
     name: str
-    description: str | None
-    ua_name: str | None
-    ua_description: str | None
-    items: List[ItemInResponse] = []
+    description: Optional[str]
+    ua_name: Optional[str]
+    ua_description: Optional[str]
+    items: List[ItemInResponse]
 
 
 # -------------------------------
