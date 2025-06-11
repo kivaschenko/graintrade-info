@@ -105,18 +105,25 @@ async def read_items(
 )
 async def read_item(item_id: int, token: Annotated[str, Depends(oauth2_scheme)] = None):
     """Return certain item's info."""
-    user_id, scopes = await get_current_user_id(token)
-    if "read:item" not in scopes:
-        raise HTTPException(status.HTTP_403_FORBIDDEN)
-    db_item = await items_model.get_by_id(item_id)
-    if db_item is None:
-        logging.error(f"Item with id {item_id} not found")
+    try:
+        db_item = await items_model.get_by_id(item_id)
+        if db_item is None:
+            logging.error(f"Item with id {item_id} not found")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Item not found")
+        # If token is provided, verify permisiion and increment map views
+        if token != "null":
+            user_id, scopes = await get_current_user_id(token)
+            if "read:item" not in scopes:
+                raise HTTPException(status.HTTP_403_FORBIDDEN)
+            # Increment map views counter for the user
+            await items_model.map_views_increment(user_id)
+        return db_item
+    except Exception as e:
+        logging.error(f"Error in read_item: {e}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
         )
-    # Increment map views counter for the user
-    await items_model.map_views_increment(user_id)
-    return db_item
 
 
 @router.delete(
