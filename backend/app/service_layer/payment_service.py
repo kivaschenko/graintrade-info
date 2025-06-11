@@ -211,7 +211,40 @@ class FondyPaymentService:
             return None
 
 
-# -------------------
+# ----------------------
+# Free subscription case
+
+
+async def activate_free_subscription(user_id: int, tarif_id: int) -> bool:
+    try:
+        # Specify free order_id with prefix "free-"
+        uuid_str = str(uuid.uuid4())
+        uuid_list = ["free"] + uuid_str.split("-")[1:]
+        order_id = "-".join(uuid_list)
+        start_date, end_date = make_start_end_dates_for_monthly_case()
+        # Create new inactive subscription
+        subscription = await subscription_model.create(
+            SubscriptionInDB(
+                user_id=user_id,
+                tarif_id=tarif_id,
+                start_date=start_date,
+                end_date=end_date,
+                order_id=order_id,
+                status=SubscriptionStatus.INACTIVE,
+            )
+        )
+        logging.info(f"Created a new Free subscription: {subscription}")
+        await subscription_model.update_status_by_order_id(SubscriptionStatus.ACTIVE, order_id)
+        logging.info(f"Updated status of subscription: {subscription}")
+        if not subscription:
+            raise ValueError("Failed to create subscription in the database")
+        return True
+    except Exception as e:
+        logging.error(f"Error was during create free subscription: {e}")
+        return False
+
+
+# ----------------------
 # Handlers for Fondy API
 
 
@@ -302,16 +335,13 @@ async def update_subscription_and_save_payment_confirmation(
 async def verify_payment_status(order_id: str):
     payment_service = FondyPaymentService()
     status = await payment_service.check_payment_status(order_id)
-
     if status is None:
         logging.warning(f"Payment {order_id} check timed out")
         return False
-
     if status["order_status"] == "approved":
         # Process successful payment
         await update_subscription_and_save_payment_confirmation(status)
         return True
-
     logging.info(f"Payment {order_id} finished with status: {status['order_status']}")
     return False
 
