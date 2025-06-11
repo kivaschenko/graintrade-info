@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional, Any, Dict
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+import asyncio
 import hashlib
 import httpx
 import requests
@@ -150,6 +151,65 @@ class FondyPaymentService:
             )
         return checkout_url, payment_id
 
+    async def _make_status_request(self, order_id: str) -> dict:
+        """
+        Make a request to Fondy API to check payment status
+        """
+        params = {
+            "order_id": order_id,
+            "merchant_id": self.merchant_id,
+        }
+        # Generate signature for status request
+        signature = self._generate_signature(params)
+        params["signature"] = signature
+
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                url="https://pay.fondy.eu/api/status/order_id", json={"request": params}
+            )
+            if r.status_code != 200:
+                raise ValueError(f"Error from Fondy API: {r.status_code}")
+
+            response = r.json()
+            return response.get("response", {})
+
+    async def check_payment_status(self, order_id: str) -> Optional[dict]:
+        """
+        Check payment status with progressive intervals
+        """
+        start_time = datetime.now()
+        expiration_time = start_time + timedelta(hours=24)
+
+        try:
+            # First 5 minutes - check every 30 seconds
+            while datetime.now() < start_time + timedelta(minutes=5):
+                status = await self._make_status_request(order_id)
+                if status.get("order_status") in ["approved", "declined", "expired"]:
+                    return status
+                await asyncio.sleep(30)
+
+            # Next hour - check every 5 minutes
+            while datetime.now() < start_time + timedelta(hours=1):
+                status = await self._make_status_request(order_id)
+                if status.get("order_status") in ["approved", "declined", "expired"]:
+                    return status
+                await asyncio.sleep(300)
+
+            # Until expiration - check every 30 minutes
+            while datetime.now() < expiration_time:
+                status = await self._make_status_request(order_id)
+                if status.get("order_status") in ["approved", "declined", "expired"]:
+                    return status
+                await asyncio.sleep(1800)
+
+            return None
+
+        except Exception as e:
+            logging.error(
+                f"Error checking payment status for order {order_id}: {str(e)}"
+            )
+            return None
+
 
 # -------------------
 # Handlers for Fondy API
@@ -190,10 +250,10 @@ async def payment_for_subscription_handler(
         ) = await fondy_payment_service.create_subscription_payment(
             amount, order_id, order_desc, currency, email, server_callback_url
         )
-        print("Payment data:", payment_data)
+        logging.info("Payment data:", payment_data)
         r = await fondy_payment_service.send_request_to_fondy_api(payment_data)
         checkout_url, payment_id = await fondy_payment_service.extract_checkout_url(r)
-        print("Result:", checkout_url, payment_id)
+        logging.info("Result:", checkout_url, payment_id)
         if not order_id:
             raise ValueError("Order ID is missing in the response")
         save_signature_to_cache(order_id, signature)
@@ -203,38 +263,10 @@ async def payment_for_subscription_handler(
         return None
 
 
-def check_payment_status(
-    order_id,
-    signature,
-    merchant_id=FONDY_MERCHANT_ID,
-    status_url="https://pay.fondy.eu/api/status/order_id",
-) -> Dict[str, Any]:
-    params = {
-        "order_id": order_id,
-        "signature": signature,
-        "merchant_id": merchant_id,
-    }
-    r = requests.post(url=status_url, json=params)
-    r = r.json()
-    return r.get("response", {})
-
-
 async def update_subscription_and_save_payment_confirmation(
     payment_response: dict[str, Any],
 ):
     try:
-        # order_id = payment_response.get("order_id")
-        # if not order_id:
-        #     raise ValueError("Order ID is missing in the payment response")
-
-        # signature = payment_response.get("signature")
-        # if not signature:
-        #     raise ValueError("Signature is missing in the payment response")
-
-        # if not verify_payment(order_id, signature):
-        #     raise ValueError("Signature verification failed")
-
-        # Save payment data to DB
         payment_data = dict(
             payment_id=payment_response["payment_id"],
             order_id=payment_response["order_id"],
@@ -265,6 +297,23 @@ async def update_subscription_and_save_payment_confirmation(
             f"Error updating subscription and saving payment confirmation: {str(e)}"
         )
         return False
+
+
+async def verify_payment_status(order_id: str):
+    payment_service = FondyPaymentService()
+    status = await payment_service.check_payment_status(order_id)
+
+    if status is None:
+        logging.warning(f"Payment {order_id} check timed out")
+        return False
+
+    if status["order_status"] == "approved":
+        # Process successful payment
+        await update_subscription_and_save_payment_confirmation(status)
+        return True
+
+    logging.info(f"Payment {order_id} finished with status: {status['order_status']}")
+    return False
 
 
 # RabbitMQ publisher

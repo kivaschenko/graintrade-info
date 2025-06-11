@@ -156,3 +156,101 @@ http POST http://127.0.0.1:8000/payments/confirm \
 # Ngrok server to test callback for payment
 ngrok http http://localhost:8000
 
+# Check payment order_status
+
+Payment data: {'order_id': '0da8c0d1-8cc3-4584-b11d-a87a201cf5c5', 'merchant_id': '1396424', 'order_desc': 'sub-Basic-2025-06-10-2025-07-11-1', 'amount': '500', 'currency': 'EUR', 'sender_email': 'civaschenko@yahoo.com', 'server_callback_url': '65.108.68.57:8000/payments/confirm', 'signature': '613bfbf25ea97ae45c96e6f8aeae0317f40c2706'}
+
+https://pay.fondy.eu/api/status/order_id
+
+http POST https://pay.fondy.eu/api/status/order_id \
+    request:='{
+        "order_id": "0da8c0d1-8cc3-4584-b11d-a87a201cf5c5",
+        "merchant_id": "1396424",
+        "signature": "6e1e2a0a90c2b4e44931feb4f20f9171c1d348ea"
+    }'
+
+{
+    "response": {
+        "actual_amount": "500",
+        "actual_currency": "EUR",
+        "additional_info": "{\"capture_status\": null, \"capture_amount\": null, \"reservation_data\": \"{}\", \"transaction_id\": 2103082607, \"bank_response_code\": null, \"bank_response_description\": null, \"client_fee\": 0.0, \"settlement_fee\": 0.0, \"bank_name\": null, \"bank_country\": null, \"card_type\": \"VISA\", \"card_product\": \"empty_visa\", \"card_category\": null, \"timeend\": \"10.06.2025 14:45:40\", \"ipaddress_v4\": \"188.163.31.56\", \"payment_method\": \"card\", \"version_3ds\": 2, \"flow\": \"challenge\", \"is_test\": true}",
+        "amount": "500",
+        "approval_code": "426504",
+        "card_bin": 444455,
+        "card_type": "VISA",
+        "currency": "EUR",
+        "eci": "5",
+        "fee": "",
+        "fee_oplata": "0",
+        "masked_card": "444455XXXXXX1111",
+        "merchant_data": "",
+        "merchant_id": 1396424,
+        "order_id": "0da8c0d1-8cc3-4584-b11d-a87a201cf5c5",
+        "order_status": "approved",
+        "order_time": "10.06.2025 14:45:14",
+        "parent_order_id": "",
+        "payment_id": 865868573,
+        "payment_system": "card",
+        "product_id": "",
+        "rectoken": "",
+        "rectoken_lifetime": "",
+        "response_code": "",
+        "response_description": "",
+        "response_signature_string": "**********|500|EUR|{\"capture_status\": null, \"capture_amount\": null, \"reservation_data\": \"{}\", \"transaction_id\": 2103082607, \"bank_response_code\": null, \"bank_response_description\": null, \"client_fee\": 0.0, \"settlement_fee\": 0.0, \"bank_name\": null, \"bank_country\": null, \"card_type\": \"VISA\", \"card_product\": \"empty_visa\", \"card_category\": null, \"timeend\": \"10.06.2025 14:45:40\", \"ipaddress_v4\": \"188.163.31.56\", \"payment_method\": \"card\", \"version_3ds\": 2, \"flow\": \"challenge\", \"is_**********\": true}|500|426504|444455|VISA|EUR|5|0|444455XXXXXX1111|1396424|0da8c0d1-8cc3-4584-b11d-a87a201cf5c5|approved|10.06.2025 14:45:14|865868573|card|success|0|413957824276|civaschenko@yahoo.com|0|purchase",
+        "response_status": "success",
+        "reversal_amount": "0",
+        "rrn": "413957824276",
+        "sender_account": "",
+        "sender_cell_phone": "",
+        "sender_email": "civaschenko@yahoo.com",
+        "settlement_amount": "0",
+        "settlement_currency": "",
+        "settlement_date": "",
+        "signature": "67878f17ce36e3be8fc05b746f6197d0ba086f61",
+        "tran_type": "purchase",
+        "verification_status": ""
+    }
+}
+
+# Remove the stray single quote and fix the JSON formatting
+http POST http://65.108.68.57:8000/payments/confirm \
+    response:='{
+        "actual_amount": "500",
+        "actual_currency": "EUR",
+        "additional_info": "{\"capture_status\": null, \"capture_amount\": null, \"reservation_data\": \"{}\", \"transaction_id\": 2103082607, \"bank_response_code\": null, \"bank_response_description\": null, \"client_fee\": 0.0, \"settlement_fee\": 0.0, \"bank_name\": null, \"bank_country\": null, \"card_type\": \"VISA\", \"card_product\": \"empty_visa\", \"card_category\": null, \"timeend\": \"10.06.2025 14:45:40\", \"ipaddress_v4\": \"188.163.31.56\", \"payment_method\": \"card\", \"version_3ds\": 2, \"flow\": \"challenge\", \"is_test\": true}",
+        "amount": "500",
+        "approval_code": "426504",
+        "card_bin": 444455,
+        "card_type": "VISA",
+        "currency": "EUR",
+        "eci": "5",
+        "fee": "",
+        "fee_oplata": "0",
+        "masked_card": "444455XXXXXX1111",
+        "merchant_data": "",
+        "merchant_id": 1396424,
+        "order_id": "0da8c0d1-8cc3-4584-b11d-a87a201cf5c5",
+        "order_status": "approved",
+        "order_time": "10.06.2025 14:45:14",
+        "parent_order_id": "",
+        "payment_id": 865868573,
+        "payment_system": "card",
+        "product_id": "",
+        "rectoken": "",
+        "rectoken_lifetime": "",
+        "response_code": "",
+        "response_description": "",
+        "response_signature_string": "**********|500|EUR|{\"capture_status\": null, \"capture_amount\": null, \"reservation_data\": \"{}\", \"transaction_id\": 2103082607, \"bank_response_code\": null, \"bank_response_description\": null, \"client_fee\": 0.0, \"settlement_fee\": 0.0, \"bank_name\": null, \"bank_country\": null, \"card_type\": \"VISA\", \"card_product\": \"empty_visa\", \"card_category\": null, \"timeend\": \"10.06.2025 14:45:40\", \"ipaddress_v4\": \"188.163.31.56\", \"payment_method\": \"card\", \"version_3ds\": 2, \"flow\": \"challenge\", \"is_test\": true}|500|426504|444455|VISA|EUR|5|0|444455XXXXXX1111|1396424|0da8c0d1-8cc3-4584-b11d-a87a201cf5c5|approved|10.06.2025 14:45:14|865868573|card|success|0|413957824276|civaschenko@yahoo.com|0|purchase",
+        "response_status": "success",
+        "reversal_amount": "0",
+        "rrn": "413957824276",
+        "sender_account": "",
+        "sender_cell_phone": "",
+        "sender_email": "civaschenko@yahoo.com",
+        "settlement_amount": "0",
+        "settlement_currency": "",
+        "settlement_date": "",
+        "signature": "67878f17ce36e3be8fc05b746f6197d0ba086f61",
+        "tran_type": "purchase",
+        "verification_status": ""
+    }'
