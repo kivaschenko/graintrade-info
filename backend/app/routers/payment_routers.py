@@ -18,13 +18,6 @@ async def confirm_payment(request: Request, background_tasks: BackgroundTasks):
                 content={"status": "error", "message": "Payment not confirmed"},
                 status_code=400,
             )
-        # order_id = r["order_id"]
-        # signature = r["signature"]
-        # if not payment_service.verify_payment(order_id, signature):
-        #     return JSONResponse(
-        #         content={"status": "error", "message": "Signature verification failed"},
-        #         status_code=400,
-        #     )
         await payment_service.update_subscription_and_save_payment_confirmation(r)
         return JSONResponse(content={"status": "recieved"})
     except KeyError as e:
