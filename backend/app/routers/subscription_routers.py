@@ -7,7 +7,10 @@ from ..schemas import (
     SubscriptionInResponse,
     TarifInResponse,
 )
-from ..service_layer.payment_service import payment_for_subscription_handler
+from ..service_layer.payment_service import (
+    payment_for_subscription_handler,
+    activate_free_subscription,
+)
 from ..models import subscription_model, tarif_model, user_model
 
 
@@ -69,8 +72,16 @@ async def create_subscription(
         f"Creating subscription with data: user_id={user_id}, tarif_id={tarif_id}"
     )
     try:
-        current_user = await user_model.get_by_id(user_id)
         current_tarif = await tarif_model.get_by_id(tarif_id)
+        if current_tarif.scope == "free":
+            # Activate Free subscription without payment flow
+            result = await activate_free_subscription(user_id, tarif_id)
+            assert result
+            return {
+                "status": "free",
+                "message": "Free subscription activated without payment",
+            }
+        current_user = await user_model.get_by_id(user_id)
         ##import pdb; pdb.set_trace()
         amount = int(current_tarif.price)  # Make price as centes integer for Fondy API
         checkout_url = await payment_for_subscription_handler(
