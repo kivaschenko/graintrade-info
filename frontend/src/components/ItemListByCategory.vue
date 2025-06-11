@@ -86,8 +86,6 @@ export default {
     beforeUnmount() {
       if (this.map) {
         // Remove event listeners
-        this.map.off('mouseenter', 'unclustered-point');
-        this.map.off('mouseleave', 'unclustered-point');
         this.map.off('mouseenter', 'clusters');
         this.map.off('mouseleave', 'clusters');
         this.map.off('click', 'unclustered-point');
@@ -126,21 +124,22 @@ export default {
     },
     addMapSources() {
       if (!this.map) return;
-      // Add a new source from our GeoJSON data
+      
       const geoJsonData = this.getGeoJsonFromItems();
       console.log('GeoJSON data:', geoJsonData);
-        this.map.addSource('items', {
-          type: 'geojson',
-          data: this.getGeoJsonFromItems(),
-          cluster: true,
-          clusterMaxZoom: 14,
-          clasterRadius: 50,
-          generateId: true
-        });
+      
+      this.map.addSource('items', {
+        type: 'geojson',
+        data: geoJsonData,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50  // Fixed typo from clasterRadius
+      });
     },
     addMapLayers() {
       if (!this.map) return;
-      // Add cluster circles
+      
+      // Add clusters layer
       this.map.addLayer({
         id: 'clusters',
         type: 'circle',
@@ -154,19 +153,20 @@ export default {
             10,
             '#f1f075',  // 10-49 items
             50,
-            '#f28cb1',  // 50+ items
+            '#f28cb1'   // 50+ items
           ],
           'circle-radius': [
             'step',
             ['get', 'point_count'],
-            20,  // 0-9 items
+            20,
             10,
-            30,  // 10-49 items
+            30,
             50,
-            40  // 50+ items
+            40
           ]
         }
       });
+
       // Add cluster count numbers
       this.map.addLayer({
         id: 'cluster-count',
@@ -174,12 +174,13 @@ export default {
         source: 'items',
         filter: ['has', 'point_count'],
         layout: {
-          'text-field': '{point_count_abbreviated}',
+          'text-field': ['get', 'point_count_abbreviated'],
           'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
           'text-size': 12
         }
       });
-      // Add unclustered point circles
+
+      // Add unclustered points - simplified from your current version
       this.map.addLayer({
         id: 'unclustered-point',
         type: 'circle',
@@ -187,102 +188,29 @@ export default {
         filter: ['!', ['has', 'point_count']],
         paint: {
           'circle-color': '#11b4da',
-          'circle-radius': [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            12,  // hover size
-            8   // normal size
-          ],
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#fff',
-          // Add hover state using circle-opacity
-          'circle-opacity': 0.6,
-          // Increase hover area
-          'circle-stroke-opacity': 1,
+          'circle-radius': 4,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#fff'
         }
-      });
-      // Add hover effect
-      let hoveredStateId = null;
-
-      this.map.on('mousemove', 'unclustered-point', (e) => {
-        if (e.features.length > 0) {
-          if (hoveredStateId !== null) {
-            this.map.setFeatureState(
-              { source: 'items', id: hoveredStateId },
-              { hover: false }
-            );
-          }
-          hoveredStateId = e.features[0].id;
-          this.map.setFeatureState(
-            { source: 'items', id: hoveredStateId },
-            { hover: true }
-          );
-        }
-      });
-
-      this.map.on('mouseleave', 'unclustered-point', () => {
-        if (hoveredStateId !== null) {
-          this.map.setFeatureState(
-            { source: 'items', id: hoveredStateId },
-            { hover: false }
-          );
-        }
-        hoveredStateId = null;
       });
     },
     addMapInteractions() {
       if (!this.map) return;
-
-      // Add cursor style for unclustered points
-      this.map.on('mouseenter', 'unclustered-point', () => {
-        this.map.getCanvas().style.cursor = 'pointer';
-      });
-
-      this.map.on('mouseleave', 'unclustered-point', () => {
-        this.map.getCanvas().style.cursor = '';
-      });
-
-      // Add cursor style for clusters
+      // Add pointer cursor for both layers
       this.map.on('mouseenter', 'clusters', () => {
         this.map.getCanvas().style.cursor = 'pointer';
       });
-
       this.map.on('mouseleave', 'clusters', () => {
         this.map.getCanvas().style.cursor = '';
       });
+      // this.map.on('mouseenter', 'unclustered-point', () => {
+      //   this.map.getCanvas().style.cursor = 'pointer';
+      // });
+      // this.map.on('mouseleave', 'unclustered-point', () => {
+      //   this.map.getCanvas().style.cursor = '';
+      // });
 
-      // Handle clicks on individual points
-      this.map.on('click', 'unclustered-point', (e) => {
-        const coordinates = e.features[0].geometry.coordinates.slice();
-        const item = e.features[0].properties;
-
-        // Debug log
-        console.log('Clicked item:', item);
-        console.log('Coordinates:', coordinates);
-
-        // Ensure coordinates are valid
-        if (!coordinates || coordinates.length !== 2) {
-          console.error('Invalid coordinates');
-          return;
-        }
-
-        // Fix for when the map is zoomed in a lot
-        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-        }
-
-        // Create and show popup
-        new mapboxgl.Popup({
-          closeButton: true,
-          closeOnClick: false,
-          maxWidth: '300px'
-        })
-          .setLngLat(coordinates)
-          .setHTML(this.getPopupHTML(item))
-          .addTo(this.map);
-        });
-
-      // Handle clicks on clusters
+      // Handle cluster clicks
       this.map.on('click', 'clusters', (e) => {
         const features = this.map.queryRenderedFeatures(e.point, {
           layers: ['clusters']
@@ -301,22 +229,27 @@ export default {
         );
       });
 
-      // Add cursor style for unclustered points
-      this.map.on('mouseenter', 'unclustered-point', () => {
-        this.map.getCanvas().style.cursor = 'pointer';
+      // Handle unclustered point clicks
+      this.map.on('click', 'unclustered-point', (e) => {
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const item = e.features[0].properties;
+
+        // Ensure coordinates are valid
+        if (!coordinates || coordinates.length !== 2) return;
+
+        // Handle coordinate wrapping
+        if (['mercator', 'equirectangular'].includes(this.map.getProjection().name)) {
+          while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+          }
+        }
+
+        new mapboxgl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(this.getPopupHTML(item))
+          .addTo(this.map);
       });
 
-      this.map.on('mouseleave', 'unclustered-point', () => {
-        this.map.getCanvas().style.cursor = '';
-      });
-
-      // Change cursor on hover
-      this.map.on('mouseenter', 'clusters', () => {
-        this.map.getCanvas().style.cursor = 'pointer';
-      });
-      this.map.on('mouseleave', 'clusters', () => {
-        this.map.getCanvas().style.cursor = '';
-      });
     },
     getGeoJsonFromItems() {
       return {
@@ -343,7 +276,7 @@ export default {
       };
     },
     getPopupHTML(item) {
-      // Get translations first to avoid undefined this.$t in template string
+      // Get translations first to ensure they're available in the template string
       const translations = {
         price: this.$t('common.price'),
         amount: this.$t('common.amount'),
@@ -359,9 +292,13 @@ export default {
           <p>${translations.amount}: ${item.amount || 0} ${item.measure || ''}</p>
           <p>${translations.incoterms}: ${item.terms_delivery || ''}</p>
           <p>${item.country || ''} ${item.region || ''}</p>
-          <a href="/items/${item.id}" class="btn btn-sm btn-primary">
+          <router-link 
+            to="/items/${item.id}" 
+            class="btn btn-sm btn-primary"
+            style="display: block; text-align: center; padding: 8px; margin-top: 10px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;"
+          >
             ${translations.viewDetails}
-          </a>
+          </router-link>
         </div>
       `;
     },
