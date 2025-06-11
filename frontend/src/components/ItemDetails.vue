@@ -15,7 +15,7 @@
           <a :href="googleMapsUrl" target="_blank" class="btn btn-outline-success" :disabled="!item.latitude || !item.longitude">
             {{ $t('itemDetails.viewOnGoogleMaps') }}
           </a>
-          <div class="mt-3 alert alert-warning">{{ $t('itemDetails.registerToAccessMap') }}</div>
+          <div class="mt-3 alert alert-info">{{ $t('itemDetails.registerToAccessMap') }}</div>
         </div>
         <!-- Show full map features for registered users -->
         <div v-if="isAuthenticated">

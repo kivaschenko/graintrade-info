@@ -21,7 +21,7 @@
           <ul class="navbar-nav">
             <li class="nav-item" v-if="!isAuthenticated">
               <router-link class="btn btn-primary" to="/login">{{ $t('navbar.login') }}</router-link>
-              <router-link class="btn btn-warning" to="/register">{{ $t('navbar.register') }}</router-link>
+              <router-link class="btn btn-outline-success" to="/register">{{ $t('navbar.register') }}</router-link>
             </li>
             <li class="nav-item" v-if="isAuthenticated">
               <a class="btn btn-primary" href="#" @click="$router.push('/profile')">{{ $t('navbar.profile') }}</a>
