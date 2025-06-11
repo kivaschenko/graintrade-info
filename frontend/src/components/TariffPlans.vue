@@ -120,6 +120,8 @@ export default {
           window.open(r.data.checkout_url, '_blank');
           // Or redirect in the same tab
           // window.location.href = r.data.checkout_url;
+        } else if (r.data.status === "free") {
+          alert("Your Subscription was updated to Free plan!")
         } else {
           this.$toast.error(this.$t('tariffs.noCheckoutUrl'));
         }
