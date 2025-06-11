@@ -41,6 +41,9 @@ const messages = {
       tariff: 'Tariff',
       hours: 'hours',
       minutes: 'minutes',
+      locationInfo: "Location information is available on Google Maps:",
+      viewOnGoogleMaps: "View on Google Maps",
+      registerToAccessMap: "Register or login to access interactive map features, route planning and distance calculations.",
     },
     create_form: {
       map_title: 'Choose point on the map to define location',
@@ -202,6 +205,9 @@ const messages = {
       tariff: 'Тариф',
       hours: 'години',
       minutes: 'хвилини',
+      locationInfo: "Інформація про місцезнаходження доступна на Картах Google:",
+      viewOnGoogleMaps: "Переглянути на Картах Google",
+      registerToAccessMap: "Зареєструйтесь або увійдіть, щоб отримати доступ до інтерактивних функцій карти, планування маршруту та розрахунку відстані.",
     },
     create_form: {
       map_title: 'Виберіть точку на карті, щоб визначити місцезнаходження',
