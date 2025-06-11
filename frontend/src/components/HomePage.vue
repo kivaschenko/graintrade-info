@@ -35,6 +35,7 @@ export default {
           }
         });
         const newItems = response.data;
+        console.log(newItems);
         const currentUUIDs = this.items.map((i) => i.uuid);
         const newUUIDs = newItems.map((i) => i.uuid);
 
