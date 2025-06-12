@@ -120,7 +120,6 @@ async def read_category(category_id: int):
 
 @router.get(
     "/categories/{category_id}/items",
-    response_model=CategoryWithItems,
     status_code=200,
     tags=["Categories"],
 )
@@ -128,18 +127,27 @@ async def read_items_by_category(
     category_id: int,
     offeset: int = 0,
     limit: int = 10,
+    token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
-    logging.info(f"Getting items for category {category_id}")
     try:
-        category_with_items = await category_model.get_by_id_with_items(
+        category, items = await category_model.get_by_id_with_items(
             category_id, offeset, limit
         )
-        logging.info(f"Category with items: {category_with_items}")
-        if category_with_items is None:
+        if category is None:
             logging.error(f"Category with id {category_id} not found")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Category not found"
             )
-        return category_with_items
-    finally:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
+        # Add map access permission check
+        if token != "null":
+            _, scopes = await get_current_user_id(token)
+            has_map_access = "view:map" in scopes
+        else:
+            has_map_access = False
+        return {"category": category, "items": items, "has_map_access": has_map_access}
+    except Exception as e:
+        logging.error(f"Error read_items_by_category: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
