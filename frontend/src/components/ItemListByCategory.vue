@@ -188,7 +188,7 @@ export default {
         filter: ['!', ['has', 'point_count']],
         paint: {
           'circle-color': '#11b4da',
-          'circle-radius': 4,
+          'circle-radius': 6,
           'circle-stroke-width': 1,
           'circle-stroke-color': '#fff'
         }
@@ -203,12 +203,12 @@ export default {
       this.map.on('mouseleave', 'clusters', () => {
         this.map.getCanvas().style.cursor = '';
       });
-      // this.map.on('mouseenter', 'unclustered-point', () => {
-      //   this.map.getCanvas().style.cursor = 'pointer';
-      // });
-      // this.map.on('mouseleave', 'unclustered-point', () => {
-      //   this.map.getCanvas().style.cursor = '';
-      // });
+      this.map.on('mouseenter', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+      this.map.on('mouseleave', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = '';
+      });
 
       // Handle cluster clicks
       this.map.on('click', 'clusters', (e) => {
@@ -231,23 +231,49 @@ export default {
 
       // Handle unclustered point clicks
       this.map.on('click', 'unclustered-point', (e) => {
+        console.log('event: ', e);
         const coordinates = e.features[0].geometry.coordinates.slice();
+        console.log('Coords: ', coordinates);
         const item = e.features[0].properties;
 
-        // Ensure coordinates are valid
         if (!coordinates || coordinates.length !== 2) return;
 
-        // Handle coordinate wrapping
         if (['mercator', 'equirectangular'].includes(this.map.getProjection().name)) {
           while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
             coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
           }
         }
 
-        new mapboxgl.Popup()
+        // Create the popup
+        const popup = new mapboxgl.Popup()
           .setLngLat(coordinates)
-          .setHTML(this.getPopupHTML(item))
+          // .setHTML(this.getPopupHTML(item))
+          .setHTML(`<p>Hello, <br>world!</p>`)
           .addTo(this.map);
+
+        // Wait for the popup to be added to the DOM, then add a click handler
+        popup.on('open', () => {
+          const btn = document.getElementById(`popup-view-details-${item.id}`);
+          if (btn) {
+            btn.addEventListener('click', (event) => {
+              event.preventDefault();
+              this.$router.push(`/items/${item.id}`);
+              popup.remove();
+            });
+          }
+        });
+
+        // Fallback for MapboxGL versions that don't have 'open' event
+        setTimeout(() => {
+          const btn = document.getElementById(`popup-view-details-${item.id}`);
+          if (btn) {
+            btn.addEventListener('click', (event) => {
+              event.preventDefault();
+              this.$router.push(`/items/${item.id}`);
+              popup.remove();
+            });
+          }
+        }, 0);
       });
 
     },
@@ -292,13 +318,14 @@ export default {
           <p>${translations.amount}: ${item.amount || 0} ${item.measure || ''}</p>
           <p>${translations.incoterms}: ${item.terms_delivery || ''}</p>
           <p>${item.country || ''} ${item.region || ''}</p>
-          <router-link 
-            to="/items/${item.id}" 
+          <a
+            href="#"
+            id="popup-view-details-${item.id}"
             class="btn btn-sm btn-primary"
             style="display: block; text-align: center; padding: 8px; margin-top: 10px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;"
           >
             ${translations.viewDetails}
-          </router-link>
+          </a>
         </div>
       `;
     },
