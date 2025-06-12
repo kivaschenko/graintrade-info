@@ -23,10 +23,18 @@ const messages = {
       title: 'Title',
       type: 'Type',
       price: 'Price',
-      'currency': 'Currency',
+      currency: 'Currency',
       amount: 'Amount',
       incoterms: 'Incoterms',
       description: 'Description',
+      viewDetails: 'View Details',
+    },
+    common: {
+      price: "Price",
+      amount: "Amount",
+      incoterms: "Incoterms",
+      viewDetails: "View Details",
+      noDescription: "No description available"
     },
     itemDetails: {
       title: 'Item Details: {title}',
@@ -163,7 +171,12 @@ const messages = {
       subscribeSuccess: "Successfully subscribed!",
       subscribeError: "Error subscribing to plan",
       errorFetching: "Error loading tariff plans",
-    }
+    },
+    map: {
+      registerToView: "Register to view items on the map",
+      clusterSizes: "Cluster Sizes",
+      items: "items"
+    },
   },
   ua: {
     navbar: {
@@ -191,6 +204,14 @@ const messages = {
       amount: 'Кількість',
       incoterms: 'Інкотермс',
       description: 'Опис',
+      viewDetails: 'Показати подробиці',
+    },
+    common: {
+      price: "Ціна",
+      amount: "Кількість",
+      incoterms: "Інкотермс",
+      viewDetails: "Показати подробиці",
+      noDescription: "Немає опису"
     },
     itemDetails: {
       title: 'Деталі товару: {title}',
@@ -327,7 +348,12 @@ const messages = {
       subscribeSuccess: "Успішно підписано!",
       subscribeError: "Помилка підписки на план",
       errorFetching: "Помилка завантаження тарифних планів",
-    }
+    },
+    map: {
+      registerToView: "Щоб бачити пропозиції на мапі зареєструйтеся",
+      clusterSizes: "Розміри кластерів",
+      items: "пропозиції"
+    },
   },
 };
 
