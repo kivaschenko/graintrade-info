@@ -86,7 +86,7 @@ async def delete(category_id: int) -> None:
 
 async def get_by_id_with_items(
     category_id: int, offset: int, limit: int
-) -> tuple[CategoryInResponse, List[ItemInResponse]]:
+) -> tuple[CategoryInResponse, List[ItemInResponse], int]:
     query = """
         SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
         FROM categories_hierarchy 
@@ -102,12 +102,17 @@ async def get_by_id_with_items(
         OFFSET $2
         LIMIT $3
     """
+    query_count = "SELECT COUNT(*) FROM items WHERE category_id = $1"
     async with database.pool.acquire() as conn:
         row = await conn.fetchrow(query, category_id)
         if row is None:
             raise ValueError("Category not found")
         category = CategoryInResponse(**row)
         items = await conn.fetch(query2, category_id, offset, limit)
+        total_items_row = await conn.fetchrow(query_count, category_id)
+        total_items = total_items_row["count"] if total_items_row else 0
         if items:
             items_list = [ItemInResponse(**item) for item in items]
-        return category, items_list
+        else:
+            items_list = []
+        return category, items_list, total_items
