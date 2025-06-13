@@ -9,6 +9,19 @@
       </div>
     </div>
     <ItemTable :items="items" />
+    <div class="pagination-controls" v-if="totalItems > pageSize">
+      <button
+        :disabled="page === 1"
+        @click="handlePageChange(page -1)"
+        class="btn btn-outline-secondary btn-sm"
+      >&lt; Prev</button>
+      <span> {{ page }} / {{ Math.ceil(totalItems /pageSize) }}</span>
+      <button
+        :disabled="page * pageSize >= totalItems"
+        @click="handlePageChange(page + 1)"
+        class="btn btn-outline-secondary btn-sm"
+      >Next &gt;</button>
+    </div>
     <!-- Map section with access control -->
     <div class="container mt-5">
       <div v-if="!hasMapAccess" class="alert alert-info">
@@ -55,31 +68,24 @@ export default {
       map: null,
       mapLoaded: false,
       hasMapAccess: false,
+      // Pagination state
+      page: 1,
+      pageSize: 10,
+      totalItems: 0,
     };
   },
   computed: {
     ...mapState(['currentLocale']),
   },
   async created() {
-    try {
-      const category_id = this.$route.params.id;
-      const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories/${category_id}/items`, {
-        params: {
-          offset: 0,
-          limit: 100,
-        },
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-      this.items = response.data.items;
-      this.category = response.data.category;
-      this.hasMapAccess = response.data.has_map_access;
-      if (this.hasMapAccess) {
-        this.$nextTick(() => {this.initializeMap();})
+    await this.fetchItems();
+  },
+  watch: {
+    items() {
+      if (this.map && this.map.getSource('items')) {
+        const geoJsonData = this.getGeoJsonFromItems();
+        this.map.getSource('items').setData(geoJsonData);
       }
-    } catch (error) {
-      console.error('Error fetching items:', error);
     }
   },
   methods: {
@@ -96,7 +102,36 @@ export default {
         this.map = null;
       }
     },
-    initializeMap() {
+    async fetchItems() {
+      try {
+        const category_id = this.$route.params.id;
+        const offset = (this.page -1) * this.pageSize;
+        const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories/${category_id}/items`, {
+          params: {
+            offset: offset,
+            limit: this.pageSize,
+          },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        this.items = response.data.items;
+        this.category = response.data.category;
+        this.hasMapAccess = response.data.has_map_access;
+        // If backend returns total count, use it. Otherwise, estimate
+        this.totalItems = response.data.total_items || (offset + this.items.length + (this.items.length === this.pageSize ? this.pageSize : 0));
+        if (this.hasMapAccess) {
+          this.$nextTick(() => {this.initializeMap();})
+        }
+      } catch (error) {
+        console.error('Error fetching items:', error);
+      }
+    },
+    async handlePageChange(newPage) {
+      this.page = newPage;
+      await this.fetchItems();
+    },
+      initializeMap() {
       if (!this.$refs.mapContainer) {
         console.error('Map container not found');
         return;
@@ -344,6 +379,39 @@ export default {
 </script>
 
 <style>
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.pagination-controls button {
+  min-width: 70px;
+  margin: 0 4px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid #ced4da;
+  color:#333;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pagination-controls button:disabled {
+  background: #e9ecef;
+  color: #aaa;
+  border-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.pagination-controls button:not(:disabled):hover {
+  background: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
 .map-container {
   position: relative;
 }
