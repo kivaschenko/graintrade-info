@@ -125,13 +125,13 @@ async def read_category(category_id: int):
 )
 async def read_items_by_category(
     category_id: int,
-    offeset: int = 0,
-    limit: int = 10,
+    offset: int,
+    limit: int,
     token: Annotated[str, Depends(oauth2_scheme)] = None,
 ):
     try:
-        category, items = await category_model.get_by_id_with_items(
-            category_id, offeset, limit
+        category, items, total_items = await category_model.get_by_id_with_items(
+            category_id, offset, limit
         )
         if category is None:
             logging.error(f"Category with id {category_id} not found")
@@ -144,7 +144,12 @@ async def read_items_by_category(
             has_map_access = "view:map" in scopes
         else:
             has_map_access = False
-        return {"category": category, "items": items, "has_map_access": has_map_access}
+        return {
+            "category": category,
+            "items": items,
+            "total_items": total_items,
+            "has_map_access": has_map_access,
+        }
     except Exception as e:
         logging.error(f"Error read_items_by_category: {e}")
         raise HTTPException(
