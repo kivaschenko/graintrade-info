@@ -1,15 +1,23 @@
 <template>
   <div class="chat-box">
-    <div class="messages" style="height:200px;overflow:auto;">
-      <div v-for="msg in messages" :key="msg.timestamp">
-        <b>{{ msg.sender_id }}:</b> {{ msg.content }}
+    <div class="messages" style="height:250px;overflow:auto;">
+      <div
+        v-for="msg in messages"
+        :key="msg.timestamp"
+        :class="{'my-message': msg.sender_id === userId, 'other-message': msg.sender_id !== userId}"
+        class="message-row"
+      >
+        <div class="message-content">
+          <b v-if="msg.sender_id !== userId">{{ msg.sender_id }}:</b>
+          {{ msg.content }}
+        </div>
       </div>
     </div>
     <div class="mb-3 d-flex flex-column">
       <textarea
         class="form-control mb-2"
         v-model="newMessage"
-        rows="3"
+        rows="4"
         placeholder="Type your message..."
         @keyup.enter.exact="sendMessage"
         style="resize: vertical;"
@@ -38,12 +46,10 @@ export default {
     };
   },
   mounted() {
-    console.log("ItemChat mounted with itemId:", this.itemId, "userId:", this.userId);
     this.ws = new WebSocket(`ws://localhost:8001/ws/chat/${this.itemId}`);
     this.ws.onmessage = (event) => {
       this.messages.push(JSON.parse(event.data));
     };
-    // Optionally fetch history via REST
     fetch(`http://localhost:8001/chat/${this.itemId}/history`)
       .then(res => res.json())
       .then(data => { this.messages = data; });
@@ -76,8 +82,28 @@ export default {
   border-radius: 6px;
   margin-bottom: 1rem;
   padding: 0.5rem;
+  max-height: 250px;
+  overflow-y: auto;
 }
-textarea.form-control {
-  font-size: 1rem;
+.message-row {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+.my-message {
+  justify-content: flex-end;
+}
+.other-message {
+  justify-content: flex-start;
+}
+.message-content {
+  max-width: 70%;
+  padding: 0.5rem 1rem;
+  border-radius: 16px;
+  background: #e6f7e6;
+  color: #222;
+}
+.my-message .message-content {
+  background: #d1e7fd;
+  color: #222;
 }
 </style>
