@@ -39,6 +39,9 @@
         <div id="map" class="map"></div>
       </div>
     </div>
+    <div v-if="isAuthenticated && item.uuid">
+      <ItemChat :itemId="item.uuid" :userId="currentUserId" />
+    </div>
   </div>
 </template>
 
@@ -48,10 +51,25 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
+import ItemChat from './ItemChat.vue';
 
 export default {
   name: 'ItemDetails',
+  components: {
+    ItemChat,
+  },
   data() {
+    let currUser = localStorage.getItem('user');
+    console.log("Current User:", currUser);
+    let currentUserId = null;
+    if (currUser) {
+      try {
+        currUser = JSON.parse(currUser);
+        currentUserId = currUser.username; // or currUser.id if you want numeric id
+      } catch (e) {
+        console.error('failed to parse user from localstorage:', e);
+      }
+    }
     return {
       item: {},
       searchLocation: '',
@@ -60,6 +78,7 @@ export default {
       tariffRate: 25.0, // Default tariff rate
       map: null,
       marker: null,
+      currentUserId, 
     };
   },
   watch: {
