@@ -135,9 +135,14 @@ async def items_count(user_id: int) -> int:
 
 async def get_by_id(item_id: int) -> ItemInResponse:
     query = """
-        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
-        FROM items
-        WHERE id = $1
+        SELECT i.id, i.uuid, i.category_id, i.offer_type, i.title, i.description, i.price, i.currency, 
+        i.amount, i.measure, i.terms_delivery, i.country, i.region, i.latitude, i.longitude, i.created_at,
+        u.username AS owner_id
+        FROM items i
+        JOIN items_users iu ON i.id = iu.item_id
+        JOIN users u ON iu.user_id = u.id
+        WHERE i.id = $1
+        LIMIT 1
     """
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, item_id)
