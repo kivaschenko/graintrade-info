@@ -67,6 +67,7 @@ class ItemInResponse(BaseModel):
     latitude: float
     longitude: float
     created_at: datetime = Field(alias="created_at")
+    owner_id: Optional[str]
 
     @property
     def formatted_created_at(self) -> str:
