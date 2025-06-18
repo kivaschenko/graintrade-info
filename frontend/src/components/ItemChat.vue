@@ -1,0 +1,109 @@
+<template>
+  <div class="chat-box">
+    <div class="messages" style="height:250px;overflow:auto;">
+      <div
+        v-for="msg in messages"
+        :key="msg.timestamp"
+        :class="{'my-message': msg.sender_id === userId, 'other-message': msg.sender_id !== userId}"
+        class="message-row"
+      >
+        <div class="message-content">
+          <b v-if="msg.sender_id !== userId">{{ msg.sender_id }}:</b>
+          {{ msg.content }}
+        </div>
+      </div>
+    </div>
+    <div class="mb-3 d-flex flex-column">
+      <textarea
+        class="form-control mb-2"
+        v-model="newMessage"
+        rows="4"
+        placeholder="Type your message..."
+        @keyup.enter.exact="sendMessage"
+        style="resize: vertical;"
+      ></textarea>
+      <div class="d-flex justify-content-end">
+        <button
+          class="btn btn-success btn-sm"
+          @click="sendMessage"
+          :disabled="!newMessage.trim()"
+        >
+          <i class="bi bi-send"></i> Send
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {itemId: {type: String, required: true}, userId: {type: String, required: true}},
+  data() {
+    return {
+      ws: null,
+      messages: [],
+      newMessage: '',
+    };
+  },
+  mounted() {
+    this.ws = new WebSocket(`ws://localhost:8001/ws/chat/${this.itemId}`);
+    this.ws.onmessage = (event) => {
+      this.messages.push(JSON.parse(event.data));
+    };
+    fetch(`http://localhost:8001/chat/${this.itemId}/history`)
+      .then(res => res.json())
+      .then(data => { this.messages = data; });
+  },
+  methods: {
+    sendMessage() {
+      if (this.newMessage.trim()) {
+        this.ws.send(JSON.stringify({
+          sender_id: this.userId,
+          item_id: this.itemId,
+          content: this.newMessage,
+        }));
+        this.newMessage = '';
+      }
+    }
+  }
+};
+</script>
+
+<style scoped>
+.chat-box {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fafbfc;
+}
+.messages {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  max-height: 250px;
+  overflow-y: auto;
+}
+.message-row {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+.my-message {
+  justify-content: flex-end;
+}
+.other-message {
+  justify-content: flex-start;
+}
+.message-content {
+  max-width: 70%;
+  padding: 0.5rem 1rem;
+  border-radius: 16px;
+  background: #e6f7e6;
+  color: #222;
+}
+.my-message .message-content {
+  background: #d1e7fd;
+  color: #222;
+}
+</style>
