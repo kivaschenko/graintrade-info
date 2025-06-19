@@ -37,7 +37,11 @@
 
 <script>
 export default {
-  props: {itemId: {type: String, required: true}, userId: {type: String, required: true}},
+  props: {
+    itemId: {type: String, required: true}, 
+    userId: {type: String, required: true},
+    otherUserId: {type: String, required: true}
+  },
   data() {
     return {
       ws: null,
@@ -46,19 +50,22 @@ export default {
     };
   },
   mounted() {
-    this.ws = new WebSocket(`ws://localhost:8001/ws/chat/${this.itemId}`);
-    this.ws.onmessage = (event) => {
-      this.messages.push(JSON.parse(event.data));
-    };
-    fetch(`http://localhost:8001/chat/${this.itemId}/history`)
-      .then(res => res.json())
-      .then(data => { this.messages = data; });
+    if (this.userId !== this.otherUserId) {
+      this.ws = new WebSocket(`ws://localhost:8001/ws/chat/${this.itemId}/${this.otherUserId}`);
+      this.ws.onmessage = (event) => {
+        this.messages.push(JSON.parse(event.data));
+      };
+      fetch(`http://localhost:8001/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`)
+        .then(res => res.json())
+        .then(data => { this.messages = data; });
+    }
   },
   methods: {
     sendMessage() {
-      if (this.newMessage.trim()) {
+      if (this.newMessage.trim() && this.userId !== this.otherUserId) {// Prevent sending to self {
         this.ws.send(JSON.stringify({
           sender_id: this.userId,
+          receiver_id: this.otherUserId,
           item_id: this.itemId,
           content: this.newMessage,
         }));

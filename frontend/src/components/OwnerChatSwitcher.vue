@@ -3,10 +3,11 @@
   <div>
     <div class="user-list">
       <div
-        v-for="user in participants"
+        v-for="user in filteredParticipants"
         :key="user.id"
         :class="{'active': user.id === selectedUserId}"
         @click="selectUser(user.id)"
+        style="cursor:pointer; padding: 0.5em; border-bottom: 1px solid #eee;"
       >
         {{ user.username }}
       </div>
@@ -29,7 +30,16 @@ export default {
     return {
       participants: [], // fetched from backend
       selectedUserId: null,
+      filter: '',
     };
+  },
+  computed: {
+    filteredParticipants() {
+      if (!this.filter) return this.participants;
+      return this.participants.filter(user => 
+        user.username && user.username.toLowerCase().includes(this.filter.toLowerCase())
+    );
+    }
   },
   methods: {
     selectUser(userId) {
@@ -37,10 +47,15 @@ export default {
     }
   },
   mounted() {
+    if (!this.itemId) {
+      console.error('itemId is undefined!');
+      return;
+    }
     // Fetch participants from backend
     fetch(`http://localhost:8001/chat/${this.itemId}/participants`)
       .then(res => res.json())
-      .then(data => { this.participants = data; });
+      .then(data => { this.participants = data.filter(u => u.username !== this.ownerId); });
+    console.log("Fetch participants:", this.participants);
   }
 };
 </script>
