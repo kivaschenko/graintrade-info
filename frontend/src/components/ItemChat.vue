@@ -10,6 +10,7 @@
         <div class="message-content">
           <b v-if="msg.sender_id !== userId">{{ msg.sender_id }}:</b>
           {{ msg.content }}
+          <div class="timestamp">{{ formatTimestamp(msg.timestamp) }}</div>
         </div>
       </div>
     </div>
@@ -71,6 +72,11 @@ export default {
         }));
         this.newMessage = '';
       }
+    },
+    formatTimestamp(ts) {
+      if (!ts) return '';
+      // If ts is ISO string, this works; if UNIX, use new Date(ts * 1000)
+      return new Date(ts).toLocaleString();
     }
   }
 };
@@ -112,5 +118,16 @@ export default {
 .my-message .message-content {
   background: #d1e7fd;
   color: #222;
+}
+
+
+</style>
+
+<style scoped>
+.timestamp {
+  font-size: 0.8em;
+  color: #888;
+  margin-top: 0.2em;
+  text-align: right;
 }
 </style>
