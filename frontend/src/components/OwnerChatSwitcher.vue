@@ -1,17 +1,23 @@
-<!-- filepath: /home/kostiantyn/projects/graintrade-info/frontend/src/components/OwnerChatSwitcher.vue -->
 <template>
   <div>
-    <div class="user-list">
-      <div
+    <input
+      v-model="filter"
+      class="form-control mb-3"
+      placeholder="Filter users by name..."
+      type="text"
+    />
+    <ul class="list-group mb-3">
+      <li
         v-for="user in filteredParticipants"
         :key="user.id"
-        :class="{'active': user.id === selectedUserId}"
+        :class="['list-group-item', 'd-flex', 'align-items-center', {active: user.id === selectedUserId}]"
+        style="cursor:pointer;"
         @click="selectUser(user.id)"
-        style="cursor:pointer; padding: 0.5em; border-bottom: 1px solid #eee;"
       >
-        {{ user.username }}
-      </div>
-    </div>
+        <i class="bi bi-person-circle me-2" style="font-size:1.5em;"></i>
+        <span>{{ user.username }}</span>
+      </li>
+    </ul>
     <ItemChat
       v-if="selectedUserId"
       :itemId="itemId"
@@ -28,7 +34,7 @@ export default {
   props: { itemId: String, ownerId: String },
   data() {
     return {
-      participants: [], // fetched from backend
+      participants: [],
       selectedUserId: null,
       filter: '',
     };
@@ -36,9 +42,9 @@ export default {
   computed: {
     filteredParticipants() {
       if (!this.filter) return this.participants;
-      return this.participants.filter(user => 
+      return this.participants.filter(user =>
         user.username && user.username.toLowerCase().includes(this.filter.toLowerCase())
-    );
+      );
     }
   },
   methods: {
@@ -47,11 +53,6 @@ export default {
     }
   },
   mounted() {
-    if (!this.itemId) {
-      console.error('itemId is undefined!');
-      return;
-    }
-    // Fetch participants from backend
     fetch(`http://localhost:8001/chat/${this.itemId}/participants`)
       .then(res => res.json())
       .then(data => { this.participants = data.filter(u => u.username !== this.ownerId); });
@@ -59,3 +60,17 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.list-group-item.active {
+  background-color: #0d6efd;
+  color: #fff;
+  border-color: #0d6efd;
+}
+.list-group-item {
+  transition: background 0.2s;
+}
+.list-group-item:hover {
+  background: #f0f4fa;
+}
+</style>
