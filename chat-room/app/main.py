@@ -19,19 +19,28 @@ app.add_middleware(
 active_connections: Dict[str, List[WebSocket]] = {}
 
 
-@app.websocket("/ws/chat/{item_id}")
-async def chat_room(websocket: WebSocket, item_id: str):
+@app.websocket("/ws/chat/{item_id}/{other_user_id}")
+async def chat_room(websocket: WebSocket, item_id: str, other_user_id: str):
     await websocket.accept()
-    if item_id not in active_connections:
-        active_connections[item_id] = []
-    active_connections[item_id].append(websocket)
+    room_key = f"{item_id}:{other_user_id}"
+    if room_key not in active_connections:
+        active_connections[room_key] = []
+    active_connections[room_key].append(websocket)
     try:
         while True:
             data = await websocket.receive_json()
             print("Received data:", data)
             # Validate keys
-            if "sender_id" not in data or "content" not in data:
+            if (
+                "sender_id" not in data
+                or "receiver_id" not in data
+                or "content" not in data
+            ):
                 await websocket.send_json({"error": "Invalid message format"})
+                continue
+            # Prevent sending to self
+            if data["sender_id"] == data["receiver_id"]:
+                await websocket.send_json({"error": "Cannot send message to yourself."})
                 continue
             # Save message to DB
             db: Session = next(database.get_db())
@@ -39,18 +48,32 @@ async def chat_room(websocket: WebSocket, item_id: str):
                 db,
                 item_id=item_id,
                 sender_id=data["sender_id"],
+                receiver_id=data["receiver_id"],
                 content=data["content"],
             )
-            # Broadcast to all in room
-            for conn in active_connections[item_id]:
+            # Broadcast to certain chat room
+            for conn in active_connections[room_key]:
                 await conn.send_json(data)
     except WebSocketDisconnect:
-        active_connections[item_id].remove(websocket)
+        active_connections[room_key].remove(websocket)
 
 
-@app.get("/chat/{item_id}/history")
-def get_history(item_id: str, db: Session = Depends(database.get_db)):
-    return crud.get_messages(db, item_id=item_id)
+@app.get("/chat/{item_id}/{other_user_id}/history")
+def get_history(
+    item_id: str,
+    other_user_id: str,
+    current_user: str,
+    db: Session = Depends(database.get_db),
+):
+    # current_user shoild be the authenticated user (owner or participant)
+    return crud.get_messages_between_users(
+        db, item_id=item_id, user1=current_user, user2=other_user_id
+    )
+
+
+@app.get("/chat/{item_id}/participants")
+def get_chat_participants(item_id: str, db: Session = Depends(database.get_db)):
+    return crud.get_chat_participants(db, item_id)
 
 
 # ... add authentication, notification hooks, etc.

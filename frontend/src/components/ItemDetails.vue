@@ -9,6 +9,7 @@
         <p><strong>{{ $t('common_text.price') }}:</strong> {{ item.price }} {{ item.currency }}</p>
         <p><strong>{{ $t('common_text.amount') }}:</strong> {{ item.amount }} {{ item.measure }}</p>
         <p><strong>{{ $t('common_text.incoterms') }}:</strong> {{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</p>
+        <p><strong>{{ $t('registration.username') }}:</strong> {{ item.owner_id }}</p>
         <!-- Show full map features for registered users -->
         <div v-if="!isAuthenticated">
           <p>{{ $t('itemDetails.locationInfo') }}</p>
@@ -40,7 +41,12 @@
       </div>
     </div>
     <div v-if="isAuthenticated && item.uuid">
-      <ItemChat :itemId="item.uuid" :userId="currentUserId" />
+      <div v-if="isOwner">
+        <OwnerChatSwitcher :itemId="item.uuid" :ownerId="currentUserId" />
+      </div>
+      <div v-else>
+        <ItemChat :itemId="item.uuid" :userId="currentUserId" :otherUserId="otherUserId"/>
+      </div>
     </div>
   </div>
 </template>
@@ -52,11 +58,13 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import ItemChat from './ItemChat.vue';
+import OwnerChatSwitcher from './OwnerChatSwitcher.vue';
 
 export default {
   name: 'ItemDetails',
   components: {
     ItemChat,
+    OwnerChatSwitcher,
   },
   data() {
     let currUser = localStorage.getItem('user');
@@ -79,6 +87,7 @@ export default {
       map: null,
       marker: null,
       currentUserId, 
+      ownerId: null,
     };
   },
   watch: {
@@ -96,6 +105,7 @@ export default {
         },
       });
       this.item = response.data;
+      this.ownerId = response.data["owner_id"];
       // If User authenticated then send request to Mapbox 
       if (this.isAuthenticated) { 
         this.$nextTick(() => {this.initializeMap();})
@@ -192,6 +202,12 @@ export default {
     },
   },
   computed: {
+    isOwner() {
+      return this.currentUserId && this.item && this.currentUserId === this.item.owner_id;
+    },
+    otherUserId() {
+      if (this.currentUserId !== this.item.owner_id) {return this.item.owner_id} else return null;
+    },
     googleMapsUrl() {
       if (!this.item.latitude || !this.item.longitude) return '#';
       return `https://maps.google.com/maps/@${this.item.latitude},${this.item.longitude},14z`;
