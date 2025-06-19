@@ -10,6 +10,7 @@
         <div class="message-content">
           <b v-if="msg.sender_id !== userId">{{ msg.sender_id }}:</b>
           {{ msg.content }}
+          <div class="timestamp">{{ formatTimestamp(msg.timestamp) }}</div>
         </div>
       </div>
     </div>
@@ -37,33 +38,83 @@
 
 <script>
 export default {
-  props: {itemId: {type: String, required: true}, userId: {type: String, required: true}},
+  props: {
+    itemId: {type: String, required: true}, 
+    userId: {type: String, required: true},
+    otherUserId: {type: String, required: true}
+  },
   data() {
     return {
       ws: null,
       messages: [],
       newMessage: '',
+      refreshTimer: null,
     };
   },
   mounted() {
-    this.ws = new WebSocket(`ws://localhost:8001/ws/chat/${this.itemId}`);
-    this.ws.onmessage = (event) => {
-      this.messages.push(JSON.parse(event.data));
-    };
-    fetch(`http://localhost:8001/chat/${this.itemId}/history`)
-      .then(res => res.json())
-      .then(data => { this.messages = data; });
+    this.initChat();
+    this.startPeriodicRefresh();
+  },
+  watch: {
+    itemId: 'handleSwitch',
+    otherUserId: 'handleSwitch'
+  },
+  beforeUnmount() {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+    }
   },
   methods: {
+    handleSwitch() {
+      this.initChat();
+      this.startPeriodicRefresh();
+    },
+    initChat() {
+      if (this.ws) {
+        this.ws.close();
+        this.ws = null;
+      }
+      this.messages = [];
+      if (this.userId !== this.otherUserId) {
+        this.ws = new WebSocket(`ws://localhost:8001/ws/chat/${this.itemId}/${this.otherUserId}`);
+        this.ws.onmessage = (event) => {
+          this.messages.push(JSON.parse(event.data));
+        };
+        this.fetchHistory();
+      }
+    },
+    fetchHistory() {
+      fetch(`http://localhost:8001/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`)
+        .then(res => res.json())
+        .then(data => { this.messages = data; });
+    },
+    startPeriodicRefresh() {
+      if (this.refreshTimer) {
+        clearInterval(this.refreshTimer);
+      }
+      this.refreshTimer = setInterval(() => {
+        this.fetchHistory();
+      }, 60000); // 60,000 ms = 1 minute
+    },
     sendMessage() {
-      if (this.newMessage.trim()) {
+      if (this.newMessage.trim() && this.userId !== this.otherUserId) {
         this.ws.send(JSON.stringify({
           sender_id: this.userId,
+          receiver_id: this.otherUserId,
           item_id: this.itemId,
           content: this.newMessage,
         }));
         this.newMessage = '';
       }
+    },
+    formatTimestamp(ts) {
+      if (!ts) return '';
+      return new Date(ts).toLocaleString();
     }
   }
 };
@@ -105,5 +156,16 @@ export default {
 .my-message .message-content {
   background: #d1e7fd;
   color: #222;
+}
+
+
+</style>
+
+<style scoped>
+.timestamp {
+  font-size: 0.8em;
+  color: #888;
+  margin-top: 0.2em;
+  text-align: right;
 }
 </style>
