@@ -1,0 +1,8 @@
+__pycache__/**
+LICENSE
+README.md
+*.egg-info/**
+*.egg
+*.pyc
+# avoid tests in the image
+tests/**
