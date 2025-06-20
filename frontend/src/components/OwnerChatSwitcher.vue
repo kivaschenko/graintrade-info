@@ -31,7 +31,11 @@
 import ItemChat from './ItemChat.vue';
 export default {
   components: { ItemChat },
-  props: { itemId: String, ownerId: String },
+  props: { 
+    itemId: {type: String, required: true}, 
+    ownerId: {type: String, required: true},
+    chatRoomUrl: {type: String, default: process.env.VUE_APP_CHAT_ROOM_URL || 'localhost:8001'},
+  },
   data() {
     return {
       participants: [],
@@ -53,7 +57,7 @@ export default {
     }
   },
   mounted() {
-    fetch(`http://${process.env.CHAT_ROOM_HOST_PORT}/chat/${this.itemId}/participants`)
+    fetch(`http://${this.chatRoomUrl}/chat/${this.itemId}/participants`)
       .then(res => res.json())
       .then(data => { this.participants = data.filter(u => u.username !== this.ownerId); });
     console.log("Fetch participants:", this.participants);
