@@ -37,6 +37,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   props: {
     itemId: {type: String, required: true}, 
@@ -81,7 +83,7 @@ export default {
       }
       this.messages = [];
       if (this.userId !== this.otherUserId) {
-        this.ws = new WebSocket(`ws://localhost:8001/ws/chat/${this.itemId}/${this.otherUserId}`);
+          this.ws = new WebSocket(`ws://${process.env.CHAT_ROOM_HOST_PORT}/ws/chat/${this.itemId}/${this.otherUserId}`);
         this.ws.onmessage = (event) => {
           this.messages.push(JSON.parse(event.data));
         };
@@ -89,7 +91,7 @@ export default {
       }
     },
     fetchHistory() {
-      fetch(`http://localhost:8001/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`)
+      fetch(`http://${process.env.CHAT_ROOM_HOST_PORT}/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`)
         .then(res => res.json())
         .then(data => { this.messages = data; });
     },
