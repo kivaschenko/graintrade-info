@@ -53,7 +53,7 @@ export default {
     }
   },
   mounted() {
-    fetch(`http://localhost:8001/chat/${this.itemId}/participants`)
+    fetch(`http://${process.env.CHAT_ROOM_HOST_PORT}/chat/${this.itemId}/participants`)
       .then(res => res.json())
       .then(data => { this.participants = data.filter(u => u.username !== this.ownerId); });
     console.log("Fetch participants:", this.participants);
