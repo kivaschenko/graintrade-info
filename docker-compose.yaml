@@ -17,6 +17,23 @@ services:
       timeout: 10s
       retries: 3
 
+  chat-room:
+    build: ./chat-room
+    restart: always
+    env_file:
+      - ./chat-room/.env
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./chat-room:/chat-room
+    networks:
+      - grain-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   frontend:
     build: 
       context: ./frontend
@@ -31,6 +48,7 @@ services:
       - grain-network
     depends_on:
       - backend
+      - chat-room
 
 networks:
   grain-network:
