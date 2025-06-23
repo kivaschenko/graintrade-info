@@ -16,7 +16,7 @@ export default createStore({
     isAuthenticated: !!localStorage.getItem('access_token'),
     accessToken: localStorage.getItem('access_token'),
     user: JSON.parse(localStorage.getItem('user')),
-    currentLocale: localStorage.getItem('locale') || 'en',
+    currentLocale: localStorage.getItem('locale') || 'ua',
   },
   mutations: {
     setAuthenticated(state, status) {
