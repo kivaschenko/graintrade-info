@@ -6,9 +6,9 @@
         <tr>
           <th scope="col">{{ $t( 'common_text.title' ) }}</th>
           <th scope="col">{{ $t( 'common_text.type' ) }}</th>
-          <th scope="col">{{ $t( 'common_text.price' ) }}</th>
-          <th scope="col">{{ $t( 'common_text.amount' ) }}</th>
-          <th scope="col">{{ $t( 'common_text.incoterms' ) }}</th>
+          <th scope="col" class="text-end">{{ $t( 'common_text.price' ) }}</th>
+          <th scope="col" class="text-end">{{ $t( 'common_text.amount' ) }}</th>
+          <th scope="col" class="text-end">{{ $t( 'common_text.incoterms' ) }}</th>
         </tr>
       </thead>
       <tbody>
@@ -21,7 +21,7 @@
           <td>{{ $t(`offer_type.${item.offer_type}`) }}</td>
           <td class="text-end">{{ item.price }} {{ $t(`currency.${item.currency}`) }}</td>
           <td class="text-end">{{ item.amount }} {{ item.measure }}</td>
-          <td class="text-start">{{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</td>
+          <td class="text-end">{{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</td>
         </tr>
       </tbody>
     </table>
