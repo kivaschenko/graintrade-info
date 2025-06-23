@@ -77,13 +77,13 @@ const messages = {
       error_403: 'Not enough permissions to create an offer.',
       error_400: 'Offer not created. Please check the form and try again.',
       title_placeholder: 'Enter title',
-      description_placeholder: 'Enter description',
       price_placeholder: 'Enter price',
       amount_placeholder: 'Enter amount',
-      country_placeholder: 'Search or pick on map',
-      region_placeholder: 'Search or pick on map',
-      latitude_placeholder: 'Search or pick on map',
-      longitude_placeholder: 'Search or pick on map',
+      country_placeholder: 'Search or pick on map filled automatically',
+      region_placeholder: 'Search or pick on map filled automatically',
+      latitude_placeholder: 'Search or pick on map filled automatically',
+      longitude_placeholder: 'Search or pick on map filled automatically',
+      description_placeholder: 'Enter description (optional) until 600 characters',
     },
     incoterms: {
       EXW: 'Ex Works',
@@ -177,6 +177,10 @@ const messages = {
       clusterSizes: "Cluster Sizes",
       items: "items"
     },
+    chat: {
+      messagePlaceholder: 'Type your message here...',
+      send: 'Send',
+    },
   },
   ua: {
     navbar: {
@@ -254,13 +258,13 @@ const messages = {
       error_403: 'Недостатньо прав для створення пропозиції.',
       error_400: 'Пропозиція не створена. Будь ласка, перевірте форму і спробуйте ще раз.',
       title_placeholder: 'Введіть назву',
-      description_placeholder: 'Введіть опис',
       price_placeholder: 'Введіть ціну',
       amount_placeholder: 'Введіть кількість',
-      country_placeholder: 'Шукати або вибрати на карті',
-      region_placeholder: 'Шукати або вибрати на карті',
-      latitude_placeholder: 'Шукати або вибрати на карті',
-      longitude_placeholder: 'Шукати або вибрати на карті',
+      country_placeholder: 'Шукати або вибрати на карті автоматично заповнюється',
+      region_placeholder: 'Шукати або вибрати на карті  автоматично заповнюється',
+      latitude_placeholder: 'Шукати або вибрати на карті автоматично заповнюється',
+      longitude_placeholder: 'Шукати або вибрати на карті автоматично заповнюється',
+      description_placeholder: 'Введіть опис (необов\'язково) до 600 символів',
     },
     incoterms: {
       EXW: 'Франко завод',
@@ -354,13 +358,17 @@ const messages = {
       clusterSizes: "Розміри кластерів",
       items: "пропозиції"
     },
+    chat: {
+      messagePlaceholder: 'Введіть ваше повідомлення...',
+      send: 'Надіслати',
+    },
   },
 };
 
 const i18n = createI18n({
-  locale: 'en', // set default locale
-  fallbackLocale: 'en', // set fallback locale
-  messages,
+  locale: localStorage.getItem('locale') || 'ua', // set default locale
+  fallbackLocale: 'ua', // set fallback locale
+  messages: {/* locale messages */ ...messages },
 });
 
 export default i18n;
