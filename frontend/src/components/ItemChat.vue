@@ -19,7 +19,8 @@
         class="form-control mb-2"
         v-model="newMessage"
         rows="4"
-        placeholder="Type your message..."
+        maxlength="500"
+        :placeholder="$t('chat.messagePlaceholder')"
         @keyup.enter.exact="sendMessage"
         style="resize: vertical;"
       ></textarea>
@@ -29,7 +30,7 @@
           @click="sendMessage"
           :disabled="!newMessage.trim()"
         >
-          <i class="bi bi-send"></i> Send
+          <i class="bi bi-send"></i> {{ $t('chat.send') }}
         </button>
       </div>
     </div>

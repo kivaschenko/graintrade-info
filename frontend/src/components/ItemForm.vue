@@ -37,8 +37,15 @@
           </div>
           <div class="mb-3">
             <label for="description" class="form-label">{{ $t( 'common_text.description' ) }}</label>
-            <input type="text" class="form-control" id="description" v-model="description" 
-             placeholder="- protein - min. 12.50%; - nature - min. 750g/l; - gluten - min. 23%;">
+            <textarea 
+              type="text" 
+              maxlength="600"
+              rows="4"
+              class="form-control" 
+              id="description" 
+              v-model="description" 
+              :placeholder="$t('create_form.description_placeholder')"
+              />
           </div>
           <div class="mb-3 row">
             <div class="col-md-6">
@@ -48,9 +55,9 @@
             <div class="col-md-6">
               <label for="currency" class="form-label">{{ $t( 'common_text.currency' ) }}</label>
               <select class="form-control" id="currency" v-model="currency" required>
+                <option value="UAH">UAH</option>
                 <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
-                <option value="UAH">UAH</option>
               </select>
             </div>
           </div>
@@ -80,21 +87,26 @@
             </div>
             <div class="col-md-6">
               <label for="country" class="form-label">{{ $t( 'create_form.country' ) }}</label>
-              <input type="text" class="form-control" id="country" v-model="country" readonly placeholder="Search or pick on map">
+              <input 
+                type="text" 
+                class="form-control" 
+                id="country" 
+                v-model="country" readonly 
+                :placeholder="$t('create_form.country_placeholder')" />
             </div>
           </div>
           <div class="mb-3">
             <label for="region" class="form-label">{{ $t( 'create_form.region' ) }}</label>
-            <input type="text" class="form-control" id="region" v-model="region" readonly  placeholder="Search or pick on map">
+            <input type="text" class="form-control" id="region" v-model="region" readonly :placeholder="$t('create_form.country_placeholder')" />
           </div>
           <div class="mb-3 row">
             <div class="col-md-6">
               <label for="latitude" class="form-label">{{ $t( 'create_form.latitude' ) }}</label>
-              <input type="text" class="form-control" id="latitude" v-model="latitude" readonly  placeholder="Search or pick on map">
+              <input type="text" class="form-control" id="latitude" v-model="latitude" readonly :placeholder="$t('create_form.latitude_placeholder')" />
             </div>
             <div class="col-md-6">
               <label for="longitude" class="form-label">{{ $t( 'create_form.longitude' ) }}</label>
-              <input type="text" class="form-control" id="longitude" v-model="longitude" readonly  placeholder="Search or pick on map">
+              <input type="text" class="form-control" id="longitude" v-model="longitude" readonly :placeholder="$t('create_form.latitude_placeholder')" />
             </div>
           </div>
           <button type="submit" class="btn btn-primary">{{ $t( 'create_form.submit' ) }}</button>
@@ -120,7 +132,7 @@ export default {
       title: this.offer_type === '',
       description: '',
       price: 0,
-      currency: 'USD',
+      currency: 'UAH',
       amount: 0,
       measure: 'metric ton',
       terms_delivery: 'EXW',
@@ -305,7 +317,7 @@ export default {
 <style>
 .map {
   width: 100%;
-  height: 400px;
+  /* height: 500px; */
   margin-bottom: 20px;
 }
 </style>
