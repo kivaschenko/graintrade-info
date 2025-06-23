@@ -19,6 +19,7 @@ def get_messages_between_users(
 ):
     return (
         db.query(models.Message)
+        .filter(models.Message.item_id == item_id)
         .filter(
             (
                 (models.Message.sender_id == user1)
