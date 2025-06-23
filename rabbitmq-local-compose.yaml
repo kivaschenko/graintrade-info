@@ -1,0 +1,17 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management # Uses the official image with the management plugin
+    hostname: rabbitmq          # Defines the hostname for the container
+    ports:
+      - "5672:5672" # Standard AMQP port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: user # Default username for RabbitMQ
+      RABBITMQ_DEFAULT_PASS: password # Default password for RabbitMQ
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq # Persist data
+      - rabbitmq_logs:/var/log/rabbitmq   # Persist logs
+
+volumes:
+  rabbitmq_data:
+  rabbitmq_logs:
