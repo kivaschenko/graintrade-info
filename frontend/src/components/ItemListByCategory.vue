@@ -128,6 +128,7 @@ export default {
         console.error('Error fetching items:', error);
       }
     },
+    
     async handlePageChange(newPage) {
       this.page = newPage;
       await this.fetchItems();
@@ -145,6 +146,8 @@ export default {
           center: [31.946946, 49.305825],
           zoom: 4,
         });
+        this.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        this.map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
         // Wait for map to load before adding sources and layers
         this.map.on('load', () => {
           this.mapLoaded = true;
@@ -165,7 +168,7 @@ export default {
         type: 'geojson',
         data: geoJsonData,
         cluster: true,
-        clusterMaxZoom: 14,
+        clusterMaxZoom: 12, // Max zoom to cluster points on
         clusterRadius: 50  // Fixed typo from clasterRadius
       });
     },
@@ -392,7 +395,7 @@ export default {
 
 .map {
   width: 100%;
-  height: 600px;
+  height: 400px;
 }
 
 .map-legend {
