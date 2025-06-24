@@ -36,14 +36,16 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 # Logging configuration
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 # ==========
 # Dependency
 
 
-async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = None):
+async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -70,9 +72,9 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
 async def create_item(
     item: ItemInDB,
     background_tasks: BackgroundTasks,
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
+    token: Annotated[str, Depends(oauth2_scheme)],
 ):
-    if token is None:
+    if token is None or token == "null" or token == "":
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id, scopes = await get_current_user_id(token)
@@ -177,15 +179,15 @@ async def find_items_in_radius(
 
 @router.get("/filter-items", response_model=List[ItemInResponse], tags=["filter items"])
 async def filter_items(
-    min_price: float = None,
-    max_price: float = None,
-    currency: str = None,
-    min_amount: int = None,
-    max_amount: int = None,
-    measure: str = None,
-    terms_delivery: str = None,
-    country: str = None,
-    region: str = None,
+    min_price: float = 0.0,
+    max_price: float = 999999.0,
+    currency: str = "UAH",
+    min_amount: int = 0,
+    max_amount: int = 999999,
+    measure: str = "",
+    terms_delivery: str = "",
+    country: str = "",
+    region: str = "",
 ):
     return await items_model.get_filtered_items(
         min_price=min_price,
@@ -198,3 +200,22 @@ async def filter_items(
         country=country,
         region=region,
     )
+
+
+@router.get("/geo-items-by-category/{category_id}", response_model=dict, tags=["Items"])
+async def get_geo_items_by_category(
+    category_id: int,
+    token: Annotated[
+        str, Depends(oauth2_scheme)
+    ] = "null",  # Default to None if no token is provided,
+):
+    """Get items by category with geo information."""
+    try:
+        user_id, scopes = await get_current_user_id(token)
+        if "view:map" not in scopes:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        items = await items_model.get_geo_items_by_category(category_id)
+        return {"status": "success", "items": items}
+    except Exception as e:
+        logging.error(f"Error in get_geo_items_by_category: {e}")
+        return {"status": "error", "message": f"Something went wrong: {e}"}

@@ -1,13 +1,20 @@
 import asyncpg
+import logging
 from typing import List
 from ..database import database
 from ..schemas import ItemInDB, ItemInResponse
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 async def get_all(offset: int = 0, limit: int = 10) -> List[ItemInResponse]:
     """Get all items according offset and limit cause."""
     query = """
-        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+        SELECT 
+            id, uuid, category_id, offer_type, title, description, price, currency, 
+            amount, measure, terms_delivery, country, region, latitude, longitude, created_at
         FROM items
         ORDER BY id DESC
         OFFSET $1
@@ -19,7 +26,7 @@ async def get_all(offset: int = 0, limit: int = 10) -> List[ItemInResponse]:
             return [ItemInResponse(**row) for row in rows]
     except asyncpg.exceptions.InvalidTextRepresentationError as e:
         # Handle specific error for invalid text representation
-        print(f"Invalid text representation error: {e}")
+        logging.error(f"Invalid text representation error: {e}")
         return []
 
 
@@ -154,3 +161,25 @@ async def map_views_increment(user_id: int):
     async with database.pool.acquire() as conn:
         counter = await conn.fetchval(query, user_id)
         return counter
+
+
+async def get_geo_items_by_category(category_id: int) -> dict:
+    query = """
+        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at,
+        ST_AsGeoJSON(geom) AS geometry
+        FROM items
+        WHERE category_id = $1
+        AND geom IS NOT NULL
+        ORDER BY id DESC
+    """
+    async with database.pool.acquire() as conn:
+        rows = await conn.fetch(query, category_id)
+        features = [
+            {
+                "type": "Feature",
+                "geometry": row["geometry"],
+                "properties": {k: row[k] for k in row.keys() if k != "geometry"},
+            }
+            for row in rows
+        ]
+    return {"type": "FeatureCollection", "features": features}
