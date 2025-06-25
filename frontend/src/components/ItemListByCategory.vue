@@ -34,13 +34,13 @@
           <div class="map-legend" v-if="mapLoaded">
             <h6>{{ $t('map.clusterSizes') }}</h6>
             <div class="legend-item">
-              <span class="circle small"></span> 1-3 {{ $t('map.items') }}
+              <span class="circle small"> 1-3 {{ $t('map.items') }}</span>
             </div>
             <div class="legend-item">
-              <span class="circle medium"> 4-8 {{ $t('map.items') }}</span>
+              <span class="circle medium"> 4-6 {{ $t('map.items') }}</span>
             </div>
             <div class="legend-item">
-              <span class="circle large"> 8+ {{ $t('map.items') }}</span>
+              <span class="circle large"> 6+ {{ $t('map.items') }}</span>
             </div>
           </div>
         </div>
@@ -173,7 +173,7 @@ export default {
         type: 'geojson',
         data: geoJsonData,
         cluster: true,
-        clusterMaxZoom: 12, // Max zoom to cluster points on
+        clusterMaxZoom: 14, // Max zoom to cluster points on
         clusterMinPoints: 2, // Minimum number of points to form a cluster
         clusterRadius: 60  // Fixed typo from clasterRadius
       });
@@ -193,13 +193,13 @@ export default {
             '#51bbd6',  // 0-3 items
             4,
             '#f1f075',  // 4-8 items
-            8,
+            6,
             '#f28cb1'   // 8+ items
           ],
           'circle-radius': [
             'step',
             ['get', 'point_count'],
-            30, 4, 40, 8, 60
+            30, 4, 40, 6, 60
           ]
         }
       });
@@ -212,7 +212,7 @@ export default {
         layout: {
           'text-field': ['get', 'point_count_abbreviated'],
           'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-          'text-size': 12
+          'text-size': 14
         }
       });
       // Add unclustered points - simplified from your current version
