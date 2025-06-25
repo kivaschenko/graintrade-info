@@ -34,13 +34,13 @@
           <div class="map-legend" v-if="mapLoaded">
             <h6>{{ $t('map.clusterSizes') }}</h6>
             <div class="legend-item">
-              <span class="circle small"></span> 1-10 {{ $t('map.items') }}
+              <span class="circle small"></span> 1-3 {{ $t('map.items') }}
             </div>
             <div class="legend-item">
-              <span class="circle medium"> 11-50 {{ $t('map.items') }}</span>
+              <span class="circle medium"> 4-8 {{ $t('map.items') }}</span>
             </div>
             <div class="legend-item">
-              <span class="circle large"> 50+ {{ $t('map.items') }}</span>
+              <span class="circle large"> 8+ {{ $t('map.items') }}</span>
             </div>
           </div>
         </div>
@@ -143,8 +143,13 @@ export default {
         this.map = new mapboxgl.Map({
           container: this.$refs.mapContainer,
           style: 'mapbox://styles/mapbox/standard',
+          config: {
+            basemap: {
+                theme: 'monochrome'
+            }
+          },
           center: [31.946946, 49.305825],
-          zoom: 4,
+          zoom: 5,
         });
         this.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
         this.map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
@@ -169,6 +174,7 @@ export default {
         data: geoJsonData,
         cluster: true,
         clusterMaxZoom: 12, // Max zoom to cluster points on
+        clusterMinPoints: 2, // Minimum number of points to form a cluster
         clusterRadius: 50  // Fixed typo from clasterRadius
       });
     },
@@ -184,16 +190,16 @@ export default {
           'circle-color': [
             'step',
             ['get', 'point_count'],
-            '#51bbd6',  // 0-9 items
-            10,
-            '#f1f075',  // 10-49 items
-            50,
-            '#f28cb1'   // 50+ items
+            '#51bbd6',  // 0-3 items
+            4,
+            '#f1f075',  // 4-8 items
+            8,
+            '#f28cb1'   // 8+ items
           ],
           'circle-radius': [
             'step',
             ['get', 'point_count'],
-            20, 10, 30, 50, 40
+            20, 4, 30, 8, 40
           ]
         }
       });
@@ -217,7 +223,7 @@ export default {
         filter: ['!', ['has', 'point_count']],
         paint: {
           'circle-color': '#11b4da',
-          'circle-radius': 6,
+          'circle-radius': 8,
           'circle-stroke-width': 1,
           'circle-stroke-color': '#fff',
           'circle-emissive-strength': 0.5
@@ -243,7 +249,6 @@ export default {
           clusterId,
           (err, zoom) => {
             if (err) return;
-
             this.map.easeTo({
               center: features[0].geometry.coordinates,
               zoom: zoom
@@ -251,12 +256,18 @@ export default {
           }
         );
       });
+      // Unclustered point interaction (works for both single and multiple points)
+      this.map.on('mouseenter', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+      this.map.on('mouseleave', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = '';
+      });
       // Handle unclustered point clicks
       this.map.on('click', 'unclustered-point', (e) => {
-        const coordinates = e.features[0].geometry.coordinates.slice();
-        const item = e.features[0].properties;
-        console.log('Clicked item:', item);
-
+        const feature = e.features[0];
+        const coordinates = feature.geometry.coordinates.slice();
+        const item = feature.properties;
         // Ensure the popup is closed before opening a new one
         if (this.popup) { // Змінено з this.map.getPopup() на this.popup
           this.popup.remove();
