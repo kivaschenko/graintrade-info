@@ -8,6 +8,9 @@
         </div>
       </div>
     </div>
+    <!-- ItemFilter component -->
+    <ItemFilter :initialCategoryId="selectedCategory" @filters-changed="handleFiltersChanged" ref="ItemFilter" class="mt-4 mb-4" />
+    <!-- ItemTable component -->
     <ItemTable :items="items" />
     <div class="pagination-controls" v-if="totalItems > pageSize">
       <button
@@ -34,13 +37,13 @@
           <div class="map-legend" v-if="mapLoaded">
             <h6>{{ $t('map.clusterSizes') }}</h6>
             <div class="legend-item">
-              <span class="circle small"></span> 1-10 {{ $t('map.items') }}
+              <span class="circle small"></span> 1-3 {{ $t('map.items') }}
             </div>
             <div class="legend-item">
-              <span class="circle medium"> 11-50 {{ $t('map.items') }}</span>
+              <span class="circle medium"></span> 4-6 {{ $t('map.items') }}
             </div>
             <div class="legend-item">
-              <span class="circle large"> 50+ {{ $t('map.items') }}</span>
+              <span class="circle large"></span> 6+ {{ $t('map.items') }}
             </div>
           </div>
         </div>
@@ -55,17 +58,20 @@ import { mapState } from 'vuex';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import ItemTable from './ItemTable.vue';
+import ItemFilter from './ItemFilter.vue';
 
 export default {
   name: 'ItemListByCategory',
   components: {
     ItemTable,
+    ItemFilter,
   },
   data() {
     return {
       items: [],
       category: {},
       map: null,
+      popup: null, // Додано для відстеження поточного попапу
       mapLoaded: false,
       hasMapAccess: false,
       // Pagination state
@@ -127,6 +133,7 @@ export default {
         console.error('Error fetching items:', error);
       }
     },
+    
     async handlePageChange(newPage) {
       this.page = newPage;
       await this.fetchItems();
@@ -137,14 +144,20 @@ export default {
         return;
       }
       try {
-        console.log('Initializing map with items:', this.items);
         mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
         this.map = new mapboxgl.Map({
           container: this.$refs.mapContainer,
-          style: 'mapbox://styles/mapbox/light-v11',
+          style: 'mapbox://styles/mapbox/standard',
+          config: {
+            basemap: {
+                theme: 'monochrome'
+            }
+          },
           center: [31.946946, 49.305825],
-          zoom: 5,
+          zoom: 4,
         });
+        this.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        this.map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
         // Wait for map to load before adding sources and layers
         this.map.on('load', () => {
           this.mapLoaded = true;
@@ -159,21 +172,19 @@ export default {
     },
     addMapSources() {
       if (!this.map) return;
-      
       const geoJsonData = this.getGeoJsonFromItems();
       console.log('GeoJSON data:', geoJsonData);
-      
       this.map.addSource('items', {
         type: 'geojson',
         data: geoJsonData,
         cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50  // Fixed typo from clasterRadius
+        clusterMaxZoom: 14, // Max zoom to cluster points on
+        clusterMinPoints: 2, // Minimum number of points to form a cluster
+        clusterRadius: 60  // Fixed typo from clasterRadius
       });
     },
     addMapLayers() {
       if (!this.map) return;
-      
       // Add clusters layer
       this.map.addLayer({
         id: 'clusters',
@@ -184,24 +195,19 @@ export default {
           'circle-color': [
             'step',
             ['get', 'point_count'],
-            '#51bbd6',  // 0-9 items
-            10,
-            '#f1f075',  // 10-49 items
-            50,
-            '#f28cb1'   // 50+ items
+            '#51bbd6',  // 0-3 items
+            4,
+            '#f1f075',  // 4-8 items
+            6,
+            '#f28cb1'   // 8+ items
           ],
           'circle-radius': [
             'step',
             ['get', 'point_count'],
-            20,
-            10,
-            30,
-            50,
-            40
+            30, 4, 40, 6, 60
           ]
         }
       });
-
       // Add cluster count numbers
       this.map.addLayer({
         id: 'cluster-count',
@@ -211,10 +217,9 @@ export default {
         layout: {
           'text-field': ['get', 'point_count_abbreviated'],
           'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-          'text-size': 12
+          'text-size': 14
         }
       });
-
       // Add unclustered points - simplified from your current version
       this.map.addLayer({
         id: 'unclustered-point',
@@ -223,9 +228,10 @@ export default {
         filter: ['!', ['has', 'point_count']],
         paint: {
           'circle-color': '#11b4da',
-          'circle-radius': 6,
+          'circle-radius': 8,
           'circle-stroke-width': 1,
-          'circle-stroke-color': '#fff'
+          'circle-stroke-color': '#fff',
+          'circle-emissive-strength': 0.5
         }
       });
     },
@@ -238,13 +244,6 @@ export default {
       this.map.on('mouseleave', 'clusters', () => {
         this.map.getCanvas().style.cursor = '';
       });
-      this.map.on('mouseenter', 'unclustered-point', () => {
-        this.map.getCanvas().style.cursor = 'pointer';
-      });
-      this.map.on('mouseleave', 'unclustered-point', () => {
-        this.map.getCanvas().style.cursor = '';
-      });
-
       // Handle cluster clicks
       this.map.on('click', 'clusters', (e) => {
         const features = this.map.queryRenderedFeatures(e.point, {
@@ -255,7 +254,6 @@ export default {
           clusterId,
           (err, zoom) => {
             if (err) return;
-
             this.map.easeTo({
               center: features[0].geometry.coordinates,
               zoom: zoom
@@ -263,54 +261,54 @@ export default {
           }
         );
       });
-
+      // Unclustered point interaction (works for both single and multiple points)
+      this.map.on('mouseenter', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+      this.map.on('mouseleave', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = '';
+      });
       // Handle unclustered point clicks
       this.map.on('click', 'unclustered-point', (e) => {
-        console.log('event: ', e);
-        const coordinates = e.features[0].geometry.coordinates.slice();
-        console.log('Coords: ', coordinates);
-        const item = e.features[0].properties;
-
-        if (!coordinates || coordinates.length !== 2) return;
-
-        if (['mercator', 'equirectangular'].includes(this.map.getProjection().name)) {
-          while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-          }
+        const feature = e.features[0];
+        const coordinates = feature.geometry.coordinates.slice();
+        const item = feature.properties;
+        // Ensure the popup is closed before opening a new one
+        if (this.popup) { // Змінено з this.map.getPopup() на this.popup
+          this.popup.remove();
+          this.popup = null; // Очистити посилання після видалення
         }
 
-        // Create the popup
-        const popup = new mapboxgl.Popup()
-          .setLngLat(coordinates)
-          // .setHTML(this.getPopupHTML(item))
-          .setHTML(`<p>Hello, <br>world!</p>`)
-          .addTo(this.map);
+        // Create and show the popup
+        const popupContent = this.getPopupHTML(item);
+        console.log('Popup content:', popupContent);
 
-        // Wait for the popup to be added to the DOM, then add a click handler
-        popup.on('open', () => {
-          const btn = document.getElementById(`popup-view-details-${item.id}`);
-          if (btn) {
-            btn.addEventListener('click', (event) => {
-              event.preventDefault();
+        this.popup = new mapboxgl.Popup({ closeOnClick: false })
+          .setLngLat(coordinates)
+          .setHTML(popupContent)
+          .addTo(this.map);
+        console.log('Popup added to map.'); // Додано лог
+
+        // Add a 'open' event listener to the popup to ensure the button is in the DOM
+        this.popup.on('open', () => {
+          console.log('Popup opened event fired.'); // Додано лог
+          const popupButton = document.getElementById(`popup-view-details-${item.id}`);
+          if (popupButton) {
+            console.log('Popup button found. Adding click listener.'); // Додано лог
+            popupButton.addEventListener('click', (event) => {
+              event.preventDefault(); // Prevent default anchor behavior
               this.$router.push(`/items/${item.id}`);
-              popup.remove();
             });
+          } else {
+            console.log('Popup button NOT found.'); // Лог, якщо кнопка не знайдена
           }
         });
 
-        // Fallback for MapboxGL versions that don't have 'open' event
-        setTimeout(() => {
-          const btn = document.getElementById(`popup-view-details-${item.id}`);
-          if (btn) {
-            btn.addEventListener('click', (event) => {
-              event.preventDefault();
-              this.$router.push(`/items/${item.id}`);
-              popup.remove();
-            });
-          }
-        }, 0);
+        this.popup.on('close', () => { // Додано обробник закриття для очищення
+          console.log('Popup closed.');
+          this.popup = null;
+        });
       });
-
     },
     getGeoJsonFromItems() {
       return {
@@ -320,6 +318,7 @@ export default {
           properties: {
             id: item.id,
             title: item.title,
+            offer_type: item.offer_type,
             description: item.description,
             price: item.price,
             currency: item.currency,
@@ -337,32 +336,26 @@ export default {
       };
     },
     getPopupHTML(item) {
-      // Get translations first to ensure they're available in the template string
-      const translations = {
-        price: this.$t('common.price'),
-        amount: this.$t('common.amount'),
-        incoterms: this.$t('common.incoterms'),
-        viewDetails: this.$t('common.viewDetails')
-      };
-
-      return `
+    console.log('Generating popup HTML for item:', item);
+      let popupContent = `
         <div class="popup-content">
-          <h5>${item.title || ''}</h5>
+          <h5><span class="badge bg-info text-dark">${item.offer_type.toUpperCase()}</span> ${item.title || ''}</h5>
           <p>${item.description || ''}</p>
-          <p>${translations.price}: ${item.price || 0} ${item.currency || ''}</p>
-          <p>${translations.amount}: ${item.amount || 0} ${item.measure || ''}</p>
-          <p>${translations.incoterms}: ${item.terms_delivery || ''}</p>
-          <p>${item.country || ''} ${item.region || ''}</p>
+          <p><strong>${this.$t('common.price')}:</strong> ${item.price || 0} ${item.currency || ''}</p>
+          <p><strong>${this.$t('common.amount')}:</strong> ${item.amount || 0} ${item.measure || ''}</p>
+          <p><strong>${this.$t('common.incoterms')}:</strong> ${item.terms_delivery || ''} ${item.country || ''} ${item.region || ''}</p>
           <a
-            href="#"
+            href="/items/${item.id}"
             id="popup-view-details-${item.id}"
             class="btn btn-sm btn-primary"
             style="display: block; text-align: center; padding: 8px; margin-top: 10px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;"
           >
-            ${translations.viewDetails}
+            ${this.$t('common.viewDetails')}
           </a>
         </div>
       `;
+      console.log('Popup content:', popupContent);
+      return popupContent;
     },
     // Translate Category
     getCategoryName(category) {
@@ -460,11 +453,12 @@ export default {
 }
 
 .popup-content {
-  padding: 10px;
+  padding: 2px;
+flex: 1;
 }
 
 .popup-content h5 {
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   font-weight: bold;
   color: #333;
 }
@@ -482,3 +476,4 @@ export default {
   text-align: center;
 }
 </style>
+
