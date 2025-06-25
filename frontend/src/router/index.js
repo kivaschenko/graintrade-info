@@ -8,8 +8,7 @@ import RegistrationForm from '@/components/RegistrationForm.vue';
 import UserProfile from '@/components/UserProfile.vue';
 import TariffPlans from '@/components/TariffPlans.vue';
 import PasswordRecovery from '@/components/PasswordRecovery.vue';
-// router/index.js
-import AllItemsMap from '../components/AllItemsMap.vue'; // Переконайтеся, що шлях правильний
+import AllItemsMap from '../components/AllItemsMap.vue'; 
 
 
 const routes = [
@@ -34,8 +33,8 @@ const routes = [
       component: ItemForm,
     },
     {
-      path: '/categories/:id',
-      name: 'Category',
+      path: '/categories/:id/items',
+      name: 'ItemListByCategory',
       component: ItemListByCategory,
     },
     { path: '/items/:id',
@@ -61,10 +60,16 @@ const routes = [
       component: PasswordRecovery,
     },
     {
-      path: '/map/all-items', // Або будь-який інший бажаний шлях
+      path: '/map/all-items', 
       name: 'AllItemsMap',
       component: AllItemsMap,
-      meta: { requiresAuth: true, scope: 'view:map' } // Додайте, якщо потрібна авторизація
+      meta: { requiresAuth: true, scope: 'view:map' } 
+    },
+    {
+      path: '/map/filtered-items',
+      name: 'FilteredItemsMap',
+      component: AllItemsMap, // Reusing AllItemsMap for filtered items
+      meta: { requiresAuth: true, scope: 'view:map' }
     }
   ];
 
