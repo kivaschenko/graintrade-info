@@ -14,6 +14,9 @@
             <li class="nav-item">
               <router-link class="nav-link" to="/items/new">{{ $t('navbar.addNew') }}</router-link>
             </li>
+            <li class="nav-item">
+              <router-link to="/map/all-items" class="nav-link">{{ $t('navbar.viewAllItemsOnMap') }}</router-link>
+            </li>
             <li class="nav-item" v-if="isAuthenticated">
               <router-link class="nav-link" to="/tariffs">{{ $t('navbar.tariffs') }}</router-link>
             </li>

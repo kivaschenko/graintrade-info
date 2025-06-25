@@ -183,3 +183,24 @@ async def get_geo_items_by_category(category_id: int) -> dict:
             for row in rows
         ]
     return {"type": "FeatureCollection", "features": features}
+
+
+async def get_all_geo_items() -> dict:
+    query = """
+        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at,
+        ST_AsGeoJSON(geom) AS geometry
+        FROM items
+        WHERE geom IS NOT NULL
+        ORDER BY id DESC
+    """
+    async with database.pool.acquire() as conn:
+        rows = await conn.fetch(query)
+        features = [
+            {
+                "type": "Feature",
+                "geometry": row["geometry"],
+                "properties": {k: row[k] for k in row.keys() if k != "geometry"},
+            }
+            for row in rows
+        ]
+    return {"type": "FeatureCollection", "features": features}

@@ -8,6 +8,8 @@ import RegistrationForm from '@/components/RegistrationForm.vue';
 import UserProfile from '@/components/UserProfile.vue';
 import TariffPlans from '@/components/TariffPlans.vue';
 import PasswordRecovery from '@/components/PasswordRecovery.vue';
+// router/index.js
+import AllItemsMap from '../components/AllItemsMap.vue'; // Переконайтеся, що шлях правильний
 
 
 const routes = [
@@ -57,6 +59,12 @@ const routes = [
     { path: '/reset-password',
       name: 'PasswordRecovery',
       component: PasswordRecovery,
+    },
+    {
+      path: '/map/all-items', // Або будь-який інший бажаний шлях
+      name: 'AllItemsMap',
+      component: AllItemsMap,
+      meta: { requiresAuth: true, scope: 'view:map' } // Додайте, якщо потрібна авторизація
     }
   ];
 
