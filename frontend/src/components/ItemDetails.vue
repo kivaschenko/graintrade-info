@@ -123,7 +123,12 @@ export default {
       mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
       this.map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: 'mapbox://styles/mapbox/standard',
+        config: {
+          basemap: {
+            theme: 'monochrome',
+          }
+        },
         center: [this.item.longitude, this.item.latitude],
         zoom: 5,
       });
