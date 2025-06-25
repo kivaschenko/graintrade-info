@@ -8,6 +8,9 @@
         </div>
       </div>
     </div>
+    <!-- ItemFilter component -->
+    <ItemFilter :initialCategoryId="selectedCategory" @filters-changed="handleFiltersChanged" ref="ItemFilter" class="mt-4 mb-4" />
+    <!-- ItemTable component -->
     <ItemTable :items="items" />
     <div class="pagination-controls" v-if="totalItems > pageSize">
       <button
@@ -34,13 +37,13 @@
           <div class="map-legend" v-if="mapLoaded">
             <h6>{{ $t('map.clusterSizes') }}</h6>
             <div class="legend-item">
-              <span class="circle small"> 1-3 {{ $t('map.items') }}</span>
+              <span class="circle small"></span> 1-3 {{ $t('map.items') }}
             </div>
             <div class="legend-item">
-              <span class="circle medium"> 4-6 {{ $t('map.items') }}</span>
+              <span class="circle medium"></span> 4-6 {{ $t('map.items') }}
             </div>
             <div class="legend-item">
-              <span class="circle large"> 6+ {{ $t('map.items') }}</span>
+              <span class="circle large"></span> 6+ {{ $t('map.items') }}
             </div>
           </div>
         </div>
@@ -55,11 +58,13 @@ import { mapState } from 'vuex';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import ItemTable from './ItemTable.vue';
+import ItemFilter from './ItemFilter.vue';
 
 export default {
   name: 'ItemListByCategory',
   components: {
     ItemTable,
+    ItemFilter,
   },
   data() {
     return {
