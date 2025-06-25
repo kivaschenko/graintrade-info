@@ -202,33 +202,15 @@ async def filter_items(
     )
 
 
-@router.get("/geo-items-by-category/{category_id}", response_model=dict, tags=["Items"])
-async def get_geo_items_by_category(
-    category_id: int,
-    token: Annotated[
-        str, Depends(oauth2_scheme)
-    ] = "null",  # Default to None if no token is provided,
-):
-    """Get items by category with geo information."""
-    try:
-        user_id, scopes = await get_current_user_id(token)
-        if "view:map" not in scopes:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-        items = await items_model.get_geo_items_by_category(category_id)
-        return {"status": "success", "items": items}
-    except Exception as e:
-        logging.error(f"Error in get_geo_items_by_category: {e}")
-        return {"status": "error", "message": f"Something went wrong: {e}"}
-
-
 @router.get("/items-geojson", response_model=dict, tags=["Items"])
 async def get_all_items_geojson(
+    category_id: int = 0,  # Optional category filter
     token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
     """Get all items with geo information."""
     try:
         # Optionally, add scope check here if only authorized users can view the full map
-        user_id, scopes = await get_current_user_id(token)
+        _, scopes = await get_current_user_id(token)
         if "view:map" not in scopes:  # Example scope check
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 

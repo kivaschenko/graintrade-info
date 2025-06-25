@@ -1,6 +1,6 @@
 import asyncpg
 import logging
-from typing import List
+from typing import List, Optional
 from ..database import database
 from ..schemas import ItemInDB, ItemInResponse
 
@@ -115,9 +115,20 @@ async def get_filtered_items(
     region: str = "",
 ) -> List[ItemInResponse]:
     query = """
-        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+        SELECT 
+            id, uuid, category_id, offer_type, title, description, 
+            price, currency, amount, measure, terms_delivery, 
+            country, region, latitude, longitude, created_at
         FROM items
-        WHERE ($1::float IS NULL OR price >= $1) AND ($2::float IS NULL OR price <= $2) AND ($3::text IS NULL OR currency = $3) AND ($4::int IS NULL OR amount >= $4) AND ($5::int IS NULL OR amount <= $5) AND ($6::text IS NULL OR measure = $6) AND ($7::text IS NULL OR terms_delivery = $7) AND ($8::text IS NULL OR country = $8) AND ($9::text IS NULL OR region = $9)
+        WHERE ($1::float IS NULL OR price >= $1) 
+            AND ($2::float IS NULL OR price <= $2) 
+            AND ($3::text IS NULL OR currency = $3) 
+            AND ($4::int IS NULL OR amount >= $4) 
+            AND ($5::int IS NULL OR amount <= $5) 
+            AND ($6::text IS NULL OR measure = $6) 
+            AND ($7::text IS NULL OR terms_delivery = $7) 
+            AND ($8::text IS NULL OR country = $8) 
+            AND ($9::text IS NULL OR region = $9)
     """
     async with database.pool.acquire() as conn:
         rows = await conn.fetch(
@@ -165,7 +176,10 @@ async def map_views_increment(user_id: int):
 
 async def get_geo_items_by_category(category_id: int) -> dict:
     query = """
-        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at,
+        SELECT 
+            id, uuid, category_id, offer_type, title, description, price, 
+            currency, amount, measure, terms_delivery, country, region, 
+            latitude, longitude, created_at,
         ST_AsGeoJSON(geom) AS geometry
         FROM items
         WHERE category_id = $1
@@ -187,7 +201,10 @@ async def get_geo_items_by_category(category_id: int) -> dict:
 
 async def get_all_geo_items() -> dict:
     query = """
-        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at,
+        SELECT 
+            id, uuid, category_id, offer_type, title, description, price, 
+            currency, amount, measure, terms_delivery, country, region, 
+            latitude, longitude, created_at,
         ST_AsGeoJSON(geom) AS geometry
         FROM items
         WHERE geom IS NOT NULL
@@ -195,6 +212,63 @@ async def get_all_geo_items() -> dict:
     """
     async with database.pool.acquire() as conn:
         rows = await conn.fetch(query)
+        features = [
+            {
+                "type": "Feature",
+                "geometry": row["geometry"],
+                "properties": {k: row[k] for k in row.keys() if k != "geometry"},
+            }
+            for row in rows
+        ]
+    return {"type": "FeatureCollection", "features": features}
+
+
+async def get_filtered_items_geo_json(
+    category_id: Optional[int] = None,
+    offer_type: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    country: Optional[str] = None,
+) -> dict:
+    conditions = ["geom IS NOT NULL"]
+    query_params = []
+    param_idx = 1
+
+    if category_id is not None:
+        conditions.append(f"category_id = ${param_idx}")
+        query_params.append(category_id)
+        param_idx += 1
+    if offer_type and offer_type != "all":
+        conditions.append(f"offer_type = ${param_idx}")
+        query_params.append(offer_type)
+        param_idx += 1
+    if min_price is not None:
+        conditions.append(f"price >= ${param_idx}")
+        query_params.append(min_price)
+        param_idx += 1
+    if max_price is not None:
+        conditions.append(f"price <= ${param_idx}")
+        query_params.append(max_price)
+        param_idx += 1
+    if country:
+        conditions.append(f"country ILIKE ${param_idx}")
+        query_params.append(country)
+        param_idx += 1
+
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+    query = f"""
+        SELECT 
+            id, uuid, category_id, offer_type, title, description, price, 
+            currency, amount, measure, terms_delivery, country, 
+            region, latitude, longitude, created_at,
+        ST_AsGeoJSON(geom) AS geometry
+        FROM items
+        {where_clause}
+        ORDER BY id DESC
+    """
+    async with database.pool.acquire() as conn:
+        rows = await conn.fetch(query, *query_params)
         features = [
             {
                 "type": "Feature",

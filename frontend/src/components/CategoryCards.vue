@@ -69,7 +69,7 @@ export default {
       }
     },
     navigateToCategory(categoryId) {
-      this.$router.push({ name: 'Category', params: { id: categoryId } });
+      this.$router.push({ name: 'ItemListByCategory', params: { id: categoryId } });
     },
   },
   async created() {
