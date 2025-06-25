@@ -15,6 +15,7 @@ const messages = {
       settings: 'Settings',
       tariffs: 'Tariff Plans',
       forgotPassword: 'Forgot Password?',
+      viewAllItemsOnMap: 'View All Items on Map',
     },
     common_text: {
       offers: 'Offers latest',
@@ -34,7 +35,23 @@ const messages = {
       amount: "Amount",
       incoterms: "Incoterms",
       viewDetails: "View Details",
-      noDescription: "No description available"
+      noDescription: "No description available",
+      country: 'Country',
+      region: 'Region',
+      applyFilters: 'Apply filters',
+      clearFilters: 'Clear filters',
+      from: 'From',
+      to: 'To',
+      loading: 'Loading',
+      allCategories: 'All categories',
+      allCountries: 'All countries',
+      backToTable: 'Back to table',
+      items: 'items',
+      category: 'Category',
+      all: 'All',
+      buy: 'Buy',
+      sell: 'Sell',
+      offerType: 'Offer type',
     },
     itemDetails: {
       title: 'Item Details: {title}',
@@ -56,6 +73,7 @@ const messages = {
     create_form: {
       map_title: 'Choose point on the map to define location',
       form_title: 'Create new offer',
+      all: 'All',
       sell: 'Sell',
       buy: 'Buy',
       offer_type: 'Offer type',
@@ -175,7 +193,10 @@ const messages = {
     map: {
       registerToView: "Register to view items on the map",
       clusterSizes: "Cluster Sizes",
-      items: "items"
+      items: "items",
+      allItemsMapTitle: "All Items on Map",
+      clusterAmountNote: "Cluster amount is the number of amount measures in the cluster",
+      tonn: "tonn",
     },
     chat: {
       messagePlaceholder: 'Type your message here...',
@@ -195,7 +216,8 @@ const messages = {
       myProfile: 'Мій профіль',
       settings: 'Налаштування',
       tariffs: 'Тарифні плани',
-      dontHaveccount: 'Немає облікового запису?',
+      forgotPassword: 'Забули пароль?',
+      viewAllItemsOnMap: 'Всі пропозиції на мапі',
     },
     common_text: {
       offers: 'Пропозиції останні',
@@ -215,7 +237,23 @@ const messages = {
       amount: "Кількість",
       incoterms: "Інкотермс",
       viewDetails: "Показати подробиці",
-      noDescription: "Немає опису"
+      noDescription: "Немає опису",
+      country: 'Країна',
+      region: 'Регіон',
+      "applyFilters": "Застосувати фільтри",
+      "clearFilters": "Очистити фільтри",
+      "from": "Від",
+      "to": "До",
+      "loading": "Завантаження",
+      "allCategories": "Всі категорії",
+      "allCountries": "Всі країни",
+      "backToTable": "Повернутись до таблиці",
+      "items": "оголошень",
+      "category": "Категорії",
+      "all": "Всі",
+      "buy": "Куплю",
+      "sell": "Продам",
+      "offerType": "Тип оголошень",
     },
     itemDetails: {
       title: 'Деталі товару: {title}',
@@ -238,6 +276,7 @@ const messages = {
       map_title: 'Виберіть точку на карті, щоб визначити місцезнаходження',
       form_title: 'Створити нову пропозицію',
       sell: 'Продаю',
+      all: 'Всі',
       buy: 'Купую',
       offer_type: 'Тип пропозиції',
       category: 'Категорія',
@@ -356,7 +395,12 @@ const messages = {
     map: {
       registerToView: "Щоб бачити пропозиції на мапі зареєструйтеся",
       clusterSizes: "Розміри кластерів",
-      items: "пропозиції"
+      items: "пропозиції",
+      allItemsMapTitle: "Всі пропозиції на мапі",
+      clusterAmountNote: "Кількість в кластері - це кількість одиниць вимірювання об'єму в кластері",
+      tonn: "тонн",
+      "filteredItemsMapTitle": "Карта відфільтрованих оголошень",
+      "viewFilteredOnMap": "Переглянути на карті"
     },
     chat: {
       messagePlaceholder: 'Введіть ваше повідомлення...',
