@@ -35,7 +35,9 @@ const messages = {
       amount: "Amount",
       incoterms: "Incoterms",
       viewDetails: "View Details",
-      noDescription: "No description available"
+      noDescription: "No description available",
+      country: 'Country',
+      region: 'Region',
     },
     itemDetails: {
       title: 'Item Details: {title}',
@@ -178,7 +180,8 @@ const messages = {
       clusterSizes: "Cluster Sizes",
       items: "items",
       allItemsMapTitle: "All Items on Map",
-      clusterAmountNote: "Cluster amount is the number of items in the cluster",
+      clusterAmountNote: "Cluster amount is the number of amount measures in the cluster",
+      tonn: "tonn",
     },
     chat: {
       messagePlaceholder: 'Type your message here...',
@@ -219,7 +222,9 @@ const messages = {
       amount: "Кількість",
       incoterms: "Інкотермс",
       viewDetails: "Показати подробиці",
-      noDescription: "Немає опису"
+      noDescription: "Немає опису",
+      country: 'Країна',
+      region: 'Регіон',
     },
     itemDetails: {
       title: 'Деталі товару: {title}',
@@ -362,7 +367,8 @@ const messages = {
       clusterSizes: "Розміри кластерів",
       items: "пропозиції",
       allItemsMapTitle: "Всі пропозиції на мапі",
-      clusterAmountNote: "Кількість в кластері - це кількість пропозицій в кластері",
+      clusterAmountNote: "Кількість в кластері - це кількість одиниць вимірювання об'єму в кластері",
+      tonn: "тонн",
     },
     chat: {
       messagePlaceholder: 'Введіть ваше повідомлення...',
