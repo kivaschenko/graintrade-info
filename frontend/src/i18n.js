@@ -15,6 +15,7 @@ const messages = {
       settings: 'Settings',
       tariffs: 'Tariff Plans',
       forgotPassword: 'Forgot Password?',
+      viewAllItemsOnMap: 'View All Items on Map',
     },
     common_text: {
       offers: 'Offers latest',
@@ -175,7 +176,9 @@ const messages = {
     map: {
       registerToView: "Register to view items on the map",
       clusterSizes: "Cluster Sizes",
-      items: "items"
+      items: "items",
+      allItemsMapTitle: "All Items on Map",
+      clusterAmountNote: "Cluster amount is the number of items in the cluster",
     },
     chat: {
       messagePlaceholder: 'Type your message here...',
@@ -195,7 +198,8 @@ const messages = {
       myProfile: 'Мій профіль',
       settings: 'Налаштування',
       tariffs: 'Тарифні плани',
-      dontHaveccount: 'Немає облікового запису?',
+      forgotPassword: 'Забули пароль?',
+      viewAllItemsOnMap: 'Всі пропозиції на мапі',
     },
     common_text: {
       offers: 'Пропозиції останні',
@@ -356,7 +360,9 @@ const messages = {
     map: {
       registerToView: "Щоб бачити пропозиції на мапі зареєструйтеся",
       clusterSizes: "Розміри кластерів",
-      items: "пропозиції"
+      items: "пропозиції",
+      allItemsMapTitle: "Всі пропозиції на мапі",
+      clusterAmountNote: "Кількість в кластері - це кількість пропозицій в кластері",
     },
     chat: {
       messagePlaceholder: 'Введіть ваше повідомлення...',

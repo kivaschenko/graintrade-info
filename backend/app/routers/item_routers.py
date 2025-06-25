@@ -219,3 +219,24 @@ async def get_geo_items_by_category(
     except Exception as e:
         logging.error(f"Error in get_geo_items_by_category: {e}")
         return {"status": "error", "message": f"Something went wrong: {e}"}
+
+
+@router.get("/items-geojson", response_model=dict, tags=["Items"])
+async def get_all_items_geojson(
+    token: Annotated[str, Depends(oauth2_scheme)] = "null",
+):
+    """Get all items with geo information."""
+    try:
+        # Optionally, add scope check here if only authorized users can view the full map
+        user_id, scopes = await get_current_user_id(token)
+        if "view:map" not in scopes:  # Example scope check
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        items = await items_model.get_all_geo_items()
+        return {"status": "success", "items": items}
+    except Exception as e:
+        logging.error(f"Error in get_all_items_geojson: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
