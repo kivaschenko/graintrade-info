@@ -149,7 +149,7 @@ export default {
             }
           },
           center: [31.946946, 49.305825],
-          zoom: 5,
+          zoom: 4,
         });
         this.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
         this.map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
@@ -175,7 +175,7 @@ export default {
         cluster: true,
         clusterMaxZoom: 12, // Max zoom to cluster points on
         clusterMinPoints: 2, // Minimum number of points to form a cluster
-        clusterRadius: 50  // Fixed typo from clasterRadius
+        clusterRadius: 60  // Fixed typo from clasterRadius
       });
     },
     addMapLayers() {
@@ -199,7 +199,7 @@ export default {
           'circle-radius': [
             'step',
             ['get', 'point_count'],
-            20, 4, 30, 8, 40
+            30, 4, 40, 8, 60
           ]
         }
       });
