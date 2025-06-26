@@ -69,10 +69,18 @@ const routes = [
       path: '/map/filtered-items',
       name: 'FilteredItemsMap',
       component: AllItemsMap, // Reusing AllItemsMap for filtered items
-      meta: { requiresAuth: true, scope: 'view:map' }
+      meta: { requiresAuth: true, scope: 'view:map' },
+      props: (route) => ({ // Дозволяє передавати query params як пропси
+        category_id: route.query.category_id,
+        offer_type: route.query.offer_type,
+        min_price: route.query.min_price,
+        max_price: route.query.max_price,
+        currency: route.query.currency,
+        country: route.query.country,
+        incoterms: route.query.incoterms,
+      })
     }
   ];
-
 const router = createRouter({
     history: createWebHistory(),
     routes,
