@@ -1,9 +1,9 @@
 <template>
   <div class="filters-container">
     <div class="filter-group">
-      <label for="category-filter">{{ $t('common.category') }}:</label>
+      <label for="category-filter">{{ $t('common_text.category') }}:</label>
       <select id="category-filter" v-model="currentSelectedCategory" @change="applyFilters">
-        <option value="">{{ $t('common.allCategories') }}</option>
+        <option value="">{{ $t('common_text.allCategories') }}</option>
         <option v-for="cat in categories" :key="cat.id" :value="cat.id">
           {{ currentLocale === 'ua' ? cat.ua_name : cat.name }}
         </option>
@@ -11,48 +11,92 @@
     </div>
 
     <div class="filter-group offer-type-group">
-      <label>{{ $t('common.offerType') }}:</label>
+      <label>{{ $t('common_text.offerType') }}:</label>
       <button
         @click="setOfferType('all')"
         :class="{ 'active-filter': currentSelectedOfferType === 'all' }"
       >
-        {{ $t('common.all') }}
+        {{ $t('common_text.all') }}
       </button>
       <button
         @click="setOfferType('buy')"
         :class="{ 'active-filter': currentSelectedOfferType === 'buy' }"
       >
-        {{ $t('common.buy') }}
+        {{ $t('common_text.buy') }}
       </button>
       <button
         @click="setOfferType('sell')"
         :class="{ 'active-filter': currentSelectedOfferType === 'sell' }"
       >
-        {{ $t('common.sell') }}
+        {{ $t('common_text.sell') }}
       </button>
     </div>
 
+    <!-- Price range filter -->
     <div class="filter-group price-group">
-      <label>{{ $t('common.price') }} (USD):</label>
-      <input type="number" v-model.number="currentMinPrice" :placeholder="$t('common.from')" @input="debounceApplyFilters">
+      <label>{{ $t('common_text.price') }}:</label>
+      <input type="number" v-model.number="currentMinPrice" :placeholder="$t('common_text.from')" @input="debounceApplyFilters">
       <span class="price-separator">-</span>
-      <input type="number" v-model.number="currentMaxPrice" :placeholder="$t('common.to')" @input="debounceApplyFilters">
+      <input type="number" v-model.number="currentMaxPrice" :placeholder="$t('common_text.to')" @input="debounceApplyFilters">
     </div>
 
+    <!-- Currency filter -->
+    <div class="filter-group offer-type-group">
+      <label>{{ $t('common_text.currency') }}:</label>
+      <button
+        @click="setCurrency('all')"
+        :class="{ 'active-filter': currentSelectedCurrency === 'all' }"
+      >
+        {{ $t('common_text.all') }}
+      </button>
+      <button
+        @click="setCurrency('uah')"
+        :class="{ 'active-filter': currentSelectedCurrency === 'uah' }"
+      >
+        UAH
+      </button>
+      <button
+        @click="setCurrency('usd')"
+        :class="{ 'active-filter': currentSelectedCurrency === 'usd' }"
+      >
+        USD
+      </button>
+      <button
+        @click="setCurrency('eur')"
+        :class="{ 'active-filter': currentSelectedCurrency === 'eur' }"
+      >
+        EUR
+      </button>
+    </div>
+
+    <!-- Country filter -->
     <div class="filter-group country-group">
-      <label for="country-filter">{{ $t('common.country') }}:</label>
+      <label for="country-filter">{{ $t('common_text.country') }}:</label>
       <select id="country-filter" v-model="currentSelectedCountry" @change="applyFilters">
-        <option value="">{{ $t('common.allCountries') }}</option>
+        <option value="">{{ $t('common_text.allCountries') }}</option>
         <option value="Ukraine">Ukraine</option>
         <!-- Add more countries dynamically if available from backend -->
       </select>
     </div>
-    
+
+    <!-- Incoterms filter -->
+    <div class="filter-group incoterms-group">
+      <label for="incoterms-filter">{{ $t('common_text.incoterms') }}:</label>
+      <select id="incoterms-filter" v-model="currentSelectedIncoterm" @change="applyFilters">
+        <option value="">{{ $t('common_text.allIncoterms') }}</option>
+        <option v-for="incoterm in incoterms" :key="incoterm.abbreviation" :value="incoterm.abbreviation">
+          {{ incoterm.abbreviation }} - {{ incoterm.description }}
+        </option>
+      </select>
+    </div>
+
+    <div>
     <button class="btn-apply-filters" @click="applyFilters" :disabled="loadingCategories">
-      <span v-if="loadingCategories">{{ $t('common.loading') }}...</span>
-      <span v-else>{{ $t('common.applyFilters') }}</span>
+      <span v-if="loadingCategories">{{ $t('common_text.loading') }}...</span>
+      <span v-else>{{ $t('common_text.applyFilters') }}</span>
     </button>
-    <button class="btn-clear-filters" @click="clearFilters">{{ $t('common.clearFilters') }}</button>
+    <button class="btn-clear-filters" @click="clearFilters">{{ $t('common_text.clearFilters') }}</button>
+    </div>
   </div>
 </template>
 
@@ -77,7 +121,8 @@ export default {
       currentMinPrice: null,
       currentMaxPrice: null,
       currentSelectedCountry: '',
-      
+      currentSelectedCurrency: 'all', // Default to 'all' for currency filter
+      currentSelectedIncoterm: '', // Default to no incoterm selected
       loadingCategories: false,
       debounceTimeout: null,
     };
@@ -102,8 +147,29 @@ export default {
       if (this.currentSelectedCountry) {
         params.country = this.currentSelectedCountry;
       }
+      if (this.currentSelectedCurrency !== 'all') {
+        params.currency = this.currentSelectedCurrency;
+      }
+      if (this.currentSelectedIncoterm) {
+        params.incoterm = this.currentSelectedIncoterm;
+      }
       return params;
-    }
+    },
+    incoterms() {
+      return [
+        { abbreviation: 'EXW', description: this.$t('incoterms.EXW') },
+        { abbreviation: 'FCA', description: this.$t('incoterms.FCA') },
+        { abbreviation: 'CPT', description: this.$t('incoterms.CPT') },
+        { abbreviation: 'CIP', description: this.$t('incoterms.CIP') },
+        { abbreviation: 'DAP', description: this.$t('incoterms.DAP') },
+        { abbreviation: 'DPU', description: this.$t('incoterms.DPU') },
+        { abbreviation: 'DDP', description: this.$t('incoterms.DDP') },
+        { abbreviation: 'FAS', description: this.$t('incoterms.FAS') },
+        { abbreviation: 'FOB', description: this.$t('incoterms.FOB') },
+        { abbreviation: 'CFR', description: this.$t('incoterms.CFR') },
+        { abbreviation: 'CIF', description: this.$t('incoterms.CIF') },
+      ];
+    },
   },
   watch: {
     // Watch for changes in initialCategoryId prop to update the internal state
@@ -123,6 +189,10 @@ export default {
           this.currentMinPrice = newQuery.min_price ? parseFloat(newQuery.min_price) : null;
           this.currentMaxPrice = newQuery.max_price ? parseFloat(newQuery.max_price) : null;
           this.currentSelectedCountry = newQuery.country || '';
+          this.currentSelectedCurrency = newQuery.currency || 'all';
+          this.currentSelectedIncoterm = newQuery.incoterm || '';
+          // Emit the updated filters to the parent component
+          this.applyFilters();
         }
       }
     }
@@ -151,6 +221,15 @@ export default {
       this.currentSelectedOfferType = type;
       this.applyFilters();
     },
+    setCurrency(currency) {
+      this.currentSelectedCurrency = currency;
+      this.applyFilters();
+    },
+    setIncoterm(incoterm) {
+      this.currentSelectedIncoterm = incoterm;
+      this.applyFilters();
+    },
+    // Debounce the applyFilters method to prevent excessive calls
     debounceApplyFilters() {
       clearTimeout(this.debounceTimeout);
       this.debounceTimeout = setTimeout(() => {
@@ -168,6 +247,33 @@ export default {
       this.currentMinPrice = null;
       this.currentMaxPrice = null;
       this.currentSelectedCountry = '';
+      this.currentSelectedCurrency = 'all'; // Reset currency filter
+      this.currentSelectedIncoterm = ''; // Reset incoterm filter
+      console.log('Filters cleared in ItemFilter');
+      // Emit cleared filters to parent component
+      this.$emit('filters-changed', {
+        category_id: this.initialCategoryId,
+        offer_type: 'all',
+        min_price: null,
+        max_price: null,
+        country: '',
+        currency: 'all',
+        incoterm: '',
+      });
+      // Optionally, you can also reset the route query parameters if needed
+      this.$router.push({
+        name: this.$route.name,
+        query: {
+          category_id: this.initialCategoryId,
+          offer_type: 'all',
+          min_price: null,
+          max_price: null,
+          country: '',
+          currency: 'all',
+          incoterm: '',
+        },
+      });
+      // Call applyFilters to emit the cleared filters
       this.applyFilters(); // Emit cleared filters
     },
   },
@@ -177,6 +283,12 @@ export default {
 <style scoped>
 .filters-container {
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  align-self: center;
   flex-wrap: wrap;
   gap: 15px;
   justify-content: center;
@@ -198,6 +310,7 @@ export default {
   font-size: 0.9em;
   color: #555;
   margin-bottom: 6px;
+  margin-right: 6px;
   font-weight: 600;
 }
 
@@ -236,6 +349,7 @@ export default {
 }
 
 .offer-type-group button.active-filter {
+  flex-direction: row;
   background-color: #007bff;
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
@@ -269,6 +383,8 @@ export default {
   font-weight: 600;
   transition: all 0.2s ease-in-out;
   min-width: 120px;
+  align-self: center;
+  margin: 5px;
 }
 
 .btn-apply-filters {
