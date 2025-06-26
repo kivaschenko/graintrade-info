@@ -7,8 +7,11 @@
           <th scope="col">{{ $t( 'common_text.title' ) }}</th>
           <th scope="col">{{ $t( 'common_text.type' ) }}</th>
           <th scope="col" class="text-end">{{ $t( 'common_text.price' ) }}</th>
+          <th scope="col" class="text-start">{{ $t( 'common_text.currency' ) }}</th>
           <th scope="col" class="text-end">{{ $t( 'common_text.amount' ) }}</th>
+          <th scope="col" class="text-start">{{ $t( 'create_form.measure' ) }}</th>
           <th scope="col" class="text-end">{{ $t( 'common_text.incoterms' ) }}</th>
+          <th scope="col" class="text-end">{{ $t( 'common_text.createdAt') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -19,9 +22,12 @@
             </router-link>
           </th>
           <td>{{ $t(`offer_type.${item.offer_type}`) }}</td>
-          <td class="text-end">{{ item.price }} {{ $t(`currency.${item.currency}`) }}</td>
-          <td class="text-end">{{ item.amount }} {{ item.measure }}</td>
+          <td class="text-end">{{ item.price }} </td>
+          <td class="text-start">{{ $t(`currency.${item.currency}`) }}</td>
+          <td class="text-end">{{ item.amount }}</td>
+          <td class="text-start">{{ item.measure }}</td>
           <td class="text-end">{{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</td>
+          <td class="text-end">{{ new Date(item.created_at).toLocaleDateString() }}</td>
         </tr>
       </tbody>
     </table>
