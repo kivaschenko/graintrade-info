@@ -47,6 +47,7 @@ const messages = {
       buy: 'Buy',
       sell: 'Sell',
       offerType: 'Offer type',
+      createdAt: 'Created at',
     },
     itemDetails: {
       title: 'Item Details: {title}',
@@ -244,6 +245,7 @@ const messages = {
       "buy": "Куплю",
       "sell": "Продам",
       "offerType": "Тип оголошень",
+      "createdAt": "Створено",
     },
     itemDetails: {
       title: 'Деталі товару: {title}',
