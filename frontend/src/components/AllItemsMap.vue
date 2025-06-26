@@ -400,18 +400,18 @@ export default {
         <div class="popup-content">
           <h5><span class="badge bg-info text-dark">${item.offer_type ? item.offer_type.toUpperCase() : ''}</span> ${item.title || ''}</h5>
           <p>${item.description || ''}</p>
-          <p><strong>${this.$t('common.price')}:</strong> ${item.price || 0} ${item.currency || ''}</p>
-          <p><strong>${this.$t('common.amount')}:</strong> ${item.amount || 0} ${item.measure || ''}</p>
-          <p><strong>${this.$t('common.incoterms')}:</strong> ${item.terms_delivery || ''}</p>
-          <p><strong>${this.$t('common.country')}:</strong> ${item.country || ''}</p>
-          <p><strong>${this.$t('common.region')}:</strong> ${item.region || ''}</p>
+          <p><strong>${this.$t('common_text.price')}:</strong> ${item.price || 0} ${item.currency || ''}</p>
+          <p><strong>${this.$t('common_text.amount')}:</strong> ${item.amount || 0} ${item.measure || ''}</p>
+          <p><strong>${this.$t('common_text.incoterms')}:</strong> ${item.terms_delivery || ''}</p>
+          <p><strong>${this.$t('common_text.country')}:</strong> ${item.country || ''}</p>
+          <p><strong>${this.$t('common_text.region')}:</strong> ${item.region || ''}</p>
           <a
             href="/items/${item.id}"
             id="popup-view-details-${item.id}"
             class="btn btn-sm btn-primary"
             style="display: block; text-align: center; padding: 8px; margin-top: 10px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;"
           >
-            ${this.$t('common.viewDetails')}
+            ${this.$t('common_text.viewDetails')}
           </a>
         </div>
       `;
