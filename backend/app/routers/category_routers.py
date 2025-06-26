@@ -127,7 +127,7 @@ async def read_items_by_category(
     category_id: int,
     offset: int,
     limit: int,
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
+    token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
     try:
         category, items, total_items = await category_model.get_by_id_with_items(
