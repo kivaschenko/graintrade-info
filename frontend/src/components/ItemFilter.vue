@@ -199,8 +199,8 @@ export default {
         // Only apply if the current page is the map page or if we need to sync filters
         // This is primarily for the AllItemsMap component, which will read query params
         // For ItemListByCategory, the filters are driven by user interaction here.
-        if (this.$route.name === 'FilteredItemsMap' || this.$route.name === 'ItemListByCategory') {
-          this.currentSelectedCategory = newQuery.category_id || '';
+        if (this.$route.name === 'FilteredItemsMap' || this.$route.name === 'ItemListByCategory' || this.$route.name === 'AllItems') {
+          this.currentSelectedCategory = newQuery.category_id || this.$route.params.id || '';
           this.currentSelectedOfferType = newQuery.offer_type || 'all';
           this.currentMinPrice = newQuery.min_price ? parseFloat(newQuery.min_price) : null;
           this.currentMaxPrice = newQuery.max_price ? parseFloat(newQuery.max_price) : null;
@@ -209,6 +209,15 @@ export default {
           this.currentSelectedIncoterm = newQuery.incoterm || '';
           // Emit the updated filters to the parent component
           this.applyFilters();
+        }
+      }
+    },
+    // Watch for route param changes (specifically for category ID in path)
+    '$route.params.id': {
+      immediate: true,
+      handler(newId) {
+        if (this.$route.name === 'ItemListByCategory') {
+          this.currentSelectedCategory = newId || '';
         }
       }
     }
@@ -257,38 +266,115 @@ export default {
       // Emit the current filter parameters to the parent component
       this.$emit('filters-changed', this.currentFilterParams);
 
-      // Update route query parameters
-      this.$router.push({
-        name: this.$route.name, // Keep the current route name
-        query: {
-          ...this.$route.query, // Preserve existing query parameters
-          ...this.currentFilterParams, // Add/overwrite with current filter parameters
-          // Ensure null or empty values are removed from the URL if they mean "all" or "not set"
-          category_id: this.currentSelectedCategory || undefined,
-          offer_type: this.currentSelectedOfferType === 'all' ? undefined : this.currentSelectedOfferType,
-          min_price: this.currentMinPrice === null ? undefined : this.currentMinPrice,
-          max_price: this.currentMaxPrice === null ? undefined : this.currentMaxPrice,
-          country: this.currentSelectedCountry === '' ? undefined : this.currentSelectedCountry,
-          currency: this.currentSelectedCurrency === 'all' ? undefined : this.currentSelectedCurrency,
-          incoterm: this.currentSelectedIncoterm === '' ? undefined : this.currentSelectedIncoterm,
-        },
-      }).catch(err => {
-        // Handle navigation errors, e.g., redundant navigation to the same route
+      const currentRouteName = this.$route.name;
+      const currentRouteParams = { ...this.$route.params }; // Clone existing params
+      const currentRouteQuery = { ...this.$route.query }; // Clone existing query
+
+      // Build the base query parameters for the new route
+      let newQuery = {
+        // Explicitly set filter-related query parameters, using undefined to remove them if "all" or null
+        offer_type: this.currentSelectedOfferType === 'all' ? undefined : this.currentSelectedOfferType,
+        min_price: this.currentMinPrice === null ? undefined : this.currentMinPrice,
+        max_price: this.currentMaxPrice === null ? undefined : this.currentMaxPrice,
+        country: this.currentSelectedCountry === '' ? undefined : this.currentSelectedCountry,
+        currency: this.currentSelectedCurrency === 'all' ? undefined : this.currentSelectedCurrency,
+        incoterm: this.currentSelectedIncoterm === '' ? undefined : this.currentSelectedIncoterm,
+      };
+
+      let targetRoute = {};
+
+      // Scenario 1: Current route is category-specific (e.g., /categories/:id/items)
+      if (currentRouteName === 'ItemListByCategory') {
+        const routeCategoryId = currentRouteParams.id;
+        const selectedCategoryId = this.currentSelectedCategory;
+
+        if (selectedCategoryId && String(selectedCategoryId) !== String(routeCategoryId)) {
+          // Category changed to a specific one: navigate to new category path
+          targetRoute = {
+            name: 'ItemListByCategory',
+            params: { id: selectedCategoryId },
+            query: newQuery // Other filters go into query
+          };
+        } else if (!selectedCategoryId && routeCategoryId) {
+          // Category changed to 'All Categories' from a specific category page
+          // Navigate to a general items list. Assuming 'AllItems' route for '/items'.
+          // If 'AllItems' doesn't exist, change to 'FilteredItemsMap' or your main items page.
+          targetRoute = {
+            name: 'AllItems', // Or 'FilteredItemsMap' or your main items page name
+            params: {}, // Clear category param
+            query: newQuery // Other filters go into query
+          };
+        } else {
+          // Category selected is the same as the route param, or both are 'All'
+          // Just update query parameters for the existing route
+          targetRoute = {
+            name: currentRouteName,
+            params: currentRouteParams,
+            query: newQuery
+          };
+        }
+      }
+      // Scenario 2: Current route is general (e.g., /items or /map)
+      else if (currentRouteName === 'AllItems' || currentRouteName === 'FilteredItemsMap') {
+        const selectedCategoryId = this.currentSelectedCategory;
+
+        if (selectedCategoryId) {
+          // A specific category is selected: navigate to category-specific page
+          targetRoute = {
+            name: 'ItemListByCategory',
+            params: { id: selectedCategoryId },
+            query: newQuery
+          };
+        } else {
+          // No specific category selected: remain on general page, update query
+          targetRoute = {
+            name: currentRouteName,
+            query: newQuery
+          };
+        }
+      }
+      // Fallback for other routes (e.g., if filter is used on an unrelated page)
+      else {
+          targetRoute = {
+              name: currentRouteName,
+              params: currentRouteParams,
+              query: { ...currentRouteQuery, ...newQuery } // Merge with existing query
+          };
+          if (!this.currentSelectedCategory) {
+            delete targetRoute.query.category_id; // Remove if 'all'
+          }
+      }
+
+      // Ensure category_id is not in query if it's already in params (for ItemListByCategory)
+      if (targetRoute.name === 'ItemListByCategory' && targetRoute.params.id) {
+          delete targetRoute.query.category_id;
+      }
+
+      // Clean up undefined values from the query object before pushing
+      Object.keys(targetRoute.query).forEach(key => {
+        if (targetRoute.query[key] === undefined) {
+          delete targetRoute.query[key];
+        }
+      });
+
+      this.$router.push(targetRoute).catch(err => {
         if (err.name !== 'NavigationDuplicated') {
           console.error("Router push error:", err);
         }
       });
     },
     clearFilters() {
-      this.currentSelectedCategory = this.initialCategoryId; // Reset to initial category from prop
+      // Reset all filter data properties to their initial/default values
+      this.currentSelectedCategory = this.initialCategoryId;
       this.currentSelectedOfferType = 'all';
       this.currentMinPrice = null;
       this.currentMaxPrice = null;
-      this.currentSelectedCountry = 'Ukraine'; // Reset to default 'Ukraine'
-      this.currentSelectedCurrency = 'all'; // Reset currency filter
-      this.currentSelectedIncoterm = ''; // Reset incoterm filter
+      this.currentSelectedCountry = 'Ukraine';
+      this.currentSelectedCurrency = 'all';
+      this.currentSelectedIncoterm = '';
+
       console.log('Filters cleared in ItemFilter');
-      // Call applyFilters to emit the cleared filters and update the route
+      // Call applyFilters to update the route and emit cleared filters
       this.applyFilters();
     },
   },
