@@ -1,122 +1,151 @@
 <template>
-  <div class="container mt-5">
-    <h1>{{ $t( 'create_form.form_title' ) }}</h1>
+  <div class="container my-5">
+    <h1 class="text-center mb-4">{{ $t('create_form.form_title') }}</h1>
+
     <div class="row">
-      <div class="col-lg-6">
-        <h2>{{ $t( 'create_form.map_title' ) }}</h2>
-        <div id="map" class="map mb-3"></div>
+      <div class="col-lg-6 mb-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h2 class="card-title text-center mb-3">{{ $t('create_form.map_title') }}</h2>
+            <div id="map" class="map mb-3 border rounded"></div>
+          </div>
+        </div>
       </div>
-      <div class="col-lg-6">
-        <form @submit.prevent="createItem" style="background-color:aquamarine; padding: 1rem;">
-          <div v-if="successMessage" class="alert alert-success" role="alert">
-            {{ successMessage }}
+
+      <div class="col-lg-6 mb-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <form @submit.prevent="createItem">
+              <div v-if="successMessage" class="alert alert-success" role="alert">
+                {{ successMessage }}
+              </div>
+              <div v-if="errorMessage" class="alert alert-danger" role="alert">
+                {{ errorMessage }}
+              </div>
+
+              <div class="mb-3">
+                <label for="offer_type" class="form-label">{{ $t('create_form.offer_type') }}</label>
+                <select class="form-select" id="offer_type" v-model="offer_type" required>
+                  <option value="sell">{{ $t('create_form.sell') }}</option>
+                  <option value="buy">{{ $t('create_form.buy') }}</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="category_id" class="form-label">{{ $t('create_form.category') }}</label>
+                <select class="form-select" id="category_id" v-model="category_id" required>
+                  <option v-for="category in categories" :key="category.id" :value="category.id">
+                    {{ getCategoryName(category) }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="title" class="form-label">{{ $t('common_text.title') }}</label>
+                <input type="text" class="form-control" id="title" v-model="title" readonly required>
+              </div>
+
+              <div class="mb-3">
+                <label for="description" class="form-label">{{ $t('common_text.description') }}</label>
+                <textarea
+                  type="text"
+                  maxlength="600"
+                  rows="4"
+                  class="form-control"
+                  id="description"
+                  v-model="description"
+                  :placeholder="$t('create_form.description_placeholder')"
+                ></textarea>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="price" class="form-label">{{ $t('common_text.price') }}</label>
+                  <input type="number" class="form-control" id="price" v-model="price" step="0.01" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="currency" class="form-label">{{ $t('common_text.currency') }}</label>
+                  <select class="form-select" id="currency" v-model="currency" required>
+                    <option value="UAH">UAH</option>
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="amount" class="form-label">{{ $t('create_form.amount') }}</label>
+                  <input type="number" class="form-control" id="amount" v-model="amount" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="measure" class="form-label">{{ $t('create_form.measure') }}</label>
+                  <select class="form-select" id="measure" v-model="measure" required>
+                    <option value="metric ton">{{ $t('create_form.metric_ton') }}</option>
+                    <option value="kg">{{ $t('create_form.kg') }}</option>
+                    <option value="liter">{{ $t('create_form.liter') }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="terms_delivery" class="form-label">{{ $t('create_form.terms_delivery') }}</label>
+                <select class="form-select" id="terms_delivery" v-model="terms_delivery" required>
+                  <option v-for="term in incoterms" :key="term.abbreviation" :value="term.abbreviation">
+                    {{ term.abbreviation }} - {{ term.description }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="country" class="form-label">{{ $t('create_form.country') }}</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="country"
+                    v-model="country"
+                    readonly
+                    :placeholder="$t('create_form.country_placeholder')"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label for="region" class="form-label">{{ $t('create_form.region') }}</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="region"
+                    v-model="region"
+                    readonly
+                    :placeholder="$t('create_form.country_placeholder')"
+                  />
+                </div>
+              </div>
+
+              <div class="row mb-4">
+                <div class="col-md-6">
+                  <label for="latitude" class="form-label">{{ $t('create_form.latitude') }}</label>
+                  <input type="text" class="form-control" id="latitude" v-model="latitude" readonly :placeholder="$t('create_form.latitude_placeholder')" />
+                </div>
+                <div class="col-md-6">
+                  <label for="longitude" class="form-label">{{ $t('create_form.longitude') }}</label>
+                  <input type="text" class="form-control" id="longitude" v-model="longitude" readonly :placeholder="$t('create_form.latitude_placeholder')" />
+                </div>
+              </div>
+
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">{{ $t('create_form.submit') }}</button>
+              </div>
+            </form>
           </div>
-          <div v-if="errorMessage" class="alert alert-danger" role="alert">
-            {{ errorMessage }}
-          </div>
-          <div class="mb-3 row">
-            <div class="col-md-6">
-              <label for="offer_type" class="form-label">{{ $t( 'create_form.offer_type' ) }}</label>
-              <select class="form-control" id="offer_type" v-model="offer_type" required>
-                <option value="sell">{{ $t( 'create_form.sell' ) }}</option>
-                <option value="buy">{{ $t( 'create_form.buy' ) }}</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="category_id" class="form-label">{{ $t( 'create_form.category' ) }}</label>
-            <select class="form-control" id="category_id" v-model="category_id" required>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ getCategoryName(category) }}
-              </option>
-            </select>
-            </div>
-          </div>
-          <div class="mb-3">
-              <label for="title" class="form-label">{{ $t( 'common_text.title' ) }}</label>
-              <input type="text" class="form-control" id="title" v-model="title" readonly required>
-          </div>
-          <div class="mb-3">
-            <label for="description" class="form-label">{{ $t( 'common_text.description' ) }}</label>
-            <textarea 
-              type="text" 
-              maxlength="600"
-              rows="4"
-              class="form-control" 
-              id="description" 
-              v-model="description" 
-              :placeholder="$t('create_form.description_placeholder')"
-              />
-          </div>
-          <div class="mb-3 row">
-            <div class="col-md-6">
-              <label for="price" class="form-label">{{ $t( 'common_text.price' ) }}</label>
-              <input type="number" class="form-control" id="price" v-model="price" step="0.01" required>
-            </div>
-            <div class="col-md-6">
-              <label for="currency" class="form-label">{{ $t( 'common_text.currency' ) }}</label>
-              <select class="form-control" id="currency" v-model="currency" required>
-                <option value="UAH">UAH</option>
-                <option value="EUR">EUR</option>
-                <option value="USD">USD</option>
-              </select>
-            </div>
-          </div>
-          <div class="mb-3 row">
-            <div class="col-md-6">
-              <label for="amount" class="form-label">{{ $t( 'create_form.amount' ) }}</label>
-              <input type="number" class="form-control" id="amount" v-model="amount" required>
-            </div>
-            <div class="col-md-6">
-              <label for="measure" class="form-label">{{ $t( 'create_form.measure' ) }}</label>
-              <select class="form-control" id="measure" v-model="measure" required>
-                <option value="metric ton">{{ $t( 'create_form.metric_ton' ) }}</option>
-                <option value="kg">{{ $t( 'create_form.kg' ) }}</option>
-                <option value="liter">{{ $t( 'create_form.liter' ) }}</option>
-                <!-- Add more options as needed -->
-              </select>
-            </div>
-          </div>
-          <div class="mb-3 row">
-            <div class="col-md-6">
-              <label for="terms_delivery" class="form-label">{{ $t( 'create_form.terms_delivery' ) }}</label>
-              <select class="form-control" id="terms_delivery" v-model="terms_delivery" required>
-                <option v-for="term in incoterms" :key="term.abbreviation" :value="term.abbreviation">
-                  {{ term.abbreviation }} - {{ term.description }}
-                </option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="country" class="form-label">{{ $t( 'create_form.country' ) }}</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="country" 
-                v-model="country" readonly 
-                :placeholder="$t('create_form.country_placeholder')" />
-            </div>
-          </div>
-          <div class="mb-3">
-            <label for="region" class="form-label">{{ $t( 'create_form.region' ) }}</label>
-            <input type="text" class="form-control" id="region" v-model="region" readonly :placeholder="$t('create_form.country_placeholder')" />
-          </div>
-          <div class="mb-3 row">
-            <div class="col-md-6">
-              <label for="latitude" class="form-label">{{ $t( 'create_form.latitude' ) }}</label>
-              <input type="text" class="form-control" id="latitude" v-model="latitude" readonly :placeholder="$t('create_form.latitude_placeholder')" />
-            </div>
-            <div class="col-md-6">
-              <label for="longitude" class="form-label">{{ $t( 'create_form.longitude' ) }}</label>
-              <input type="text" class="form-control" id="longitude" v-model="longitude" readonly :placeholder="$t('create_form.latitude_placeholder')" />
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary">{{ $t( 'create_form.submit' ) }}</button>
-        </form>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+// ... (your existing script content, just ensure the 'measure' list includes kg and liter)
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
@@ -129,7 +158,7 @@ export default {
     return {
       category_id: null,
       categories: [],
-      title: this.offer_type === '',
+      title: '', // Initialize as empty, it will be computed
       description: '',
       price: 0,
       currency: 'UAH',
@@ -148,7 +177,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(['user']),
+    ...mapState(['user', 'currentLocale']), // Ensure currentLocale is mapped
     computedTitle() {
       const category = this.categories.find(c => c.id === this.category_id);
       const offerType = this.offer_type === 'sell' ? this.$t('create_form.sell') : this.$t('create_form.buy');
@@ -180,7 +209,7 @@ export default {
     category_id() {
       this.title = this.computedTitle;
     },
-    currentLocale() {
+    currentLocale() { // Watch for locale changes to update title
       this.title = this.computedTitle;
     },
   },
@@ -314,10 +343,64 @@ export default {
 };
 </script>
 
-<style>
+<style scoped> /* Added 'scoped' to prevent global style leakage */
+.container {
+  max-width: 1200px;
+}
+
 .map {
   width: 100%;
-  /* height: 500px; */
-  margin-bottom: 20px;
+  height: 400px; /* Adjusted height for better visual balance */
+}
+
+.card {
+  border: none;
+  border-radius: 0.75rem; /* Slightly rounded corners for a softer look */
+}
+
+.card-body {
+  padding: 2rem; /* More internal padding */
+}
+
+.form-label {
+  font-weight: 600; /* Make labels a bit bolder */
+  margin-bottom: 0.5rem; /* Add some space below labels */
+  color: #343a40; /* Darker text for labels */
+}
+
+.form-control,
+.form-select {
+  border-radius: 0.35rem; /* Slightly rounded input fields */
+  border-color: #ced4da; /* A standard border color */
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #80bdff; /* Bootstrap's default focus color */
+  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); /* Bootstrap's default focus shadow */
+}
+
+.btn-primary {
+  background-color: #007bff; /* Bootstrap primary blue */
+  border-color: #007bff;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out; /* Smooth transition on hover */
+}
+
+.btn-primary:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  border-color: #004085;
+}
+
+.alert {
+  margin-bottom: 1.5rem; /* Space below alerts */
+}
+
+/* Specific styles for the form card background */
+.col-lg-6 > .card:last-child { /* Targets the card containing the form */
+  background-color: #f8f9fa; /* Light grey background for the form area */
+}
+
+.text-center {
+  text-align: center;
 }
 </style>
