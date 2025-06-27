@@ -73,9 +73,14 @@
     <div class="filter-group country-group">
       <label for="country-filter">{{ $t('common_text.country') }}:</label>
       <select id="country-filter" v-model="currentSelectedCountry" @change="applyFilters">
-        <option value="">{{ $t('common_text.allCountries') }}</option>
-        <option value="Ukraine">Ukraine</option>
-        <!-- Add more countries dynamically if available from backend -->
+        <option value="all">{{ $t('common_text.allCountries') }}</option>
+        <option
+          v-for="country in countriesList"
+          :key="country.value"
+          :value="country.value"
+        >
+          {{ currentLocale === 'ua' ? country.ua_name : country.name }}
+        </option>
       </select>
     </div>
 
@@ -120,7 +125,7 @@ export default {
       currentSelectedOfferType: 'all',
       currentMinPrice: null,
       currentMaxPrice: null,
-      currentSelectedCountry: '',
+      currentSelectedCountry: 'Ukraine', // Default to 'Ukraine'
       currentSelectedCurrency: 'all', // Default to 'all' for currency filter
       currentSelectedIncoterm: '', // Default to no incoterm selected
       loadingCategories: false,
@@ -170,6 +175,17 @@ export default {
         { abbreviation: 'CIF', description: this.$t('incoterms.CIF') },
       ];
     },
+    countriesList() {
+      // You can expand this list or fetch it from an API for more comprehensive options
+      return [
+        { name: 'Ukraine', ua_name: 'Україна', value: 'Ukraine' },
+        { name: 'Poland', ua_name: 'Польща', value: 'Poland' },
+        { name: 'Germany', ua_name: 'Німеччина', value: 'Germany' },
+        { name: 'France', ua_name: 'Франція', value: 'France' },
+        { name: 'United States', ua_name: 'Сполучені Штати', value: 'United States' },
+        // Add more countries as needed
+      ];
+    },
   },
   watch: {
     // Watch for changes in initialCategoryId prop to update the internal state
@@ -183,12 +199,12 @@ export default {
         // Only apply if the current page is the map page or if we need to sync filters
         // This is primarily for the AllItemsMap component, which will read query params
         // For ItemListByCategory, the filters are driven by user interaction here.
-        if (this.$route.name === 'FilteredItemsMap') {
+        if (this.$route.name === 'FilteredItemsMap' || this.$route.name === 'ItemListByCategory') {
           this.currentSelectedCategory = newQuery.category_id || '';
           this.currentSelectedOfferType = newQuery.offer_type || 'all';
           this.currentMinPrice = newQuery.min_price ? parseFloat(newQuery.min_price) : null;
           this.currentMaxPrice = newQuery.max_price ? parseFloat(newQuery.max_price) : null;
-          this.currentSelectedCountry = newQuery.country || '';
+          this.currentSelectedCountry = newQuery.country || 'Ukraine'; // Set default if not in query
           this.currentSelectedCurrency = newQuery.currency || 'all';
           this.currentSelectedIncoterm = newQuery.incoterm || '';
           // Emit the updated filters to the parent component
@@ -240,47 +256,47 @@ export default {
       console.log('Filters applied in ItemFilter:', this.currentFilterParams);
       // Emit the current filter parameters to the parent component
       this.$emit('filters-changed', this.currentFilterParams);
+
+      // Update route query parameters
+      this.$router.push({
+        name: this.$route.name, // Keep the current route name
+        query: {
+          ...this.$route.query, // Preserve existing query parameters
+          ...this.currentFilterParams, // Add/overwrite with current filter parameters
+          // Ensure null or empty values are removed from the URL if they mean "all" or "not set"
+          category_id: this.currentSelectedCategory || undefined,
+          offer_type: this.currentSelectedOfferType === 'all' ? undefined : this.currentSelectedOfferType,
+          min_price: this.currentMinPrice === null ? undefined : this.currentMinPrice,
+          max_price: this.currentMaxPrice === null ? undefined : this.currentMaxPrice,
+          country: this.currentSelectedCountry === '' ? undefined : this.currentSelectedCountry,
+          currency: this.currentSelectedCurrency === 'all' ? undefined : this.currentSelectedCurrency,
+          incoterm: this.currentSelectedIncoterm === '' ? undefined : this.currentSelectedIncoterm,
+        },
+      }).catch(err => {
+        // Handle navigation errors, e.g., redundant navigation to the same route
+        if (err.name !== 'NavigationDuplicated') {
+          console.error("Router push error:", err);
+        }
+      });
     },
     clearFilters() {
       this.currentSelectedCategory = this.initialCategoryId; // Reset to initial category from prop
       this.currentSelectedOfferType = 'all';
       this.currentMinPrice = null;
       this.currentMaxPrice = null;
-      this.currentSelectedCountry = '';
+      this.currentSelectedCountry = 'Ukraine'; // Reset to default 'Ukraine'
       this.currentSelectedCurrency = 'all'; // Reset currency filter
       this.currentSelectedIncoterm = ''; // Reset incoterm filter
       console.log('Filters cleared in ItemFilter');
-      // Emit cleared filters to parent component
-      this.$emit('filters-changed', {
-        category_id: this.initialCategoryId,
-        offer_type: 'all',
-        min_price: null,
-        max_price: null,
-        country: '',
-        currency: 'all',
-        incoterm: '',
-      });
-      // Optionally, you can also reset the route query parameters if needed
-      this.$router.push({
-        name: this.$route.name,
-        query: {
-          category_id: this.initialCategoryId,
-          offer_type: 'all',
-          min_price: null,
-          max_price: null,
-          country: '',
-          currency: 'all',
-          incoterm: '',
-        },
-      });
-      // Call applyFilters to emit the cleared filters
-      this.applyFilters(); // Emit cleared filters
+      // Call applyFilters to emit the cleared filters and update the route
+      this.applyFilters();
     },
   },
 };
 </script>
 
 <style scoped>
+/* Your existing styles remain here */
 .filters-container {
   display: flex;
   flex-direction: row;
