@@ -1,69 +1,17 @@
 <template>
   <div id="app">
-    <nav class="navbar navbar-expand-lg navbar-light"  style="background-color:aquamarine;">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="#">Graintrade.Info</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <router-link class="nav-link" to="/">{{ $t('navbar.home') }}</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/items/new">{{ $t('navbar.addNew') }}</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link to="/map/all-items" class="nav-link">{{ $t('navbar.viewAllItemsOnMap') }}</router-link>
-            </li>
-            <li class="nav-item" v-if="isAuthenticated">
-              <router-link class="nav-link" to="/tariffs">{{ $t('navbar.tariffs') }}</router-link>
-            </li>
-          </ul>
-          <ul class="navbar-nav">
-            <li class="nav-item" v-if="!isAuthenticated">
-              <router-link class="btn btn-primary me-2" to="/login">{{ $t('navbar.login') }}</router-link>
-              <router-link class="btn btn-warning me-2" to="/register">{{ $t('navbar.register') }}</router-link>
-            </li>
-            <li class="nav-item" v-if="isAuthenticated">
-              <a class="btn btn-primary me-2" href="#" @click="$router.push('/profile')">{{ $t('navbar.profile') }}</a>
-            </li>
-            <li class="nav-item" v-if="isAuthenticated">
-              <a class="btn btn-danger me-2" href="#" @click="logout">{{ $t('navbar.logout') }}</a>
-            </li>
-            <li class="nav-item">
-              <select v-mobel="currentLocale" @change="changeLocale" class="form-select">
-                <option value="ua">UA</option>
-                <option value="en">EN</option>
-              </select>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
+    <NavbarMenu />
     <router-view />
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import NavbarMenu from './components/NavbarMenu.vue'; // Adjust path as needed
 
 export default {
   name: 'App',
-  computed: {
-    ...mapState(['isAuthenticated', 'currentLocale']),
-  },
-  methods: {
-    logout() {
-      this.$store.commit('setAuthenticated', false);
-      this.$router.push('/');
-    },
-    changeLocale(event) {
-      const newLocale = event.target.value;
-      this.$store.commit('setLocale', newLocale);
-      this.$i18n.locale = newLocale;
-    },
+  components: {
+    NavbarMenu,
   },
 }
 </script>
@@ -73,7 +21,6 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* text-align: center; */
   color: #2c3e50;
   margin-top: 10px;
 }

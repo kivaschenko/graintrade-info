@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 import logging
 
 from fastapi import (
@@ -203,18 +203,34 @@ async def filter_items(
 
 
 @router.get("/items-geojson", response_model=dict, tags=["Items"])
-async def get_all_items_geojson(
-    category_id: int = 0,  # Optional category filter
+async def get_items_geojson(
+    category_id: Optional[int] = None,
+    offer_type: Optional[str] = "all",
+    min_price: Optional[int] = 0,
+    max_price: Optional[int] = 999999,
+    country: Optional[str] = "all",
+    currency: Optional[str] = "all",
+    incoterm: Optional[str] = "all",
     token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
-    """Get all items with geo information."""
+    """Get filtered items with geo information.
+    GET /items-geojson?category_id=32&offer_type=buy&min_price=12000&country=Ukraine&currency=uah&incoterm=DAP HTTP/1.1
+    """
     try:
         # Optionally, add scope check here if only authorized users can view the full map
         _, scopes = await get_current_user_id(token)
         if "view:map" not in scopes:  # Example scope check
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        items = await items_model.get_all_geo_items()
+        items = await items_model.get_filtered_items_geo_json(
+            category_id=category_id,
+            offer_type=offer_type,
+            min_price=min_price,
+            max_price=max_price,
+            country=country,
+            currency=currency,
+            incoterm=incoterm,
+        )
         return {"status": "success", "items": items}
     except Exception as e:
         logging.error(f"Error in get_all_items_geojson: {e}")
