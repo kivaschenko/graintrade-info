@@ -226,9 +226,11 @@ async def get_all_geo_items() -> dict:
 async def get_filtered_items_geo_json(
     category_id: Optional[int] = None,
     offer_type: Optional[str] = None,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
+    min_price: Optional[int] = None,
+    max_price: Optional[int] = None,
+    currency: Optional[str] = None,
     country: Optional[str] = None,
+    incoterm: Optional[str] = None,
 ) -> dict:
     conditions = ["geom IS NOT NULL"]
     query_params = []
@@ -250,9 +252,17 @@ async def get_filtered_items_geo_json(
         conditions.append(f"price <= ${param_idx}")
         query_params.append(max_price)
         param_idx += 1
-    if country:
+    if currency and currency != "all":
+        conditions.append(f"currency = ${param_idx}")
+        query_params.append(currency.upper())
+        param_idx += 1
+    if country and country != "all":
         conditions.append(f"country ILIKE ${param_idx}")
         query_params.append(country)
+        param_idx += 1
+    if incoterm and incoterm != "all":
+        conditions.append(f"terms_delivery ILIKE ${param_idx}")
+        query_params.append(incoterm)
         param_idx += 1
 
     where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
