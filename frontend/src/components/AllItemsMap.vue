@@ -14,13 +14,13 @@
       <div class="map-legend-full" v-if="mapLoaded">
         <h6>{{ $t('map.clusterSizes') }}</h6>
         <div class="legend-item">
-          <span class="circle small"></span> 1-10 {{ $t('map.tonn') }}
+          <span class="circle small"></span> 1-1000 {{ $t('map.tonn') }}
         </div>
         <div class="legend-item">
-          <span class="circle medium"></span> 11-50 {{ $t('map.tonn') }}
+          <span class="circle medium"></span> 1000 - 10000 {{ $t('map.tonn') }}
         </div>
         <div class="legend-item">
-          <span class="circle large"></span> 50+ {{ $t('map.tonn') }}
+          <span class="circle large"></span> 10000+ {{ $t('map.tonn') }}
         </div>
         <p class="legend-note">{{ $t('map.clusterAmountNote') }}</p>
       </div>
@@ -539,6 +539,7 @@ export default {
   color: #343a40;
   z-index: 10;
   border: 1px solid #e0e0e0;
+  width: 200px;
 }
 
 .map-legend-full h6 {
