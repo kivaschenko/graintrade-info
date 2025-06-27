@@ -1,9 +1,9 @@
 <template>
   <div class="filters-container">
     <div class="filter-group">
-      <label for="category-filter">{{ $t('common.category') }}:</label>
+      <label for="category-filter">{{ $t('common_text.category') }}:</label>
       <select id="category-filter" v-model="currentSelectedCategory" @change="applyFilters">
-        <option value="">{{ $t('common.allCategories') }}</option>
+        <option value="">{{ $t('common_text.allCategories') }}</option>
         <option v-for="cat in categories" :key="cat.id" :value="cat.id">
           {{ currentLocale === 'ua' ? cat.ua_name : cat.name }}
         </option>
@@ -11,48 +11,97 @@
     </div>
 
     <div class="filter-group offer-type-group">
-      <label>{{ $t('common.offerType') }}:</label>
+      <label>{{ $t('common_text.offerType') }}:</label>
       <button
         @click="setOfferType('all')"
         :class="{ 'active-filter': currentSelectedOfferType === 'all' }"
       >
-        {{ $t('common.all') }}
+        {{ $t('common_text.all') }}
       </button>
       <button
         @click="setOfferType('buy')"
         :class="{ 'active-filter': currentSelectedOfferType === 'buy' }"
       >
-        {{ $t('common.buy') }}
+        {{ $t('common_text.buy') }}
       </button>
       <button
         @click="setOfferType('sell')"
         :class="{ 'active-filter': currentSelectedOfferType === 'sell' }"
       >
-        {{ $t('common.sell') }}
+        {{ $t('common_text.sell') }}
       </button>
     </div>
 
+    <!-- Price range filter -->
     <div class="filter-group price-group">
-      <label>{{ $t('common.price') }} (USD):</label>
-      <input type="number" v-model.number="currentMinPrice" :placeholder="$t('common.from')" @input="debounceApplyFilters">
+      <label>{{ $t('common_text.price') }}:</label>
+      <input type="number" v-model.number="currentMinPrice" :placeholder="$t('common_text.from')" @input="debounceApplyFilters">
       <span class="price-separator">-</span>
-      <input type="number" v-model.number="currentMaxPrice" :placeholder="$t('common.to')" @input="debounceApplyFilters">
+      <input type="number" v-model.number="currentMaxPrice" :placeholder="$t('common_text.to')" @input="debounceApplyFilters">
     </div>
 
+    <!-- Currency filter -->
+    <div class="filter-group offer-type-group">
+      <label>{{ $t('common_text.currency') }}:</label>
+      <button
+        @click="setCurrency('all')"
+        :class="{ 'active-filter': currentSelectedCurrency === 'all' }"
+      >
+        {{ $t('common_text.all') }}
+      </button>
+      <button
+        @click="setCurrency('uah')"
+        :class="{ 'active-filter': currentSelectedCurrency === 'uah' }"
+      >
+        UAH
+      </button>
+      <button
+        @click="setCurrency('usd')"
+        :class="{ 'active-filter': currentSelectedCurrency === 'usd' }"
+      >
+        USD
+      </button>
+      <button
+        @click="setCurrency('eur')"
+        :class="{ 'active-filter': currentSelectedCurrency === 'eur' }"
+      >
+        EUR
+      </button>
+    </div>
+
+    <!-- Country filter -->
     <div class="filter-group country-group">
-      <label for="country-filter">{{ $t('common.country') }}:</label>
+      <label for="country-filter">{{ $t('common_text.country') }}:</label>
       <select id="country-filter" v-model="currentSelectedCountry" @change="applyFilters">
-        <option value="">{{ $t('common.allCountries') }}</option>
-        <option value="Ukraine">Ukraine</option>
-        <!-- Add more countries dynamically if available from backend -->
+        <option value="all">{{ $t('common_text.allCountries') }}</option>
+        <option
+          v-for="country in countriesList"
+          :key="country.value"
+          :value="country.value"
+        >
+          {{ currentLocale === 'ua' ? country.ua_name : country.name }}
+        </option>
       </select>
     </div>
-    
+
+    <!-- Incoterms filter -->
+    <div class="filter-group incoterms-group">
+      <label for="incoterms-filter">{{ $t('common_text.incoterms') }}:</label>
+      <select id="incoterms-filter" v-model="currentSelectedIncoterm" @change="applyFilters">
+        <option value="">{{ $t('common_text.allIncoterms') }}</option>
+        <option v-for="incoterm in incoterms" :key="incoterm.abbreviation" :value="incoterm.abbreviation">
+          {{ incoterm.abbreviation }} - {{ incoterm.description }}
+        </option>
+      </select>
+    </div>
+
+    <div>
     <button class="btn-apply-filters" @click="applyFilters" :disabled="loadingCategories">
-      <span v-if="loadingCategories">{{ $t('common.loading') }}...</span>
-      <span v-else>{{ $t('common.applyFilters') }}</span>
+      <span v-if="loadingCategories">{{ $t('common_text.loading') }}...</span>
+      <span v-else>{{ $t('common_text.applyFilters') }}</span>
     </button>
-    <button class="btn-clear-filters" @click="clearFilters">{{ $t('common.clearFilters') }}</button>
+    <button class="btn-clear-filters" @click="clearFilters">{{ $t('common_text.clearFilters') }}</button>
+    </div>
   </div>
 </template>
 
@@ -76,8 +125,9 @@ export default {
       currentSelectedOfferType: 'all',
       currentMinPrice: null,
       currentMaxPrice: null,
-      currentSelectedCountry: '',
-      
+      currentSelectedCountry: 'Ukraine', // Default to 'Ukraine'
+      currentSelectedCurrency: 'all', // Default to 'all' for currency filter
+      currentSelectedIncoterm: '', // Default to no incoterm selected
       loadingCategories: false,
       debounceTimeout: null,
     };
@@ -102,8 +152,40 @@ export default {
       if (this.currentSelectedCountry) {
         params.country = this.currentSelectedCountry;
       }
+      if (this.currentSelectedCurrency !== 'all') {
+        params.currency = this.currentSelectedCurrency;
+      }
+      if (this.currentSelectedIncoterm) {
+        params.incoterm = this.currentSelectedIncoterm;
+      }
       return params;
-    }
+    },
+    incoterms() {
+      return [
+        { abbreviation: 'EXW', description: this.$t('incoterms.EXW') },
+        { abbreviation: 'FCA', description: this.$t('incoterms.FCA') },
+        { abbreviation: 'CPT', description: this.$t('incoterms.CPT') },
+        { abbreviation: 'CIP', description: this.$t('incoterms.CIP') },
+        { abbreviation: 'DAP', description: this.$t('incoterms.DAP') },
+        { abbreviation: 'DPU', description: this.$t('incoterms.DPU') },
+        { abbreviation: 'DDP', description: this.$t('incoterms.DDP') },
+        { abbreviation: 'FAS', description: this.$t('incoterms.FAS') },
+        { abbreviation: 'FOB', description: this.$t('incoterms.FOB') },
+        { abbreviation: 'CFR', description: this.$t('incoterms.CFR') },
+        { abbreviation: 'CIF', description: this.$t('incoterms.CIF') },
+      ];
+    },
+    countriesList() {
+      // You can expand this list or fetch it from an API for more comprehensive options
+      return [
+        { name: 'Ukraine', ua_name: 'Україна', value: 'Ukraine' },
+        { name: 'Poland', ua_name: 'Польща', value: 'Poland' },
+        { name: 'Germany', ua_name: 'Німеччина', value: 'Germany' },
+        { name: 'France', ua_name: 'Франція', value: 'France' },
+        { name: 'United States', ua_name: 'Сполучені Штати', value: 'United States' },
+        // Add more countries as needed
+      ];
+    },
   },
   watch: {
     // Watch for changes in initialCategoryId prop to update the internal state
@@ -117,12 +199,25 @@ export default {
         // Only apply if the current page is the map page or if we need to sync filters
         // This is primarily for the AllItemsMap component, which will read query params
         // For ItemListByCategory, the filters are driven by user interaction here.
-        if (this.$route.name === 'FilteredItemsMap') {
-          this.currentSelectedCategory = newQuery.category_id || '';
+        if (this.$route.name === 'FilteredItemsMap' || this.$route.name === 'ItemListByCategory' || this.$route.name === 'AllItems') {
+          this.currentSelectedCategory = newQuery.category_id || this.$route.params.id || '';
           this.currentSelectedOfferType = newQuery.offer_type || 'all';
           this.currentMinPrice = newQuery.min_price ? parseFloat(newQuery.min_price) : null;
           this.currentMaxPrice = newQuery.max_price ? parseFloat(newQuery.max_price) : null;
-          this.currentSelectedCountry = newQuery.country || '';
+          this.currentSelectedCountry = newQuery.country || 'Ukraine'; // Set default if not in query
+          this.currentSelectedCurrency = newQuery.currency || 'all';
+          this.currentSelectedIncoterm = newQuery.incoterm || '';
+          // Emit the updated filters to the parent component
+          this.applyFilters();
+        }
+      }
+    },
+    // Watch for route param changes (specifically for category ID in path)
+    '$route.params.id': {
+      immediate: true,
+      handler(newId) {
+        if (this.$route.name === 'ItemListByCategory') {
+          this.currentSelectedCategory = newId || '';
         }
       }
     }
@@ -151,6 +246,15 @@ export default {
       this.currentSelectedOfferType = type;
       this.applyFilters();
     },
+    setCurrency(currency) {
+      this.currentSelectedCurrency = currency;
+      this.applyFilters();
+    },
+    setIncoterm(incoterm) {
+      this.currentSelectedIncoterm = incoterm;
+      this.applyFilters();
+    },
+    // Debounce the applyFilters method to prevent excessive calls
     debounceApplyFilters() {
       clearTimeout(this.debounceTimeout);
       this.debounceTimeout = setTimeout(() => {
@@ -161,22 +265,132 @@ export default {
       console.log('Filters applied in ItemFilter:', this.currentFilterParams);
       // Emit the current filter parameters to the parent component
       this.$emit('filters-changed', this.currentFilterParams);
+
+      const currentRouteName = this.$route.name;
+      const currentRouteParams = { ...this.$route.params }; // Clone existing params
+      const currentRouteQuery = { ...this.$route.query }; // Clone existing query
+
+      // Build the base query parameters for the new route
+      let newQuery = {
+        // Explicitly set filter-related query parameters, using undefined to remove them if "all" or null
+        offer_type: this.currentSelectedOfferType === 'all' ? undefined : this.currentSelectedOfferType,
+        min_price: this.currentMinPrice === null ? undefined : this.currentMinPrice,
+        max_price: this.currentMaxPrice === null ? undefined : this.currentMaxPrice,
+        country: this.currentSelectedCountry === '' ? undefined : this.currentSelectedCountry,
+        currency: this.currentSelectedCurrency === 'all' ? undefined : this.currentSelectedCurrency,
+        incoterm: this.currentSelectedIncoterm === '' ? undefined : this.currentSelectedIncoterm,
+      };
+
+      let targetRoute = {};
+
+      // Scenario 1: Current route is category-specific (e.g., /categories/:id/items)
+      if (currentRouteName === 'ItemListByCategory') {
+        const routeCategoryId = currentRouteParams.id;
+        const selectedCategoryId = this.currentSelectedCategory;
+
+        if (selectedCategoryId && String(selectedCategoryId) !== String(routeCategoryId)) {
+          // Category changed to a specific one: navigate to new category path
+          targetRoute = {
+            name: 'ItemListByCategory',
+            params: { id: selectedCategoryId },
+            query: newQuery // Other filters go into query
+          };
+        } else if (!selectedCategoryId && routeCategoryId) {
+          // Category changed to 'All Categories' from a specific category page
+          // Navigate to a general items list. Assuming 'AllItems' route for '/items'.
+          // If 'AllItems' doesn't exist, change to 'FilteredItemsMap' or your main items page.
+          targetRoute = {
+            name: 'AllItems', // Or 'FilteredItemsMap' or your main items page name
+            params: {}, // Clear category param
+            query: newQuery // Other filters go into query
+          };
+        } else {
+          // Category selected is the same as the route param, or both are 'All'
+          // Just update query parameters for the existing route
+          targetRoute = {
+            name: currentRouteName,
+            params: currentRouteParams,
+            query: newQuery
+          };
+        }
+      }
+      // Scenario 2: Current route is general (e.g., /items or /map)
+      else if (currentRouteName === 'AllItems' || currentRouteName === 'FilteredItemsMap') {
+        const selectedCategoryId = this.currentSelectedCategory;
+
+        if (selectedCategoryId) {
+          // A specific category is selected: navigate to category-specific page
+          targetRoute = {
+            name: 'ItemListByCategory',
+            params: { id: selectedCategoryId },
+            query: newQuery
+          };
+        } else {
+          // No specific category selected: remain on general page, update query
+          targetRoute = {
+            name: currentRouteName,
+            query: newQuery
+          };
+        }
+      }
+      // Fallback for other routes (e.g., if filter is used on an unrelated page)
+      else {
+          targetRoute = {
+              name: currentRouteName,
+              params: currentRouteParams,
+              query: { ...currentRouteQuery, ...newQuery } // Merge with existing query
+          };
+          if (!this.currentSelectedCategory) {
+            delete targetRoute.query.category_id; // Remove if 'all'
+          }
+      }
+
+      // Ensure category_id is not in query if it's already in params (for ItemListByCategory)
+      if (targetRoute.name === 'ItemListByCategory' && targetRoute.params.id) {
+          delete targetRoute.query.category_id;
+      }
+
+      // Clean up undefined values from the query object before pushing
+      Object.keys(targetRoute.query).forEach(key => {
+        if (targetRoute.query[key] === undefined) {
+          delete targetRoute.query[key];
+        }
+      });
+
+      this.$router.push(targetRoute).catch(err => {
+        if (err.name !== 'NavigationDuplicated') {
+          console.error("Router push error:", err);
+        }
+      });
     },
     clearFilters() {
-      this.currentSelectedCategory = this.initialCategoryId; // Reset to initial category from prop
+      // Reset all filter data properties to their initial/default values
+      this.currentSelectedCategory = this.initialCategoryId;
       this.currentSelectedOfferType = 'all';
       this.currentMinPrice = null;
       this.currentMaxPrice = null;
-      this.currentSelectedCountry = '';
-      this.applyFilters(); // Emit cleared filters
+      this.currentSelectedCountry = 'Ukraine';
+      this.currentSelectedCurrency = 'all';
+      this.currentSelectedIncoterm = '';
+
+      console.log('Filters cleared in ItemFilter');
+      // Call applyFilters to update the route and emit cleared filters
+      this.applyFilters();
     },
   },
 };
 </script>
 
 <style scoped>
+/* Your existing styles remain here */
 .filters-container {
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  align-self: center;
   flex-wrap: wrap;
   gap: 15px;
   justify-content: center;
@@ -198,6 +412,7 @@ export default {
   font-size: 0.9em;
   color: #555;
   margin-bottom: 6px;
+  margin-right: 6px;
   font-weight: 600;
 }
 
@@ -236,6 +451,7 @@ export default {
 }
 
 .offer-type-group button.active-filter {
+  flex-direction: row;
   background-color: #007bff;
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
@@ -269,6 +485,8 @@ export default {
   font-weight: 600;
   transition: all 0.2s ease-in-out;
   min-width: 120px;
+  align-self: center;
+  margin: 5px;
 }
 
 .btn-apply-filters {
