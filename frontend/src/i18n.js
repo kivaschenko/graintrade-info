@@ -48,6 +48,7 @@ const messages = {
       sell: 'Sell',
       offerType: 'Offer type',
       createdAt: 'Created at',
+      goBackToTable: 'Go back to table',
     },
     itemDetails: {
       title: 'Item Details: {title}',
@@ -246,6 +247,7 @@ const messages = {
       "sell": "Продам",
       "offerType": "Тип оголошень",
       "createdAt": "Створено",
+      "goBackToTable": "Повернутись до таблиці",
     },
     itemDetails: {
       title: 'Деталі товару: {title}',
