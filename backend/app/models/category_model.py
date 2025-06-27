@@ -1,10 +1,9 @@
 import asyncpg
-from typing import List
+from typing import List, Optional
 from ..database import database
 from ..schemas import (
     CategoryInDB,
     CategoryInResponse,
-    CategoryWithItems,
     ItemInResponse,
 )
 
@@ -85,19 +84,60 @@ async def delete(category_id: int) -> None:
 
 
 async def get_by_id_with_items(
-    category_id: int, offset: int, limit: int
+    category_id: int,
+    offset: int,
+    limit: int,
+    offer_type: Optional[str] = None,
+    min_price: Optional[int] = None,
+    max_price: Optional[int] = None,
+    currency: Optional[str] = None,
+    country: Optional[str] = None,
+    incoterm: Optional[str] = None,
 ) -> tuple[CategoryInResponse, List[ItemInResponse], int]:
+    conditions = [
+        "category_id = $1",
+    ]
+    query_params = []
+    param_idx = 4
+
+    if offer_type and offer_type != "all":
+        conditions.append(f"offer_type = ${param_idx}")
+        query_params.append(offer_type)
+        param_idx += 1
+    if min_price is not None:
+        conditions.append(f"price >= ${param_idx}")
+        query_params.append(min_price)
+        param_idx += 1
+    if max_price is not None:
+        conditions.append(f"price <= ${param_idx}")
+        query_params.append(max_price)
+        param_idx += 1
+    if currency and currency != "all":
+        conditions.append(f"currency = ${param_idx}")
+        query_params.append(currency.upper())
+        param_idx += 1
+    if country and country != "all":
+        conditions.append(f"country ILIKE ${param_idx}")
+        query_params.append(country)
+        param_idx += 1
+    if incoterm and incoterm != "all":
+        conditions.append(f"terms_delivery ILIKE ${param_idx}")
+        query_params.append(incoterm)
+        param_idx += 1
+
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
     query = """
         SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
         FROM categories_hierarchy 
         WHERE id = $1
     """
-    query2 = """
+    query2 = f"""
         SELECT 
             id, uuid, category_id, offer_type, title, description, price, currency, 
             amount, measure, terms_delivery, country, region, latitude, longitude, created_at
         FROM items
-        WHERE category_id = $1
+        {where_clause}
         ORDER BY id DESC
         OFFSET $2
         LIMIT $3
@@ -108,7 +148,7 @@ async def get_by_id_with_items(
         if row is None:
             raise ValueError("Category not found")
         category = CategoryInResponse(**row)
-        items = await conn.fetch(query2, category_id, offset, limit)
+        items = await conn.fetch(query2, category_id, offset, limit, *query_params)
         total_items_row = await conn.fetchrow(query_count, category_id)
         total_items = total_items_row["count"] if total_items_row else 0
         if items:

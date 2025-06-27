@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 import logging
 
 from fastapi import (
@@ -15,7 +15,6 @@ import jwt
 from ..schemas import (
     CategoryInDB,
     CategoryInResponse,
-    CategoryWithItems,
 )
 from ..models import category_model
 from . import JWT_SECRET
@@ -127,11 +126,25 @@ async def read_items_by_category(
     category_id: int,
     offset: int,
     limit: int,
+    offer_type: Optional[str] = "all",
+    min_price: Optional[int] = 0,
+    max_price: Optional[int] = 999999,
+    country: Optional[str] = "all",
+    currency: Optional[str] = "all",
+    incoterm: Optional[str] = "all",
     token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
     try:
         category, items, total_items = await category_model.get_by_id_with_items(
-            category_id, offset, limit
+            category_id,
+            offset,
+            limit,
+            offer_type,
+            min_price,
+            max_price,
+            currency,
+            country,
+            incoterm,
         )
         if category is None:
             logging.error(f"Category with id {category_id} not found")
