@@ -289,7 +289,6 @@ export default {
           },
         });
         this.categories = response.data;
-        console.log('Categories fetched in ItemFilter:', this.categories);
       } catch (error) {
         console.error('Error fetching categories in ItemFilter:', error);
       } finally {
@@ -321,7 +320,6 @@ export default {
       }, 500); // Debounce for 500ms
     },
     applyFilters() {
-      console.log('Filters applied in ItemFilter:', this.currentFilterParams);
       // Emit the current filter parameters to the parent component
       this.$emit('filters-changed', this.currentFilterParams);
 
@@ -438,8 +436,6 @@ export default {
       this.currentSelectedMeasure = 'all';
       // Reset incoterm filter
       this.currentSelectedIncoterm = '';
-
-      console.log('Filters cleared in ItemFilter');
       // Call applyFilters to update the route and emit cleared filters
       this.applyFilters();
     },
