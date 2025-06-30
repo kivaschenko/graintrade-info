@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ItemTable :items="items" />
+    <!-- <ItemTable :items="items" /> -->
     <CategoryCards />
     <FilterItemsForm />
   </div>
@@ -9,14 +9,14 @@
 <script>
 import publicApi from '@/services/publicApi';
 import CategoryCards from './CategoryCards.vue';
-import ItemTable from './ItemTable.vue';
+// import ItemTable from './ItemTable.vue';
 // import FilterItemsForm from './FilterItemsForm.vue';
 
 export default {
   name: 'HomePage',
   components: {
     CategoryCards,
-    ItemTable,
+    // ItemTable,
     // FilterItemsForm,
   },
   data() {
