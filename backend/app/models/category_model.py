@@ -157,9 +157,6 @@ async def get_by_id_with_items(
         OFFSET $2
         LIMIT $3
     """
-    print(
-        f"Executing query: {query2} with params: {category_id}, {offset}, {limit}, {query_params}"
-    )
     query_count = "SELECT COUNT(*) FROM items WHERE category_id = $1"
     async with database.pool.acquire() as conn:
         row = await conn.fetchrow(query, category_id)
