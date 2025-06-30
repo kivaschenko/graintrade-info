@@ -114,8 +114,8 @@
         {{ $t('create_form.liter') }}
       </button>
       <button
-        @click="setMeasure('ton')"
-        :class="{ 'active-filter': currentSelectedMeasure === 'ton' }"
+        @click="setMeasure('metric ton')"
+        :class="{ 'active-filter': currentSelectedMeasure === 'metric ton' }"
       >
         {{ $t('create_form.metric_ton') }}
       </button>

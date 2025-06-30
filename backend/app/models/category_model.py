@@ -92,6 +92,9 @@ async def get_by_id_with_items(
     max_price: Optional[int] = None,
     currency: Optional[str] = None,
     country: Optional[str] = None,
+    min_amount: Optional[int] = None,
+    max_amount: Optional[int] = None,
+    measure: Optional[str] = None,
     incoterm: Optional[str] = None,
 ) -> tuple[CategoryInResponse, List[ItemInResponse], int]:
     conditions = [
@@ -120,6 +123,18 @@ async def get_by_id_with_items(
         conditions.append(f"country ILIKE ${param_idx}")
         query_params.append(country)
         param_idx += 1
+    if min_amount is not None:
+        conditions.append(f"amount >= ${param_idx}")
+        query_params.append(min_amount)
+        param_idx += 1
+    if max_amount is not None:
+        conditions.append(f"amount <= ${param_idx}")
+        query_params.append(max_amount)
+        param_idx += 1
+    if measure and measure != "all":
+        conditions.append(f"measure = ${param_idx}")
+        query_params.append(measure)
+        param_idx += 1
     if incoterm and incoterm != "all":
         conditions.append(f"terms_delivery ILIKE ${param_idx}")
         query_params.append(incoterm)
@@ -142,6 +157,9 @@ async def get_by_id_with_items(
         OFFSET $2
         LIMIT $3
     """
+    print(
+        f"Executing query: {query2} with params: {category_id}, {offset}, {limit}, {query_params}"
+    )
     query_count = "SELECT COUNT(*) FROM items WHERE category_id = $1"
     async with database.pool.acquire() as conn:
         row = await conn.fetchrow(query, category_id)
