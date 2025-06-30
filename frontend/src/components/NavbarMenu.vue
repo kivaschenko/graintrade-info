@@ -61,7 +61,8 @@ export default {
   },
   methods: {
     logout() {
-      this.$store.commit('setAuthenticated', false);
+      this.$store.dispatch('logout'); // Dispatch logout action
+      this.$store.commit('setLocale', 'ua'); // Reset locale to default on logout
       this.$router.push('/');
       this.collapseNavbar(); // Collapse navbar after logout
     },
