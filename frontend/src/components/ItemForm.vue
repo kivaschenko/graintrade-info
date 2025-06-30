@@ -16,13 +16,6 @@
         <div class="card h-100 shadow-sm">
           <div class="card-body">
             <form @submit.prevent="createItem">
-              <div v-if="successMessage" class="alert alert-success" role="alert">
-                {{ successMessage }}
-              </div>
-              <div v-if="errorMessage" class="alert alert-danger" role="alert">
-                {{ errorMessage }}
-              </div>
-
               <div class="mb-3">
                 <label for="offer_type" class="form-label">{{ $t('create_form.offer_type') }}</label>
                 <select class="form-select" id="offer_type" v-model="offer_type" required>
@@ -136,6 +129,14 @@
               <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-primary btn-lg">{{ $t('create_form.submit') }}</button>
               </div>
+
+              <div v-if="successMessage" class="alert alert-success" role="alert">
+                {{ successMessage }}
+              </div>
+              <div v-if="errorMessage" class="alert alert-danger" role="alert">
+                {{ errorMessage }}
+              </div>
+
             </form>
           </div>
         </div>
@@ -219,8 +220,12 @@ export default {
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [31.946946, 49.305825],
-      zoom: 6,
+      zoom: 5,
+      maxZoom: 10,
+      minZoom: 2,
     });
+    this.map.addControl(new mapboxgl.NavigationControl());
+    this.map.addControl(new mapboxgl.FullscreenControl());
 
     const geocoder = new MapboxGeocoder({
       accessToken: mapboxgl.accessToken,
