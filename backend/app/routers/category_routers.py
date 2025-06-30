@@ -131,6 +131,9 @@ async def read_items_by_category(
     max_price: Optional[int] = 999999,
     country: Optional[str] = "all",
     currency: Optional[str] = "all",
+    min_amount: Optional[int] = 0,
+    max_amount: Optional[int] = 999999,
+    measure: Optional[str] = "all",
     incoterm: Optional[str] = "all",
     token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
@@ -144,6 +147,9 @@ async def read_items_by_category(
             max_price,
             currency,
             country,
+            min_amount,
+            max_amount,
+            measure,
             incoterm,
         )
         if category is None:

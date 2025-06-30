@@ -84,6 +84,43 @@
       </select>
     </div>
 
+    <!-- Amount filter -->
+    <div class="filter-group price-group">
+      <label>{{ $t('common_text.amount') }}:</label>
+      <input type="number" v-model.number="currentMinAmount" :placeholder="$t('common_text.from')" @input="debounceApplyFilters">
+      <span class="price-separator">-</span>
+      <input type="number" v-model.number="currentMaxAmount" :placeholder="$t('common_text.to')" @input="debounceApplyFilters">
+    </div>
+
+    <!-- Measure filter -->
+    <div class="filter-group offer-type-group">
+      <label>{{ $t('create_form.measure') }}:</label>
+      <button
+        @click="setMeasure('all')"
+        :class="{ 'active-filter': currentSelectedMeasure === 'all' }"
+      >
+        {{ $t('common_text.all') }}
+      </button>
+      <button
+        @click="setMeasure('kg')"
+        :class="{ 'active-filter': currentSelectedMeasure === 'kg' }"
+      >
+        {{ $t('create_form.kg') }}
+      </button>
+      <button
+        @click="setMeasure('liter')"
+        :class="{ 'active-filter': currentSelectedMeasure === 'l' }"
+      >
+        {{ $t('create_form.liter') }}
+      </button>
+      <button
+        @click="setMeasure('metric ton')"
+        :class="{ 'active-filter': currentSelectedMeasure === 'metric ton' }"
+      >
+        {{ $t('create_form.metric_ton') }}
+      </button>
+    </div>
+
     <!-- Incoterms filter -->
     <div class="filter-group incoterms-group">
       <label for="incoterms-filter">{{ $t('common_text.incoterms') }}:</label>
@@ -125,9 +162,12 @@ export default {
       currentSelectedOfferType: 'all',
       currentMinPrice: null,
       currentMaxPrice: null,
-      currentSelectedCountry: 'Ukraine', // Default to 'Ukraine'
+      currentSelectedCountry: 'all', // Default to 'all' for country filter
       currentSelectedCurrency: 'all', // Default to 'all' for currency filter
       currentSelectedIncoterm: '', // Default to no incoterm selected
+      currentMinAmount: null,
+      currentMaxAmount: null,
+      currentSelectedMeasure: 'all', // Default to 'all' for measure filter
       loadingCategories: false,
       debounceTimeout: null,
     };
@@ -157,6 +197,15 @@ export default {
       }
       if (this.currentSelectedIncoterm) {
         params.incoterm = this.currentSelectedIncoterm;
+      }
+      if (this.currentMinAmount !== null && this.currentMinAmount !== '') {
+        params.min_amount = this.currentMinAmount;
+      }
+      if (this.currentMaxAmount !== null && this.currentMaxAmount !== '') {
+        params.max_amount = this.currentMaxAmount;
+      }
+      if (this.currentSelectedMeasure !== 'all') {
+        params.measure = this.currentSelectedMeasure;
       }
       return params;
     },
@@ -204,8 +253,13 @@ export default {
           this.currentSelectedOfferType = newQuery.offer_type || 'all';
           this.currentMinPrice = newQuery.min_price ? parseFloat(newQuery.min_price) : null;
           this.currentMaxPrice = newQuery.max_price ? parseFloat(newQuery.max_price) : null;
-          this.currentSelectedCountry = newQuery.country || 'Ukraine'; // Set default if not in query
+          this.currentSelectedCountry = newQuery.country || 'all'; // Set default if not in query
           this.currentSelectedCurrency = newQuery.currency || 'all';
+          this.currentMinAmount = newQuery.min_amount ? parseFloat(newQuery.min_amount) : null;
+          this.currentMaxAmount = newQuery.max_amount ? parseFloat(newQuery.max_amount) : null;
+          this.currentSelectedMeasure = newQuery.measure || 'all'; // Default to 'all' if not specified
+          // Handle incoterm filter
+          // If incoterm is not in query, default to empty string
           this.currentSelectedIncoterm = newQuery.incoterm || '';
           // Emit the updated filters to the parent component
           this.applyFilters();
@@ -235,7 +289,6 @@ export default {
           },
         });
         this.categories = response.data;
-        console.log('Categories fetched in ItemFilter:', this.categories);
       } catch (error) {
         console.error('Error fetching categories in ItemFilter:', error);
       } finally {
@@ -254,6 +307,11 @@ export default {
       this.currentSelectedIncoterm = incoterm;
       this.applyFilters();
     },
+    setMeasure(measure) {
+      this.currentSelectedMeasure = measure;
+      this.applyFilters();
+    },
+
     // Debounce the applyFilters method to prevent excessive calls
     debounceApplyFilters() {
       clearTimeout(this.debounceTimeout);
@@ -262,7 +320,6 @@ export default {
       }, 500); // Debounce for 500ms
     },
     applyFilters() {
-      console.log('Filters applied in ItemFilter:', this.currentFilterParams);
       // Emit the current filter parameters to the parent component
       this.$emit('filters-changed', this.currentFilterParams);
 
@@ -278,6 +335,9 @@ export default {
         max_price: this.currentMaxPrice === null ? undefined : this.currentMaxPrice,
         country: this.currentSelectedCountry === '' ? undefined : this.currentSelectedCountry,
         currency: this.currentSelectedCurrency === 'all' ? undefined : this.currentSelectedCurrency,
+        min_amount: this.currentMinAmount === null ? undefined : this.currentMinAmount,
+        max_amount: this.currentMaxAmount === null ? undefined : this.currentMaxAmount,
+        measure: this.currentSelectedMeasure === 'all' ? undefined : this.currentSelectedMeasure,
         incoterm: this.currentSelectedIncoterm === '' ? undefined : this.currentSelectedIncoterm,
       };
 
@@ -371,9 +431,11 @@ export default {
       this.currentMaxPrice = null;
       this.currentSelectedCountry = 'Ukraine';
       this.currentSelectedCurrency = 'all';
+      this.currentMinAmount = null;
+      this.currentMaxAmount = null;
+      this.currentSelectedMeasure = 'all';
+      // Reset incoterm filter
       this.currentSelectedIncoterm = '';
-
-      console.log('Filters cleared in ItemFilter');
       // Call applyFilters to update the route and emit cleared filters
       this.applyFilters();
     },
