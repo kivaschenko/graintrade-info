@@ -68,7 +68,6 @@ export default {
   },
   data() {
     let currUser = localStorage.getItem('user');
-    console.log("Current User:", currUser);
     let currentUserId = null;
     if (currUser) {
       try {
@@ -123,7 +122,7 @@ export default {
       mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
       this.map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/standard',
+        style: 'mapbox://styles/mapbox/streets-v12',
         config: {
           basemap: {
             theme: 'monochrome',
@@ -131,7 +130,16 @@ export default {
         },
         center: [this.item.longitude, this.item.latitude],
         zoom: 5,
+        maxZoom: 10,
+        minZoom: 2,
       });
+      this.map.on('load', () => {
+        this.map.resize();
+        this.map.setCenter([this.item.longitude, this.item.latitude]);
+        this.map.setZoom(10);
+      });
+      this.map.addControl(new mapboxgl.NavigationControl());
+      this.map.addControl(new mapboxgl.FullscreenControl());
 
       this.marker = new mapboxgl.Marker()
         .setLngLat([this.item.longitude, this.item.latitude])

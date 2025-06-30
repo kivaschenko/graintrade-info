@@ -91,7 +91,6 @@ export default {
         // JSON.stringify can be used for deep comparison, but might be overkill.
         // Simple checks for common cases like category_id change are sufficient.
         if (JSON.stringify(newParams) !== JSON.stringify(oldParams)) {
-             console.log('Filter parameters in route query changed. Re-fetching map data...');
              this.fetchAllItemsGeoJson();
         }
       },
@@ -107,16 +106,12 @@ export default {
     async fetchAllItemsGeoJson() {
       this.loadingMapData = true; // Set loading to true
       try {
-        console.log('Fetching GeoJSON with current filter params:', this.filterParams);
         const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/items-geojson`, {
           params: this.filterParams, // Pass route query params directly
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
-        
-        console.log('Raw GeoJSON API Response:', response.data);
-
         let geoJsonData;
         if (response.data && response.data.type === 'FeatureCollection' && Array.isArray(response.data.features)) {
           geoJsonData = response.data;
@@ -126,7 +121,6 @@ export default {
           console.error('Unexpected GeoJSON data structure:', response.data);
           geoJsonData = { type: 'FeatureCollection', features: [] };
         }
-
         geoJsonData.features = geoJsonData.features.map(feature => {
             if (typeof feature.geometry === 'string') {
                 try {
@@ -136,7 +130,6 @@ export default {
                     feature.geometry = null;
                 }
             }
-
             if (feature.properties && typeof feature.properties.amount !== 'number') {
                 feature.properties.amount = parseFloat(feature.properties.amount) || 0;
             }
@@ -146,10 +139,7 @@ export default {
             }
             return feature;
         }).filter(feature => feature.geometry !== null && feature.geometry.coordinates && !isNaN(feature.geometry.coordinates[0]) && !isNaN(feature.geometry.coordinates[1]));
-
-        console.log('Processed GeoJSON data for Mapbox:', geoJsonData);
         this.geoJsonData = geoJsonData;
-        
         // Update map source if it's already initialized
         if (this.map && this.map.getSource('items')) {
             this.map.getSource('items').setData(this.geoJsonData);
@@ -181,7 +171,6 @@ export default {
         this.map.remove();
         this.map = null;
       }
-
       try {
         mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
         this.map = new mapboxgl.Map({
@@ -189,11 +178,11 @@ export default {
           style: 'mapbox://styles/mapbox/light-v11',
           center: [31.946946, 49.305825],
           zoom: 3.5,
+          maxZoom: 10,
+          minZoom: 2,
         });
-
         this.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
         this.map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-
         this.map.on('load', () => {
           this.mapLoaded = true;
           if (this.geoJsonData && this.geoJsonData.features.length > 0) {
@@ -201,7 +190,6 @@ export default {
             this.addMapLayers();
             this.addMapInteractions();
             this.fitMapToBounds();
-
             this.map.on('idle', this.updateMarkers);
           } else {
             console.warn('No initial GeoJSON features to display. Map will be empty until data is loaded/filtered.');
@@ -210,7 +198,6 @@ export default {
             this.map.on('idle', this.updateMarkers);
           }
         });
-
       } catch (error) {
         console.error('Error initializing map:', error);
       }
@@ -218,11 +205,8 @@ export default {
     addMapSources() {
       if (!this.map) return;
       if (this.map.getSource('items')) {
-        console.log('Map source "items" already exists. Skipping addSource.');
         return;
       }
-
-      console.log('Adding new map source "items" with initial data:', this.geoJsonData);
       this.map.addSource('items', {
         type: 'geojson',
         data: this.geoJsonData || { type: 'FeatureCollection', features: [] },
@@ -235,14 +219,12 @@ export default {
       });
       this.map.getSource('items').on('data', (e) => {
         if (e.dataType === 'source' && e.sourceId === 'items' && e.isSourceLoaded) { 
-          console.log('Mapbox source "items" has successfully loaded data or data updated.');
           this.updateMarkers(); 
         }
       });
     },
     addMapLayers() {
       if (!this.map) return;
-      
       if (!this.map.getLayer('unclustered-point')) { // Prevent adding multiple times
         this.map.addLayer({
           id: 'unclustered-point',
@@ -263,7 +245,6 @@ export default {
     },
     addMapInteractions() {
       if (!this.map) return;
-
       this.map.off('mouseenter', 'unclustered-point'); 
       this.map.on('mouseenter', 'unclustered-point', () => {
         this.map.getCanvas().style.cursor = 'pointer';
@@ -272,34 +253,24 @@ export default {
       this.map.on('mouseleave', 'unclustered-point', () => {
         this.map.getCanvas().style.cursor = '';
       });
-
       this.map.off('click', 'unclustered-point'); 
       this.map.on('click', 'unclustered-point', (e) => {
-        console.log('Unclustered point clicked:', e);
         if (!e.features || e.features.length === 0) {
             console.warn('No features found on click.');
             return;
         }
         const coordinates = e.features[0].geometry.coordinates.slice();
         const item = JSON.parse(JSON.stringify(e.features[0].properties));
-        console.log('Clicked item (after deep copy):', item);
-
         if (this.popup) {
           this.popup.remove();
           this.popup = null;
         }
-
         const popupContent = this.getPopupHTML(item);
-        console.log('Popup content:', popupContent);
-
         this.popup = new mapboxgl.Popup({ closeOnClick: false })
           .setLngLat(coordinates)
           .setHTML(popupContent)
           .addTo(this.map);
-        console.log('Popup added to map.');
-
         this.popup.on('open', () => {
-          console.log('Popup opened event fired.');
           const popupButton = document.getElementById(`popup-view-details-${item.id}`);
           if (popupButton) {
             console.log('Popup button found. Adding click listener.');
@@ -307,33 +278,24 @@ export default {
             console.log('Popup button NOT found.');
           }
         });
-
         this.popup.on('close', () => {
-          console.log('Popup closed.');
           this.popup = null;
         });
       });
     },
     updateMarkers() {
       if (!this.map || !this.mapLoaded || !this.map.getSource('items')) {
-          console.log('Update markers skipped: Map not loaded or source not available.');
           return;
       }
-
       const newMarkers = {};
       const features = this.map.querySourceFeatures('items', {
         filter: ['has', 'point_count']
       });
-      
-      console.log('Cluster features found by querySourceFeatures (in updateMarkers):', features); 
-
       for (const feature of features) {
         const clusterId = feature.properties.cluster_id;
         const coordinates = feature.geometry.coordinates;
         const sumAmount = feature.properties.sum_amount; 
-
         let marker = this.markers[clusterId];
-
         if (!marker) {
           const el = document.createElement('div');
           el.className = 'cluster-marker';
@@ -351,9 +313,7 @@ export default {
           el.style.fontSize = `${Math.min(14, size / 2.5)}px`; 
           el.style.boxShadow = '0 0 5px rgba(0,0,0,0.3)';
           el.style.cursor = 'pointer';
-
           el.textContent = this.formatAmount(sumAmount); 
-
           el.addEventListener('click', () => {
             this.map.getSource('items').getClusterExpansionZoom(clusterId, (err, zoom) => {
               if (err) return;
@@ -363,23 +323,18 @@ export default {
               });
             });
           });
-
           marker = new mapboxgl.Marker({ element: el }).setLngLat(coordinates);
           this.markers[clusterId] = marker;
         }
-
         if (!this.markersOnScreen[clusterId]) {
           marker.addTo(this.map);
           this.markersOnScreen[clusterId] = true;
-          console.log(`Marker ${clusterId} added to map.`); 
         }
         newMarkers[clusterId] = true;
       }
-
       for (const id in this.markersOnScreen) {
         if (!newMarkers[id]) {
           this.markers[id].remove();
-          console.log(`Marker ${id} removed from map.`); 
           delete this.markers[id];
           delete this.markersOnScreen[id];
         }
@@ -396,7 +351,6 @@ export default {
       return Math.round(amount).toString(); 
     },
     getPopupHTML(item) {
-      console.log('Generating popup HTML for item:', item);
       let popupContent = `
         <div class="popup-content">
           <h5><span class="badge bg-info text-dark">${item.offer_type ? item.offer_type.toUpperCase() : ''}</span> ${item.title || ''}</h5>
@@ -416,7 +370,6 @@ export default {
           </a>
         </div>
       `;
-      console.log('Popup content:', popupContent);
       return popupContent;
     },
     fitMapToBounds() {
@@ -429,7 +382,6 @@ export default {
             });
             return;
         }
-
         const bounds = new mapboxgl.LngLatBounds();
         for (const feature of this.geoJsonData.features) {
             if (feature.geometry && feature.geometry.coordinates && 
@@ -444,7 +396,6 @@ export default {
                 padding: 50,
                 maxZoom: 10 
             });
-            console.log('Map fitted to bounds of GeoJSON data.');
         } else {
             console.warn('Bounds are empty (no valid features found), cannot fit map to features. Setting default view.');
             this.map.easeTo({
