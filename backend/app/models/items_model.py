@@ -230,6 +230,9 @@ async def get_filtered_items_geo_json(
     max_price: Optional[int] = None,
     currency: Optional[str] = None,
     country: Optional[str] = None,
+    min_amount: Optional[int] = None,
+    max_amount: Optional[int] = None,
+    measure: Optional[str] = None,
     incoterm: Optional[str] = None,
 ) -> dict:
     conditions = ["geom IS NOT NULL"]
@@ -259,6 +262,18 @@ async def get_filtered_items_geo_json(
     if country and country != "all":
         conditions.append(f"country ILIKE ${param_idx}")
         query_params.append(country)
+        param_idx += 1
+    if min_amount is not None:
+        conditions.append(f"amount >= ${param_idx}")
+        query_params.append(min_amount)
+        param_idx += 1
+    if max_amount is not None:
+        conditions.append(f"amount <= ${param_idx}")
+        query_params.append(max_amount)
+        param_idx += 1
+    if measure and measure != "all":
+        conditions.append(f"measure = ${param_idx}")
+        query_params.append(measure)
         param_idx += 1
     if incoterm and incoterm != "all":
         conditions.append(f"terms_delivery ILIKE ${param_idx}")
