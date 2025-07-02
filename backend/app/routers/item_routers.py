@@ -17,6 +17,7 @@ import jwt
 from ..schemas import (
     ItemInDB,
     ItemInResponse,
+    ItemsByUserResponse,
 )
 from ..models import items_model
 from ..service_layer import item_services
@@ -136,29 +137,55 @@ async def read_item(item_id: int, token: Annotated[str, Depends(oauth2_scheme)] 
 )
 async def delete_item_bound_to_user(
     item_id: int,
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
+    token: Annotated[
+        str, Depends(oauth2_scheme)
+    ] = "null",  # Default to 'null' if no token is provided
 ):
+    """Delete an item by its ID, only if the user has the 'delete:item' scope."""
+    if token == "null":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="No token provided"
+        )
     try:
         user_id, scopes = await get_current_user_id(token)
         if "delete:item" not in scopes:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-        await items_model.delete(user_id, item_id)
+        await items_model.delete(item_id, user_id)
         return {"status": "success", "message": "Item deleted successfully"}
     except Exception as e:
         return {"status": "error", "message": f"Something went wrong: {e}"}
 
 
 @router.get(
-    "/items-by-user/{user_id}", response_model=List[ItemInResponse], tags=["Items"]
+    "/items-by-user/{user_id}", response_model=ItemsByUserResponse, tags=["Items"]
 )
 async def read_items_by_user(
     user_id: int,
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
+    offset: int = 0,
+    limit: int = 10,
+    token: Annotated[
+        str, Depends(oauth2_scheme)
+    ] = "null",  # Default to 'null' if no token is provided,
 ):
-    _, scopes = await get_current_user_id(token)
-    if "read:item" not in scopes:
-        raise HTTPException(status.HTTP_403_FORBIDDEN)
-    return await items_model.get_items_by_user_id(user_id)
+    """Return all items created by a specific user."""
+    try:
+        if token == "null":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="No token provided"
+            )
+        _, scopes = await get_current_user_id(token)
+        if "read:item" not in scopes:
+            raise HTTPException(status.HTTP_403_FORBIDDEN)
+        items, total_items = await items_model.get_items_by_user_id(
+            user_id=user_id, offset=offset, limit=limit
+        )
+        return {"items": items, "total_items": total_items}
+    except Exception as e:
+        logging.error(f"Error read items by user_id: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
 
 
 @router.get(

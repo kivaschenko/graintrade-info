@@ -27,7 +27,7 @@ from ..schemas import (
 )
 from ..models import user_model, subscription_model
 from ..service_layer import user_services
-from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, MAP_VIEW_LIMIT
+from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -54,6 +54,7 @@ SCOPES = {
         "me",
         "create:item",
         "read:item",
+        "delete:item",
         "view:map",
     ],
     "basic": [
