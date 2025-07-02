@@ -149,7 +149,7 @@ async def delete_item_bound_to_user(
         user_id, scopes = await get_current_user_id(token)
         if "delete:item" not in scopes:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-        await items_model.delete(user_id, item_id)
+        await items_model.delete(item_id, user_id)
         return {"status": "success", "message": "Item deleted successfully"}
     except Exception as e:
         return {"status": "error", "message": f"Something went wrong: {e}"}

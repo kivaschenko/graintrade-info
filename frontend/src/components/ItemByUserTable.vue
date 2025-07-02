@@ -35,7 +35,7 @@
             <!-- <router-link :to="{ name: 'EditItem', params: { id: item.id } }" class="btn btn-primary btn-sm">
               {{ $t( 'common_text.edit' ) }} -->
             <!-- </router-link> -->
-            <button class="btn btn-danger btn-sm" @click="$emit('delete-item', item.id)">
+            <button class="btn btn-danger btn-sm" @click="deleteItem(item.id)">
               {{ $t( 'common_text.delete' ) }}
             </button>
           </td>
@@ -59,14 +59,18 @@ export default {
   methods: {
     deleteItem(itemId) {
       if (confirm(this.$t('common_text.confirmDelete'))) {
-        axios.delete(`${process.env.VUE_APP_BACKEND_URL}/items/${itemId}`)
+        axios.delete(`${process.env.VUE_APP_BACKEND_URL}/items/${itemId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },  
+          })
           .then(() => {
             this.$emit('delete-item', itemId);
-            this.$toast.success(this.$t('common_text.itemDeleted'));
+            // this.$toast.success(this.$t('common_text.itemDeleted'));
           })
           .catch(error => {
             console.error('Error deleting item:', error);
-            this.$toast.error(this.$t('common_text.itemDeleteError'));
+            // this.$toast.error(this.$t('common_text.itemDeleteError'));
           });
       }
     },
