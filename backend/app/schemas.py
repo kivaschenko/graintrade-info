@@ -77,6 +77,11 @@ class ItemInResponse(BaseModel):
         from_attributes = True
 
 
+class ItemsByUserResponse(BaseModel):
+    items: List[ItemInResponse]
+    total_items: int
+
+
 # -------------------------------
 # Category with Items schema
 
