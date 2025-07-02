@@ -161,19 +161,24 @@
             </button>
           </div>
         </div>
-        <div class="row mt-4">
-          <div class="col-md-12">
-            <item-by-user-table 
-              v-if="Array.isArray(itemByUser) && itemByUser.length > 0"
-              :items="itemByUser" 
-              :ref="itemTable"
-              @delete-item="fetchItemByUser"
-              @itemUpdated="handleItemUpdate"
-            />
-            <div v-else class="text-muted text-center">
-              {{ $t('profile.noItems') }}
-            </div>
-          </div>
+        <ItemByUserTable
+          :items="itemByUser" 
+          :ref="itemTable"
+          @delete-item="fetchItemByUser"
+          @itemUpdated="handleItemUpdate"
+        />
+        <div class="pagination-controls" v-if="totalItems > pageSize">
+          <button
+            :disabled="page === 1"
+            @click="handlePageChange(page -1)"
+            class="btn btn-outline-secondary btn-sm"
+          >&lt; Prev</button>
+          <span> {{ page }} / {{ Math.ceil(totalItems /pageSize) }}</span>
+          <button
+            :disabled="page * pageSize >= totalItems"
+            @click="handlePageChange(page + 1)"
+            class="btn btn-outline-secondary btn-sm"
+          >Next &gt;</button>
         </div>
       </div>
     </div>
@@ -216,7 +221,14 @@ export default {
         // navigation_count: 0,
         is_active: false
       },
-      itemByUser: []
+      itemByUser: [],
+
+      // Pagination state
+      totalItems: 0,
+      page: 1,
+      pageSize: 10,
+
+      loadingItems: false,
     }
   },
   computed: {
@@ -290,9 +302,19 @@ export default {
       this.$router.get('/tarifs');
     },
     async fetchItemByUser() {
+      this.loadingItems = true;
       try {
-        const response = await api.get(`/items-by-user/${this.user.id}`);
-        this.itemByUser = response.data;
+        const params = {
+          offset: (this.page - 1) * this.pageSize,
+          limit: this.pageSize
+        };
+        const response = await api.get(`/items-by-user/${this.user.id}`, { params }, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          }
+        });
+        this.itemByUser = response.data.items || [];
+        this.totalItems = response.data.total_items || 0;
         console.log('Items by user:', this.itemByUser);
       } catch (error) {
         console.error('Error fetching items by user:', error);
@@ -302,6 +324,10 @@ export default {
     },
     async handleItemUpdate() {
       // This method can be used to refresh items after an update
+      await this.fetchItemByUser();
+    },
+    async handlePageChange(newPage) {
+      this.page = newPage;
       await this.fetchItemByUser();
     }
   },
@@ -355,5 +381,39 @@ export default {
 .progress-bar {
   line-height: 25px;
   font-weight: bold;
+}
+
+/* Pagination controls (from original ItemListByCategory) */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.pagination-controls button {
+  min-width: 70px;
+  margin: 0 4px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid #ced4da;
+  color:#333;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pagination-controls button:disabled {
+  background: #e9ecef;
+  color: #aaa;
+  border-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.pagination-controls button:not(:disabled):hover {
+  background: #007bff;
+  color: #fff;
+  border-color: #007bff;
 }
 </style>
