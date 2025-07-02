@@ -166,6 +166,8 @@
             <item-by-user-table 
               v-if="Array.isArray(itemByUser) && itemByUser.length > 0"
               :items="itemByUser" 
+              :ref="itemTable"
+              @delete-item="fetchItemByUser"
               @itemUpdated="handleItemUpdate"
             />
             <div v-else class="text-muted text-center">
