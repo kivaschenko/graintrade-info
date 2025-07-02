@@ -161,6 +161,18 @@
             </button>
           </div>
         </div>
+        <div class="row mt-4">
+          <div class="col-md-12">
+            <item-by-user-table 
+              v-if="Array.isArray(itemByUser) && itemByUser.length > 0"
+              :items="itemByUser" 
+              @itemUpdated="handleItemUpdate"
+            />
+            <div v-else class="text-muted text-center">
+              {{ $t('profile.noItems') }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -169,9 +181,13 @@
 <script>
 import { mapState } from 'vuex';
 import api from '@/services/api';
+import ItemByUserTable from './ItemByUserTable.vue';
 
 export default {
   name: 'UserProfile',
+  components: {
+    ItemByUserTable
+  },
   data() {
     return {
       isLoading: false,
@@ -194,8 +210,11 @@ export default {
         items_count: 0,
         map_views: 0,
         tarif_scope: '',
+        // geo_search_count: 0,
+        // navigation_count: 0,
         is_active: false
-      }
+      },
+      itemByUser: []
     }
   },
   computed: {
@@ -242,16 +261,46 @@ export default {
           throw new Error('User ID is not available');
         }
         const response = await api.get(`/subscriptions/usage/${this.user.id}`);
-        this.usage = response.data;
+        this.usage = response.data || {
+          items_count: 0,
+          map_views: 0,
+          geo_search_count: 0,
+          navigation_count: 0,
+          tarif_scope: '',
+          is_active: false
+        };
         console.log('Usage data:', this.usage);
       } catch (error) {
         console.error('Error fetching usage data:', error);
         this.error = 'Failed to load usage data';
+        this.usage = {
+          items_count: 0,
+          map_views: 0,
+          geo_search_count: 0,
+          navigation_count: 0,
+          tarif_scope: '',
+          is_active: false
+        };
       }
     },
     async upgradePlan() {
       // Implement upgrade logic here
       this.$router.get('/tarifs');
+    },
+    async fetchItemByUser() {
+      try {
+        const response = await api.get(`/items-by-user/${this.user.id}`);
+        this.itemByUser = response.data;
+        console.log('Items by user:', this.itemByUser);
+      } catch (error) {
+        console.error('Error fetching items by user:', error);
+        this.itemByUser = [];
+        this.error = 'Failed to load items';
+      }
+    },
+    async handleItemUpdate() {
+      // This method can be used to refresh items after an update
+      await this.fetchItemByUser();
     }
   },
   async created() {
@@ -260,7 +309,8 @@ export default {
       try {
         await this.fetchUserData();
         await this.fetchSubscription(),
-        await this.fetchUsageData()
+        await this.fetchUsageData(),
+        await this.fetchItemByUser();
       } catch (error) {
         console.error('Error during created lifecycle:', error);
         this.error = 'Failed to load data';

@@ -80,7 +80,9 @@ async def delete(item_id: int, user_id: int) -> None:
 
 async def get_items_by_user_id(user_id: int) -> List[ItemInResponse]:
     query = """
-        SELECT i.id, i.uuid, i.category_id, i.offer_type, i.title, i.description, i.price, i.currency, i.amount, i.measure, i.terms_delivery, i.country, i.region, i.latitude, i.longitude, i.created_at
+        SELECT i.id, i.uuid, i.category_id, i.offer_type, i.title, i.description, 
+        i.price, i.currency, i.amount, i.measure, i.terms_delivery, i.country, 
+        i.region, i.latitude, i.longitude, i.created_at
         FROM items i
         JOIN items_users iu ON i.id = iu.item_id
         WHERE iu.user_id = $1

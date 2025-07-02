@@ -136,8 +136,15 @@ async def read_item(item_id: int, token: Annotated[str, Depends(oauth2_scheme)] 
 )
 async def delete_item_bound_to_user(
     item_id: int,
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
+    token: Annotated[
+        str, Depends(oauth2_scheme)
+    ] = "null",  # Default to 'null' if no token is provided
 ):
+    """Delete an item by its ID, only if the user has the 'delete:item' scope."""
+    if token == "null":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="No token provided"
+        )
     try:
         user_id, scopes = await get_current_user_id(token)
         if "delete:item" not in scopes:
@@ -153,8 +160,15 @@ async def delete_item_bound_to_user(
 )
 async def read_items_by_user(
     user_id: int,
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
+    token: Annotated[
+        str, Depends(oauth2_scheme)
+    ] = "null",  # Default to 'null' if no token is provided,
 ):
+    """Return all items created by a specific user."""
+    if token == "null":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="No token provided"
+        )
     _, scopes = await get_current_user_id(token)
     if "read:item" not in scopes:
         raise HTTPException(status.HTTP_403_FORBIDDEN)
