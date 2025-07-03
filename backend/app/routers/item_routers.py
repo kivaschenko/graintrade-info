@@ -93,20 +93,35 @@ async def create_item(
     return new_item
 
 
-@router.get(
-    "/items", response_model=List[ItemInResponse], status_code=200, tags=["Items"]
-)
+@router.get("/items", status_code=200, tags=["Items"])
 async def read_items(
     offset: int = 0,
     limit: int = 10,
+    token: Annotated[str, Depends(oauth2_scheme)] = 'null',
 ):
-    return await items_model.get_all(offset=offset, limit=limit)
+    """Get all items with count value"""
+    try:
+        # Add map access permission check
+        if token != 'null':
+            _, scopes = await get_current_user_id(token)
+            has_map_access = 'view:map' in scopes
+        else:
+            has_map_access = False
+        # Get items and count value
+        items, total_items = await items_model.get_all(offset=offset, limit=limit)
+        print(f"items: {items}, total_items: {total_items}")
+        return {"items": items, "total_items": total_items, "has_map_access": has_map_access}
+    except Exception as e:
+        logging.error(f"Error in read_items: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
 @router.get(
     "/items/{item_id}", response_model=ItemInResponse, status_code=200, tags=["Items"]
 )
-async def read_item(item_id: int, token: Annotated[str, Depends(oauth2_scheme)] = None):
+async def read_item(
+    item_id: int, token: Annotated[str, Depends(oauth2_scheme)] = "null"
+):
     """Return certain item's info."""
     try:
         db_item = await items_model.get_by_id(item_id)
