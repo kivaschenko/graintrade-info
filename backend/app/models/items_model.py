@@ -9,7 +9,7 @@ logging.basicConfig(
 )
 
 
-async def get_all(offset: int = 0, limit: int = 10) -> List[ItemInResponse]:
+async def get_all(offset: int = 0, limit: int = 10) -> Tuple[List[ItemInResponse], int]:
     """Get all items according offset and limit cause."""
     query = """
         SELECT 
@@ -20,14 +20,20 @@ async def get_all(offset: int = 0, limit: int = 10) -> List[ItemInResponse]:
         OFFSET $1
         LIMIT $2
     """
+    query_count = "SELECT COUNT(*) FROM items"
     try:
         async with database.pool.acquire() as conn:
+            total_items = await conn.fetchval(query_count)
+            if not total_items:
+                return [], 0
             rows = await conn.fetch(query, offset, limit)
-            return [ItemInResponse(**row) for row in rows]
+            items_list = [ItemInResponse(**row) for row in rows]
+            return items_list, total_items
+
     except asyncpg.exceptions.InvalidTextRepresentationError as e:
         # Handle specific error for invalid text representation
         logging.error(f"Invalid text representation error: {e}")
-        return []
+        return [], 0
 
 
 async def create(item: ItemInDB, user_id: int) -> ItemInResponse:

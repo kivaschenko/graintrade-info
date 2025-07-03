@@ -175,9 +175,9 @@ export default {
         mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
         this.map = new mapboxgl.Map({
           container: this.$refs.allItemsMapContainer,
-          style: 'mapbox://styles/mapbox/light-v11',
+          style: 'mapbox://styles/mapbox/standard',
           center: [31.946946, 49.305825],
-          zoom: 3.5,
+          zoom: 5,
           maxZoom: 14,
           minZoom: 2,
         });
@@ -394,8 +394,8 @@ export default {
         if (!bounds.isEmpty()) {
             this.map.fitBounds(bounds, {
                 padding: 50,
-                maxZoom: 14, // Adjust max zoom level as needed
-                duration: 1000 // Smooth transition 
+                maxZoom: 10, // Adjust max zoom level as needed
+                // duration: 1000 // Smooth transition 
             });
         } else {
             console.warn('Bounds are empty (no valid features found), cannot fit map to features. Setting default view.');

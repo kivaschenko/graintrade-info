@@ -1,51 +1,70 @@
 <template>
-  <div class="container mt-5">
-    <div class="row">
-      <div class="col-md-6 item-details">
-        <h3>{{ $t('itemDetails.title', { title: item.title }) }}</h3>
-        <p><strong>ID:</strong> {{ item.uuid }}</p>
-        <p><strong>{{ $t('common_text.type') }}:</strong> {{ $t(`offer_type.${item.offer_type}`) }}</p>
-        <p><strong>{{ $t('common_text.description') }}:</strong> {{ item.description }}</p>
-        <p><strong>{{ $t('common_text.price') }}:</strong> {{ item.price }} {{ item.currency }}</p>
-        <p><strong>{{ $t('common_text.amount') }}:</strong> {{ item.amount }} {{ item.measure }}</p>
-        <p><strong>{{ $t('common_text.incoterms') }}:</strong> {{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</p>
-        <p><strong>{{ $t('registration.username') }}:</strong> {{ item.owner_id }}</p>
-        <!-- Show full map features for registered users -->
-        <div v-if="!isAuthenticated">
-          <p>{{ $t('itemDetails.locationInfo') }}</p>
-          <a :href="googleMapsUrl" target="_blank" class="btn btn-outline-success" :disabled="!item.latitude || !item.longitude">
-            {{ $t('itemDetails.viewOnGoogleMaps') }}
-          </a>
-          <div class="mt-3 alert alert-info">{{ $t('itemDetails.registerToAccessMap') }}</div>
-        </div>
-        <!-- Show full map features for registered users -->
-        <div v-if="isAuthenticated">
-          <div>
-            <label for="searchLocation">{{ $t('itemDetails.enterLocation') }}</label>
-            <input class="form-control" type="text" id="searchLocation" v-model="searchLocation" @change="geocodeLocation" :placeholder="$t('itemDetails.enterAddressOrCoordinates')">
-          </div>
-          <div>
-            <label for="tariffRate">{{ $t('itemDetails.tariffRatePerKilometer') }}</label>
-            <input class="form-control" type="number" id="tariffRate" v-model="tariffRate" @input="calculateTariff" :placeholder="$t('itemDetails.enterTariffRate')">
-          </div>
-          <div v-if="directions">
-            <h4>{{ $t('itemDetails.directions') }}</h4>
-            <p><strong>{{ $t('itemDetails.distance') }}:</strong> {{ (directions.distance / 1000).toFixed(2) }} {{ $t('itemDetails.kilometers') }}</p>
-            <p><strong>{{ $t('itemDetails.duration') }}:</strong> {{ formatDuration(directions.duration) }}</p>
-            <p><strong>{{ $t('itemDetails.tariff') }}:</strong> {{ tariff.toFixed(2) }}</p>
+  <div class="container my-5">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card item-details-card">
+          <div class="card-body">
+            <h3 class="card-title text-primary mb-4">{{ $t('itemDetails.title', { title: item.title }) }}</h3>
+            <div class="detail-group">
+              <p><strong>ID:</strong> <span class="text-muted">{{ item.uuid }}</span></p>
+              <p><strong>{{ $t('common_text.type') }}:</strong> <span class="badge bg-secondary">{{ $t(`offer_type.${item.offer_type}`) }}</span></p>
+              <p><strong>{{ $t('common_text.description') }}:</strong> {{ item.description }}</p>
+              <p><strong>{{ $t('common_text.price') }}:</strong> <span class="text-success fs-5">{{ item.price }} {{ item.currency }}</span></p>
+              <p><strong>{{ $t('common_text.amount') }}:</strong> {{ item.amount }} {{ item.measure }}</p>
+              <p><strong>{{ $t('common_text.incoterms') }}:</strong> {{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</p>
+              <p><strong>{{ $t('registration.username') }}:</strong> <span class="text-info">{{ item.owner_id }}</span></p>
+            </div>
+
+            <div class="mt-4 pt-3 border-top">
+              <div v-if="!isAuthenticated">
+                <p class="text-info">{{ $t('itemDetails.locationInfo') }}</p>
+                <a :href="googleMapsUrl" target="_blank" class="btn btn-outline-primary mb-3" :class="{ 'disabled': !item.latitude || !item.longitude }" :disabled="!item.latitude || !item.longitude">
+                  <i class="bi bi-geo-alt-fill me-2"></i>{{ $t('itemDetails.viewOnGoogleMaps') }}
+                </a>
+                <div class="alert alert-warning text-center">
+                  <i class="bi bi-info-circle me-2"></i>{{ $t('itemDetails.registerToAccessMap') }}
+                </div>
+              </div>
+              <div v-else>
+                <div class="mb-3">
+                  <label for="searchLocation" class="form-label">{{ $t('itemDetails.enterLocation') }}</label>
+                  <input class="form-control" type="text" id="searchLocation" v-model="searchLocation" @change="geocodeLocation" :placeholder="$t('itemDetails.enterAddressOrCoordinates')">
+                </div>
+                <div class="mb-3">
+                  <label for="tariffRate" class="form-label">{{ $t('itemDetails.tariffRatePerKilometer') }}</label>
+                  <input class="form-control" type="number" id="tariffRate" v-model="tariffRate" @input="calculateTariff" :placeholder="$t('itemDetails.enterTariffRate')">
+                </div>
+                <div v-if="directions" class="directions-info p-3 mt-4 rounded">
+                  <h5 class="text-primary mb-3">{{ $t('itemDetails.directions') }}</h5>
+                  <p><strong>{{ $t('itemDetails.distance') }}:</strong> <span class="text-success">{{ (directions.distance / 1000).toFixed(2) }} {{ $t('itemDetails.kilometers') }}</span></p>
+                  <p><strong>{{ $t('itemDetails.duration') }}:</strong> <span class="text-success">{{ formatDuration(directions.duration) }}</span></p>
+                  <p><strong>{{ $t('itemDetails.tariff') }}:</strong> <span class="text-danger fs-5">{{ tariff.toFixed(2) }}</span></p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
       <div class="col-md-6" v-if="isAuthenticated">
-        <div id="map" class="map"></div>
+        <div class="card map-card">
+          <div class="card-body p-0">
+            <div id="map" class="map-instance"></div>
+          </div>
+        </div>
       </div>
     </div>
-    <div v-if="isAuthenticated && item.uuid">
-      <div v-if="isOwner">
-        <OwnerChatSwitcher :itemId="item.uuid" :ownerId="currentUserId" />
-      </div>
-      <div v-else>
-        <ItemChat :itemId="item.uuid" :userId="currentUserId" :otherUserId="otherUserId"/>
+
+    <div v-if="isAuthenticated && item.uuid" class="mt-5">
+      <div class="card chat-card">
+        <div class="card-body">
+          <div v-if="isOwner">
+            <OwnerChatSwitcher :itemId="item.uuid" :ownerId="currentUserId" />
+          </div>
+          <div v-else>
+            <ItemChat :itemId="item.uuid" :userId="currentUserId" :otherUserId="otherUserId"/>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -85,8 +104,9 @@ export default {
       tariffRate: 25.0, // Default tariff rate
       map: null,
       marker: null,
-      currentUserId, 
+      currentUserId,
       ownerId: null,
+      isAuthenticated: false, // Initialize isAuthenticated
     };
   },
   watch: {
@@ -105,8 +125,8 @@ export default {
       });
       this.item = response.data;
       this.ownerId = response.data["owner_id"];
-      // If User authenticated then send request to Mapbox 
-      if (this.isAuthenticated) { 
+      // If User authenticated then send request to Mapbox
+      if (this.isAuthenticated) {
         this.$nextTick(() => {this.initializeMap();})
       }
     } catch (error) {
@@ -119,15 +139,14 @@ export default {
       this.isAuthenticated = !!token;
     },
     initializeMap() {
+      // Prevent map re-initialization if already exists
+      if (this.map) {
+        return;
+      }
       mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
       this.map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v12',
-        config: {
-          basemap: {
-            theme: 'monochrome',
-          }
-        },
         center: [this.item.longitude, this.item.latitude],
         zoom: 5,
         maxZoom: 10,
@@ -138,8 +157,8 @@ export default {
         this.map.setCenter([this.item.longitude, this.item.latitude]);
         this.map.setZoom(10);
       });
-      this.map.addControl(new mapboxgl.NavigationControl());
-      this.map.addControl(new mapboxgl.FullscreenControl());
+      this.map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+      this.map.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // Fix syntax here
 
       this.marker = new mapboxgl.Marker()
         .setLngLat([this.item.longitude, this.item.latitude])
@@ -150,7 +169,7 @@ export default {
         mapboxgl: mapboxgl,
       });
 
-      this.map.addControl(geocoder);
+      this.map.addControl(geocoder, 'top-left'); // Place geocoder at top-left for better visibility
 
       geocoder.on('result', (e) => {
         const { center } = e.result;
@@ -193,9 +212,9 @@ export default {
               'line-cap': 'round',
             },
             paint: {
-              'line-color': '#3887be',
-              'line-width': 5,
-              'line-opacity': 0.75,
+              'line-color': '#007bff', // Bootstrap primary color
+              'line-width': 6,
+              'line-opacity': 0.8,
             },
           });
         }
@@ -211,7 +230,7 @@ export default {
     formatDuration(duration) {
       const hours = Math.floor(duration / 3600);
       const minutes = Math.floor((duration % 3600) / 60);
-      return `${hours} hours ${minutes} minutes`;
+      return `${hours} ${this.$t('itemDetails.hours')} ${minutes} ${this.$t('itemDetails.minutes')}`;
     },
   },
   computed: {
@@ -223,25 +242,201 @@ export default {
     },
     googleMapsUrl() {
       if (!this.item.latitude || !this.item.longitude) return '#';
-      return `https://maps.google.com/maps/@${this.item.latitude},${this.item.longitude},14z`;
+      return `https://www.google.com/maps/search/?api=1&query=${this.item.latitude},${this.item.longitude}`; // Corrected Google Maps URL
     }
   },
+  beforeUnmount() {
+    if (this.map) {
+      this.map.remove();
+    }
+  }
 };
 </script>
 
 <style>
-.item-details {
-  border: 1px solid #ccc;
-  padding: 20px;
-  border-radius: 5px;
+/* General Page Styling */
+body {
+  background-color: #f8f9fa; /* Light background for the whole page */
 }
 
-.map {
-  border: 1px solid #ccc;
-  padding: 20px;
-  border-radius: 5px;
+.container {
+  max-width: 1200px; /* Limit container width for better readability */
+}
+
+/* Card Styles */
+.card {
+  border: none;
+  border-radius: 0.75rem; /* More pronounced rounded corners */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Soft shadow for depth */
+  transition: transform 0.2s ease-in-out; /* Slight hover effect */
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.item-details-card .card-body {
+  padding: 2rem; /* Increased padding */
+}
+
+.map-card {
+  height: 500px; /* Fixed height for the map card */
+}
+
+.map-card .card-body {
+  padding: 0; /* Remove padding for map to fill the card */
+}
+
+.chat-card {
+  margin-top: 2.5rem; /* Space above chat card */
+}
+
+.chat-card .card-body {
+  padding: 2rem;
+}
+
+/* Item Details Specifics */
+.item-details-card h3 {
+  font-weight: 700;
+  color: #007bff; /* Primary brand color */
+  margin-bottom: 1.5rem;
+  font-size: 2.25rem; /* Larger title */
+}
+
+.detail-group p {
+  margin-bottom: 0.75rem; /* Spacing between detail lines */
+  font-size: 1.05rem;
+  color: #343a40; /* Darker text for details */
+}
+
+.detail-group strong {
+  color: #495057; /* Slightly darker for labels */
+  min-width: 120px; /* Align labels */
+  display: inline-block;
+}
+
+.detail-group p span {
+  font-weight: 500;
+}
+
+.text-success.fs-5 {
+  font-weight: 600;
+  color: #28a745 !important; /* Ensure strong green for price */
+}
+
+.badge {
+  font-size: 0.85rem;
+  padding: 0.5em 0.8em;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+/* Inputs and Forms */
+.form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ced4da;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+/* Buttons */
+.btn-outline-primary {
+  border-color: #007bff;
+  color: #007bff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-outline-primary:hover:not(.disabled) {
+  background-color: #007bff;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
+.btn-outline-primary.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Alerts */
+.alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffeeba;
+  color: #856404;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.95rem;
+}
+
+.alert-warning .bi {
+  vertical-align: middle;
+  font-size: 1.2rem;
+}
+
+/* Directions Info Box */
+.directions-info {
+  background-color: #e9f7ff; /* Light blue background */
+  border: 1px solid #cceeff;
+  border-radius: 0.75rem;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.directions-info h5 {
+  color: #0056b3; /* Darker blue for heading */
+  font-weight: 700;
+  border-bottom: 1px dashed #cceeff;
+  padding-bottom: 0.75rem;
+}
+
+.directions-info p {
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+}
+
+.directions-info p strong {
+  min-width: 90px;
+  display: inline-block;
+  color: #495057;
+}
+
+.directions-info .text-danger {
+  font-weight: 700;
+  color: #dc3545 !important;
+}
+
+/* Mapbox specific styles */
+.map-instance {
+  height: 100%; /* Make map fill its container */
   width: 100%;
-  height: 500px;
+  border-radius: 0 0 0.75rem 0.75rem; /* Match card radius, or fill entirely */
 }
 
+/* Adjust Mapbox controls positioning if necessary */
+.mapboxgl-ctrl-bottom-right,
+.mapboxgl-ctrl-top-left {
+  margin: 15px; /* Add some margin around controls */
+}
+
+/* Ensure map container has no padding for the map instance to fill it */
+#map {
+  padding: 0;
+  border: none; /* Remove default border from map ID */
+  border-radius: 0.75rem;
+  overflow: hidden; /* Ensure rounded corners clip map content */
+}
 </style>
