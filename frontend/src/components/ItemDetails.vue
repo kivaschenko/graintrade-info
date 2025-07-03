@@ -123,11 +123,11 @@ export default {
       this.map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v12',
-        config: {
-          basemap: {
-            theme: 'monochrome',
-          }
-        },
+        // config: {
+        //   basemap: {
+        //     theme: 'monochrome',
+        //   }
+        // },
         center: [this.item.longitude, this.item.latitude],
         zoom: 5,
         maxZoom: 10,
@@ -138,8 +138,8 @@ export default {
         this.map.setCenter([this.item.longitude, this.item.latitude]);
         this.map.setZoom(10);
       });
-      this.map.addControl(new mapboxgl.NavigationControl());
-      this.map.addControl(new mapboxgl.FullscreenControl());
+      this.map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+      this.map.addControl(new mapboxgl.FullscreenControl()), 'bottom-right';
 
       this.marker = new mapboxgl.Marker()
         .setLngLat([this.item.longitude, this.item.latitude])
