@@ -138,7 +138,7 @@ export default {
       this.page = newPage;
       await this.fetchItems();
     },
-      initializeMap() {
+    initializeMap() {
       if (!this.$refs.mapContainer) {
         console.error('Map container not found');
         return;
