@@ -17,6 +17,10 @@ const messages = {
       forgotPassword: 'Forgot Password?',
       viewAllItemsOnMap: 'View All Items on Map',
     },
+    pagination: {
+      prev: 'Prev',
+      next: 'Next',
+    },
     common_text: {
       offers: 'Offers latest',
       categories: 'Categories',
@@ -186,6 +190,7 @@ const messages = {
       deleteItemConfirm: 'Are you sure you want to delete this item?',
       deleteItemSuccess: 'Item deleted successfully!',
       deleteItemError: 'Error deleting item',
+      myItems: 'My items',
     },
     tariff: {
       basic: "Basic",
@@ -232,6 +237,10 @@ const messages = {
       tariffs: 'Тарифні плани',
       forgotPassword: 'Забули пароль?',
       viewAllItemsOnMap: 'Всі пропозиції на мапі',
+    },
+    pagination: {
+      prev: 'Попередня',
+      next: 'Наступна',
     },
     common_text: {
       offers: 'Пропозиції останні',
@@ -402,6 +411,7 @@ const messages = {
       deleteItemConfirm: 'Ви впевнені, що хочете видалити цей товар?',
       deleteItemSuccess: 'Товар успішно видалено!',
       deleteItemError: 'Помилка видалення товару',
+      myItems: 'Мої товари',
     },
     tariff: {
       basic: "Базовий",
