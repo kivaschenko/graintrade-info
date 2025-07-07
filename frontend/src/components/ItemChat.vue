@@ -22,8 +22,10 @@
         maxlength="500"
         :placeholder="$t('chat.messagePlaceholder')"
         @keyup.enter.exact="sendMessage"
+        @input="validateNewMessage"
         style="resize: vertical;"
       ></textarea>
+      <div v-if="newMessageError" class="text-danger mt-1">{{ newMessageError }}</div>
       <div class="d-flex justify-content-end">
         <button
           class="btn btn-success btn-sm"
@@ -50,6 +52,7 @@ export default {
       ws: null,
       messages: [],
       newMessage: '',
+      newMessageError: '',
       refreshTimer: null,
     };
   },
@@ -103,8 +106,21 @@ export default {
         this.fetchHistory();
       }, 60000); // 60,000 ms = 1 minute
     },
+    validateNewMessage() {
+      const scriptPattern = /<script\b[^>]*>(.*?)<\/script>|<img\b[^>]*onerror\b[^>]*>/i;
+      if (scriptPattern.test(this.newMessage)) {
+        this.newMessageError = this.$t('create_form.validation_xss_message');
+      } else {
+        this.newMessageError = '';
+      }
+    },
     sendMessage() {
       if (this.newMessage.trim() && this.userId !== this.otherUserId) {
+        // Prevent sending if there's a frontend validation error
+        if (this.newMessageError) {
+          console.warn("Attempted to send message with validation error.");
+          return;
+        }
         this.ws.send(JSON.stringify({
           sender_id: this.userId,
           receiver_id: this.otherUserId,
@@ -117,7 +133,7 @@ export default {
     formatTimestamp(ts) {
       if (!ts) return '';
       return new Date(ts).toLocaleString();
-    }
+    },
   }
 };
 </script>
