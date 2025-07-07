@@ -175,7 +175,7 @@ export default {
         mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
         this.map = new mapboxgl.Map({
           container: this.$refs.allItemsMapContainer,
-          style: 'mapbox://styles/mapbox/standard',
+          style: 'mapbox://styles/mapbox/light-v11',
           center: [31.946946, 49.305825],
           zoom: 5,
           maxZoom: 14,
