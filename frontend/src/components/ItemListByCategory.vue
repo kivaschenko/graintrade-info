@@ -133,6 +133,7 @@ export default {
         this.loadingItems = false;
       }
     },
+    
     async handlePageChange(newPage) {
       this.page = newPage;
       await this.fetchItems();
