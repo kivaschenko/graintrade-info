@@ -48,7 +48,9 @@
                   id="description"
                   v-model="description"
                   :placeholder="$t('create_form.description_placeholder')"
+                  @input="validateDescription"
                 ></textarea>
+                <div v-if="descriptionError" class="text-danger mt-1">{{descriptionError}}</div>
               </div>
 
               <div class="row mb-3">
@@ -175,6 +177,7 @@ export default {
       marker: null,
       successMessage: '',
       errorMessage: '',
+      descriptionError: '',
     };
   },
   computed: {
@@ -298,12 +301,24 @@ export default {
     });
   },
   methods: {
+    validateDescription() {
+      // Simple frontend check for common script patterns
+      const scriptPattern = /<script\b[^>]*>(.*?)<\/script>|<img\b[^>]*onerror\b[^>]*>/i;
+        if (scriptPattern.test(this.description)) {
+          this.descriptionError = this.$t('create_form.validation_xss_description');
+        } else { this.descriptionError = '';}
+    },
     getCategoryName(category) {
       return this.$store.state.currentLocale === 'ua' ? category.ua_name : category.name;
     },
     async createItem() {
       this.successMessage = '';
       this.errorMessage = '';
+      // Prevent submission if there's a frontend validation error
+      if (this.descriptionError) {
+        this.errorMessage = this.$t('create_form.error_validation_failed');
+        return;
+      }
       try {
         const response = await axios.post(`${process.env.VUE_APP_BACKEND_URL}/items`, {
           user_id: this.user.id,
@@ -338,12 +353,10 @@ export default {
           } else {
             this.errorMessage = this.$t('create_form.error_message');
           }
-        } else {
-          this.errorMessage = this.$t('create_form.error_message');
         }
         console.error('Error creating offer:', error);
       }
-    },
+    }
   },
 };
 </script>
