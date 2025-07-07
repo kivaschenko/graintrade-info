@@ -113,6 +113,9 @@ const messages = {
       latitude_placeholder: 'Search or pick on map filled automatically',
       longitude_placeholder: 'Search or pick on map filled automatically',
       description_placeholder: 'Enter description (optional) until 600 characters',
+      validation_xss_description: 'The text looks like JS script and will be denied',
+      error_validation_failed: 'The form did not pas validation',
+      validation_xss_message: 'The text looks like JS script and will be denied',
     },
     incoterms: {
       EXW: 'Ex Works',
@@ -334,6 +337,9 @@ const messages = {
       latitude_placeholder: 'Шукати або вибрати на карті автоматично заповнюється',
       longitude_placeholder: 'Шукати або вибрати на карті автоматично заповнюється',
       description_placeholder: 'Введіть опис (необов\'язково) до 600 символів',
+      validation_xss_description: 'Цей текст виглядає як скрипт і буде відхилений',
+      error_validation_failed: 'Форма не пройшла перевірку',
+      validation_xss_message: 'Цей текст виглядає як скрипт і буде відхилений',
     },
     incoterms: {
       EXW: 'Франко завод',
