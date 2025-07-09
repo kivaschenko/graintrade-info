@@ -1,92 +1,78 @@
 import logging
-import os
+from typing import Annotated
 
-import httpx
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordBearer
+import jwt
 
-from ..schemas import GeoSearchRequest, DirectionsRequest
-from ..models.subscription_model import increment_map_views, increment_geo_search_count, increment_navigation_count
+from ..models import subscription_model
+from . import JWT_SECRET
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
-JWT_SECRET = os.getenv("JWT_SECRET")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
-MAP_VIEW_LIMIT = os.getenv("MAP_VIEW_LIMIT")
-MAPBOX_TOKEN = os.getenv("MAPBOX_SECRET_TOKEN")
-MAPBOX_API_BASE_URL = "https://api.mapbox.com"
-
-
 router = APIRouter(tags=["map"])
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="token",
+    scopes={
+        "me": "Read information about the current user.",
+        "create:item": "Allowed to create a new Item",
+        "read:item": "Allowed to read items.",
+        "delete:item": "Allowed to delete item.",
+        "add:category": "Allowed to add a new Category",
+        "view:map": "Allowed to view map.",
+    },
+)
+
+# ==========
+# Dependency
 
 
-@router.post("/mapbox/map-view")
-async def increment_map_view(user_id: int):
-    """Increment map_views count for the user."""
-    map_views = await increment_map_views(user_id=user_id)
-    return {"message": "Map view counted", "map_views": map_views}
-
-
-@router.post("/mapbox/geo-search")
-async def proxy_geo_search(request: GeoSearchRequest, user_id: int):
-    """Proxies Mapbox Geocoding API and increments geo_search_count."""
-    geo_search_count = await increment_geo_search_count(
-        user_id=user_id, column_name="geo_search_count"
+async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
     )
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        user_id: str = payload.get("user_id")
+        scopes: str = payload.get("scopes")
+        if user_id is None:
+            logging.error("No user_id found in token")
+            raise credentials_exception
+    except jwt.PyJWTError as e:
+        logging.error(e)
+        raise credentials_exception
+    return user_id, scopes
 
-    async with httpx.AsyncClient() as client:
-        mapbox_url = (
-            f"{MAPBOX_API_BASE_URL}/geocoding/v5/mapbox.places/{request.query}.json"
+
+COUNTERS = {
+    "map_views": subscription_model.increment_map_views,
+    "geo_search_count": subscription_model.increment_geo_search_count,
+    "navigation_count": subscription_model.increment_navigation_count,
+}
+
+# ----------------------
+# Map counters endpoints
+
+
+@router.post("/mapbox/increment-counter")
+async def increment_map_view(
+    token: Annotated[str, Depends(oauth2_scheme)], counter: str
+):
+    if token is None or token == "null" or token == "":
+        logging.error("No token provided.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
-        params = {"token": MAPBOX_TOKEN}
-        response = await client.get(mapbox_url, params=params)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        mapbox_results = response.json()
-
-    return {
-        "message": "Geo search successful",
-        "geo_search_count": geo_search_count,
-        "features": mapbox_results.get("features", [])  # Return Mapbox results
-    }
-
-
-@router.post("/mapbox/directions")
-async def proxy_directions(request: DirectionsRequest, user_id: int):
-    """Proxies Mapbox Directions API and increments navigation_count."""
-    navigation_count = await increment_navigation_count(user_id)
-    async with httpx.AsyncClient() as client:
-        coordinates_str = f"{request.origin[0]},{request.origin[1]};{request.destination[0]},{request.destination[1]}"
-        mapbox_url = f"{MAPBOX_API_BASE_URL}/directions/v5/mapbox/driving/{coordinates_str}"
-        params = {
-            "alternatives": "true",
-            "geometries": "geojson",
-            "language": "en",
-            "overview": "full",
-            "steps": "true",
-            "access_token": MAPBOX_TOKEN
-        }
-        response = await client.get(mapbox_url, params=params)
-        response.raise_for_status()
-        mapbox_results = response.json()
-        # Assuming want to return the first route found
-        route = mapbox_results["routes"][0] if mapbox_results and "routes" in mapbox_results else None
-        return {
-            "message": "Directions successful",
-            "navigation_count": navigation_count,
-            "route": route,
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    user_id, scopes = await get_current_user_id(token)
+    user_id = int(user_id)
+    try:
+        counter = await COUNTERS[counter](user_id)
+        return {"status": "success", "counter": counter}
+    except Exception as e:
+        logging.error(f"Error during update map_vie for user_id: {user_id} {e}.")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Counter {counter} not updated.",
+        )

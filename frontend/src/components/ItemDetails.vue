@@ -27,14 +27,22 @@
               </div>
               <div v-else>
                 <div class="mb-3">
+                  <button v-if="!showMap" @click="toggleMap" class="btn btn-primary">
+                    <i class="bi bi-map me-2"></i>{{ $t('itemDetails.showMapWithMarker') }}
+                  </button>
+                  <button v-else @click="toggleMap" class="btn btn-primary">
+                    <i class="bi bi-map me-2"></i>{{ $t('itemDetails.hideMap') }}
+                  </button>
+                </div>
+                <div class="mb-3" v-if="showMap">  
                   <label for="searchLocation" class="form-label">{{ $t('itemDetails.enterLocation') }}</label>
                   <input class="form-control" type="text" id="searchLocation" v-model="searchLocation" @change="geocodeLocation" :placeholder="$t('itemDetails.enterAddressOrCoordinates')">
                 </div>
-                <div class="mb-3">
+                <div class="mb-3" v-if="showMap">
                   <label for="tariffRate" class="form-label">{{ $t('itemDetails.tariffRatePerKilometer') }}</label>
                   <input class="form-control" type="number" id="tariffRate" v-model="tariffRate" @input="calculateTariff" :placeholder="$t('itemDetails.enterTariffRate')">
                 </div>
-                <div v-if="directions" class="directions-info p-3 mt-4 rounded">
+                <div v-if="directions && showMap" class="directions-info p-3 mt-4 rounded">
                   <h5 class="text-primary mb-3">{{ $t('itemDetails.directions') }}</h5>
                   <p><strong>{{ $t('itemDetails.distance') }}:</strong> <span class="text-success">{{ (directions.distance / 1000).toFixed(2) }} {{ $t('itemDetails.kilometers') }}</span></p>
                   <p><strong>{{ $t('itemDetails.duration') }}:</strong> <span class="text-success">{{ formatDuration(directions.duration) }}</span></p>
@@ -46,7 +54,7 @@
         </div>
       </div>
 
-      <div class="col-md-6" v-if="isAuthenticated">
+      <div class="col-md-6" v-if="isAuthenticated && showMap">
         <div class="card map-card">
           <div class="card-body p-0">
             <div id="map" class="map-instance"></div>
@@ -107,6 +115,8 @@ export default {
       currentUserId,
       ownerId: null,
       isAuthenticated: false, // Initialize isAuthenticated
+      showMap: false,
+      mapInitialized: false,
     };
   },
   watch: {
@@ -125,10 +135,6 @@ export default {
       });
       this.item = response.data;
       this.ownerId = response.data["owner_id"];
-      // If User authenticated then send request to Mapbox
-      if (this.isAuthenticated) {
-        this.$nextTick(() => {this.initializeMap();})
-      }
     } catch (error) {
       console.error('Error fetching item details:', error);
     }
@@ -137,6 +143,60 @@ export default {
     checkAuthentication() {
       const token = localStorage.getItem('access_token');
       this.isAuthenticated = !!token;
+    },
+    // Toggle map visibility and initialize if not already
+    async toggleMap() {
+      this.showMap = !this.showMap;
+      if (this.showMap && !this.mapInitialized && this.isAuthenticated) {
+        // Ensure map container is rendered before initializing Mapbox
+        await this.$nextTick();
+        this.initializeMap();
+        await this.incrementCounter('map_views');
+        this.mapInitialized = true;  // Mark as initialized
+      } else if (!this.showMap && this.map) {
+        // Optional: Remove map instance if hiding to free  up resources
+        this.map.remove();
+        this.map = null;
+        this.marker = null;
+        this.mapInitialized = false; // Reset initialized state
+      }
+    },
+    async incrementCounter(counterName) {
+      try {
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+          console.error('No access token found. User not authenticated.');
+          // Optionally, throw an error or redirect to login
+          throw new Error('No access token');
+        }
+        const response = await axios.post(
+          `${process.env.VUE_APP_BACKEND_URL}/mapbox/increment-counter?counter=${counterName}`,
+          {}, // <--- This is the empty request body
+          {   // <--- This is the config object for headers
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
+        );
+
+        console.log(response);
+        if (response.data.status === 'success') {
+          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
+          // You might want to update your local usage state here
+          // e.g., if you have userUsage data property
+          // if (counterName === 'map_views') this.userUsage.map_views = response.data.counter;
+          // ... similar for geo_search_count and navigation_count
+        }
+      } catch (error) {
+        console.error('Error sending signal to counters:', error.response ? error.response.data : error.message);
+        // Handle specific errors like 401 Unauthorized or 403 Forbidden (if you implement limits)
+        if (error.response && error.response.status === 401) {
+          alert('Your session has expired or you are not authorized. Please log in again.');
+          // Redirect to login page
+        } else if (error.response && error.response.status === 503) { // As per your backend error
+            alert(`Service unavailable: ${error.response.data.detail}`);
+        }
+      }
     },
     initializeMap() {
       // Prevent map re-initialization if already exists
@@ -158,7 +218,7 @@ export default {
         this.map.setZoom(10);
       });
       this.map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-      this.map.addControl(new mapboxgl.FullscreenControl(), 'bottom-right'); // Fix syntax here
+      this.map.addControl(new mapboxgl.FullscreenControl(), 'bottom-right');
 
       this.marker = new mapboxgl.Marker()
         .setLngLat([this.item.longitude, this.item.latitude])
@@ -175,6 +235,7 @@ export default {
         const { center } = e.result;
         this.searchLocation = `${center[1]},${center[0]}`;
         this.calculateDirections(center);
+        this.incrementCounter('geo_search_count'); // Increment geo search counter on result
       });
     },
     async geocodeLocation() {
@@ -182,6 +243,7 @@ export default {
         const response = await axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${this.searchLocation}.json?access_token=${process.env.VUE_APP_MAPBOX_TOKEN}`);
         const coordinates = response.data.features[0].geometry.coordinates;
         this.calculateDirections(coordinates);
+        this.incrementCounter('geo_search_count'); // Increment geo search counter
       } catch (error) {
         console.error('Error geocoding location:', error);
       }
@@ -218,6 +280,7 @@ export default {
             },
           });
         }
+        this.incrementCounter('navigation_count'); // Increment navigation counter
       } catch (error) {
         console.error('Error calculating directions:', error);
       }
