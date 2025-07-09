@@ -3,37 +3,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 import logging
 
-from app.adapters import AsyncpgItemRepository
-from app.routers.schemas import SubscriptionInResponse
-
-TARIFF_LIMITS = {
-    "basic": {"items_limit": 5, "map_views": 10},
-    "premium": {"items_limit": 20, "map_views": 50},
-    "pro": {"items_limit": -1, "map_views": -1},  # unlimited
-}
-
-
-async def check_user_limits(
-    user_id: int,
-    subscription: SubscriptionInResponse,
-    item_repo: AsyncpgItemRepository,
-) -> None:
-    """Check if user has reached their limits based on subscription."""
-    if subscription.tarif.scope == "pro":
-        return  # Pro users have no limits
-
-    # Get user's current item count
-    user_items = await item_repo.get_items_by_user_id(user_id)
-    current_item_count = len(user_items)
-
-    if (
-        subscription.tarif.items_limit != -1
-        and current_item_count >= subscription.tarif.items_limit
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"You have reached your items limit ({subscription.tarif.items_limit}) for {subscription.tarif.name} plan",
-        )
+from app.schemas import SubscriptionInResponse
 
 
 async def check_map_view_limit(
@@ -74,3 +44,8 @@ async def check_subscription_status(subscription: SubscriptionInResponse) -> boo
         f"Subscription {subscription.id} is active and valid until {subscription.end_date}"
     )
     return True
+
+
+# --- Helper to check and increment useage ---
+async def check_and_increment_usage(user_id: int, usage_type: str):
+    pass
