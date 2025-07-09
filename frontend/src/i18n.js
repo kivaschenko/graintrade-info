@@ -80,6 +80,8 @@ const messages = {
       locationInfo: "Location information is available on Google Maps:",
       viewOnGoogleMaps: "View on Google Maps",
       registerToAccessMap: "Register or login to access interactive map features, route planning and distance calculations.",
+      showMapWithMarker: "Show map with item location",
+      hideMap: "Hide map",
     },
     create_form: {
       map_title: 'Choose point on the map to define location',
@@ -304,6 +306,8 @@ const messages = {
       locationInfo: "Інформація про місцезнаходження доступна на Картах Google:",
       viewOnGoogleMaps: "Переглянути на Картах Google",
       registerToAccessMap: "Зареєструйтесь або увійдіть, щоб отримати доступ до інтерактивних функцій карти, планування маршруту та розрахунку відстані.",
+      showMapWithMarker: "Показати карту з маркером розташування товару",
+      hideMap: "Приховати карту",
     },
     create_form: {
       map_title: 'Виберіть точку на карті, щоб визначити місцезнаходження',
