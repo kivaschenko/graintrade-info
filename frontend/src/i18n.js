@@ -83,6 +83,10 @@ const messages = {
       showMapWithMarker: "Show map with item location",
       hideMap: "Hide map",
     },
+    homePage: {
+      showMapWithMarkers: "Show map with item markers",
+      hideMap: "Hide map",
+    },
     create_form: {
       map_title: 'Choose point on the map to define location',
       form_title: 'Create new offer',
@@ -289,6 +293,10 @@ const messages = {
       itemNotFoundMessage: 'Товар, який ви шукаєте, не існує або був видалений.',
       itemDeletedError: 'Помилка видалення товару',
       itemNotFoundError: 'Помилка: Товар не знайдено',  
+    },
+    homePage: {
+      showMapWithMarkers: "Показати карту з маркерами товарів",
+      hideMap: "Приховати карту",
     },
     itemDetails: {
       title: 'Деталі товару: {title}',
