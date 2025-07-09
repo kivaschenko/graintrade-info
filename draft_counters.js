@@ -620,6 +620,7 @@ async def increment_map_view(current_user: Dict = Depends(get_current_user)):
     updated_sub = await check_and_increment_usage(user_id, "map_views")
     return {"message": "Map view counted", "map_views": updated_sub["map_views"]}
 
+
 @app.post("/mapbox/geo-search")
 async def proxy_geo_search(request: GeoSearchRequest, current_user: Dict = Depends(get_current_user)):
     """
@@ -640,6 +641,7 @@ async def proxy_geo_search(request: GeoSearchRequest, current_user: Dict = Depen
         "geo_search_count": updated_sub["geo_search_count"],
         "features": mapbox_results.get("features", []) # Return Mapbox results
     }
+
 
 @app.post("/mapbox/directions")
 async def proxy_directions(request: DirectionsRequest, current_user: Dict = Depends(get_current_user)):

@@ -80,6 +80,12 @@ const messages = {
       locationInfo: "Location information is available on Google Maps:",
       viewOnGoogleMaps: "View on Google Maps",
       registerToAccessMap: "Register or login to access interactive map features, route planning and distance calculations.",
+      showMapWithMarker: "Show map with item location",
+      hideMap: "Hide map",
+    },
+    homePage: {
+      showMapWithMarkers: "Show map with item markers",
+      hideMap: "Hide map",
     },
     create_form: {
       map_title: 'Choose point on the map to define location',
@@ -223,6 +229,8 @@ const messages = {
     chat: {
       messagePlaceholder: 'Type your message here...',
       send: 'Send',
+      chatsWithOtherUsers: "Chats with other users",
+      chatWithOwnerOfItem: "Chat with owner of item",
     },
   },
   ua: {
@@ -288,6 +296,10 @@ const messages = {
       itemDeletedError: 'Помилка видалення товару',
       itemNotFoundError: 'Помилка: Товар не знайдено',  
     },
+    homePage: {
+      showMapWithMarkers: "Показати карту з маркерами товарів",
+      hideMap: "Приховати карту",
+    },
     itemDetails: {
       title: 'Деталі товару: {title}',
       enterLocation: 'Введіть місцезнаходження:',
@@ -304,6 +316,8 @@ const messages = {
       locationInfo: "Інформація про місцезнаходження доступна на Картах Google:",
       viewOnGoogleMaps: "Переглянути на Картах Google",
       registerToAccessMap: "Зареєструйтесь або увійдіть, щоб отримати доступ до інтерактивних функцій карти, планування маршруту та розрахунку відстані.",
+      showMapWithMarker: "Показати карту з маркером розташування товару",
+      hideMap: "Приховати карту",
     },
     create_form: {
       map_title: 'Виберіть точку на карті, щоб визначити місцезнаходження',
@@ -449,6 +463,8 @@ const messages = {
     chat: {
       messagePlaceholder: 'Введіть ваше повідомлення...',
       send: 'Надіслати',
+      chatsWithOtherUsers: "Чат з іншими користувачами",
+      chatWithOwnerOfItem: "Чат з власником товару",
     },
   },
 };
