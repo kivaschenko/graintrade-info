@@ -138,7 +138,7 @@ async def read_item(
             if "read:item" not in scopes:
                 raise HTTPException(status.HTTP_403_FORBIDDEN)
             # Increment map views counter for the user
-            await items_model.map_views_increment(user_id)
+            # await items_model.map_views_increment(user_id)
         return db_item
     except Exception as e:
         logging.error(f"Error in read_item: {e}")
