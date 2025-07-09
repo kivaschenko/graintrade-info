@@ -22,7 +22,17 @@
         <router-link to="/register" class="btn btn-primary ml-3">{{ $t('navbar.register') }}</router-link>
       </div>
       <div v-else>
-        <div class="map-container">
+        <!-- Buttons to toggle map -->
+        <div class="mb-3">
+          <button v-if="!showMap" @click="toggleMap" class="btn btn-primary">
+            <i class="bi bi-map me-2"></i>{{ $t('homePage.showMapWithMarkers') }}
+          </button>
+          <button v-else @click="toggleMap" class="btn btn-secondary">
+            <i class="bi bi-eye-slash me-2"></i>{{ $t('homePage.hideMap') }} 
+          </button>
+        </div>
+
+        <div class="map-container" v-if="showMap">
           <div class="map mt-5" id="mapContainer" ref="mapContainer"></div>
           <div class="map-legend" v-if="mapLoaded">
             <h6>{{ $t('map.clusterSizes') }}</h6>
@@ -72,6 +82,8 @@ export default {
       page: 1,
       pageSize: 10,
       totalItems: 0,
+      showMap: false, // Control map visibility
+      mapInitialized: false, // Track if map has been initialized
     };
   },
   computed: {
@@ -81,8 +93,9 @@ export default {
     await this.fetchItems();
   },
   watch: {
+    // Only update map source if map is already visible and initialized
     items() {
-      if (this.map && this.map.getSource('items')) {
+      if (this.map && this.map.getSource('items') && this.showMap) {
         const geoJsonData = this.getGeoJsonFromItems();
         this.map.getSource('items').setData(geoJsonData);
       }
@@ -105,9 +118,10 @@ export default {
         this.hasMapAccess = response.data.has_map_access;
         // If backend returns total count, use it. Otherwise, estimate
         this.totalItems = response.data.total_items || (offset + this.items.length + (this.items.length === this.pageSize ? this.pageSize : 0));
-        if (this.hasMapAccess) {
-          this.$nextTick(() => {this.initializeMap();})
-        }
+        // Do not initialize map here. It's handled by toggleMap.
+        // if (this.hasMapAccess) {
+        //   this.$nextTick(() => {this.initializeMap();})
+        // }
       } catch (error) {
         console.error('Failed to fetch items:', error);
       }
@@ -115,6 +129,59 @@ export default {
     async handlePageChange(newPage) {
       this.page = newPage;
       await this.fetchItems();
+      // If map is visible, re-center or refresh data after pagination
+      if (this.showMap && this.mapInitialized) {
+        // The watch handler for 'items' will update the source data automatically.
+        // You might want to re-center the map if the new items are far from the current view.
+        // For now, simply updating source data is sufficient.
+      }
+    },
+    async toggleMap() {
+      this.showMap = !this.showMap;
+      if (this.showMap && this.hasMapAccess && !this.mapInitialized) {
+        // Ensure map container is rendered before initializing Mapbox
+        await this.$nextTick();
+        this.initializeMap();
+        await this.incrementCounter('map_views'); // Increment counter when map is first shown
+        this.mapInitialized = true;  // Mark as initialized
+      } else {
+        // Optional: remove map instance if hiding to free up resources
+        this.map.remove();
+        this.map = null;
+        this.popup = null; // Clear popup reference
+        this.mapInitialized = false; // Reset initialized state
+        this.mapLoaded = false; // Reset maploaded state
+      }
+    },
+    // Method to increment counters (copied from ItemDetails.vue)
+    async incrementCounter(counterName) {
+      try {
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+          console.error('No access token found. User not authenticated.');
+          throw new Error('No access token');
+        }
+
+        const response = await axios.post(
+          `${process.env.VUE_APP_BACKEND_URL}/mapbox/increment-counter?counter=${counterName}`,
+          {}, // Empty request body
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
+        );
+        if (response.data.status === 'success') {
+          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
+        }
+      } catch (error) {
+        console.error('Error sending signal to counters:', error.response ? error.response.data : error.message);
+        if (error.response && error.response.status === 401) {
+          alert('Your session has expired or you are not authorized. Please log in again.');
+        } else if (error.response && error.response.status === 503) {
+            alert(`Service unavailable: ${error.response.data.detail}`);
+        }
+      }
     },
     initializeMap() {
       if (!this.$refs.mapContainer) {
@@ -122,8 +189,8 @@ export default {
         return;
       }
       // If map already exists, do not re-initialize
-      if (this.map) {
-        console.log('Map already initialized.')
+      if (this.map && this.mapInitialized) {
+        console.log('Map already initialized. Updating source data')
         // If items have changed, update the source data
         if (this.map.getSource('items')) {
           const geoJsonData = this.getGeoJsonFromItems();
@@ -163,7 +230,6 @@ export default {
     addMapSources() {
       if (!this.map) return;
       const geoJsonData = this.getGeoJsonFromItems();
-      console.log('GeoJSON data:', geoJsonData);
       this.map.addSource('items', {
         type: 'geojson',
         data: geoJsonData,
@@ -271,17 +337,12 @@ export default {
 
         // Create and show the popup
         const popupContent = this.getPopupHTML(item);
-        console.log('Popup content:', popupContent);
-
         this.popup = new mapboxgl.Popup({ closeOnClick: false })
           .setLngLat(coordinates)
           .setHTML(popupContent)
           .addTo(this.map);
-        console.log('Popup added to map.'); // Додано лог
-
         // Add a 'open' event listener to the popup to ensure the button is in the DOM
         this.popup.on('open', () => {
-          console.log('Popup opened event fired.'); // Додано лог
           const popupButton = document.getElementById(`popup-view-details-${item.id}`);
           if (popupButton) {
             console.log('Popup button found. Adding click listener.'); // Додано лог
@@ -326,7 +387,6 @@ export default {
       };
     },
     getPopupHTML(item) {
-    console.log('Generating popup HTML for item:', item);
       let popupContent = `
         <div class="popup-content">
           <h5><span class="badge bg-info text-dark">${item.offer_type.toUpperCase()}</span> ${item.title || ''}</h5>
@@ -344,7 +404,6 @@ export default {
           </a>
         </div>
       `;
-      console.log('Popup content:', popupContent);
       return popupContent;
     },
   },
