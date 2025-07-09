@@ -229,6 +229,8 @@ const messages = {
     chat: {
       messagePlaceholder: 'Type your message here...',
       send: 'Send',
+      chatsWithOtherUsers: "Chats with other users",
+      chatWithOwnerOfItem: "Chat with owner of item",
     },
   },
   ua: {
@@ -461,6 +463,8 @@ const messages = {
     chat: {
       messagePlaceholder: 'Введіть ваше повідомлення...',
       send: 'Надіслати',
+      chatsWithOtherUsers: "Чат з іншими користувачами",
+      chatWithOwnerOfItem: "Чат з власником товару",
     },
   },
 };
