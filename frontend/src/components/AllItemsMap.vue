@@ -63,6 +63,7 @@ export default {
     // Fetch initial data based on route filters (before map init)
     await this.fetchAllItemsGeoJson(); 
     await this.initializeMap();
+    await this.incrementCounter('map_views');
     window.addEventListener('resize', this.resizeMap);
   },
   beforeUnmount() {
@@ -101,6 +102,43 @@ export default {
     resizeMap() {
       if (this.map) {
         this.map.resize();
+      }
+    },
+    async incrementCounter(counterName) {
+      try {
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+          console.error('No access token found. User not authenticated.');
+          // Optionally, throw an error or redirect to login
+          throw new Error('No access token');
+        }
+        const response = await axios.post(
+          `${process.env.VUE_APP_BACKEND_URL}/mapbox/increment-counter?counter=${counterName}`,
+          {}, // <--- This is the empty request body
+          {   // <--- This is the config object for headers
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
+        );
+
+        console.log(response);
+        if (response.data.status === 'success') {
+          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
+          // You might want to update your local usage state here
+          // e.g., if you have userUsage data property
+          // if (counterName === 'map_views') this.userUsage.map_views = response.data.counter;
+          // ... similar for geo_search_count and navigation_count
+        }
+      } catch (error) {
+        console.error('Error sending signal to counters:', error.response ? error.response.data : error.message);
+        // Handle specific errors like 401 Unauthorized or 403 Forbidden (if you implement limits)
+        if (error.response && error.response.status === 401) {
+          alert('Your session has expired or you are not authorized. Please log in again.');
+          // Redirect to login page
+        } else if (error.response && error.response.status === 503) { // As per your backend error
+            alert(`Service unavailable: ${error.response.data.detail}`);
+        }
       }
     },
     async fetchAllItemsGeoJson() {
