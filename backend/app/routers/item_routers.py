@@ -8,9 +8,7 @@ from fastapi import (
     BackgroundTasks,
     APIRouter,
 )
-from fastapi.security import (
-    OAuth2PasswordBearer,
-)
+from fastapi.security import OAuth2PasswordBearer
 
 import jwt
 
@@ -97,23 +95,29 @@ async def create_item(
 async def read_items(
     offset: int = 0,
     limit: int = 10,
-    token: Annotated[str, Depends(oauth2_scheme)] = 'null',
+    token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
     """Get all items with count value"""
     try:
         # Add map access permission check
-        if token != 'null':
+        if token != "null":
             _, scopes = await get_current_user_id(token)
-            has_map_access = 'view:map' in scopes
+            has_map_access = "view:map" in scopes
         else:
             has_map_access = False
         # Get items and count value
         items, total_items = await items_model.get_all(offset=offset, limit=limit)
-        print(f"items: {items}, total_items: {total_items}")
-        return {"items": items, "total_items": total_items, "has_map_access": has_map_access}
+        return {
+            "items": items,
+            "total_items": total_items,
+            "has_map_access": has_map_access,
+        }
     except Exception as e:
         logging.error(f"Error in read_items: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
 
 
 @router.get(
@@ -134,7 +138,7 @@ async def read_item(
             if "read:item" not in scopes:
                 raise HTTPException(status.HTTP_403_FORBIDDEN)
             # Increment map views counter for the user
-            await items_model.map_views_increment(user_id)
+            # await items_model.map_views_increment(user_id)
         return db_item
     except Exception as e:
         logging.error(f"Error in read_item: {e}")
