@@ -67,9 +67,11 @@
       <div class="card chat-card">
         <div class="card-body">
           <div v-if="isOwner">
+            <h5>{{ $t('chat.chatsWithOtherUsers') }}</h5>
             <OwnerChatSwitcher :itemId="item.uuid" :ownerId="currentUserId" />
           </div>
           <div v-else>
+            <h5>{{ $t('chat.chatWithOwnerOfItem') }}</h5>
             <ItemChat :itemId="item.uuid" :userId="currentUserId" :otherUserId="otherUserId"/>
           </div>
         </div>
