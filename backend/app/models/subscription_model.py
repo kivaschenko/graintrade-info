@@ -137,3 +137,32 @@ async def get_subscription_usage_for_user(user_id: int) -> List[SubscriptionInRe
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, user_id)
         return row
+
+# --------------------------------------------------------------------------------------------
+# Update counters for Subscription: items_count, map_views, geo_search_count, navigation_count
+
+async def increment_map_views(user_id: int):
+    sub_query = "SELECT id FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1"
+    update_query = "UPDATE subscriptions SET map_views = map_views + 1 WHERE id = $1 RETURNING map_views"
+    async with database.pool.acquire() as conn:
+        sub_id = await conn.fetchval(sub_query, user_id)
+        updated_counter = await conn.fetchval(update_query, sub_id)
+        return updated_counter
+
+
+async def increment_geo_search_count(user_id: int):
+    sub_query = "SELECT id FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1"
+    update_query = "UPDATE subscriptions SET geo_search_count = geo_search_count + 1 WHERE id = $1 RETURNING geo_search_count"
+    async with database.pool.acquire() as conn:
+        sub_id = await conn.fetchval(sub_query, user_id)
+        updated_counter = await conn.fetchval(update_query, sub_id)
+        return updated_counter
+
+
+async def increment_navigation_count(user_id: int):
+    sub_query = "SELECT id FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1"
+    update_query = "UPDATE subscriptions SET navigation_count = navigation_count + 1 WHERE id = $1 RETURNING geo_search_count"
+    async with database.pool.acquire() as conn:
+        sub_id = await conn.fetchval(sub_query, user_id)
+        updated_counter = await conn.fetchval(update_query, sub_id)
+        return updated_counter
