@@ -233,3 +233,12 @@ class SubscriptionInResponse(SubscriptionInDB):
 
 #     class Config:
 #         from_attributes = True
+
+
+class GeoSearchRequest(BaseModel):
+    query: str
+
+
+class DirectionsRequest(BaseModel):
+    origin: List[float]  # [longitude, latitude]
+    destination: List[float]  # [longitude, latitude]
