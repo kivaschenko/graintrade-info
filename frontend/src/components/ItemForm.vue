@@ -343,6 +343,7 @@ export default {
         console.log('Item created:', response.status, response.data);
         this.successMessage = 'Offer created successfully!';
       } catch (error) {
+        console.error(error.response.status, "<- response.status")
         if (error.response) {
           if (error.response.status === 401) {
             this.errorMessage = this.$t('create_form.error_401');
