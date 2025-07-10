@@ -268,6 +268,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to decrement item count
+CREATE OR REPLACE FUNCTION decrement_items_count(p_user_id INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    v_current_count INTEGER;
+BEGIN
+    -- Update the counter and return new value
+    UPDATE subscriptions
+    SET items_count = items_count - 1
+    WHERE user_id = p_user_id
+    AND end_date > NOW()
+    RETURNING items_count INTO v_current_count;
+
+    RETURN COALESCE(v_current_count, 0);
+END;
+$$ LANGUAGE plpgsql;
+
 -- Function to get current usage
 CREATE OR REPLACE FUNCTION get_subscription_usage(p_user_id INTEGER)
 RETURNS TABLE (
