@@ -1,7 +1,6 @@
 <template>
   <div>
     <ItemTable :items="items" />
-    <!-- Pagination block -->
     <div class="pagination-controls" v-if="totalItems > pageSize">
       <button
         :disabled="page === 1"
@@ -15,20 +14,18 @@
         class="btn btn-outline-secondary btn-sm"
       >Next &gt;</button>
     </div>
-    <!-- Map section with access control -->
     <div class="container mt-5">
       <div v-if="!hasMapAccess" class="alert alert-info">
         {{ $t('map.registerToView') }}
         <router-link to="/register" class="btn btn-primary ml-3">{{ $t('navbar.register') }}</router-link>
       </div>
       <div v-else>
-        <!-- Buttons to toggle map -->
         <div class="mb-3">
           <button v-if="!showMap" @click="toggleMap" class="btn btn-primary">
             <i class="bi bi-map me-2"></i>{{ $t('homePage.showMapWithMarkers') }}
           </button>
           <button v-else @click="toggleMap" class="btn btn-secondary">
-            <i class="bi bi-eye-slash me-2"></i>{{ $t('homePage.hideMap') }} 
+            <i class="bi bi-eye-slash me-2"></i>{{ $t('homePage.hideMap') }}
           </button>
         </div>
 
@@ -49,7 +46,6 @@
         </div>
       </div>
     </div>
-    <!-- Categories cards -->
     <CategoryCards />
   </div>
 </template>
@@ -61,14 +57,12 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import CategoryCards from './CategoryCards.vue';
 import ItemTable from './ItemTable.vue';
-// import FilterItemsForm from './FilterItemsForm.vue';
 
 export default {
   name: 'HomePage',
   components: {
     CategoryCards,
     ItemTable,
-    // FilterItemsForm,
   },
   data() {
     return {
@@ -78,12 +72,11 @@ export default {
       popup: null,
       mapLoaded: false,
       hasMapAccess: false,
-      // pagination-controls
       page: 1,
       pageSize: 10,
       totalItems: 0,
-      showMap: false, // Control map visibility
-      mapInitialized: false, // Track if map has been initialized
+      showMap: false, // NEW: Control map visibility
+      mapInitialized: false, // NEW: Track if map has been initialized
     };
   },
   computed: {
@@ -116,12 +109,9 @@ export default {
         });
         this.items = response.data.items;
         this.hasMapAccess = response.data.has_map_access;
-        // If backend returns total count, use it. Otherwise, estimate
         this.totalItems = response.data.total_items || (offset + this.items.length + (this.items.length === this.pageSize ? this.pageSize : 0));
-        // Do not initialize map here. It's handled by toggleMap.
-        // if (this.hasMapAccess) {
-        //   this.$nextTick(() => {this.initializeMap();})
-        // }
+
+        // NEW: Do NOT initialize map here. It's handled by toggleMap.
       } catch (error) {
         console.error('Failed to fetch items:', error);
       }
@@ -136,24 +126,27 @@ export default {
         // For now, simply updating source data is sufficient.
       }
     },
+    // NEW: Method to toggle map visibility and initialize
     async toggleMap() {
       this.showMap = !this.showMap;
       if (this.showMap && this.hasMapAccess && !this.mapInitialized) {
         // Ensure map container is rendered before initializing Mapbox
         await this.$nextTick();
-        this.initializeMap();
-        await this.incrementCounter('map_views'); // Increment counter when map is first shown
-        this.mapInitialized = true;  // Mark as initialized
-      } else {
-        // Optional: remove map instance if hiding to free up resources
+        const isAllowed = await this.incrementCounter('map_views'); // Increment counter when map is first shown
+        if (isAllowed) {
+          this.initializeMap();
+          this.mapInitialized = true; // Mark as initialized
+        }
+      } else if (!this.showMap && this.map) {
+        // Optional: Remove map instance if hiding to free up resources
         this.map.remove();
         this.map = null;
         this.popup = null; // Clear popup reference
         this.mapInitialized = false; // Reset initialized state
-        this.mapLoaded = false; // Reset maploaded state
+        this.mapLoaded = false; // Reset mapLoaded state
       }
     },
-    // Method to increment counters (copied from ItemDetails.vue)
+    // NEW: Method to increment counters (copied from ItemDetails.vue)
     async incrementCounter(counterName) {
       try {
         const accessToken = localStorage.getItem('access_token');
@@ -171,8 +164,15 @@ export default {
             }
           }
         );
+
+        console.log(response);
         if (response.data.status === 'success') {
           console.log('Counter:', counterName, ' updated by value:', response.data.counter);
+          return true;
+        } else if (response.data.status === 'denied') {
+          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
+          alert(`${this.$t('profile.serviceLimitReached')}`)
+          return false;
         }
       } catch (error) {
         console.error('Error sending signal to counters:', error.response ? error.response.data : error.message);
@@ -188,14 +188,12 @@ export default {
         console.error('Map container not found');
         return;
       }
-      // If map already exists, do not re-initialize
+      // If map already exists and is initialized, just update data if items changed.
+      // The toggleMap logic should prevent this from being called if map is already running.
       if (this.map && this.mapInitialized) {
-        console.log('Map already initialized. Updating source data')
-        // If items have changed, update the source data
-        if (this.map.getSource('items')) {
-          const geoJsonData = this.getGeoJsonFromItems();
-          this.map.getSource('items').setData(geoJsonData);
-        }
+        console.log('Map already initialized. Updating source data.');
+        const geoJsonData = this.getGeoJsonFromItems();
+        this.map.getSource('items').setData(geoJsonData);
         return;
       }
       try {
@@ -230,18 +228,18 @@ export default {
     addMapSources() {
       if (!this.map) return;
       const geoJsonData = this.getGeoJsonFromItems();
+      console.log('GeoJSON data:', geoJsonData);
       this.map.addSource('items', {
         type: 'geojson',
         data: geoJsonData,
         cluster: true,
         clusterMaxZoom: 14, // Max zoom to cluster points on
         clusterMinPoints: 2, // Minimum number of points to form a cluster
-        clusterRadius: 60  // Fixed typo from clasterRadius
+        clusterRadius: 60
       });
     },
     addMapLayers() {
       if (!this.map) return;
-      // Add clusters layer
       this.map.addLayer({
         id: 'clusters',
         type: 'circle',
@@ -251,11 +249,11 @@ export default {
           'circle-color': [
             'step',
             ['get', 'point_count'],
-            '#51bbd6',  // 0-3 items
+            '#51bbd6',
             4,
-            '#f1f075',  // 4-8 items
+            '#f1f075',
             6,
-            '#f28cb1'   // 8+ items
+            '#f28cb1'
           ],
           'circle-radius': [
             'step',
@@ -264,7 +262,6 @@ export default {
           ]
         }
       });
-      // Add cluster count numbers
       this.map.addLayer({
         id: 'cluster-count',
         type: 'symbol',
@@ -276,7 +273,6 @@ export default {
           'text-size': 14
         }
       });
-      // Add unclustered points - simplified from your current version
       this.map.addLayer({
         id: 'unclustered-point',
         type: 'circle',
@@ -293,14 +289,12 @@ export default {
     },
     addMapInteractions() {
       if (!this.map) return;
-      // Add pointer cursor for both layers
       this.map.on('mouseenter', 'clusters', () => {
         this.map.getCanvas().style.cursor = 'pointer';
       });
       this.map.on('mouseleave', 'clusters', () => {
         this.map.getCanvas().style.cursor = '';
       });
-      // Handle cluster clicks
       this.map.on('click', 'clusters', (e) => {
         const features = this.map.queryRenderedFeatures(e.point, {
           layers: ['clusters']
@@ -317,45 +311,45 @@ export default {
           }
         );
       });
-      // Unclustered point interaction (works for both single and multiple points)
       this.map.on('mouseenter', 'unclustered-point', () => {
         this.map.getCanvas().style.cursor = 'pointer';
       });
       this.map.on('mouseleave', 'unclustered-point', () => {
         this.map.getCanvas().style.cursor = '';
       });
-      // Handle unclustered point clicks
       this.map.on('click', 'unclustered-point', (e) => {
         const feature = e.features[0];
         const coordinates = feature.geometry.coordinates.slice();
         const item = feature.properties;
-        // Ensure the popup is closed before opening a new one
-        if (this.popup) { // Змінено з this.map.getPopup() на this.popup
+        if (this.popup) {
           this.popup.remove();
-          this.popup = null; // Очистити посилання після видалення
+          this.popup = null;
         }
 
-        // Create and show the popup
         const popupContent = this.getPopupHTML(item);
+        console.log('Popup content:', popupContent);
+
         this.popup = new mapboxgl.Popup({ closeOnClick: false })
           .setLngLat(coordinates)
           .setHTML(popupContent)
           .addTo(this.map);
-        // Add a 'open' event listener to the popup to ensure the button is in the DOM
+        console.log('Popup added to map.');
+
         this.popup.on('open', () => {
+          console.log('Popup opened event fired.');
           const popupButton = document.getElementById(`popup-view-details-${item.id}`);
           if (popupButton) {
-            console.log('Popup button found. Adding click listener.'); // Додано лог
+            console.log('Popup button found. Adding click listener.');
             popupButton.addEventListener('click', (event) => {
-              event.preventDefault(); // Prevent default anchor behavior
+              event.preventDefault();
               this.$router.push(`/items/${item.id}`);
             });
           } else {
-            console.log('Popup button NOT found.'); // Лог, якщо кнопка не знайдена
+            console.log('Popup button NOT found.');
           }
         });
 
-        this.popup.on('close', () => { // Додано обробник закриття для очищення
+        this.popup.on('close', () => {
           console.log('Popup closed.');
           this.popup = null;
         });
@@ -387,6 +381,7 @@ export default {
       };
     },
     getPopupHTML(item) {
+    console.log('Generating popup HTML for item:', item);
       let popupContent = `
         <div class="popup-content">
           <h5><span class="badge bg-info text-dark">${item.offer_type.toUpperCase()}</span> ${item.title || ''}</h5>
@@ -404,6 +399,7 @@ export default {
           </a>
         </div>
       `;
+      console.log('Popup content:', popupContent);
       return popupContent;
     },
   },
@@ -414,12 +410,10 @@ export default {
   beforeUnmount() {
     clearInterval(this.timer);
     if (this.map) {
-      // Remove event listeners
       this.map.off('mouseenter', 'clusters');
       this.map.off('mouseleave', 'clusters');
       this.map.off('click', 'unclustered-point');
       this.map.off('click', 'clusters');
-      // Remove the map
       this.map.remove();
       this.map = null;
     }
@@ -428,6 +422,7 @@ export default {
 </script>
 
 <style>
+/* Existing styles */
 .pagination-controls {
   display: flex;
   justify-content: center;
@@ -532,4 +527,3 @@ flex: 1;
   text-align: center;
 }
 </style>
-
