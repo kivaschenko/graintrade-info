@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 
-from ..models import subscription_model
+from ..models import subscription_model, tarif_model
 from . import JWT_SECRET
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -51,6 +51,11 @@ COUNTERS = {
     "geo_search_count": subscription_model.increment_geo_search_count,
     "navigation_count": subscription_model.increment_navigation_count,
 }
+LIMIT_KEYS = {
+    "map_views": "map_views_limit",
+    "geo_search_count": "geo_search_limit",
+    "navigation_count": "navigation_limit",
+}
 
 # ----------------------
 # Map counters endpoints
@@ -68,8 +73,18 @@ async def increment_map_view(
     user_id, scopes = await get_current_user_id(token)
     user_id = int(user_id)
     try:
-        counter = await COUNTERS[counter](user_id)
-        return {"status": "success", "counter": counter}
+        # Get usage info for current user
+        usage_info = await subscription_model.get_subscription_usage_for_user(user_id)
+        counter_usage = usage_info.get(counter)
+        scope = usage_info.get("tarif_scope")
+        tarif = await tarif_model.get_tarif_by_scope(scope)
+        limit_key = LIMIT_KEYS[counter]
+        counter_limit = tarif.__getattribute__(limit_key)
+        if counter_usage < counter_limit:
+            counter_usage = await COUNTERS[counter](user_id)
+            return {"status": "success", "counter": counter_usage}
+        else:
+            return {"status": "denied", "counter": counter_usage}
     except Exception as e:
         logging.error(f"Error during update map_vie for user_id: {user_id} {e}.")
         raise HTTPException(
