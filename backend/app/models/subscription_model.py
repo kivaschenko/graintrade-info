@@ -132,14 +132,16 @@ async def get_by_user_id(user_id: int) -> SubscriptionInResponse:
         return subscription
 
 
-async def get_subscription_usage_for_user(user_id: int) -> List[SubscriptionInResponse]:
+async def get_subscription_usage_for_user(user_id: int):
     query = "SELECT * FROM get_subscription_usage($1)"
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, user_id)
         return row
 
+
 # --------------------------------------------------------------------------------------------
 # Update counters for Subscription: items_count, map_views, geo_search_count, navigation_count
+
 
 async def increment_map_views(user_id: int):
     sub_query = "SELECT id FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1"
