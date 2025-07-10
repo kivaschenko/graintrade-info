@@ -188,7 +188,7 @@
         <ItemByUserTable
           :items="itemByUser" 
           :ref="itemTable"
-          @delete-item="fetchItemByUser"
+          @delete-item="handleItemDeletion"
           @itemUpdated="handleItemUpdate"
         />
         <div class="d-flex justify-content-center align-items-center mt-4" v-if="totalItems > pageSize">
@@ -368,6 +368,13 @@ export default {
     },
     async handleItemUpdate() {
       await this.fetchItemByUser();
+      // Potentially also refetch usage if item update can affect usage (e.g., changing item status that affects count)
+    },
+    async handleItemDeletion() {
+      // Re-fetch the list of items
+      await this.fetchItemByUser();
+      // Re-fetch the usage data to update item count
+      await this.fetchUsageData();
     },
     async handlePageChange(newPage) {
       this.page = newPage;
