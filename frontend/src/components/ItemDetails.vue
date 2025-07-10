@@ -152,9 +152,11 @@ export default {
       if (this.showMap && !this.mapInitialized && this.isAuthenticated) {
         // Ensure map container is rendered before initializing Mapbox
         await this.$nextTick();
-        this.initializeMap();
-        await this.incrementCounter('map_views');
-        this.mapInitialized = true;  // Mark as initialized
+        const isAllowed = await this.incrementCounter('map_views');
+        if (isAllowed) {
+          this.initializeMap();
+          this.mapInitialized = true;  // Mark as initialized
+        }
       } else if (!this.showMap && this.map) {
         // Optional: Remove map instance if hiding to free  up resources
         this.map.remove();
@@ -180,14 +182,17 @@ export default {
             }
           }
         );
-
-        console.log(response);
         if (response.data.status === 'success') {
           console.log('Counter:', counterName, ' updated by value:', response.data.counter);
           // You might want to update your local usage state here
           // e.g., if you have userUsage data property
           // if (counterName === 'map_views') this.userUsage.map_views = response.data.counter;
           // ... similar for geo_search_count and navigation_count
+          return true;
+        } else if (response.data.status === 'denied') {
+          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
+          alert(`${this.$t('profile.serviceLimitReached')}`)
+          return false;
         }
       } catch (error) {
         console.error('Error sending signal to counters:', error.response ? error.response.data : error.message);
@@ -241,16 +246,19 @@ export default {
       });
     },
     async geocodeLocation() {
+      const isAllowed = this.incrementCounter('geo_search_count'); // Increment geo search counter
+      if (!isAllowed) {return;} // Dont allow if limit reached
       try {
         const response = await axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${this.searchLocation}.json?access_token=${process.env.VUE_APP_MAPBOX_TOKEN}`);
         const coordinates = response.data.features[0].geometry.coordinates;
         this.calculateDirections(coordinates);
-        this.incrementCounter('geo_search_count'); // Increment geo search counter
       } catch (error) {
         console.error('Error geocoding location:', error);
       }
     },
     async calculateDirections(coordinates) {
+      const isAllowed = this.incrementCounter('navigation_count'); // Increment navigation counter
+      if (!isAllowed) {return;} // Dont allow if limit reached
       try {
         const response = await axios.get(`https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates[0]},${coordinates[1]};${this.item.longitude},${this.item.latitude}?alternatives=true&geometries=geojson&language=en&overview=full&steps=true&access_token=${process.env.VUE_APP_MAPBOX_TOKEN}`);
         const route = response.data.routes[0];
@@ -282,7 +290,6 @@ export default {
             },
           });
         }
-        this.incrementCounter('navigation_count'); // Increment navigation counter
       } catch (error) {
         console.error('Error calculating directions:', error);
       }
