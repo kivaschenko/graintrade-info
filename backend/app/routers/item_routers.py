@@ -17,7 +17,7 @@ from ..schemas import (
     ItemInResponse,
     ItemsByUserResponse,
 )
-from ..models import items_model
+from ..models import items_model, subscription_model, tarif_model
 from ..service_layer import item_services
 from . import JWT_SECRET
 
@@ -77,12 +77,21 @@ async def create_item(
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id, scopes = await get_current_user_id(token)
-    logging.info(f"User ID: {user_id}, Scopes: {scopes}")
     # check scope and permissions here
     if "create:item" not in scopes:
         logging.error("Not enough permissions")
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    new_item = await items_model.create(item=item, user_id=user_id)
+    usage_info = await subscription_model.get_subscription_usage_for_user(int(user_id))
+    counter_usage = usage_info.get("items_count")
+    scope = usage_info.get("tarif_scope")
+    tarif = await tarif_model.get_tarif_by_scope(scope)
+    counter_limit = tarif.__getattribute__("items_limit")
+    if counter_usage >= counter_limit:
+        logging.error("Not enough permissions, limit reached")
+        raise HTTPException(
+            status_code=403, detail="Not enough permissions, service limit reached"
+        )
+    new_item = await items_model.create(item=item, user_id=int(user_id))
     if new_item is None:
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
@@ -137,8 +146,6 @@ async def read_item(
             user_id, scopes = await get_current_user_id(token)
             if "read:item" not in scopes:
                 raise HTTPException(status.HTTP_403_FORBIDDEN)
-            # Increment map views counter for the user
-            # await items_model.map_views_increment(user_id)
         return db_item
     except Exception as e:
         logging.error(f"Error in read_item: {e}")
@@ -169,7 +176,7 @@ async def delete_item_bound_to_user(
         user_id, scopes = await get_current_user_id(token)
         if "delete:item" not in scopes:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-        await items_model.delete(item_id, user_id)
+        await items_model.delete(item_id, int(user_id))
         return {"status": "success", "message": "Item deleted successfully"}
     except Exception as e:
         return {"status": "error", "message": f"Something went wrong: {e}"}
