@@ -45,3 +45,28 @@ def get_chat_participants(db: Session, item_id: str):
     )
     print(f"Rows: {rows}")
     return [{"id": row[0], "username": row[0]} for row in rows if row[0]]
+
+
+def delete_chat_history(db: Session, item_id: str, user1: str, user2: str):
+    messages = (
+        db.query(models.Message)
+        .filter(models.Message.item_id == item_id)
+        .filter(
+            (
+                (models.Message.sender_id == user1)
+                & (models.Message.receiver_id == user2)
+            )
+            | (
+                (models.Message.sender_id == user2)
+                & (models.Message.receiver_id == user1)
+            )
+        )
+        .all()
+    )
+    for msg in messages:
+        db.delete(msg)
+    db.commit()
+    if not len(messages):
+        return True
+    else:
+        return False
