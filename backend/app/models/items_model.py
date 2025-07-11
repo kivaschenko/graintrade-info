@@ -326,3 +326,12 @@ async def get_filtered_items_geo_json(
             for row in rows
         ]
     return {"type": "FeatureCollection", "features": features}
+
+
+async def get_countries_list():
+    query = "SELECT DISTINCT ON (country) country FROM items ORDER BY country"
+    async with database.pool.acquire() as conn:
+        rows = await conn.fetch(query)
+        if not rows:
+            return []
+    return [r.get("country") for r in rows]
