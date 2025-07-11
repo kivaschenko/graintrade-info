@@ -26,7 +26,13 @@
         style="resize: vertical;"
       ></textarea>
       <div v-if="newMessageError" class="text-danger mt-1">{{ newMessageError }}</div>
-      <div class="d-flex justify-content-end">
+      <div class="d-flex justify-content-end align-items-center">
+        <button
+          class="btn btn-danger btn-sm me-2"
+          @click="deleteChatHistory"
+        >
+          <i class="bi bi-trash"></i> {{ $t('chat.deleteHistory') }}
+        </button>
         <button
           class="btn btn-success btn-sm"
           @click="sendMessage"
@@ -128,6 +134,26 @@ export default {
           content: this.newMessage,
         }));
         this.newMessage = '';
+      }
+    },
+    async deleteChatHistory() {
+      if (confirm(this.$t('chat.confirmDeleteHistory'))) {
+        try {
+          const response = await fetch(
+            `http://${this.chatRoomUrl}/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`,
+            {method: 'DELETE',}
+          );
+          const data = await response.json();
+          if (data.status === 'success') {
+            this.messages = []; // Clear messages on successful deletion
+            alert(this.$t('chat.deleteSuccess'));
+          } else {
+            alert(this.$t('chat.deleteError'));
+          }
+        } catch (error) {
+          console.error("Error deleting chat history:", error);
+          alert(this.$t('chat.deleteError'));
+        }
       }
     },
     formatTimestamp(ts) {

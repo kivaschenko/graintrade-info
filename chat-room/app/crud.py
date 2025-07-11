@@ -47,15 +47,6 @@ def get_chat_participants(db: Session, item_id: str):
     return [{"id": row[0], "username": row[0]} for row in rows if row[0]]
 
 
-def delete_message(db: Session, message_id: int):
-    message = db.query(models.Message).filter(models.Message.id == message_id).first()
-    if message:
-        db.delete(message)
-        db.commit()
-        return True
-    return False
-
-
 def delete_chat_history(db: Session, item_id: str, user1: str, user2: str):
     messages = (
         db.query(models.Message)
@@ -75,4 +66,7 @@ def delete_chat_history(db: Session, item_id: str, user1: str, user2: str):
     for msg in messages:
         db.delete(msg)
     db.commit()
-    return len(messages)
+    if not len(messages):
+        return True
+    else:
+        return False
