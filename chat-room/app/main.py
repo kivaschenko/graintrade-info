@@ -65,7 +65,7 @@ def get_history(
     current_user: str,
     db: Session = Depends(database.get_db),
 ):
-    # current_user shoild be the authenticated user (owner or participant)
+    # current_user should be the authenticated user (owner or participant)
     return crud.get_messages_between_users(
         db, item_id=item_id, user1=current_user, user2=other_user_id
     )
@@ -74,6 +74,23 @@ def get_history(
 @app.get("/chat/{item_id}/participants")
 def get_chat_participants(item_id: str, db: Session = Depends(database.get_db)):
     return crud.get_chat_participants(db, item_id)
+
+
+@app.delete("/chat/{item_id}/{other_user_id}/history")
+def delete_history(
+    item_id: str,
+    other_user_id: str,
+    current_user: str,
+    db: Session = Depends(database.get_db),
+):
+    # current_user should be the authenticated user (owner or participant)
+    res = crud.delete_chat_history(
+        db=db, item_id=item_id, user1=current_user, user2=other_user_id
+    )
+    if res:
+        return {"status": "success"}
+    else:
+        return {"status": "error"}
 
 
 # ... add authentication, notification hooks, etc.
