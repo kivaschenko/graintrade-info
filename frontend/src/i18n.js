@@ -232,6 +232,10 @@ const messages = {
       send: 'Send',
       chatsWithOtherUsers: "Chats with other users",
       chatWithOwnerOfItem: "Chat with owner of item",
+      deleteHistory: "Delete whole history",
+      confirmDeleteHistory: "Are you sure you want to delete this chat history? This action cannot be undone.",
+      deleteSuccess: "Chat history deleted successfully!",
+      deleteError: "Failed to delete chat history. Please try again."
     },
   },
   ua: {
@@ -467,6 +471,10 @@ const messages = {
       send: 'Надіслати',
       chatsWithOtherUsers: "Чат з іншими користувачами",
       chatWithOwnerOfItem: "Чат з власником товару",
+      deleteHistory: "Видалити всю історію",
+      confirmDeleteHistory: "Ви впевнені, що хочете видалити всю історію чату? Цю дію неможливо відмінити.",
+      deleteSuccess: "Історія чату успішно видалена!",
+      deleteError: "Помилка видалення історії чату. Будь ласка спробуйте ще раз."
     },
   },
 };
