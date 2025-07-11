@@ -291,3 +291,16 @@ async def get_items_geojson(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+
+
+@router.get("/countries", response_model=dict, tags=["Items"])
+async def get_countries():
+    try:
+        countries = await items_model.get_countries_list()
+        return {"status": "success", "countries": countries}
+    except Exception as e:
+        logging.error(f"Error during countris list getting: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
