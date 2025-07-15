@@ -23,13 +23,14 @@ rabbitmq_vhost = os.getenv("RABBITMQ_VHOST", "/")
 if not rabbitmq_host or not rabbitmq_username or not rabbitmq_password:
     raise ValueError("Check environment variables for RabbitMQ!")
 
+
 async def publish_notification(payload: dict):
     connection = await aio_pika.connect_robust(
-        host=self.host,
-        port=self.port,
-        login=self.username,
-        password=self.password,
-        virtualhost=self.vhost,
+        host=rabbitmq_host,
+        port=rabbitmq_port,
+        login=rabbitmq_username,
+        password=rabbitmq_password,
+        virtualhost=rabbitmq_vhost,
     )
     logger.info(f"Connected to RabbitMQ: {connection}")
     channel = await connection.channel()
