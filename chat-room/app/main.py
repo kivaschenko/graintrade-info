@@ -1,10 +1,10 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Dict, List
 import uvicorn
 
-from . import models, schemas, crud, database
+from . import models, crud, database
 
 models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI()
@@ -29,7 +29,6 @@ async def chat_room(websocket: WebSocket, item_id: str, other_user_id: str):
     try:
         while True:
             data = await websocket.receive_json()
-            print("Received data:", data)
             # Validate keys
             if (
                 "sender_id" not in data
@@ -44,7 +43,7 @@ async def chat_room(websocket: WebSocket, item_id: str, other_user_id: str):
                 continue
             # Save message to DB
             db: Session = next(database.get_db())
-            crud.create_message(
+            new_message = crud.create_message(
                 db,
                 item_id=item_id,
                 sender_id=data["sender_id"],
