@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, List
 import uvicorn
 
-from . import models, crud, database
+from . import models, crud, database, services
 
 models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI()
@@ -20,7 +20,12 @@ active_connections: Dict[str, List[WebSocket]] = {}
 
 
 @app.websocket("/ws/chat/{item_id}/{other_user_id}")
-async def chat_room(websocket: WebSocket, item_id: str, other_user_id: str):
+async def chat_room(
+    websocket: WebSocket,
+    item_id: str,
+    other_user_id: str,
+    background_tasks: BackgroundTasks,
+):
     await websocket.accept()
     room_key = f"{item_id}:{other_user_id}"
     if room_key not in active_connections:
@@ -49,6 +54,9 @@ async def chat_room(websocket: WebSocket, item_id: str, other_user_id: str):
                 sender_id=data["sender_id"],
                 receiver_id=data["receiver_id"],
                 content=data["content"],
+            )
+            background_tasks.add_task(
+                services.send_message_to_queue, new_message.__dict__
             )
             # Broadcast to certain chat room
             for conn in active_connections[room_key]:
