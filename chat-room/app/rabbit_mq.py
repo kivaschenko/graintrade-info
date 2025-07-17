@@ -28,10 +28,10 @@ if not rabbitmq_host or not rabbitmq_username or not rabbitmq_password:
 
 
 class QueueName(StrEnum):
-    ITEM_EVENTS = "item.events"
-    USER_EVENTS = "user.events"
-    PAYMENT_EVENTS = "payment.events"
-    # MESSAGE_EVENTS = "message.events"
+    # ITEM_EVENTS = "item.events"
+    # USER_EVENTS = "user.events"
+    # PAYMENT_EVENTS = "payment.events"
+    MESSAGE_EVENTS = "message.events"
 
 
 # Generate the list of all queue names dynamically
