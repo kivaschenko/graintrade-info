@@ -55,9 +55,7 @@ async def chat_room(
                 receiver_id=data["receiver_id"],
                 content=data["content"],
             )
-            background_tasks.add_task(
-                services.send_message_to_queue, new_message.__dict__
-            )
+            await services.send_message_to_queue(new_message)
             # Broadcast to certain chat room
             for conn in active_connections[room_key]:
                 await conn.send_json(data)
