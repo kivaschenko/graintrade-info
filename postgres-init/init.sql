@@ -557,3 +557,14 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_status_end_date
 ON subscriptions(status, end_date);
 CREATE INDEX IF NOT EXISTS idx_tarifs_scope 
 ON tarifs(scope);
+
+-- Create Notifications table
+CREATE TABLE IF NOT EXISTS user_notification_preferences (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    notify_new_messages BOOLEAN DEFAULT TRUE,
+    notify_new_items BOOLEAN DEFAULT TRUE,
+    interested_categories TEXT[],
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
