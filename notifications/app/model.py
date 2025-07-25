@@ -5,6 +5,7 @@ from .schemas import UserInResponse, ItemInResponse
 # ---------------
 # GET User models
 
+
 async def get_user_by_username(username: str) -> UserInResponse:
     query = """
         SELECT id, username, email, full_name, phone, hashed_password, disabled
@@ -12,12 +13,8 @@ async def get_user_by_username(username: str) -> UserInResponse:
         WHERE username = $1
     """
     async with database.pool.acquire() as conn:
-        try:
-            row = await conn.fetchrow(query, username)
-            return UserInResponse(**row)
-        except Exception as e:
-            print(f"Error fetching user by username: {e}")
-            return None
+        row = await conn.fetchrow(query, username)
+        return UserInResponse(**row)
 
 
 async def get_user_by_id(user_id: int) -> UserInResponse:
@@ -49,4 +46,3 @@ async def get_item_by_id(item_id: int) -> ItemInResponse:
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, item_id)
     return ItemInResponse(**row)
-
