@@ -1,12 +1,14 @@
 from email.message import EmailMessage
+from pathlib import Path
+import os
 import asyncio
 import json
 import aio_pika
 import aiosmtplib
 import logging
-import os
 
-from jinja2 import Template
+from jinja2 import Environment, FileSystemLoader
+from dotenv import load_dotenv
 
 from .database import database
 from .model import get_user_by_username
@@ -15,6 +17,14 @@ from .rabbit_mq import QueueName, get_rabbitmq_connection
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+BASE_DIR = Path(__file__).resolve().parent.parent
+env = Environment(loader=FileSystemLoader(BASE_DIR / "app" / "templates"))
+# Load environment variables
+if not BASE_DIR.joinpath(".env").exists():
+    raise FileNotFoundError("Environment file .env not found in the base directory.")
+else:
+    logging.info("Loading environment variables from .env file.")
+load_dotenv(BASE_DIR / ".env")
 
 # Load environment (Mailtrap)
 SMTP_USER = os.getenv("MAILTRAP_USER")
@@ -31,7 +41,7 @@ async def send_email(to_email, subject, body):
     message["From"] = EMAIL_FROM
     message["To"] = to_email
     message["Subject"] = subject
-    message.set_content(body)
+    message.set_content(body, subtype="html")
 
     await aiosmtplib.send(
         message,
@@ -55,8 +65,15 @@ async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage)
                 logging.error(f"Error fetching user or item: {e}")
                 return
             subject = "You have a new message"
-            body = f"You received a new message: {data['message_text']}\nView item: /items/{data['item_id']}"
-            await send_email(user.email, subject, body)
+            # body = f"You received a new message: {data['message_text']}\nView item: {BASE_URL}/items/{data['item_id']}"
+            # await send_email(user.email, subject, body)
+            html_body = env.get_template("new_message_email.html").render(
+                user_name=user.full_name or user.username,
+                message_text=data["message_text"],
+                item_url=f"{BASE_URL}/items/{data['item_id']}",
+            )
+            await send_email(user.email, subject, html_body)
+            logging.info(f"Email sent to {user.email} with subject: {subject}")
         else:
             return
 
