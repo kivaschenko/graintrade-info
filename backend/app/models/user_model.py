@@ -1,7 +1,7 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 
 from ..database import database
-from ..schemas import UserInDB, UserInResponse
+from ..schemas import UserInDB, UserInResponse, PreferencesUpdateSchema
 
 ORDER_ID = "registration-{}"
 
@@ -64,7 +64,7 @@ async def get_by_username(username: str) -> UserInResponse:
             return UserInResponse(**row)
         except Exception as e:
             print(f"Error fetching user by username: {e}")
-            return None
+            raise ValueError(f"User with username {username} not found.")
 
 
 async def get_by_id(user_id: int) -> UserInResponse:
@@ -136,3 +136,36 @@ async def update_password(user_id: int, hashed_password: str) -> UserInResponse 
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, hashed_password, user_id)
     return UserInResponse(**row) if row else None
+
+
+# ----------
+# Prefernces
+
+
+async def update_user_preferences(user_id: int, prefs_data: PreferencesUpdateSchema):
+    query = """
+        UPDATE user_notification_preferences
+        SET notify_new_messages = $1,
+            notify_new_items = $2,
+            interested_categories = $3
+            updated_at = $4
+        WHERE user_id = $5
+        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories
+    """
+    timestamp = datetime.now(timezone.utc)
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(
+            query,
+            prefs_data.notify_new_messages,
+            prefs_data.notify_new_items,
+            prefs_data.interested_categories,
+            timestamp,
+            user_id,
+        )
+        if row is None:
+            raise ValueError("User prefernces not found for the given user_id.")
+        return PreferencesUpdateSchema(
+            notify_new_messages=row["notify_new_messages"],
+            notify_new_items=row["notify_new_items"],
+            interested_categories=row["interested_categories"],
+        )

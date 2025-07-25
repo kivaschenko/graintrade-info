@@ -28,10 +28,10 @@ if not rabbitmq_host or not rabbitmq_username or not rabbitmq_password:
 
 
 class QueueName(StrEnum):
-    ITEM_EVENTS = "item.events"
-    USER_EVENTS = "user.events"
-    PAYMENT_EVENTS = "payment.events"
-    # MESSAGE_EVENTS = "message.events"
+    # ITEM_EVENTS = "item.events"
+    # USER_EVENTS = "user.events"
+    # PAYMENT_EVENTS = "payment.events"
+    MESSAGE_EVENTS = "message.events"
 
 
 # Generate the list of all queue names dynamically
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
     async def publish_document_upload_event(
         rabbitmq: RabbitMQ = rabbitmq,
-        queue: str = QueueName.ITEM_EVENTS,
+        queue: str = QueueName.MESSAGE_EVENTS,
         document_uuid: str = "test_uuid",
         document_type: str = "test_type",
         params: dict = {"key": "value"},
@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     async def test_rabbitmq():
         await rabbitmq.connect()
-        queue = QueueName.ITEM_EVENTS
+        queue = QueueName.MESSAGE_EVENTS
         print(f"Publish messages to queue: {queue}")
         await publish_document_upload_event(rabbitmq, queue)
         await rabbitmq.close()
@@ -163,7 +163,7 @@ if __name__ == "__main__":
             async with message.process():
                 print("Received message:", json.loads(message.body.decode()))
 
-        queue = QueueName.ITEM_EVENTS
+        queue = QueueName.MESSAGE_EVENTS
         print(f"Consume messages from queue: {queue}")
         await rabbitmq.consume(queue, callback)
 

@@ -28,6 +28,7 @@ from ..schemas import (
 from ..models import user_model, subscription_model
 from ..service_layer import user_services
 from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from ..schemas import PreferencesUpdateSchema
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -364,3 +365,19 @@ async def delete_user(
 
 #     new_map_views = await repo.increment_map_views(user_id)
 #     return {"map_views": new_map_views}
+
+
+@router.put("/preferences", summary="Update notification preferences")
+async def update_preferences(
+    prefs_data: PreferencesUpdateSchema,
+    user_id: int = Depends(get_current_user_id),
+):
+    try:
+        updated_prefs = await update_user_preferences(user_id, prefs_data)
+        return updated_prefs
+    except Exception as e:
+        logging.error(f"Error updating preferences: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update preferences",
+        )
