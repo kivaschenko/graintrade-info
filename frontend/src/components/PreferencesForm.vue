@@ -1,40 +1,39 @@
 <template>
 	<div class="card shadow-sm border-0 custom-card-nested mt-4">
 		<div class="card-body">
-			<h4 class="card-title text-primary mb-3">Notification Preferences Edit</h4>
+			<h4 class="card-title text-primary mb-3">{{ $t('preferences.notificationPreferencesEdit') }}</h4>
 
 			<div class="mb-3 form-check">
 				<input type="checkbox" class="form-check-input" id="notifyMessages" v-model="notify_new_messages" />
-				<label class="form-check-label" for="notifyMessages">Notify me about new messages</label>
+				<label class="form-check-label" for="notifyMessages">{{ $t('preferences.notifyMeAboutNewMessages') }}</label>
 			</div>
 
 			<div class="mb-3 form-check">
 				<input type="checkbox" class="form-check-input" id="notifyItems" v-model="notify_new_items" />
-				<label class="form-check-label" for="notifyItems">Notify me about new items in categories</label>
+				<label class="form-check-label" for="notifyItems">{{ $t('preferences.notifyMeAboutNewItems') }}</label>
 			</div>
 
 			<div class="mb-3">
-				<label for="category_idx" class="form-label">Interested Categories</label>
+				<label for="category_idx" class="form-label">{{ $t('preferences.interestedCategories') }}</label>
 				<select
 					id="category_idx"
 					v-model="selectedCategories"
 					class="form-select"
 					multiple
 					size="6"
-					aria-label="Select categories of interest"
-					help-text="Select categories you are interested in for notifications with Ctrl/Cmd + Click"
 				>
 					<option v-for="category in categories" :key="category.id" :value="category.name">
 						{{ getCategoryName(category) }}
 					</option>
 				</select>
+				<small class="form-text text-muted">{{ $t('preferences.helpText') }}</small>
 			</div>
 
 			<button
 				@click="updatePreferences"
 				class="btn btn-primary"
 			>
-				Save Preferences
+				{{ $t('preferences.savePreferences') }}
 			</button>
 
 			<div v-if="message" :class="['mt-3', message.includes('successfully') ? 'alert alert-success' : 'alert alert-danger']" role="alert">
