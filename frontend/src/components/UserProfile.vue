@@ -208,31 +208,31 @@
     </div>
         <div class="card shadow-sm border-0 mt-4 custom-card-nested">
       <div class="card-body">
-        <h4 class="card-title text-primary mb-3">Notification Preferences Status</h4>
+        <h4 class="card-title text-primary mb-3">{{ $t('preferences.notificationPreferencesStatus') }}</h4>
         <div v-if="preferences">
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <div class="d-flex align-items-center">
                 <i class="bi bi-bell-fill me-2 text-muted"></i>
-                <strong>Notify about new messages:</strong>
+                <strong>{{ $t('preferences.notifyMeAboutNewMessages') }}:</strong>
                 <span :class="['badge ms-2', preferences.notify_new_messages ? 'bg-success' : 'bg-secondary']">
-                  {{ preferences.notify_new_messages ? 'Yes' : 'No' }}
+                  {{ preferences.notify_new_messages ? 'Yes / Так' : 'No / Ні' }}
                 </span>
               </div>
             </div>
             <div class="col-md-6">
               <div class="d-flex align-items-center">
                 <i class="bi bi-bell-fill me-2 text-muted"></i>
-                <strong>Notify about new items:</strong>
+                <strong>{{ $t('preferences.notifyMeAboutNewItems') }}:</strong>
                 <span :class="['badge ms-2', preferences.notify_new_items ? 'bg-success' : 'bg-secondary']">
-                  {{ preferences.notify_new_items ? 'Yes' : 'No' }}
+                  {{ preferences.notify_new_items ? 'Yes / Так' : 'No / Ні' }}
                 </span>
               </div>
             </div>
             <div class="col-12">
               <div class="d-flex align-items-start">
                 <i class="bi bi-tags-fill me-2 text-muted mt-1"></i>
-                <strong>Interested categories:</strong>
+                <strong>{{ $t('preferences.interestedCategories') }}:</strong>
                 <div class="ms-2">
                   <span v-if="preferences.interested_categories && preferences.interested_categories.length">
                     <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-info me-1 mb-1">
@@ -451,6 +451,9 @@ export default {
         console.error('Error fetching preferences:', error);
         this.error = 'Failed to load preferences';
       }
+    },
+    getCategoryName(category) {
+      return this.$store.state.currentLocale === 'ua' ? category.ua_name : category.name;
     },
   },
   async created() {
