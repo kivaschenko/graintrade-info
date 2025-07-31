@@ -206,6 +206,36 @@
         </div>
       </div>
     </div>
+        <div class="card shadow-sm border-0 mt-4 custom-card-nested">
+      <div class="card-body">
+        <h4 class="card-title text-primary mb-3">Notification Preferences</h4>
+        <div v-if="preferences">
+          <ul class="mb-3">
+            <li>
+              <strong>Notify about new messages:</strong>
+              <span>{{ preferences.notify_new_messages ? 'Yes' : 'No' }}</span>
+            </li>
+            <li>
+              <strong>Notify about new items:</strong>
+              <span>{{ preferences.notify_new_items ? 'Yes' : 'No' }}</span>
+            </li>
+            <li>
+              <strong>Interested categories:</strong>
+              <span>
+                <span v-if="preferences.interested_categories && preferences.interested_categories.length">
+                  {{ preferences.interested_categories.join(', ') }}
+                </span>
+                <span v-else>
+                  None selected
+                </span>
+              </span>
+            </li>
+          </ul>
+        </div>
+        <PreferencesForm :initialPreferences="preferences" @updated="fetchPreferences" />
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -213,11 +243,13 @@
 import { mapState } from 'vuex';
 import api from '@/services/api';
 import ItemByUserTable from './ItemByUserTable.vue';
+import PreferencesForm from './PreferencesForm.vue';
 
 export default {
   name: 'UserProfile',
   components: {
-    ItemByUserTable
+    ItemByUserTable,
+    PreferencesForm, // Add this line to include the PreferencesForm component
   },
   data() {
     return {
@@ -257,6 +289,13 @@ export default {
       pageSize: 10,
 
       loadingItems: false,
+
+      // Preferences form state
+      preferences: {
+        notify_new_messages: false,
+        notify_new_items: false,
+        interested_categories: []
+      },
     }
   },
   computed: {
@@ -278,6 +317,7 @@ export default {
         console.log('User data:', this.user);
         await this.fetchSubscription();
         await this.fetchUsageData();
+        await this.fetchPreferences(); // Fetch preferences after user data is available
       } catch (error) {
         console.error('Error fetching user data:', error);
         this.error = 'Failed to load user data';
@@ -379,13 +419,30 @@ export default {
     async handlePageChange(newPage) {
       this.page = newPage;
       await this.fetchItemByUser();
-    }
+    },
+    async fetchPreferences() {
+      try {
+        if (!this.user.id) {
+          console.warn('User ID not available for fetching preferences.');
+          return;
+        }
+        const response = await api.get(`/preferences`);
+        this.preferences = response.data || {
+          notify_new_messages: false,
+          notify_new_items: false,
+          interested_categories: []
+        };
+      } catch (error) {
+        console.error('Error fetching preferences:', error);
+        this.error = 'Failed to load preferences';
+      }
+    },
   },
   async created() {
     if (this.isAuthenticated) {
       this.isLoading = true;
       try {
-        await this.fetchUserData(); // This now also fetches subscription and usage
+        await this.fetchUserData(); // This now also fetches subscription, usage, and preferences
         await this.fetchItemByUser();
       } catch (error) {
         console.error('Error during created lifecycle:', error);
