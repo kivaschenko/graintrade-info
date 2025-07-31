@@ -237,6 +237,20 @@ const messages = {
       deleteSuccess: "Chat history deleted successfully!",
       deleteError: "Failed to delete chat history. Please try again."
     },
+    preferences: {
+      notificationPreferencesStatus: "Notification Preferences Status",
+      notificationPreferencesEdit: "Edit Notification Preferences",
+      notifyMeAboutNewMessages: "Notify me about new messages",
+      notifyMeAboutNewItems: "Notify me about new items",
+      interestedCategories: "Interested Categories",
+      selectCategories: "Select categories you are interested in (you can select multiple categories)",
+      savePreferences: "Save Preferences",
+      preferencesSaved: "Preferences saved successfully!",
+      preferencesSaveError: "Error saving preferences. Please try again.",
+      helpText: "Select categories you are interested in for notifications with Ctrl/Cmd + Click",
+      yes: 'Yes',
+      no: 'No',
+    }
   },
   ua: {
     navbar: {
@@ -476,6 +490,20 @@ const messages = {
       deleteSuccess: "Історія чату успішно видалена!",
       deleteError: "Помилка видалення історії чату. Будь ласка спробуйте ще раз."
     },
+    preferences: {
+      notificationPreferencesStatus: "Статус налаштувань сповіщень",
+      notificationPreferencesEdit: "Редагувати налаштування сповіщень",
+      notifyMeAboutNewMessages: "Сповіщати про нові повідомлення",
+      notifyMeAboutNewItems: "Сповіщати про нові товари",
+      interestedCategories: "Категорії, що вас цікавлять",
+      selectCategories: "Виберіть категорії, які вас цікавлять (можна вибрати кілька категорій)",
+      savePreferences: "Зберегти налаштування",
+      preferencesSaved: "Налаштування успішно збережено!",
+      preferencesSaveError: "Помилка збереження налаштувань. Будь ласка, спробуйте ще раз.",
+      helpText: "Виберіть категорії, які вас цікавлять для сповіщень, використовуючи Ctrl/Cmd + Клік",
+      yes: 'Так',
+      no: 'Ні',
+    }
   },
 };
 

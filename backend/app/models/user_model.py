@@ -147,12 +147,12 @@ async def update_user_preferences(user_id: int, prefs_data: PreferencesUpdateSch
         UPDATE user_notification_preferences
         SET notify_new_messages = $1,
             notify_new_items = $2,
-            interested_categories = $3
+            interested_categories = $3,
             updated_at = $4
         WHERE user_id = $5
         RETURNING user_id, notify_new_messages, notify_new_items, interested_categories
     """
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now()
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(
             query,
@@ -169,3 +169,52 @@ async def update_user_preferences(user_id: int, prefs_data: PreferencesUpdateSch
             notify_new_items=row["notify_new_items"],
             interested_categories=row["interested_categories"],
         )
+
+
+async def get_user_preferences(user_id: int) -> PreferencesUpdateSchema:
+    query = """
+        SELECT user_id, notify_new_messages, notify_new_items, interested_categories
+        FROM user_notification_preferences
+        WHERE user_id = $1
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, user_id)
+        if row is None:
+            raise ValueError("User preferences not found for the given user_id.")
+        return PreferencesUpdateSchema(
+            notify_new_messages=row["notify_new_messages"],
+            notify_new_items=row["notify_new_items"],
+            interested_categories=row["interested_categories"],
+        )
+
+
+async def create_user_preferences(user_id: int, prefs_data: PreferencesUpdateSchema):
+    query = """
+        INSERT INTO user_notification_preferences (user_id, notify_new_messages, notify_new_items, interested_categories)
+        VALUES ($1, $2, $3, $4)
+        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(
+            query,
+            user_id,
+            prefs_data.notify_new_messages,
+            prefs_data.notify_new_items,
+            prefs_data.interested_categories,
+        )
+        return PreferencesUpdateSchema(
+            notify_new_messages=row["notify_new_messages"],
+            notify_new_items=row["notify_new_items"],
+            interested_categories=row["interested_categories"],
+        )
+
+
+async def get_or_create_user_preferences(user_id: int) -> PreferencesUpdateSchema:
+    try:
+        return await get_user_preferences(user_id)
+    except ValueError:
+        # If preferences do not exist, create them with default values
+        default_prefs = PreferencesUpdateSchema(
+            notify_new_messages=False, notify_new_items=False, interested_categories=[]
+        )
+        return await create_user_preferences(user_id, default_prefs)

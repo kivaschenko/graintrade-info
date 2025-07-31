@@ -206,6 +206,51 @@
         </div>
       </div>
     </div>
+        <div class="card shadow-sm border-0 mt-4 custom-card-nested">
+      <div class="card-body">
+        <h4 class="card-title text-primary mb-3">{{ $t('preferences.notificationPreferencesStatus') }}</h4>
+        <div v-if="preferences">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-bell-fill me-2 text-muted"></i>
+                <strong>{{ $t('preferences.notifyMeAboutNewMessages') }}:</strong>
+                <span :class="['badge ms-2', preferences.notify_new_messages ? 'bg-success' : 'bg-secondary']">
+                  {{ preferences.notify_new_messages ? 'Yes / Так' : 'No / Ні' }}
+                </span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-bell-fill me-2 text-muted"></i>
+                <strong>{{ $t('preferences.notifyMeAboutNewItems') }}:</strong>
+                <span :class="['badge ms-2', preferences.notify_new_items ? 'bg-success' : 'bg-secondary']">
+                  {{ preferences.notify_new_items ? 'Yes / Так' : 'No / Ні' }}
+                </span>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="d-flex align-items-start">
+                <i class="bi bi-tags-fill me-2 text-muted mt-1"></i>
+                <strong>{{ $t('preferences.interestedCategories') }}:</strong>
+                <div class="ms-2">
+                  <span v-if="preferences.interested_categories && preferences.interested_categories.length">
+                    <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-info me-1 mb-1">
+                      {{ category }}
+                    </span>
+                  </span>
+                  <span v-else class="text-muted">
+                    None selected
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <PreferencesForm :initialPreferences="preferences" @updated="fetchPreferences" />
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -213,11 +258,13 @@
 import { mapState } from 'vuex';
 import api from '@/services/api';
 import ItemByUserTable from './ItemByUserTable.vue';
+import PreferencesForm from './PreferencesForm.vue';
 
 export default {
   name: 'UserProfile',
   components: {
-    ItemByUserTable
+    ItemByUserTable,
+    PreferencesForm, // Add this line to include the PreferencesForm component
   },
   data() {
     return {
@@ -257,6 +304,13 @@ export default {
       pageSize: 10,
 
       loadingItems: false,
+
+      // Preferences form state
+      preferences: {
+        notify_new_messages: false,
+        notify_new_items: false,
+        interested_categories: []
+      },
     }
   },
   computed: {
@@ -278,6 +332,7 @@ export default {
         console.log('User data:', this.user);
         await this.fetchSubscription();
         await this.fetchUsageData();
+        await this.fetchPreferences(); // Fetch preferences after user data is available
       } catch (error) {
         console.error('Error fetching user data:', error);
         this.error = 'Failed to load user data';
@@ -379,13 +434,33 @@ export default {
     async handlePageChange(newPage) {
       this.page = newPage;
       await this.fetchItemByUser();
-    }
+    },
+    async fetchPreferences() {
+      try {
+        if (!this.user.id) {
+          console.warn('User ID not available for fetching preferences.');
+          return;
+        }
+        const response = await api.get(`/preferences`);
+        this.preferences = response.data || {
+          notify_new_messages: false,
+          notify_new_items: false,
+          interested_categories: []
+        };
+      } catch (error) {
+        console.error('Error fetching preferences:', error);
+        this.error = 'Failed to load preferences';
+      }
+    },
+    getCategoryName(category) {
+      return this.$store.state.currentLocale === 'ua' ? category.ua_name : category.name;
+    },
   },
   async created() {
     if (this.isAuthenticated) {
       this.isLoading = true;
       try {
-        await this.fetchUserData(); // This now also fetches subscription and usage
+        await this.fetchUserData(); // This now also fetches subscription, usage, and preferences
         await this.fetchItemByUser();
       } catch (error) {
         console.error('Error during created lifecycle:', error);
