@@ -32,4 +32,5 @@ COPY --from=builder /notifications /notifications
 EXPOSE 8002
 
 # Command to run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+CMD ["python3", "-m", "notifications.app.main"]
