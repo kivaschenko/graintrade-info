@@ -1,10 +1,10 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Dict, List
 import uvicorn
 
-from . import models, schemas, crud, database
+from . import models, crud, database, services
 
 models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI()
@@ -20,7 +20,12 @@ active_connections: Dict[str, List[WebSocket]] = {}
 
 
 @app.websocket("/ws/chat/{item_id}/{other_user_id}")
-async def chat_room(websocket: WebSocket, item_id: str, other_user_id: str):
+async def chat_room(
+    websocket: WebSocket,
+    item_id: str,
+    other_user_id: str,
+    background_tasks: BackgroundTasks,
+):
     await websocket.accept()
     room_key = f"{item_id}:{other_user_id}"
     if room_key not in active_connections:
@@ -29,7 +34,6 @@ async def chat_room(websocket: WebSocket, item_id: str, other_user_id: str):
     try:
         while True:
             data = await websocket.receive_json()
-            print("Received data:", data)
             # Validate keys
             if (
                 "sender_id" not in data
@@ -44,13 +48,14 @@ async def chat_room(websocket: WebSocket, item_id: str, other_user_id: str):
                 continue
             # Save message to DB
             db: Session = next(database.get_db())
-            crud.create_message(
+            new_message = crud.create_message(
                 db,
                 item_id=item_id,
                 sender_id=data["sender_id"],
                 receiver_id=data["receiver_id"],
                 content=data["content"],
             )
+            await services.send_message_to_queue(new_message)
             # Broadcast to certain chat room
             for conn in active_connections[room_key]:
                 await conn.send_json(data)
