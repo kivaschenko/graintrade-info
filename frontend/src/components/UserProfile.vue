@@ -208,29 +208,44 @@
     </div>
         <div class="card shadow-sm border-0 mt-4 custom-card-nested">
       <div class="card-body">
-        <h4 class="card-title text-primary mb-3">Notification Preferences</h4>
+        <h4 class="card-title text-primary mb-3">Notification Preferences Status</h4>
         <div v-if="preferences">
-          <ul class="mb-3">
-            <li>
-              <strong>Notify about new messages:</strong>
-              <span>{{ preferences.notify_new_messages ? 'Yes' : 'No' }}</span>
-            </li>
-            <li>
-              <strong>Notify about new items:</strong>
-              <span>{{ preferences.notify_new_items ? 'Yes' : 'No' }}</span>
-            </li>
-            <li>
-              <strong>Interested categories:</strong>
-              <span>
-                <span v-if="preferences.interested_categories && preferences.interested_categories.length">
-                  {{ preferences.interested_categories.join(', ') }}
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-bell-fill me-2 text-muted"></i>
+                <strong>Notify about new messages:</strong>
+                <span :class="['badge ms-2', preferences.notify_new_messages ? 'bg-success' : 'bg-secondary']">
+                  {{ preferences.notify_new_messages ? 'Yes' : 'No' }}
                 </span>
-                <span v-else>
-                  None selected
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-bell-fill me-2 text-muted"></i>
+                <strong>Notify about new items:</strong>
+                <span :class="['badge ms-2', preferences.notify_new_items ? 'bg-success' : 'bg-secondary']">
+                  {{ preferences.notify_new_items ? 'Yes' : 'No' }}
                 </span>
-              </span>
-            </li>
-          </ul>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="d-flex align-items-start">
+                <i class="bi bi-tags-fill me-2 text-muted mt-1"></i>
+                <strong>Interested categories:</strong>
+                <div class="ms-2">
+                  <span v-if="preferences.interested_categories && preferences.interested_categories.length">
+                    <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-info me-1 mb-1">
+                      {{ category }}
+                    </span>
+                  </span>
+                  <span v-else class="text-muted">
+                    None selected
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <PreferencesForm :initialPreferences="preferences" @updated="fetchPreferences" />
       </div>
