@@ -23,13 +23,6 @@ ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 
 
-app_env = os.getenv("APP_ENV", "production")
-debug_mode = os.getenv("DEBUG", "false").lower() == "true"
-
-if app_env == "development":
-    print("Running in development mode")
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await database.connect()

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>You have a new message</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f9f9f9; color: #333; }
+        .container { background: #fff; padding: 24px; border-radius: 8px; max-width: 500px; margin: auto; }
+        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: #fff; text-decoration: none; border-radius: 4px; }
+        .footer { margin-top: 24px; font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>You have a new message!</h2>
+        <p>Hello {{ user_name }},</p>
+        <p>You received a new message about the item:</p>
+        <blockquote style="background:#f1f1f1;padding:10px;border-radius:4px;">{{ message_text }}</blockquote>
+        <p>
+            <a href="{{ item_url }}" class="btn">View Item</a>
+        </p>
+        <div class="footer">
+            This is an automated notification from GrainTrade Info.
+        </div>
+    </div>
+</body>
+</html>

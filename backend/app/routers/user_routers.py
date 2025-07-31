@@ -28,6 +28,7 @@ from ..schemas import (
 from ..models import user_model, subscription_model
 from ..service_layer import user_services
 from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from ..schemas import PreferencesUpdateSchema
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -215,7 +216,9 @@ async def login_for_access_token(
         ]
         current_subscr = await subscription_model.get_by_user_id(user.id)
         if current_subscr:
-            scope = current_subscr.tarif.scope
+            scope = (
+                current_subscr.tarif.scope  # type: ignore
+            )  # Get the scope from the current subscription
             scopes = SCOPES[scope]
         # Create the access token
         access_token_expires = timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
@@ -364,3 +367,60 @@ async def delete_user(
 
 #     new_map_views = await repo.increment_map_views(user_id)
 #     return {"map_views": new_map_views}
+
+
+@router.put("/preferences", summary="Update notification preferences")
+async def update_preferences(
+    prefs_data: PreferencesUpdateSchema,
+    token: Annotated[str, Depends(oauth2_scheme)],
+):
+    if not prefs_data:
+        logging.error("Preferences data is empty")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Preferences data cannot be empty",
+        )
+    if token is None or token == "null" or token == "":
+        logging.error("Token is missing or invalid")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token is required for updating preferences",
+        )
+    user_id, _ = await get_current_user_id(token)  # Not needed scopes here
+    try:
+        updated_prefs = await user_model.update_user_preferences(
+            int(user_id), prefs_data
+        )
+        return updated_prefs
+    except Exception as e:
+        logging.error(f"Error updating preferences: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update preferences",
+        )
+
+
+@router.get("/preferences", summary="Get user preferences")
+async def get_preferences(
+    token: Annotated[str, Depends(oauth2_scheme)],
+):
+    if token is None or token == "null" or token == "":
+        logging.error("Token is missing or invalid")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token is required for updating preferences",
+        )
+    user_id, _ = await get_current_user_id(token)  # Not needed scopes here
+    try:
+        prefs = await user_model.get_or_create_user_preferences(int(user_id))
+        if not prefs:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Preferences not found"
+            )
+        return prefs
+    except Exception as e:
+        logging.error(f"Error fetching preferences: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch preferences",
+        )

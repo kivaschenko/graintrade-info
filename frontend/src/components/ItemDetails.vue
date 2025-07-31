@@ -63,16 +63,16 @@
       </div>
     </div>
 
-    <div v-if="isAuthenticated && item.uuid" class="mt-5">
+    <div v-if="isAuthenticated && item.id" class="mt-5">
       <div class="card chat-card">
         <div class="card-body">
           <div v-if="isOwner">
             <h5>{{ $t('chat.chatsWithOtherUsers') }}</h5>
-            <OwnerChatSwitcher :itemId="item.uuid" :ownerId="currentUserId" />
+            <OwnerChatSwitcher :itemId="item.id" :ownerId="currentUserId" />
           </div>
           <div v-else>
             <h5>{{ $t('chat.chatWithOwnerOfItem') }}</h5>
-            <ItemChat :itemId="item.uuid" :userId="currentUserId" :otherUserId="otherUserId"/>
+            <ItemChat :itemId="item.id" :userId="currentUserId" :otherUserId="otherUserId"/>
           </div>
         </div>
       </div>
