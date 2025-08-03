@@ -29,9 +29,9 @@ load_dotenv(BASE_DIR / ".env")
 # Load environment (Mailtrap)
 SMTP_USER = os.getenv("MAILTRAP_USER")
 SMTP_PASS = os.getenv("MAILTRAP_PASS")
-SMTP_HOST = os.getenv("MAILTRAP_HOST", "smtp.mailtrap.io")
+SMTP_HOST = os.getenv("MAILTRAP_HOST")
 SMTP_PORT = int(os.getenv("MAILTRAP_PORT", 587))
-EMAIL_FROM = os.getenv("EMAIL_FROM", "no-reply@example.com")
+EMAIL_FROM = os.getenv("EMAIL_FROM")
 # RabbitMQ variables
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://user:password@localhost:5672/")
 
