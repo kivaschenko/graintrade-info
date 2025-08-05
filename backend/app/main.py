@@ -9,6 +9,7 @@ from fastapi.security import (
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import database, redis_db
+from .rabbit_mq import create_topics_from_categories
 from .routers import user_routers
 from .routers import item_routers
 from .routers import subscription_routers
@@ -26,6 +27,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await database.connect()
+    await create_topics_from_categories()
     redis_db.connect()
     try:
         yield

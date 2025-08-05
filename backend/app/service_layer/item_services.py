@@ -18,3 +18,22 @@ async def send_item_to_queue(
     finally:
         await rabbitmq.close()
         # Ensure the connection is closed
+
+
+async def send_item_to_category_topic(item: ItemInResponse):
+    try:
+        await rabbitmq.connect()
+        message_body = {k: str(v) for k, v in item.__dict__.items()}
+        await rabbitmq.publish_to_topic(
+            category_id=item.category_id, message=message_body
+        )
+    except Exception as e:
+        logging.error(f"Failed to send item to RabbitMQ topic: {e}")
+    finally:
+        await rabbitmq.close()
+        # Ensure the connection is closed
+
+
+async def send_new_item_notification(item: ItemInResponse):
+    await send_item_to_queue(item=item)
+    await send_item_to_category_topic(item=item)

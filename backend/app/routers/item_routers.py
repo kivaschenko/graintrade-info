@@ -82,7 +82,7 @@ async def create_item(
         logging.error("Not enough permissions")
         raise HTTPException(status_code=403, detail="Not enough permissions")
     usage_info = await subscription_model.get_subscription_usage_for_user(int(user_id))
-    counter_usage = usage_info.get("items_count")
+    counter_usage = usage_info.get("items_count", 0)
     scope = usage_info.get("tarif_scope")
     tarif = await tarif_model.get_tarif_by_scope(scope)
     counter_limit = tarif.__getattribute__("items_limit")
@@ -96,7 +96,7 @@ async def create_item(
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
     logging.info(f"New item created: {new_item}")
-    background_tasks.add_task(item_services.send_item_to_queue, new_item)
+    background_tasks.add_task(item_services.send_new_item_notification, new_item)
     return new_item
 
 

@@ -3,8 +3,7 @@
     <table class="table table-striped table-hover">
       <thead>
         <tr>
-          <th scope="col" class="text-start">ID</th>
-          <th scope="col">{{ $t( 'common_text.title' ) }}</th>
+          <th scope="col">{{ $t( 'common_text.title' ) }} (ID)</th>
           <th scope="col">{{ $t( 'common_text.type' ) }}</th>
           <th scope="col" class="text-end">{{ $t( 'common_text.price' ) }}</th>
           <th scope="col" class="text-start">{{ $t( 'common_text.currency' ) }}</th>
@@ -17,11 +16,11 @@
       </thead>
       <tbody>
         <tr v-for="item in items" :key="item.id">
-          <td class="text-start">{{ item.uuid }}</td>
           <th class="text-start">
             <router-link :to="{ name: 'ItemDetails', params: { id: item.id } }">
               {{ item.title }}
             </router-link>
+            <br>(<span class="text-muted"><sm>{{ item.uuid }}</sm></span>)
           </th>
           <td>{{ $t(`offer_type.${item.offer_type}`) }}</td>
           <td class="text-end">{{ item.price }} </td>

@@ -27,10 +27,10 @@ else:
 load_dotenv(BASE_DIR / ".env")
 
 # Load environment (Mailtrap)
-SMTP_USER = os.getenv("MAILTRAP_USER")
-SMTP_PASS = os.getenv("MAILTRAP_PASS")
-SMTP_HOST = os.getenv("MAILTRAP_HOST")
-SMTP_PORT = int(os.getenv("MAILTRAP_PORT", 587))
+SMTP_USER = os.getenv("TRANSACTIONAL_MAILTRAP_USER")
+SMTP_PASS = os.getenv("TRANSACTIONAL_MAILTRAP_PASS")
+SMTP_HOST = os.getenv("TRANSACTIONAL_MAILTRAP_HOST")
+SMTP_PORT = int(os.getenv("TRANSACTIONAL_MAILTRAP_PORT", 587))
 EMAIL_FROM = os.getenv("EMAIL_FROM")
 # RabbitMQ variables
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://user:password@localhost:5672/")
@@ -56,11 +56,9 @@ async def send_email(to_email, subject, body):
 async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage):
     async with msg.process():
         data = json.loads(msg.body.decode())
-        print(f"Received message: {data}")
         if data["type"] == "new_message":
             try:
                 user = await get_user_by_username(data["to_username"])
-                print(f"User found: {user}")
             except Exception as e:
                 logging.error(f"Error fetching user or item: {e}")
                 return
