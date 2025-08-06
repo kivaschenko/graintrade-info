@@ -110,16 +110,36 @@ async def send_bulk_email(to_email: str, subject: str, body: str):
     )
 
 
-async def send_emails_about_message_notifications():
-    rabbitmq = await get_rabbitmq_connection()
-    logging.info(f"Consuming from queue: {QueueName.MESSAGE_EVENTS.value}")
-    # Start consuming messages from the RabbitMQ queue
-    await rabbitmq.consume(
-        queue=QueueName.MESSAGE_EVENTS.value,
-        callback=handle_message_notification,
-    )
-    print("Waiting for notifications...")
-    return rabbitmq
+async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
+    async with msg.process():
+        data = json.loads(msg.body.decode())
+        if data["type"] == "new_item":
+            try:
+                topic_users = await get_all_users_by_topic_preferences()
+            except Exception as e:
+                logging.error(f"Error fetching user preferences: {e}")
+                return
+
+            item_url = f"{BASE_URL}/items/{data['item_id']}"
+            subject = f"New item posted: {data['item_title']}"
+            html_body = env.get_template("new_item_email.html").render(
+                item_title=data["item_title"],
+                item_description=data["item_description"],
+                item_price=data["item_price"],
+                item_currency=data["item_currency"],
+                item_url=item_url,
+            )
+
+            for topic, users in topic_users.items():
+                if topic == data["topic"]:
+                    for user_email in users:
+                        await send_bulk_email(user_email, subject, html_body)
+                        logging.info(
+                            f"Bulk email sent to {user_email} for topic {topic}"
+                        )
+
+        else:
+            return
 
 
 if __name__ == "__main__":
@@ -128,7 +148,7 @@ if __name__ == "__main__":
     loop.run_until_complete(database.connect())
     logging.info("Connected to database and Redis.")
     logging.info("Connecting to RabbitMQ...")
-    rabbitmq = loop.run_until_complete(send_emails_about_message_notifications())
+    rabbitmq = loop.run_until_complete(handle_message_notification())
     logging.info("Connected to RabbitMQ.")
     try:
         loop.run_forever()
