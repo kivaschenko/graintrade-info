@@ -242,3 +242,16 @@ class GeoSearchRequest(BaseModel):
 class DirectionsRequest(BaseModel):
     origin: List[float]  # [longitude, latitude]
     destination: List[float]  # [longitude, latitude]
+
+
+# -------------------------------
+# Notification schemas
+
+
+class PreferencesSchema(BaseModel):
+    notify_new_messages: Optional[bool] = True
+    notify_new_items: Optional[bool] = True
+    interested_categories: Optional[List[str]] = []
+    user_id: Optional[int] = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None

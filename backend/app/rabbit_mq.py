@@ -1,4 +1,3 @@
-# app/rabbit_mq.py
 from pathlib import Path
 import aio_pika
 import json

@@ -1,5 +1,11 @@
+from typing import List
 from .database import database
-from .schemas import UserInResponse, ItemInResponse
+from .schemas import (
+    UserInResponse,
+    ItemInResponse,
+    CategoryInResponse,
+    PreferencesSchema,
+)
 
 
 # ---------------
@@ -46,3 +52,35 @@ async def get_item_by_id(item_id: int) -> ItemInResponse:
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, item_id)
     return ItemInResponse(**row)
+
+
+# ------------------
+# GET Category models
+
+
+async def get_all_categories() -> List[CategoryInResponse]:
+    """Retrive all categories from view with their parent categories."""
+    query = """
+        SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
+        FROM categories_hierarchy
+        
+    """
+    async with database.pool.acquire() as conn:
+        rows = await conn.fetch(query)
+        return [CategoryInResponse(**row) for row in rows]
+
+
+# ------------------
+# Users Preferences
+
+
+async def get_all_users_preferences() -> List[PreferencesSchema]:
+    query = """
+        SELECT user_id, notify_new_messages, notify_new_items, interested_categories, full_name, email
+        FROM user_notification_preferences,
+        JOIN users ON user_notification_preferences.user_id = users.id
+        WHERE users.disabled = 'false' AND user_notification_preferences.notify_new_items = 'true'
+    """
+    async with database.pool.acquire() as conn:
+        rows = await conn.fetch(query)
+        return [PreferencesSchema(**row) for row in rows]

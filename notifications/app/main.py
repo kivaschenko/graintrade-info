@@ -1,5 +1,6 @@
 from email.message import EmailMessage
 from pathlib import Path
+from typing import Dict, List
 import os
 import asyncio
 import json
@@ -13,6 +14,7 @@ from dotenv import load_dotenv
 from .database import database
 from .model import get_user_by_username
 from .rabbit_mq import QueueName, get_rabbitmq_connection
+from .services import get_all_users_by_topic_preferences
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
 
@@ -27,28 +29,38 @@ else:
 load_dotenv(BASE_DIR / ".env")
 
 # Load environment (Mailtrap)
-SMTP_USER = os.getenv("TRANSACTIONAL_MAILTRAP_USER")
-SMTP_PASS = os.getenv("TRANSACTIONAL_MAILTRAP_PASS")
-SMTP_HOST = os.getenv("TRANSACTIONAL_MAILTRAP_HOST")
-SMTP_PORT = int(os.getenv("TRANSACTIONAL_MAILTRAP_PORT", 587))
+# Mailtrap SMTP Configuration for Transactional Emails
+TRANSACTIONAL_SMTP_USER = os.getenv("TRANSACTIONAL_MAILTRAP_USER")
+TRANSACTIONAL_SMTP_PASS = os.getenv("TRANSACTIONAL_MAILTRAP_PASS")
+TRANSACTIONAL_SMTP_HOST = os.getenv("TRANSACTIONAL_MAILTRAP_HOST")
+TRANSACTIONAL_SMTP_PORT = int(os.getenv("TRANSACTIONAL_MAILTRAP_PORT", 587))
 EMAIL_FROM = os.getenv("EMAIL_FROM")
+# Mailtrap SMTP Configuration for Notification Emails
+BULK_MAILTRAP_HOST = os.getenv("BULK_MAILTRAP_HOST")
+BULK_MAILTRAP_PORT = int(os.getenv("BULK_MAILTRAP_PORT", 587))
+BULK_MAILTRAP_USER = os.getenv("BULK_MAILTRAP_USER")
+BULK_MAILTRAP_PASS = os.getenv("BULK_MAILTRAP_PASS")
 # RabbitMQ variables
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://user:password@localhost:5672/")
 
+# ------------------------------
+# Messages handling for RabbitMQ
+
 
 async def send_email(to_email, subject, body):
+    """Send an email using Mailtrap SMTP server. For transactional emails."""
     message = EmailMessage()
-    message["From"] = EMAIL_FROM
+    message["From"] = f"Graintrade.Info <{EMAIL_FROM}>"
     message["To"] = to_email
     message["Subject"] = subject
     message.set_content(body, subtype="html")
 
     await aiosmtplib.send(
         message,
-        hostname=SMTP_HOST,
-        port=SMTP_PORT,
-        username=SMTP_USER,
-        password=SMTP_PASS,
+        hostname=TRANSACTIONAL_SMTP_HOST,
+        port=TRANSACTIONAL_SMTP_PORT,
+        username=TRANSACTIONAL_SMTP_USER,
+        password=TRANSACTIONAL_SMTP_PASS,
         start_tls=True,
     )
 
@@ -76,7 +88,29 @@ async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage)
             return
 
 
-async def main():
+# ----------------------------
+# Topics handling for RabbitMQ
+
+
+async def send_bulk_email(to_email: str, subject: str, body: str):
+    """Send bulk email using Mailtrap SMTP server."""
+    message = EmailMessage()
+    message["From"] = f"Graintrade.Info <{EMAIL_FROM}>"
+    message["To"] = to_email
+    message["Subject"] = subject
+    message.set_content(body, subtype="html")
+
+    await aiosmtplib.send(
+        message,
+        hostname=BULK_MAILTRAP_HOST,
+        port=BULK_MAILTRAP_PORT,
+        username=BULK_MAILTRAP_USER,
+        password=BULK_MAILTRAP_PASS,
+        start_tls=True,
+    )
+
+
+async def send_emails_about_message_notifications():
     rabbitmq = await get_rabbitmq_connection()
     logging.info(f"Consuming from queue: {QueueName.MESSAGE_EVENTS.value}")
     # Start consuming messages from the RabbitMQ queue
@@ -94,7 +128,7 @@ if __name__ == "__main__":
     loop.run_until_complete(database.connect())
     logging.info("Connected to database and Redis.")
     logging.info("Connecting to RabbitMQ...")
-    rabbitmq = loop.run_until_complete(main())
+    rabbitmq = loop.run_until_complete(send_emails_about_message_notifications())
     logging.info("Connected to RabbitMQ.")
     try:
         loop.run_forever()
