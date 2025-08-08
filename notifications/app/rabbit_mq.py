@@ -53,8 +53,8 @@ class RabbitMQ:
         self.username = username
         self.password = password
         self.vhost = vhost
-        self.connection = None
-        self.channel = None
+        # self.connection = None
+        # self.channel = None
         self.queues = queues
 
     async def connect(self):
