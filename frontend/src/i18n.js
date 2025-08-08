@@ -250,6 +250,7 @@ const messages = {
       helpText: "Select categories you are interested in for notifications with Ctrl/Cmd + Click",
       yes: 'Yes',
       no: 'No',
+      selectCountry: 'Select Country',
     }
   },
   ua: {
@@ -503,6 +504,7 @@ const messages = {
       helpText: "Виберіть категорії, які вас цікавлять для сповіщень, використовуючи Ctrl/Cmd + Клік",
       yes: 'Так',
       no: 'Ні',
+      selectCountry: 'Виберіть країну',
     }
   },
 };
