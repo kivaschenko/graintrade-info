@@ -1,5 +1,11 @@
+from typing import List
 from .database import database
-from .schemas import UserInResponse, ItemInResponse
+from .schemas import (
+    UserInResponse,
+    ItemInResponse,
+    CategoryInResponse,
+    PreferencesSchema,
+)
 
 
 # ---------------
@@ -46,3 +52,71 @@ async def get_item_by_id(item_id: int) -> ItemInResponse:
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, item_id)
     return ItemInResponse(**row)
+
+
+# ------------------
+# GET Category models
+
+
+async def get_all_categories() -> List[CategoryInResponse]:
+    """Retrive all categories from view with their parent categories."""
+    query = """
+        SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
+        FROM categories_hierarchy
+        
+    """
+    async with database.pool.acquire() as conn:
+        rows = await conn.fetch(query)
+        return [CategoryInResponse(**row) for row in rows]
+
+
+async def get_category_by_name(name: str) -> CategoryInResponse:
+    """Retrieve a category by its name."""
+    query = """
+        SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
+        FROM categories_hierarchy
+        WHERE name = $1
+    """
+    async with database.pool.acquire() as conn:
+        row = await conn.fetchrow(query, name)
+        if row:
+            return CategoryInResponse(**row)
+        return None
+
+
+async def get_category_by_id(category_id: int) -> CategoryInResponse:
+    """Retrieve a category by its ID."""
+    query = """
+        SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
+        FROM categories_hierarchy
+        WHERE id = $1
+    """
+    async with database.pool.acquire() as conn:
+        row = await conn.fetchrow(query, category_id)
+        if row:
+            return CategoryInResponse(**row)
+        return None
+
+
+# ------------------
+# Users Preferences
+
+
+async def get_all_users_preferences() -> List[PreferencesSchema]:
+    query = """
+        SELECT 
+            unp.user_id, 
+            unp.notify_new_messages, 
+            unp.notify_new_items, 
+            unp.interested_categories, 
+            unp.country,
+            u.full_name,
+            u.username,
+            u.email
+        FROM user_notification_preferences AS unp
+        JOIN users AS u ON unp.user_id = u.id
+        WHERE u.disabled = 'false' AND unp.notify_new_items = 'true'
+    """
+    async with database.pool.acquire() as conn:
+        rows = await conn.fetch(query)
+        return [PreferencesSchema(**row) for row in rows]

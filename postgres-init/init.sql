@@ -565,6 +565,7 @@ CREATE TABLE IF NOT EXISTS user_notification_preferences (
     notify_new_messages BOOLEAN DEFAULT TRUE,
     notify_new_items BOOLEAN DEFAULT TRUE,
     interested_categories TEXT[],
+    country VARCHAR(150) DEFAULT 'Ukraine',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
