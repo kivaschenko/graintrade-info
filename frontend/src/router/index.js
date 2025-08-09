@@ -81,7 +81,7 @@ const routes = [
       })
     },
     {
-      path: '/public-profile/:user_id',
+      path: '/public-profile/:id',
       name: 'PublicProfile',
       component: PublicProfile,
     }

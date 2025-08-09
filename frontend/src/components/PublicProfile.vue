@@ -2,7 +2,7 @@
   <div class="container mt-4">
     <div class="card shadow-sm border-0">
       <div class="card-header bg-primary text-white text-center py-3">
-        <h3 class="mb-0">{{ user.full_name || user.username }}'s Profile</h3>
+        <h3 class="mb-0"> {{ $t('profile.title') }}: {{ user.full_name || user.username }}</h3>
       </div>
       <div class="card-body p-4">
         <div v-if="isLoading" class="text-center">
@@ -19,16 +19,26 @@
             <div class="col-md-6">
               <div class="card h-100 border-0 shadow-sm custom-card-nested">
                 <div class="card-body">
-                  <h4 class="card-title text-primary mb-3">User Information</h4>
+                  <h4 class="card-title text-primary mb-3">{{ $t('profile.userInfo') }}</h4>
                   <div class="mb-3 d-flex align-items-center">
                     <i class="bi bi-person-fill me-2 text-muted"></i>
-                    <strong>Username:</strong>
+                    <strong>{{ $t('profile.username') }}:</strong>
                     <span class="ms-1">{{ user.username }}</span>
                   </div>
                   <div class="mb-3 d-flex align-items-center">
                     <i class="bi bi-person-badge me-2 text-muted"></i>
-                    <strong>Full Name:</strong>
+                    <strong>{{ $t('profile.fullName') }}:</strong>
                     <span class="ms-1">{{ user.full_name }}</span>
+                  </div>
+                  <div class="mb-3 d-flex align-items-center">
+                    <i class="bi bi-envelope-fill me-2 text-muted"></i>
+                    <strong>{{ $t('profile.email') }}:</strong>
+                    <span class="ms-1">{{ user.email }}</span>  
+                  </div>
+                  <div class="mb-3 d-flex align-items-center">
+                    <i class="bi bi-telephone-fill me-2 text-muted"></i>
+                    <strong>{{ $t('profile.phone') }}:</strong>
+                    <span class="ms-1">{{ user.phone }}</span>
                   </div>
                 </div>
               </div>
@@ -38,11 +48,11 @@
             <div class="col-md-6">
               <div class="card h-100 border-0 shadow-sm custom-card-nested">
                 <div class="card-body">
-                  <h4 class="card-title text-primary mb-3">Preferences</h4>
+                  <h4 class="card-title text-primary mb-3">{{ $t('profile.preferences') }}</h4>
                   <div class="mb-3">
                     <div class="d-flex align-items-start">
                       <i class="bi bi-tags-fill me-2 text-muted mt-1"></i>
-                      <strong>Interested Categories:</strong>
+                      <strong>{{ $t('preferences.interestedCategories') }}:</strong>
                       <div class="ms-2">
                         <span v-if="preferences.interested_categories && preferences.interested_categories.length">
                           <span
@@ -62,7 +72,7 @@
                   <div class="mb-3">
                     <div class="d-flex align-items-start">
                       <i class="bi bi-globe2 me-2 text-muted mt-1"></i>
-                      <strong>Country:</strong>
+                      <strong>{{ $t('common_text.country') }}:</strong>
                       <span class="badge bg-warning ms-2">{{ preferences.country }}</span>
                     </div>
                   </div>
@@ -74,7 +84,7 @@
           <hr class="my-5" />
 
           <!-- User's Items Section -->
-          <h4 class="card-title text-primary mb-3">Items by {{ user.username }}</h4>
+          <h4 class="card-title text-primary mb-3">{{ $t('profile.allItems') }} {{ user.username }}</h4>
           <ItemTable :items="items" />
 
           <!-- Pagination -->
@@ -128,6 +138,7 @@ export default {
     '$route.params.id': {
       handler(newId, oldId) {
         if (newId && newId !== oldId) {
+          console.log(`Fetching data for user ID: ${newId}`);
           this.fetchData(newId);
         }
       },
@@ -151,13 +162,12 @@ export default {
     },
     async fetchUserData(userId) {
       try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/users/${userId}`, {
+        const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/users/${userId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
         this.user = response.data;
-        console.log('User data fetched:', this.user);
       } catch (error) {
         console.error('Error fetching user data:', error);
         throw new Error('Failed to load user data.');
@@ -166,7 +176,11 @@ export default {
     async fetchUserPreferences(userId) {
       try {
         // The API endpoint for preferences is assumed to be `preferences/{userId}`
-        const response = await api.get(`/preferences/${userId}`);
+        const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/preferences/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
         this.preferences = response.data || { interested_categories: [], country: '' };
       } catch (error) {
         // Log the error but don't stop the app, as preferences might be missing
