@@ -13,7 +13,7 @@
               <p><strong>{{ $t('common_text.amount') }}:</strong> {{ item.amount }} {{ item.measure }}</p>
               <p><strong>{{ $t('common_text.incoterms') }}:</strong> {{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</p>
               <p><strong>{{ $t('registration.username') }}:</strong> <span class="text-info">
-                <router-link :to="{ name: 'PublicProfile', params: { user_id: item.user_id} }">{{ item.owner_id }}</router-link></span></p>
+                <router-link :to="{ name: 'PublicProfile', params: { id: item.user_id} }">{{ item.owner_id }}</router-link></span></p>
             </div>
 
             <div class="mt-4 pt-3 border-top">
