@@ -252,3 +252,4 @@ class PreferencesUpdateSchema(BaseModel):
     notify_new_messages: Optional[bool] = True
     notify_new_items: Optional[bool] = True
     interested_categories: Optional[List[str]] = []
+    country: Optional[str]  # Default to Ukraine if not set
