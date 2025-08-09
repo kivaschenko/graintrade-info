@@ -229,7 +229,6 @@ export default {
       return [
         // Major grain exporters/importers and countries with key sea ports
         { name: 'Ukraine', ua_name: 'Україна', value: 'Ukraine' },
-        { name: 'Russia', ua_name: 'Росія', value: 'Russia' },
         { name: 'United States', ua_name: 'Сполучені Штати', value: 'United States' },
         { name: 'Canada', ua_name: 'Канада', value: 'Canada' },
         { name: 'Brazil', ua_name: 'Бразилія', value: 'Brazil' },
@@ -284,19 +283,6 @@ export default {
         { name: 'Japan', ua_name: 'Японія', value: 'Japan' },
         { name: 'South Korea', ua_name: 'Південна Корея', value: 'South Korea' },
         // Add more as needed for your market
-        { name: 'Tunisia', ua_name: 'Туніс', value: 'Tunisia' },
-        { name: 'Algeria', ua_name: 'Алжир', value: 'Algeria' },
-        { name: 'Libya', ua_name: 'Лівія', value: 'Libya' },
-        { name: 'Kazakhstan', ua_name: 'Казахстан', value: 'Kazakhstan' },
-        { name: 'Uzbekistan', ua_name: 'Узбекистан', value: 'Uzbekistan' },
-        { name: 'Kyrgyzstan', ua_name: 'Киргизстан', value: 'Kyrgyzstan' },
-        { name: 'Tajikistan', ua_name: 'Таджикистан', value: 'Tajikistan' },
-        { name: 'Turkmenistan', ua_name: 'Туркменістан', value: 'Turkmenistan' },
-        { name: 'Vietnam', ua_name: 'В\'єтнам', value: 'Vietnam' },
-        { name: 'Thailand', ua_name: 'Таїланд', value: 'Thailand' },
-        { name: 'Malaysia', ua_name: 'Малайзія', value: 'Malaysia' },
-        { name: 'Philippines', ua_name: 'Філіппіни', value: 'Philippines' },
-        { name: 'Indonesia', ua_name: 'Індонезія', value: 'Indonesia' },
       ];
     },
   },
