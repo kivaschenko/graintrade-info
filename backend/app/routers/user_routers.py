@@ -282,6 +282,14 @@ async def create_user(
     return new_user
 
 
+def hide_sensitive_data(user: UserInResponse) -> UserInResponse:
+    """Hide sensitive data in the user response."""
+    user.email = "****@example.com"
+    user.phone = "**********"
+    user.hashed_password = "**********"
+    return user
+
+
 @router.get(
     "/users/{user_id}",
     response_model=UserInResponse,
@@ -293,6 +301,14 @@ async def read_user(
 ):
     try:
         user = await user_model.get_by_id(user_id)
+        # Hide email and phone for security
+        user = hide_sensitive_data(user)
+        logging.info(f"Retrieved user: {user.username}")
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} not found",
+            )
         return user
     except Exception as e:
         logging.error(f"Error getting user: {e}")

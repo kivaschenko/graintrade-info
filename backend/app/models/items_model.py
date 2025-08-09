@@ -178,7 +178,7 @@ async def get_by_id(item_id: int) -> ItemInResponse:
     query = """
         SELECT i.id, i.uuid, i.category_id, i.offer_type, i.title, i.description, i.price, i.currency, 
         i.amount, i.measure, i.terms_delivery, i.country, i.region, i.latitude, i.longitude, i.created_at,
-        u.username AS owner_id
+        u.username AS owner_id, u.id AS user_id
         FROM items i
         JOIN items_users iu ON i.id = iu.item_id
         JOIN users u ON iu.user_id = u.id

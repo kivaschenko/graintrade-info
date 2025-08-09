@@ -9,7 +9,7 @@ import UserProfile from '@/components/UserProfile.vue';
 import TariffPlans from '@/components/TariffPlans.vue';
 import PasswordRecovery from '@/components/PasswordRecovery.vue';
 import AllItemsMap from '../components/AllItemsMap.vue'; 
-
+import PublicProfile from '@/components/PublicProfile.vue';
 
 const routes = [
     {
@@ -79,6 +79,11 @@ const routes = [
         country: route.query.country,
         incoterms: route.query.incoterms,
       })
+    },
+    {
+      path: '/public-profile/:user_id',
+      name: 'PublicProfile',
+      component: PublicProfile,
     }
   ];
 const router = createRouter({

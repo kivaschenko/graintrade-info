@@ -12,7 +12,8 @@
               <p><strong>{{ $t('common_text.price') }}:</strong> <span class="text-success fs-5">{{ item.price }} {{ item.currency }}</span></p>
               <p><strong>{{ $t('common_text.amount') }}:</strong> {{ item.amount }} {{ item.measure }}</p>
               <p><strong>{{ $t('common_text.incoterms') }}:</strong> {{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</p>
-              <p><strong>{{ $t('registration.username') }}:</strong> <span class="text-info">{{ item.owner_id }}</span></p>
+              <p><strong>{{ $t('registration.username') }}:</strong> <span class="text-info">
+                <router-link :to="{ name: 'PublicProfile', params: { user_id: item.user_id} }">{{ item.owner_id }}</router-link></span></p>
             </div>
 
             <div class="mt-4 pt-3 border-top">
@@ -116,6 +117,7 @@ export default {
       marker: null,
       currentUserId,
       ownerId: null,
+      user_id: null, // Initialize user_id to null
       isAuthenticated: false, // Initialize isAuthenticated
       showMap: false,
       mapInitialized: false,
