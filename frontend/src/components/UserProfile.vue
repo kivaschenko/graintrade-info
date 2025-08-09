@@ -182,9 +182,68 @@
             </button>
         </div>
 
+        <!-- Preferences Section -->
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="card shadow-sm border-0 mt-4 custom-card-nested">
+              <div class="card-body">
+                <h4 class="card-title text-primary mb-3">{{ $t('preferences.notificationPreferencesStatus') }}</h4>
+                <div v-if="preferences">
+                  <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-bell-fill me-2 text-muted"></i>
+                        <strong>{{ $t('preferences.notifyMeAboutNewMessages') }}:</strong>
+                        <span :class="['badge ms-2', preferences.notify_new_messages ? 'bg-success' : 'bg-secondary']">
+                          {{ preferences.notify_new_messages ? 'Yes / Так' : 'No / Ні' }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-bell-fill me-2 text-muted"></i>
+                        <strong>{{ $t('preferences.notifyMeAboutNewItems') }}:</strong>
+                        <span :class="['badge ms-2', preferences.notify_new_items ? 'bg-success' : 'bg-secondary']">
+                          {{ preferences.notify_new_items ? 'Yes / Так' : 'No / Ні' }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="d-flex align-items-start">
+                        <i class="bi bi-tags-fill me-2 text-muted mt-1"></i>
+                        <strong>{{ $t('preferences.interestedCategories') }}:</strong>
+                        <div class="ms-2">
+                          <span v-if="preferences.interested_categories && preferences.interested_categories.length">
+                            <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-info me-1 mb-1">
+                              {{ category }}
+                            </span>
+                          </span>
+                          <span v-else class="text-muted">
+                            None selected
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="d-flex align-items-start">
+                        <i class="bi bi-globe2 me-2 text-muted mt-1"></i>
+                        <strong>{{ $t('common_text.country') }}:</strong>
+                        <span class="badge bg-warning ms-2">{{ preferences.country }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <PreferencesForm :initialPreferences="preferences" @updated="fetchPreferences" :key="preferences.country" />
+          </div>
+        </div>
+
         <hr class="my-5">
 
-        <h4 class="text-primary mb-3">{{ $t('profile.myItems') }}</h4>
+        <h4 class="card-title text-primary mb-3">{{ $t('profile.myItems') }}</h4>
         <ItemByUserTable
           :items="itemByUser" 
           :ref="itemTable"
@@ -206,50 +265,7 @@
         </div>
       </div>
     </div>
-        <div class="card shadow-sm border-0 mt-4 custom-card-nested">
-      <div class="card-body">
-        <h4 class="card-title text-primary mb-3">{{ $t('preferences.notificationPreferencesStatus') }}</h4>
-        <div v-if="preferences">
-          <div class="row g-3 mb-3">
-            <div class="col-md-6">
-              <div class="d-flex align-items-center">
-                <i class="bi bi-bell-fill me-2 text-muted"></i>
-                <strong>{{ $t('preferences.notifyMeAboutNewMessages') }}:</strong>
-                <span :class="['badge ms-2', preferences.notify_new_messages ? 'bg-success' : 'bg-secondary']">
-                  {{ preferences.notify_new_messages ? 'Yes / Так' : 'No / Ні' }}
-                </span>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="d-flex align-items-center">
-                <i class="bi bi-bell-fill me-2 text-muted"></i>
-                <strong>{{ $t('preferences.notifyMeAboutNewItems') }}:</strong>
-                <span :class="['badge ms-2', preferences.notify_new_items ? 'bg-success' : 'bg-secondary']">
-                  {{ preferences.notify_new_items ? 'Yes / Так' : 'No / Ні' }}
-                </span>
-              </div>
-            </div>
-            <div class="col-12">
-              <div class="d-flex align-items-start">
-                <i class="bi bi-tags-fill me-2 text-muted mt-1"></i>
-                <strong>{{ $t('preferences.interestedCategories') }}:</strong>
-                <div class="ms-2">
-                  <span v-if="preferences.interested_categories && preferences.interested_categories.length">
-                    <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-info me-1 mb-1">
-                      {{ category }}
-                    </span>
-                  </span>
-                  <span v-else class="text-muted">
-                    None selected
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <PreferencesForm :initialPreferences="preferences" @updated="fetchPreferences" />
-      </div>
-    </div>
+
 
   </div>
 </template>
@@ -309,7 +325,8 @@ export default {
       preferences: {
         notify_new_messages: false,
         notify_new_items: false,
-        interested_categories: []
+        interested_categories: [],
+        country: '',
       },
     }
   },
@@ -445,7 +462,8 @@ export default {
         this.preferences = response.data || {
           notify_new_messages: false,
           notify_new_items: false,
-          interested_categories: []
+          interested_categories: [],
+          country: ''
         };
       } catch (error) {
         console.error('Error fetching preferences:', error);

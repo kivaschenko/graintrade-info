@@ -148,9 +148,10 @@ async def update_user_preferences(user_id: int, prefs_data: PreferencesUpdateSch
         SET notify_new_messages = $1,
             notify_new_items = $2,
             interested_categories = $3,
-            updated_at = $4
-        WHERE user_id = $5
-        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories
+            country = $4,
+            updated_at = $5
+        WHERE user_id = $6
+        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories, country
     """
     timestamp = datetime.now()
     async with database.pool.acquire() as connection:
@@ -159,6 +160,7 @@ async def update_user_preferences(user_id: int, prefs_data: PreferencesUpdateSch
             prefs_data.notify_new_messages,
             prefs_data.notify_new_items,
             prefs_data.interested_categories,
+            prefs_data.country,
             timestamp,
             user_id,
         )
@@ -168,12 +170,13 @@ async def update_user_preferences(user_id: int, prefs_data: PreferencesUpdateSch
             notify_new_messages=row["notify_new_messages"],
             notify_new_items=row["notify_new_items"],
             interested_categories=row["interested_categories"],
+            country=row.get("country", "Ukraine"),  # Default to Ukraine if not set
         )
 
 
 async def get_user_preferences(user_id: int) -> PreferencesUpdateSchema:
     query = """
-        SELECT user_id, notify_new_messages, notify_new_items, interested_categories
+        SELECT user_id, notify_new_messages, notify_new_items, interested_categories, country
         FROM user_notification_preferences
         WHERE user_id = $1
     """
@@ -185,14 +188,15 @@ async def get_user_preferences(user_id: int) -> PreferencesUpdateSchema:
             notify_new_messages=row["notify_new_messages"],
             notify_new_items=row["notify_new_items"],
             interested_categories=row["interested_categories"],
+            country=row["country"],
         )
 
 
 async def create_user_preferences(user_id: int, prefs_data: PreferencesUpdateSchema):
     query = """
-        INSERT INTO user_notification_preferences (user_id, notify_new_messages, notify_new_items, interested_categories)
-        VALUES ($1, $2, $3, $4)
-        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories
+        INSERT INTO user_notification_preferences (user_id, notify_new_messages, notify_new_items, interested_categories, country)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories, country
     """
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(
@@ -201,11 +205,13 @@ async def create_user_preferences(user_id: int, prefs_data: PreferencesUpdateSch
             prefs_data.notify_new_messages,
             prefs_data.notify_new_items,
             prefs_data.interested_categories,
+            prefs_data.country or "Ukraine",  # Default to Ukraine if not set
         )
         return PreferencesUpdateSchema(
             notify_new_messages=row["notify_new_messages"],
             notify_new_items=row["notify_new_items"],
             interested_categories=row["interested_categories"],
+            country=row.get("country", "Ukraine"),  # Default to Ukraine if not set
         )
 
 
