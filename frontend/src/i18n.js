@@ -201,6 +201,8 @@ const messages = {
       deleteItemSuccess: 'Item deleted successfully!',
       deleteItemError: 'Error deleting item',
       myItems: 'My items',
+      preferences: 'Preferences',
+      allItems: 'All Items by User',
     },
     tariff: {
       basic: "Basic",
@@ -453,6 +455,8 @@ const messages = {
       deleteItemSuccess: 'Товар успішно видалено!',
       deleteItemError: 'Помилка видалення товару',
       myItems: 'Мої товари',
+      preferences: 'Уподобання',
+      allItems: 'Всі товари користувача',
     },
     tariff: {
       basic: "Базовий",
@@ -496,7 +500,7 @@ const messages = {
       notificationPreferencesEdit: "Редагувати налаштування сповіщень",
       notifyMeAboutNewMessages: "Сповіщати про нові повідомлення",
       notifyMeAboutNewItems: "Сповіщати про нові товари",
-      interestedCategories: "Категорії, що вас цікавлять",
+      interestedCategories: "Категорії, що цікавлять",
       selectCategories: "Виберіть категорії, які вас цікавлять (можна вибрати кілька категорій)",
       savePreferences: "Зберегти налаштування",
       preferencesSaved: "Налаштування успішно збережено!",
