@@ -221,6 +221,9 @@ async def get_or_create_user_preferences(user_id: int) -> PreferencesUpdateSchem
     except ValueError:
         # If preferences do not exist, create them with default values
         default_prefs = PreferencesUpdateSchema(
-            notify_new_messages=False, notify_new_items=False, interested_categories=[]
+            notify_new_messages=False,
+            notify_new_items=False,
+            interested_categories=[],
+            country="Ukraine",
         )
         return await create_user_preferences(user_id, default_prefs)

@@ -69,6 +69,7 @@ class ItemInResponse(BaseModel):
     created_at: datetime = Field(alias="created_at")
     owner_id: Optional[str] = None
     category: Optional[CategoryInResponse] = None
+    user_id: Optional[int] = None
 
     @property
     def formatted_created_at(self) -> str:
@@ -128,22 +129,6 @@ class UserInDB(User):
 
 class UserInResponse(UserInDB):
     id: int
-
-
-# -------------------------------
-# Notification schemas
-class Notification(BaseModel):
-    recipient: str
-    message: str
-    method: str  # 'email', 'sms', 'telegram'
-
-
-class Recipient(BaseModel):
-    email: Optional[str]
-    phone: Optional[str]
-    telegram_id: Optional[str]
-    device_id: Optional[str]
-    viber_id: Optional[str]
 
 
 # -------------------------------
