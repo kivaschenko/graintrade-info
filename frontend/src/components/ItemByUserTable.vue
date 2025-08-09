@@ -17,7 +17,7 @@
       </thead>
       <tbody>
         <tr v-for="item in items" :key="item.id">
-          <td class="text-start">{{ item.uuid }}</td>
+          <td class="text-start">{{ item.id }}</td>
           <th class="text-start">
             <router-link :to="{ name: 'ItemDetails', params: { id: item.id } }">
               {{ item.title }}
