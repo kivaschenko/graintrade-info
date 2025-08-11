@@ -4,7 +4,6 @@ from datetime import date, timedelta, datetime
 import asyncio
 import hashlib
 import httpx
-import requests
 import logging
 import uuid
 import os
@@ -23,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
 FONDY_MERCHANT_ID = os.getenv("FONDY_MERCHANT_ID")
 FONDY_MERCHANT_KEY = os.getenv("FONDY_MERCHANT_KEY")
-BASE_URL = os.getenv("BASE_URL")
+BASE_URL = os.getenv("BASE_URL", "localhost:8000")
 CALLBACK_URL = f"{BASE_URL}/payments/confirm"
 ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
 
@@ -91,8 +90,8 @@ class FondyPaymentService:
 
     def __init__(
         self,
-        merchant_id: str = FONDY_MERCHANT_ID,
-        merchant_key: str = FONDY_MERCHANT_KEY,
+        merchant_id: str = FONDY_MERCHANT_ID,  # type: ignore
+        merchant_key: str = FONDY_MERCHANT_KEY,  # type: ignore
     ):
         self.merchant_id = merchant_id
         self.merchant_key = merchant_key
@@ -234,7 +233,9 @@ async def activate_free_subscription(user_id: int, tarif_id: int) -> bool:
             )
         )
         logging.info(f"Created a new Free subscription: {subscription}")
-        await subscription_model.update_status_by_order_id(SubscriptionStatus.ACTIVE, order_id)
+        await subscription_model.update_status_by_order_id(
+            SubscriptionStatus.ACTIVE, order_id
+        )
         logging.info(f"Updated status of subscription: {subscription}")
         if not subscription:
             raise ValueError("Failed to create subscription in the database")
