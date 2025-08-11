@@ -408,7 +408,7 @@ export default {
       }
     },
     upgradePlan() {
-      this.$router.push('/tarifs'); // Correct usage for navigation
+      this.$router.push('/tariffs');
     },
     async fetchItemByUser() {
       this.loadingItems = true;
