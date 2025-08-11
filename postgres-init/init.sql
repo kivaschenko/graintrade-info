@@ -320,9 +320,9 @@ BEGIN
 	INSERT INTO tarifs (name, description, price, currency, scope, terms, items_limit, map_views_limit, geo_search_limit, navigation_limit)
 	VALUES
         ('Free', 'Free probation plan', 0.00, 'EUR', 'free', 'monthly', 5, 10, 10, 10),
-	    ('Basic', 'Basic subscription plan', 5.00, 'EUR', 'basic', 'monthly', 25, 100, 100, 100),
-        ('Premium', 'Premium subscription plan', 10.00, 'EUR', 'premium', 'monthly', 50, 300, 300, 300),
-        ('Pro', 'Pro subscription plan', 25.00, 'EUR', 'pro', 'monthly', 125, 1000, 1000, 1000);
+	    ('Basic', 'Basic subscription plan', 5.00, 'EUR', 'basic', 'monthly', 10, 100, 100, 100),
+        ('Premium', 'Premium subscription plan', 10.00, 'EUR', 'premium', 'monthly', 30, 300, 300, 300),
+        ('Pro', 'Pro subscription plan', 25.00, 'EUR', 'pro', 'monthly', 100, 1000, 1000, 1000);
     END IF;
 END $$;
 
