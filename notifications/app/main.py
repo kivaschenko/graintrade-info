@@ -12,7 +12,13 @@ from jinja2 import Environment, FileSystemLoader
 from dotenv import load_dotenv
 
 from .database import database
-from .model import get_user_by_username, get_all_users_preferences, get_category_by_id
+from .model import (
+    get_user_by_username,
+    get_user_by_id,
+    get_all_users_preferences,
+    get_category_by_id,
+    get_user_subscritpion_by_order_id,
+)
 from .schemas import PreferencesSchema, CategoryInResponse, UserInResponse
 from .rabbit_mq import QueueName, get_rabbitmq_connection
 
@@ -68,11 +74,9 @@ async def send_email(to_email, subject, body, bulk=False):
 async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage):
     async with msg.process():
         data = json.loads(msg.body.decode())
-        print(f"Received message: {data}")
         if data["type"] == "new_message":
             try:
                 user = await get_user_by_username(data["to_username"])
-                print(f"User found: {user}")
             except Exception as e:
                 logging.error(f"Error fetching user or item: {e}")
                 return
@@ -110,7 +114,6 @@ async def get_users_preferences(
 async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
     async with msg.process():
         data = json.loads(msg.body.decode())
-        print(f"Received message: {data}")
         try:
             preferences = await get_users_preferences(
                 int(data["category_id"]), data["country"]
@@ -156,8 +159,40 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
         logging.info(f"Email sent to {user.email} with subject: {subject}")
 
 
+async def handle_payment_notification(msg: aio_pika.abc.AbstractIncomingMessage):
+    async with msg.process():
+        data = json.loads(msg.body.decode())
+        try:
+            user_subscription = await get_user_subscritpion_by_order_id(
+                data["order_id"]
+            )
+            if not user_subscription:
+                logging.warning(
+                    f"No subscription found for order ID: {data['order_id']}"
+                )
+                return
+            user = await get_user_by_id(user_id=user_subscription.user_id)
+            if not user.email:
+                logging.warning(f"User {user.username} has no email, skipping.")
+                return
+            subject = "Payment Confirmation"
+            html_body = env.get_template("payment_confirmation_email.html").render(
+                user_name=user.full_name or user.username,
+                order_id=data["order_id"],
+                amount=data["amount"] / 100,  # Assuming amount is in cents
+                currency=data["currency"],
+                status=data["response_status"],
+                subscription_details=f"{user_subscription.tarif.name} - {user_subscription.tarif.price} {user_subscription.tarif.currency}",
+            )
+            await send_email(user.email, subject, html_body)
+            logging.info(f"Payment confirmation email sent to {user.email}")
+        except Exception as e:
+            logging.error(f"Error processing payment notification: {e}")
+
+
 async def main():
     rabbitmq = await get_rabbitmq_connection()
+    logging.info("RabbitMQ connection established and consumers started.")
     logging.info(f"Consuming from queue: {QueueName.MESSAGE_EVENTS.value}")
     # Start consuming messages from the RabbitMQ queue
     await rabbitmq.consume(
@@ -170,9 +205,14 @@ async def main():
         queue=QueueName.ITEM_EVENTS.value,
         callback=handle_item_notification,
     )
-    logging.info("RabbitMQ connection established and consumers started.")
+    # Start consuming payment notifications
+    logging.info(f"Consuming from queue: {QueueName.PAYMENT_EVENTS.value}")
+    await rabbitmq.consume(
+        queue=QueueName.PAYMENT_EVENTS.value,
+        callback=handle_payment_notification,
+    )
     # Keep the script running to listen for messages
-    print("Waiting for notifications...")
+    logging.info("Waiting for notifications...")
     return rabbitmq
 
 

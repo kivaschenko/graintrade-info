@@ -210,7 +210,7 @@ const messages = {
       pro: "Pro",
     },
     tariffs: {
-      itemsLimit: "Items limit: {limit}",
+      itemsLimit: "New Items limit: {limit}",
       mapViewsLimit: "Map views: {limit}",
       geoSearchLimit: "Geo search limit: {limit}",
       navigationLimit: "Navigation limit: {limit}",
@@ -464,7 +464,7 @@ const messages = {
       pro: "Професійний",
     },
     tariffs: {
-      itemsLimit: "Ліміт товарів: {limit}",
+      itemsLimit: "Ліміт нових товарів: {limit}",
       mapViewsLimit: "Ліміт переглядів карти: {limit}",
       geoSearchLimit: "Ліміт геопошуку: {limit}",
       navigationLimit: "Ліміт навігації: {limit}",
