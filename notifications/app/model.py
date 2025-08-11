@@ -5,6 +5,8 @@ from .schemas import (
     ItemInResponse,
     CategoryInResponse,
     PreferencesSchema,
+    SubscriptionInResponse,
+    TarifInResponse,
 )
 
 
@@ -120,3 +122,29 @@ async def get_all_users_preferences() -> List[PreferencesSchema]:
     async with database.pool.acquire() as conn:
         rows = await conn.fetch(query)
         return [PreferencesSchema(**row) for row in rows]
+
+
+# ------------------
+# Subscription models
+
+
+async def get_user_subscritpion_by_order_id(order_id: str) -> SubscriptionInResponse:
+    query = """
+        SELECT id, user_id, tarif_id, start_date, end_date, order_id, status, created_at
+        FROM subscriptions
+        WHERE order_id = $1
+    """
+    query_tarif = """
+        SELECT id, name, description, price, currency, scope, terms, items_limit, map_views_limit, geo_search_limit, navigation_limit, created_at
+        FROM tarifs
+        WHERE id = $1
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, order_id)
+        if row is None:
+            raise ValueError("Subscription with the given order_id does not exist.")
+        subscription = SubscriptionInResponse(**row)
+        tarif_row = await connection.fetchrow(query_tarif, subscription.tarif_id)
+        if tarif_row is not None:
+            subscription.tarif = TarifInResponse(**tarif_row)
+        return subscription
