@@ -5,10 +5,11 @@ from ..schemas import TarifInResponse
 
 
 async def get_all() -> List[TarifInResponse]:
-    query = """SELECT 
-        id, name, description, price, currency, scope, terms, 
+    query = """SELECT id, name, description, price, currency, scope, terms, 
         items_limit, map_views_limit, geo_search_limit, navigation_limit, created_at 
-        FROM tarifs"""
+        FROM tarifs
+        WHERE scope != 'free'
+        ORDER BY price ASC"""
     async with database.pool.acquire() as conn:
         rows = await conn.fetch(query)
         try:
