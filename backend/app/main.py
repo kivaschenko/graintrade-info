@@ -59,6 +59,8 @@ app.add_middleware(
         "http://localhost:80",
         "http://65.108.68.57:8080",
         "http://65.108.68.57",
+        "https://graintrade.info",
+        "https://www.graintrade.info",
     ],
     allow_credentials=True,
     allow_methods=["*"],
