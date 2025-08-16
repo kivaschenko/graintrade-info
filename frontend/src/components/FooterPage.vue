@@ -3,7 +3,9 @@
 		<footer class="py-3 my-4">
 			<ul class="nav justify-content-center border-bottom pb-3 mb-3">
 				<li class="nav-item"><a href="#" class="nav-link px-2 text-muted">{{ $t('footer.contact') }}</a></li>
-				<li class="nav-item"><a href="#" class="nav-link px-2 text-muted">{{ $t('footer.privacyPolicy') }}</a></li>
+				<li class="nav-item">
+					<router-link class="nav-link px-2 text-muted" to="/privacy-policy">{{ $t('footer.privacyPolicy') }}</router-link>
+				</li>
 				<li class="nav-item"><a href="#" class="nav-link px-2 text-muted">{{ $t('footer.termsOfService') }}</a></li>
 				<li class="nav-item">
 					<router-link class="nav-link px-2 text-muted" to="/tariffs">{{ $t('footer.pricing') }}</router-link>
