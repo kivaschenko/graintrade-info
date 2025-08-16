@@ -118,8 +118,6 @@ export default {
           user_id: this.user.id,
           tarif_id: tariff.id
         });
-        // this.$toast.success(this.$t('tariffs.subscribeSuccess'));
-        // Redirect to Fondy checkout page via checkout URL if available from response
         console.log('Subscription response:', r.data);
         if (r.data.checkout_url) {
           // Redirect to the checkout URL in a new tab
@@ -129,12 +127,12 @@ export default {
         } else if (r.data.status === "free") {
           alert("Your Subscription was updated to Free plan!")
         } else {
-          this.$toast.error(this.$t('tariffs.noCheckoutUrl'));
+          alert(this.$t('tariffs.noCheckoutUrl'));
         }
         await this.fetchCurrentSubscription();
       } catch (error) {
         console.error('Error subscribing:', error);
-        this.$toast.error(this.$t('tariffs.subscribeError'));
+        alert(this.$t('tariffs.subscribeError'));
       } finally {
         this.isSubscribing = false;
       }
