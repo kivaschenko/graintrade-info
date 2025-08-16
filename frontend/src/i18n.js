@@ -17,6 +17,14 @@ const messages = {
       forgotPassword: 'Forgot Password?',
       viewAllItemsOnMap: 'View All Items on Map',
     },
+    footer: {
+      about: 'About',
+      contact: 'Contact',
+      pricing: 'Pricing',
+      privacyPolicy: 'Privacy Policy',
+      termsOfService: 'Terms of Service',
+      faqs: 'FAQs',   
+    },
     pagination: {
       prev: 'Prev',
       next: 'Next',
@@ -271,6 +279,14 @@ const messages = {
       tariffs: 'Тарифні плани',
       forgotPassword: 'Забули пароль?',
       viewAllItemsOnMap: 'Всі пропозиції на мапі',
+    },
+    footer: {
+      about: 'Про нас',
+      contact: 'Контакти',
+      pricing: 'Ціни',
+      privacyPolicy: 'Політика конфіденційності',
+      termsOfService: 'Умови використання',
+      faqs: 'Питання та відповіді',   
     },
     pagination: {
       prev: 'Попередня',
