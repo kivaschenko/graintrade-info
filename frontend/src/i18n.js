@@ -220,6 +220,7 @@ const messages = {
       subscribeSuccess: "Successfully subscribed!",
       subscribeError: "Error subscribing to plan",
       errorFetching: "Error loading tariff plans",
+      loginRequired: "You need to be logged in to subscribe to a plan",
     },
     map: {
       registerToView: "Register to view items on the map",
@@ -474,6 +475,7 @@ const messages = {
       subscribeSuccess: "Успішно підписано!",
       subscribeError: "Помилка підписки на план",
       errorFetching: "Помилка завантаження тарифних планів",
+      loginRequired: "Вам потрібно увійти, щоб підписатися на план",
     },
     map: {
       registerToView: "Щоб бачити пропозиції на мапі зареєструйтеся",
