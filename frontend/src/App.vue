@@ -2,16 +2,19 @@
   <div id="app">
     <NavbarMenu />
     <router-view />
+    <FooterPage />
   </div>
 </template>
 
 <script>
 import NavbarMenu from './components/NavbarMenu.vue'; // Adjust path as needed
+import FooterPage from './components/FooterPage.vue';
 
 export default {
   name: 'App',
   components: {
     NavbarMenu,
+    FooterPage,
   },
 }
 </script>
