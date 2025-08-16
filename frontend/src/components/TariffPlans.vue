@@ -108,6 +108,10 @@ export default {
       }
     },
     async subscribe(tariff) {
+      if (!this.user || !this.user.id) {
+        alert(this.$t('tariffs.loginRequired'));
+        return;
+      }
       this.isSubscribing = true;
       try {
         let r = await api.post('/subscriptions', {
