@@ -153,6 +153,8 @@ class TarifInResponse(TarifInDB):
     map_views_limit: int
     geo_search_limit: int
     navigation_limit: int
+    notify_new_messages: bool = True
+    notify_new_items: bool = True
     created_at: datetime | None
 
     @property
