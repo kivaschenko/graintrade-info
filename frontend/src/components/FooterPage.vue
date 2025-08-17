@@ -6,7 +6,9 @@
 				<li class="nav-item">
 					<router-link class="nav-link px-2 text-muted" to="/privacy-policy">{{ $t('footer.privacyPolicy') }}</router-link>
 				</li>
-				<li class="nav-item"><a href="#" class="nav-link px-2 text-muted">{{ $t('footer.termsOfService') }}</a></li>
+				<li class="nav-item">
+					<router-link class="nav-link px-2 text-muted" to="/terms-of-service">{{ $t('footer.termsOfService') }}</router-link>
+				</li>
 				<li class="nav-item">
 					<router-link class="nav-link px-2 text-muted" to="/tariffs">{{ $t('footer.pricing') }}</router-link>
 				</li>

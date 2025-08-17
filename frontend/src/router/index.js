@@ -89,6 +89,11 @@ const routes = [
       path: '/privacy-policy',
       name: 'PrivacyPolicy',
       component: () => import('@/components/PrivacyPolicy.vue'), // Lazy loading
+    },
+    {
+      path: '/terms-of-service',
+      name: 'TermsOfService',
+      component: () => import('@/components/TermsOfService.vue'), // Lazy loading
     }
   ];
 const router = createRouter({
