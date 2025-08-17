@@ -229,6 +229,8 @@ const messages = {
       subscribeError: "Error subscribing to plan",
       errorFetching: "Error loading tariff plans",
       loginRequired: "You need to be logged in to subscribe to a plan",
+      notifyNewMessages: "Notify me about new messages",
+      notifyNewItems: "Notify me about new items",
     },
     map: {
       registerToView: "Register to view items on the map",
@@ -492,6 +494,8 @@ const messages = {
       subscribeError: "Помилка підписки на план",
       errorFetching: "Помилка завантаження тарифних планів",
       loginRequired: "Вам потрібно увійти, щоб підписатися на план",
+      notifyNewMessages: "Сповіщати про нові повідомлення",
+      notifyNewItems: "Сповіщати про нові товари",
     },
     map: {
       registerToView: "Щоб бачити пропозиції на мапі зареєструйтеся",

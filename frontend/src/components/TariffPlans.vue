@@ -37,6 +37,14 @@
                 <i class="bi bi-check-circle text-success"></i> 
                 {{ $t('tariffs.navigationLimit', { limit: formatLimit(tariff.navigation_limit) }) }}
               </li>
+              <li v-if="tariff.notify_new_messages">
+                <i class="bi bi-check-circle text-success"></i> 
+                {{ $t('tariffs.notifyNewMessages') }}
+              </li>
+              <li v-if="tariff.notify_new_items">
+                <i class="bi bi-check-circle text-success"></i> 
+                {{ $t('tariffs.notifyNewItems') }}
+              </li>
             </ul>
           </div>
           <div class="card-footer text-center">
