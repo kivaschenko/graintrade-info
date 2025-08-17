@@ -72,7 +72,7 @@ export default {
     return {
       I18N: {
         en: {
-          brand: "GrainTrade — Legal",
+          brand: "GrainTrade.Info — Terms of Service",
           updated: "Last updated",
           print: "Print",
           download: "Download",
@@ -94,7 +94,7 @@ export default {
           terms_payments_list: [
             "We accept payments via provider for cards and bank transfers.",
             "We accept crypto via provider for cryptocurrencies.",
-            "Prices are shown in UAH or converted at payment time depending on method.",
+            "Prices are shown in USD or converted at payment time depending on method.",
             "Payments are final and non-refundable except as required by law."
           ],
           terms_subs_title: "3. Subscription & Renewal",
@@ -119,7 +119,7 @@ export default {
           footnote: "This page is a simplified legal template. Consult a lawyer for specific requirements.",
         },
         ua: {
-          brand: "GrainTrade — Правові документи",
+          brand: "GrainTrade.Info — Публічна оферта (Правила користування)",
           updated: "Оновлено",
           print: "Надрукувати",
           download: "Завантажити",
@@ -141,7 +141,7 @@ export default {
           terms_payments_list: [
             "Ми приймаємо платежі через платіжного провайдера для карток та банківських переказів.",
             "Ми приймаємо криптовалюту через платіжного провайдера для криптовалют.",
-            "Ціни відображаються у грн або конвертуються під час оплати залежно від обраного методу.",
+            "Ціни відображаються у доларах або конвертуються під час оплати залежно від обраного методу.",
             "Оплати остаточні та не повертаються за винятком випадків, передбачених законодавством."
           ],
           terms_subs_title: "3. Підписка та продовження",
