@@ -9,7 +9,7 @@
       @click="$emit('close')"
     ></button>
     <div class="row justify-content-center">
-      <div class="col-lg-6 col-md-10">
+      <div class="col-lg-10 col-md-10">
         <div class="card shadow-sm border-0">
           <div class="card-body p-4">
             <h2 class="card-title text-center mb-4 text-primary">{{ $t('userUpdate.title') }}</h2>
