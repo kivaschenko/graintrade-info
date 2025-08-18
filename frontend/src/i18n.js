@@ -225,6 +225,10 @@ const messages = {
       preferences: 'Preferences',
       allItems: 'All Items by User',
       editProfile: 'Edit Profile',
+      deleteAccount: 'Delete Account',
+      deleteAccountConfirm: 'Are you sure you want to delete your account? This action cannot be undone.',
+      deleteAccountSuccess: 'Account deleted successfully!',
+      deleteAccountError: 'Error deleting account',
     },
     tariff: {
       basic: "Basic",
@@ -504,6 +508,10 @@ const messages = {
       preferences: 'Уподобання',
       allItems: 'Всі товари користувача',
       editProfile: 'Редагувати профіль',
+      deleteAccount: 'Видалити обліковий запис',
+      deleteAccountConfirm: 'Ви впевнені, що хочете видалити свій обліковий запис? Цю дію не можна скасувати.',
+      deleteAccountSuccess: 'Обліковий запис успішно видалено!',
+      deleteAccountError: 'Помилка видалення облікового запису',
     },
     tariff: {
       basic: "Базовий",

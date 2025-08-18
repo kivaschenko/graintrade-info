@@ -570,3 +570,42 @@ CREATE TABLE IF NOT EXISTS user_notification_preferences (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Cleanup function for disabled users
+CREATE OR REPLACE FUNCTION cleanup_disabled_users()
+RETURNS void AS $$
+DECLARE
+    user_record RECORD;
+BEGIN
+    -- Start a transaction
+    BEGIN
+        -- Find all disabled users
+        FOR user_record IN
+            SELECT id, username FROM users WHERE disabled = true
+        LOOP
+            RAISE NOTICE 'Processing disabled user: % (ID: %)', user_record.username, user_record.id;
+            
+            -- Delete user's items from items_users table
+            DELETE FROM items_users WHERE user_id = user_record.id;
+            RAISE NOTICE 'Deleted % row(s) from items_users for user %', row_count, user_record.username;
+            
+            -- Delete user's subscriptions
+            DELETE FROM subscriptions WHERE user_id = user_record.id;
+            RAISE NOTICE 'Deleted % row(s) from subscriptions for user %', row_count, user_record.username;
+            
+            -- Delete user's notification preferences
+            DELETE FROM user_notification_preferences WHERE user_id = user_record.id;
+            RAISE NOTICE 'Deleted % row(s) from user_notification_preferences for user %', row_count, user_record.username;
+            
+            -- Finally, delete the user from the users table
+            DELETE FROM users WHERE id = user_record.id;
+            RAISE NOTICE 'Deleted user record for %', user_record.username;
+        END LOOP;
+        
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- If an error occurs, roll back the transaction
+            RAISE EXCEPTION 'An error occurred during cleanup: %', SQLERRM;
+    END;
+END;
+$$ LANGUAGE plpgsql;

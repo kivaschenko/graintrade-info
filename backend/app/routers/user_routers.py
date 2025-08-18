@@ -357,6 +357,7 @@ async def update_user(
 async def delete_user(
     user_id: int,
     current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
+    background_tasks: BackgroundTasks,
 ):
     if current_active_user.id != user_id:
         raise HTTPException(
@@ -364,6 +365,10 @@ async def delete_user(
             detail="You can only delete your own user",
         )
     await user_model.delete(user_id)
+    logging.info(f"User with ID {user_id} deleted")
+    background_tasks.add_task(
+        user_services.cleanup_users
+    )  # Cleanup disabled users by calling the cleanup function
     return {"status": "success"}
 
 
