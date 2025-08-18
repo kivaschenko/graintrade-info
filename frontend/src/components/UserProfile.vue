@@ -27,6 +27,22 @@
                         <strong>{{ $t('profile.phone') }}:</strong> <span class="ms-1">{{ user.phone }}</span>
                     </div>
                 </div>
+                <!-- Add edit button -->
+                <div class="text-end mb-3">
+                  <button class="btn btn-sm btn-warning" @click="showEditModal = true">
+                    <i class="bi bi-pencil-square me-2"></i>{{ $t('profile.editProfile') }}
+                  </button> 
+                </div>
+            </div>
+          </div>
+          
+          <!-- User Update Modal -->
+          <div v-if="showEditModal" class="modal-backdrop">
+            <div class="modal-dialog">
+              <div class="modal-content p-4">
+                <button type="button" class="btn-close" @click="showEditModal = false"></button>
+                <UserUpdateForm @update-success="onUpdateSuccess" />
+              </div>
             </div>
           </div>
           
@@ -265,8 +281,6 @@
         </div>
       </div>
     </div>
-
-
   </div>
 </template>
 
@@ -275,12 +289,14 @@ import { mapState } from 'vuex';
 import api from '@/services/api';
 import ItemByUserTable from './ItemByUserTable.vue';
 import PreferencesForm from './PreferencesForm.vue';
+import UserUpdateForm from './UserUpdateForm.vue';
 
 export default {
   name: 'UserProfile',
   components: {
     ItemByUserTable,
-    PreferencesForm, // Add this line to include the PreferencesForm component
+    PreferencesForm,
+    UserUpdateForm,
   },
   data() {
     return {
@@ -328,6 +344,7 @@ export default {
         interested_categories: [],
         country: '',
       },
+      showEditModal: false,
     }
   },
   computed: {
@@ -341,6 +358,12 @@ export default {
         month: 'long',
         day: 'numeric'
       });
+    },
+    onUpdateSuccess(updatedUser) {
+      this.user = updatedUser;
+      this.showEditModal = false; // Close modal on successful update
+      this.$store.commit('setUser', updatedUser); // Update Vuex store
+      console.log('User updated successfully:', updatedUser);
     },
     async fetchUserData() {
       try {
@@ -654,5 +677,28 @@ hr {
 .pagination-controls span {
   font-weight: 500;
   color: #6c757d;
+}
+/* Add simple modal styles */
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-dialog {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  max-width: 500px;
+  width: 100%;
+}
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
 }
 </style>
