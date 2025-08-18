@@ -27,11 +27,28 @@
                         <strong>{{ $t('profile.phone') }}:</strong> <span class="ms-1">{{ user.phone }}</span>
                     </div>
                 </div>
-                <!-- Add edit button -->
-                <div class="text-end mb-3">
-                  <button class="btn btn-sm btn-warning" @click="showEditModal = true">
-                    <i class="bi bi-pencil-square me-2"></i>{{ $t('profile.editProfile') }}
-                  </button> 
+                <div class="card-footer text-muted text-end">
+                  <div class="row">
+                    <div v-if="errorMessage" class="alert alert-danger mt-3">
+                      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+                    </div>
+                    <div class="col">
+                      <!-- Delete button -->
+                      <div class="text-end mb-3">
+                        <button class="btn btn-sm btn-danger" @click="deleteUser">
+                          <i class="bi bi-trash-fill me-2"></i>{{ $t('profile.deleteAccount') }}
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col text-end">
+                      <!-- Add edit button -->
+                      <div class="text-end mb-3">
+                        <button class="btn btn-sm btn-warning" @click="showEditModal = true">
+                          <i class="bi bi-pencil-square me-2"></i>{{ $t('profile.editProfile') }}
+                        </button> 
+                      </div>
+                    </div>
+                  </div>
                 </div>
             </div>
           </div>
@@ -345,6 +362,7 @@ export default {
         country: '',
       },
       showEditModal: false,
+      errorMessage: '',
     }
   },
   computed: {
@@ -496,6 +514,19 @@ export default {
     getCategoryName(category) {
       return this.$store.state.currentLocale === 'ua' ? category.ua_name : category.name;
     },
+    deleteUser() {
+      if (confirm(this.$t('profile.deleteAccountConfirm'))) {
+        api.delete(`/users/${this.user.id}`)
+          .then(() => {
+            this.$store.commit('logout'); // Clear user data from Vuex store
+            this.$router.push('/login'); // Redirect to login page
+          })
+          .catch(error => {
+            console.error('Error deleting user:', error);
+            this.error = this.$t('profile.deleteAccountError');
+          });
+      }
+    }
   },
   async created() {
     if (this.isAuthenticated) {
@@ -636,6 +667,22 @@ export default {
   border-color: #e0a800;
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(255, 193, 7, 0.4);
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+}
+.btn-danger:hover {
+  background-color: #c82333;
+  border-color: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(220, 53, 69, 0.4);
 }
 
 /* Horizontal Rule Separator */
