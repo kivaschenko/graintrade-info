@@ -171,6 +171,19 @@ const messages = {
       "success": "Registration successful!",
       "error": "Registration failed"
     },
+    userUpdate: {
+      "title": "Update Profile",
+      "username": "Username",
+      "email": "Email",
+      "fullName": "Full Name",
+      "phone": "Phone",
+      "password": "Password (leave empty to keep current)",
+      "confirmPassword": "Confirm Password",
+      "submit": "Update",
+      "submitting": "Updating...",
+      "success": "Profile updated successfully!",
+      "error": "Profile update failed",
+    },
     profile: {
       title: 'User Profile',
       userInfo: 'User Information',
@@ -211,6 +224,7 @@ const messages = {
       myItems: 'My items',
       preferences: 'Preferences',
       allItems: 'All Items by User',
+      editProfile: 'Edit Profile',
     },
     tariff: {
       basic: "Basic",
@@ -436,6 +450,19 @@ const messages = {
       "success": "Реєстрація успішна!",
       "error": "Помилка реєстрації"
     },
+    userUpdate: {
+      "title": "Оновити профіль",
+      "username": "Ім'я користувача",
+      "email": "Електронна пошта",
+      "fullName": "Повне ім'я",
+      "phone": "Телефон",
+      "password": "Пароль (залиште порожнім, щоб зберегти поточний)",
+      "confirmPassword": "Підтвердіть пароль",
+      "submit": "Оновити",
+      "submitting": "Оновлення...",
+      "success": "Профіль успішно оновлено!",
+      "error": "Помилка оновлення профілю",
+    },
     profile: {
       title: 'Профіль користувача',
       userInfo: 'Інформація про користувача',
@@ -476,6 +503,7 @@ const messages = {
       myItems: 'Мої товари',
       preferences: 'Уподобання',
       allItems: 'Всі товари користувача',
+      editProfile: 'Редагувати профіль',
     },
     tariff: {
       basic: "Базовий",
