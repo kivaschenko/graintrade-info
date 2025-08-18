@@ -119,7 +119,10 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <strong>{{ $t('profile.itemsUsage') }}:</strong>
+                            <strong>
+                              {{ $t('profile.itemsUsage') }}:
+                              {{ usage.items_count }} / {{ subscription.tarif.items_limit }}
+                            </strong>
                             <div class="progress mt-1" style="height: 28px;">
                                 <div 
                                     class="progress-bar progress-bar-striped progress-bar-animated"
@@ -141,7 +144,10 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <strong>{{ $t('profile.mapViewsUsage') }}:</strong>
+                            <strong>
+                              {{ $t('profile.mapViewsUsage') }}:
+                              {{ usage.map_views }} / {{ subscription.tarif.map_views_limit }}
+                            </strong>
                             <div class="progress mt-1" style="height: 28px;">
                                 <div 
                                     class="progress-bar progress-bar-striped progress-bar-animated"
@@ -163,7 +169,10 @@
                     </div>
                      <div class="col-md-6" v-if="subscription.tarif.geo_search_limit !== undefined">
                         <div class="mb-3">
-                            <strong>{{ $t('profile.geoSearchUsage') }}:</strong>
+                            <strong>
+                              {{ $t('profile.geoSearchUsage') }}:
+                              {{ usage.geo_search_count }} / {{ subscription.tarif.geo_search_limit }}
+                            </strong>
                             <div class="progress mt-1" style="height: 28px;">
                                 <div 
                                     class="progress-bar progress-bar-striped progress-bar-animated" 
@@ -185,7 +194,10 @@
                     </div>
                     <div class="col-md-6" v-if="subscription.tarif.navigation_limit !== undefined">
                         <div class="mb-3">
-                            <strong>{{ $t('profile.navigationUsage') }}:</strong>
+                            <strong>
+                              {{ $t('profile.navigationUsage') }}:
+                              {{ usage.navigation_count }} / {{ subscription.tarif.navigation_limit }}
+                            </strong>
                             <div class="progress mt-1" style="height: 28px;">
                                 <div 
                                     class="progress-bar progress-bar-striped progress-bar-animated" 
