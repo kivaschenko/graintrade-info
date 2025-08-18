@@ -576,6 +576,7 @@ CREATE OR REPLACE FUNCTION cleanup_disabled_users()
 RETURNS void AS $$
 DECLARE
     user_record RECORD;
+    deleted_rows INT;
 BEGIN
     -- Start a transaction
     BEGIN
@@ -587,18 +588,22 @@ BEGIN
             
             -- Delete user's items from items_users table
             DELETE FROM items_users WHERE user_id = user_record.id;
-            RAISE NOTICE 'Deleted % row(s) from items_users for user %', row_count, user_record.username;
+            GET DIAGNOSTICS deleted_rows = ROW_COUNT;
+            RAISE NOTICE 'Deleted % row(s) from items_users for user %', deleted_rows, user_record.username;
             
             -- Delete user's subscriptions
             DELETE FROM subscriptions WHERE user_id = user_record.id;
-            RAISE NOTICE 'Deleted % row(s) from subscriptions for user %', row_count, user_record.username;
+            GET DIAGNOSTICS deleted_rows = ROW_COUNT;
+            RAISE NOTICE 'Deleted % row(s) from subscriptions for user %', deleted_rows, user_record.username;
             
             -- Delete user's notification preferences
             DELETE FROM user_notification_preferences WHERE user_id = user_record.id;
-            RAISE NOTICE 'Deleted % row(s) from user_notification_preferences for user %', row_count, user_record.username;
+            GET DIAGNOSTICS deleted_rows = ROW_COUNT;
+            RAISE NOTICE 'Deleted % row(s) from user_notification_preferences for user %', deleted_rows, user_record.username;
             
             -- Finally, delete the user from the users table
             DELETE FROM users WHERE id = user_record.id;
+            GET DIAGNOSTICS deleted_rows = ROW_COUNT;
             RAISE NOTICE 'Deleted user record for %', user_record.username;
         END LOOP;
         
