@@ -123,6 +123,15 @@ class UserInCreate(User):
     password: str
 
 
+class UserInUpdate(User):
+    id: int
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+
+
 class UserInDB(User):
     hashed_password: str
 
