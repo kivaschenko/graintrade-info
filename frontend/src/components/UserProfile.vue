@@ -41,7 +41,7 @@
             <div class="modal-dialog">
               <div class="modal-content p-4">
                 <button type="button" class="btn-close" @click="showEditModal = false"></button>
-                <UserUpdateForm @update-success="onUpdateSuccess" />
+                <UserUpdateForm :showClose="true" @close="showEditModal = false" @update-success="onUpdateSuccess" />
               </div>
             </div>
           </div>
@@ -85,10 +85,10 @@
                     <div class="mb-2">
                         <strong>{{ $t('profile.features') }}:</strong>
                         <ul class="list-unstyled mt-2 ms-4">
-                            <li><i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.basicFeatures') }}</li>
-                            <li v-if="subscription.tarif.scope !== 'basic'">
-                                <i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.advancedFeatures') }}
-                            </li>
+                          <li><i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.basicFeatures') }}</li>
+                          <li v-if="subscription.tarif.scope !== 'free'">
+                            <i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.advancedFeatures') }}
+                          </li>
                         </ul>
                     </div>
                 </div>

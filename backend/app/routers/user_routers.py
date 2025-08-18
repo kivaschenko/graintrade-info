@@ -20,6 +20,7 @@ import bcrypt
 import jwt
 from ..schemas import (
     UserInCreate,
+    UserInUpdate,
     UserInDB,
     UserInResponse,
     TokenData,
@@ -309,29 +310,47 @@ async def read_user(
 
 
 @router.put(
-    "/users/{user_id}",
+    "/users",
     response_model=UserInResponse,
     status_code=status.HTTP_202_ACCEPTED,
     tags=["users"],
 )
 async def update_user(
-    user_id: int,
-    user: UserInCreate,
+    user: UserInUpdate,
     current_active_user: Annotated[UserInResponse, Depends(get_current_active_user)],
 ):
-    if current_active_user.id != user_id:
+    if current_active_user.id != user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only update your own user",
         )
+    if not user.username or not user.email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username and email are required for updating user",
+        )
+    if user.password:
+        hashed_password = get_password_hash(user.password)
+    else:
+        # If password is not provided, keep the existing hashed password
+        existing_user = await user_model.get_by_id(user.id)
+        hashed_password = existing_user.hashed_password
+
+    # Create UserInDB object to update
+    if not user.full_name:
+        user.full_name = None  # Ensure full_name is None if not provided
+    if not user.phone:
+        user.phone = None  # Ensure phone is None if not provided
+
+    # Create UserInDB object to update
     user_to_db = UserInDB(
         username=user.username,
         email=user.email,
         full_name=user.full_name,
-        hashed_password=get_password_hash(user.password),
+        hashed_password=hashed_password,
         phone=user.phone,
     )
-    return await user_model.update(user_id, user_to_db)
+    return await user_model.update(user_id=user.id, user=user_to_db)
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_200_OK, tags=["users"])
