@@ -138,7 +138,6 @@ export default {
     '$route.params.id': {
       handler(newId, oldId) {
         if (newId && newId !== oldId) {
-          console.log(`Fetching data for user ID: ${newId}`);
           this.fetchData(newId);
         }
       },
