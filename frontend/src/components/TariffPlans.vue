@@ -37,6 +37,14 @@
                 <i class="bi bi-check-circle text-success"></i> 
                 {{ $t('tariffs.navigationLimit', { limit: formatLimit(tariff.navigation_limit) }) }}
               </li>
+              <li v-if="tariff.notify_new_messages">
+                <i class="bi bi-check-circle text-success"></i> 
+                {{ $t('tariffs.notifyNewMessages') }}
+              </li>
+              <li v-if="tariff.notify_new_items">
+                <i class="bi bi-check-circle text-success"></i> 
+                {{ $t('tariffs.notifyNewItems') }}
+              </li>
             </ul>
           </div>
           <div class="card-footer text-center">
@@ -108,15 +116,16 @@ export default {
       }
     },
     async subscribe(tariff) {
+      if (!this.user || !this.user.id) {
+        alert(this.$t('tariffs.loginRequired'));
+        return;
+      }
       this.isSubscribing = true;
       try {
         let r = await api.post('/subscriptions', {
           user_id: this.user.id,
           tarif_id: tariff.id
         });
-        // this.$toast.success(this.$t('tariffs.subscribeSuccess'));
-        // Redirect to Fondy checkout page via checkout URL if available from response
-        console.log('Subscription response:', r.data);
         if (r.data.checkout_url) {
           // Redirect to the checkout URL in a new tab
           window.open(r.data.checkout_url, '_blank');
@@ -125,12 +134,12 @@ export default {
         } else if (r.data.status === "free") {
           alert("Your Subscription was updated to Free plan!")
         } else {
-          this.$toast.error(this.$t('tariffs.noCheckoutUrl'));
+          alert(this.$t('tariffs.noCheckoutUrl'));
         }
         await this.fetchCurrentSubscription();
       } catch (error) {
         console.error('Error subscribing:', error);
-        this.$toast.error(this.$t('tariffs.subscribeError'));
+        alert(this.$t('tariffs.subscribeError'));
       } finally {
         this.isSubscribing = false;
       }

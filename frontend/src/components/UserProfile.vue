@@ -27,6 +27,39 @@
                         <strong>{{ $t('profile.phone') }}:</strong> <span class="ms-1">{{ user.phone }}</span>
                     </div>
                 </div>
+                <div class="card-footer text-muted text-end">
+                  <div class="row">
+                    <div v-if="errorMessage" class="alert alert-danger mt-3">
+                      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+                    </div>
+                    <div class="col">
+                      <!-- Delete button -->
+                      <div class="text-end mb-3">
+                        <button class="btn btn-sm btn-danger" @click="deleteUser">
+                          <i class="bi bi-trash-fill me-2"></i>{{ $t('profile.deleteAccount') }}
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col text-end">
+                      <!-- Add edit button -->
+                      <div class="text-end mb-3">
+                        <button class="btn btn-sm btn-warning" @click="showEditModal = true">
+                          <i class="bi bi-pencil-square me-2"></i>{{ $t('profile.editProfile') }}
+                        </button> 
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+          </div>
+          
+          <!-- User Update Modal -->
+          <div v-if="showEditModal" class="modal-backdrop">
+            <div class="modal-dialog">
+              <div class="modal-content p-4">
+                <button type="button" class="btn-close" @click="showEditModal = false"></button>
+                <UserUpdateForm :showClose="true" @close="showEditModal = false" @update-success="onUpdateSuccess" />
+              </div>
             </div>
           </div>
           
@@ -69,10 +102,10 @@
                     <div class="mb-2">
                         <strong>{{ $t('profile.features') }}:</strong>
                         <ul class="list-unstyled mt-2 ms-4">
-                            <li><i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.basicFeatures') }}</li>
-                            <li v-if="subscription.tarif.scope !== 'basic'">
-                                <i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.advancedFeatures') }}
-                            </li>
+                          <li><i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.basicFeatures') }}</li>
+                          <li v-if="subscription.tarif.scope !== 'free'">
+                            <i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.advancedFeatures') }}
+                          </li>
                         </ul>
                     </div>
                 </div>
@@ -86,7 +119,10 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <strong>{{ $t('profile.itemsUsage') }}:</strong>
+                            <strong>
+                              {{ $t('profile.itemsUsage') }}:
+                              {{ usage.items_count }} / {{ subscription.tarif.items_limit }}
+                            </strong>
                             <div class="progress mt-1" style="height: 28px;">
                                 <div 
                                     class="progress-bar progress-bar-striped progress-bar-animated"
@@ -108,7 +144,10 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <strong>{{ $t('profile.mapViewsUsage') }}:</strong>
+                            <strong>
+                              {{ $t('profile.mapViewsUsage') }}:
+                              {{ usage.map_views }} / {{ subscription.tarif.map_views_limit }}
+                            </strong>
                             <div class="progress mt-1" style="height: 28px;">
                                 <div 
                                     class="progress-bar progress-bar-striped progress-bar-animated"
@@ -130,7 +169,10 @@
                     </div>
                      <div class="col-md-6" v-if="subscription.tarif.geo_search_limit !== undefined">
                         <div class="mb-3">
-                            <strong>{{ $t('profile.geoSearchUsage') }}:</strong>
+                            <strong>
+                              {{ $t('profile.geoSearchUsage') }}:
+                              {{ usage.geo_search_count }} / {{ subscription.tarif.geo_search_limit }}
+                            </strong>
                             <div class="progress mt-1" style="height: 28px;">
                                 <div 
                                     class="progress-bar progress-bar-striped progress-bar-animated" 
@@ -152,7 +194,10 @@
                     </div>
                     <div class="col-md-6" v-if="subscription.tarif.navigation_limit !== undefined">
                         <div class="mb-3">
-                            <strong>{{ $t('profile.navigationUsage') }}:</strong>
+                            <strong>
+                              {{ $t('profile.navigationUsage') }}:
+                              {{ usage.navigation_count }} / {{ subscription.tarif.navigation_limit }}
+                            </strong>
                             <div class="progress mt-1" style="height: 28px;">
                                 <div 
                                     class="progress-bar progress-bar-striped progress-bar-animated" 
@@ -265,8 +310,6 @@
         </div>
       </div>
     </div>
-
-
   </div>
 </template>
 
@@ -275,12 +318,14 @@ import { mapState } from 'vuex';
 import api from '@/services/api';
 import ItemByUserTable from './ItemByUserTable.vue';
 import PreferencesForm from './PreferencesForm.vue';
+import UserUpdateForm from './UserUpdateForm.vue';
 
 export default {
   name: 'UserProfile',
   components: {
     ItemByUserTable,
-    PreferencesForm, // Add this line to include the PreferencesForm component
+    PreferencesForm,
+    UserUpdateForm,
   },
   data() {
     return {
@@ -328,6 +373,8 @@ export default {
         interested_categories: [],
         country: '',
       },
+      showEditModal: false,
+      errorMessage: '',
     }
   },
   computed: {
@@ -342,11 +389,15 @@ export default {
         day: 'numeric'
       });
     },
+    onUpdateSuccess(updatedUser) {
+      this.user = updatedUser;
+      this.showEditModal = false; // Close modal on successful update
+      this.$store.commit('setUser', updatedUser); // Update Vuex store
+    },
     async fetchUserData() {
       try {
         const response = await api.get('/users/me');
         this.user = response.data;
-        console.log('User data:', this.user);
         await this.fetchSubscription();
         await this.fetchUsageData();
         await this.fetchPreferences(); // Fetch preferences after user data is available
@@ -365,7 +416,6 @@ export default {
             ...this.subscription, // Keep initial structure
             ...response.data
         };
-        console.log('Subscription data:', this.subscription);
       } catch (error) {
         console.error('Error fetching subscription:', error);
         this.error = 'Failed to load subscription data';
@@ -393,7 +443,6 @@ export default {
           tarif_scope: '',
           is_active: false
         };
-        console.log('Usage data:', this.usage);
       } catch (error) {
         console.error('Error fetching usage data:', error);
         this.error = 'Failed to load usage data';
@@ -429,7 +478,6 @@ export default {
         });
         this.itemByUser = response.data.items || [];
         this.totalItems = response.data.total_items || 0;
-        console.log('Items by user:', this.itemByUser);
       } catch (error) {
         console.error('Error fetching items by user:', error);
         this.itemByUser = [];
@@ -473,6 +521,19 @@ export default {
     getCategoryName(category) {
       return this.$store.state.currentLocale === 'ua' ? category.ua_name : category.name;
     },
+    deleteUser() {
+      if (confirm(this.$t('profile.deleteAccountConfirm'))) {
+        api.delete(`/users/${this.user.id}`)
+          .then(() => {
+            this.$store.commit('logout'); // Clear user data from Vuex store
+            this.$router.push('/login'); // Redirect to login page
+          })
+          .catch(error => {
+            console.error('Error deleting user:', error);
+            this.error = this.$t('profile.deleteAccountError');
+          });
+      }
+    }
   },
   async created() {
     if (this.isAuthenticated) {
@@ -615,6 +676,22 @@ export default {
   box-shadow: 0 8px 16px rgba(255, 193, 7, 0.4);
 }
 
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+}
+.btn-danger:hover {
+  background-color: #c82333;
+  border-color: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(220, 53, 69, 0.4);
+}
+
 /* Horizontal Rule Separator */
 hr {
   border-top: 1px solid rgba(0, 0, 0, 0.1);
@@ -654,5 +731,28 @@ hr {
 .pagination-controls span {
   font-weight: 500;
   color: #6c757d;
+}
+/* Add simple modal styles */
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-dialog {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  max-width: 500px;
+  width: 100%;
+}
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
 }
 </style>

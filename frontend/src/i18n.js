@@ -17,6 +17,14 @@ const messages = {
       forgotPassword: 'Forgot Password?',
       viewAllItemsOnMap: 'View All Items on Map',
     },
+    footer: {
+      about: 'About',
+      contact: 'Contact',
+      pricing: 'Pricing',
+      privacyPolicy: 'Privacy Policy',
+      termsOfService: 'Terms of Service',
+      faqs: 'FAQs',   
+    },
     pagination: {
       prev: 'Prev',
       next: 'Next',
@@ -163,6 +171,19 @@ const messages = {
       "success": "Registration successful!",
       "error": "Registration failed"
     },
+    userUpdate: {
+      "title": "Update Profile",
+      "username": "Username",
+      "email": "Email",
+      "fullName": "Full Name",
+      "phone": "Phone",
+      "password": "Password (leave empty to keep current)",
+      "confirmPassword": "Confirm Password",
+      "submit": "Update",
+      "submitting": "Updating...",
+      "success": "Profile updated successfully!",
+      "error": "Profile update failed",
+    },
     profile: {
       title: 'User Profile',
       userInfo: 'User Information',
@@ -203,6 +224,11 @@ const messages = {
       myItems: 'My items',
       preferences: 'Preferences',
       allItems: 'All Items by User',
+      editProfile: 'Edit Profile',
+      deleteAccount: 'Delete Account',
+      deleteAccountConfirm: 'Are you sure you want to delete your account? This action cannot be undone.',
+      deleteAccountSuccess: 'Account deleted successfully!',
+      deleteAccountError: 'Error deleting account',
     },
     tariff: {
       basic: "Basic",
@@ -220,6 +246,9 @@ const messages = {
       subscribeSuccess: "Successfully subscribed!",
       subscribeError: "Error subscribing to plan",
       errorFetching: "Error loading tariff plans",
+      loginRequired: "You need to be logged in to subscribe to a plan",
+      notifyNewMessages: "Notify me about new messages",
+      notifyNewItems: "Notify me about new items",
     },
     map: {
       registerToView: "Register to view items on the map",
@@ -270,6 +299,14 @@ const messages = {
       tariffs: 'Тарифні плани',
       forgotPassword: 'Забули пароль?',
       viewAllItemsOnMap: 'Всі пропозиції на мапі',
+    },
+    footer: {
+      about: 'Про нас',
+      contact: 'Контакти',
+      pricing: 'Ціни',
+      privacyPolicy: 'Політика конфіденційності',
+      termsOfService: 'Умови використання',
+      faqs: 'Питання та відповіді',   
     },
     pagination: {
       prev: 'Попередня',
@@ -417,6 +454,19 @@ const messages = {
       "success": "Реєстрація успішна!",
       "error": "Помилка реєстрації"
     },
+    userUpdate: {
+      "title": "Оновити профіль",
+      "username": "Ім'я користувача",
+      "email": "Електронна пошта",
+      "fullName": "Повне ім'я",
+      "phone": "Телефон",
+      "password": "Пароль (залиште порожнім, щоб зберегти поточний)",
+      "confirmPassword": "Підтвердіть пароль",
+      "submit": "Оновити",
+      "submitting": "Оновлення...",
+      "success": "Профіль успішно оновлено!",
+      "error": "Помилка оновлення профілю",
+    },
     profile: {
       title: 'Профіль користувача',
       userInfo: 'Інформація про користувача',
@@ -457,6 +507,11 @@ const messages = {
       myItems: 'Мої товари',
       preferences: 'Уподобання',
       allItems: 'Всі товари користувача',
+      editProfile: 'Редагувати профіль',
+      deleteAccount: 'Видалити обліковий запис',
+      deleteAccountConfirm: 'Ви впевнені, що хочете видалити свій обліковий запис? Цю дію не можна скасувати.',
+      deleteAccountSuccess: 'Обліковий запис успішно видалено!',
+      deleteAccountError: 'Помилка видалення облікового запису',
     },
     tariff: {
       basic: "Базовий",
@@ -474,6 +529,9 @@ const messages = {
       subscribeSuccess: "Успішно підписано!",
       subscribeError: "Помилка підписки на план",
       errorFetching: "Помилка завантаження тарифних планів",
+      loginRequired: "Вам потрібно увійти, щоб підписатися на план",
+      notifyNewMessages: "Сповіщати про нові повідомлення",
+      notifyNewItems: "Сповіщати про нові товари",
     },
     map: {
       registerToView: "Щоб бачити пропозиції на мапі зареєструйтеся",

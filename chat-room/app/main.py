@@ -10,7 +10,14 @@ models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust for production
+    allow_origins=[
+        "http://localhost:8080",
+        "http://localhost:80",
+        "http://65.108.68.57:8080",
+        "http://65.108.68.57",
+        "https://graintrade.info",
+        "https://www.graintrade.info",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
