@@ -65,7 +65,7 @@ export default {
           return this.getCategoryName(a).localeCompare(this.getCategoryName(b));
         });
       } catch (error) {
-        console.log('Error fetching categories', error);
+        console.error('Error fetching categories', error);
       }
     },
     navigateToCategory(categoryId) {
