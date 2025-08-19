@@ -165,12 +165,9 @@ export default {
           }
         );
 
-        console.log(response);
         if (response.data.status === 'success') {
-          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
           return true;
         } else if (response.data.status === 'denied') {
-          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
           alert(`${this.$t('profile.serviceLimitReached')}`)
           return false;
         }
@@ -191,7 +188,6 @@ export default {
       // If map already exists and is initialized, just update data if items changed.
       // The toggleMap logic should prevent this from being called if map is already running.
       if (this.map && this.mapInitialized) {
-        console.log('Map already initialized. Updating source data.');
         const geoJsonData = this.getGeoJsonFromItems();
         this.map.getSource('items').setData(geoJsonData);
         return;
@@ -228,7 +224,6 @@ export default {
     addMapSources() {
       if (!this.map) return;
       const geoJsonData = this.getGeoJsonFromItems();
-      console.log('GeoJSON data:', geoJsonData);
       this.map.addSource('items', {
         type: 'geojson',
         data: geoJsonData,
@@ -325,32 +320,24 @@ export default {
           this.popup.remove();
           this.popup = null;
         }
-
         const popupContent = this.getPopupHTML(item);
-        console.log('Popup content:', popupContent);
-
         this.popup = new mapboxgl.Popup({ closeOnClick: false })
           .setLngLat(coordinates)
           .setHTML(popupContent)
           .addTo(this.map);
-        console.log('Popup added to map.');
-
         this.popup.on('open', () => {
-          console.log('Popup opened event fired.');
           const popupButton = document.getElementById(`popup-view-details-${item.id}`);
           if (popupButton) {
-            console.log('Popup button found. Adding click listener.');
             popupButton.addEventListener('click', (event) => {
               event.preventDefault();
               this.$router.push(`/items/${item.id}`);
             });
           } else {
-            console.log('Popup button NOT found.');
+            console.error('Popup button NOT found.');
           }
         });
 
         this.popup.on('close', () => {
-          console.log('Popup closed.');
           this.popup = null;
         });
       });
@@ -381,7 +368,6 @@ export default {
       };
     },
     getPopupHTML(item) {
-    console.log('Generating popup HTML for item:', item);
       let popupContent = `
         <div class="popup-content">
           <h5><span class="badge bg-info text-dark">${item.offer_type.toUpperCase()}</span> ${item.title || ''}</h5>
@@ -399,7 +385,6 @@ export default {
           </a>
         </div>
       `;
-      console.log('Popup content:', popupContent);
       return popupContent;
     },
   },
