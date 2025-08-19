@@ -94,7 +94,6 @@ export default {
   methods: {
     // This method is now called by ItemFilter component
     handleFiltersChanged(filters) {
-      console.log('Filters changed received in ItemListByCategory:', filters);
       this.appliedFilters = filters;
       this.page = 1; // Reset page on filter change
       this.fetchItems();
@@ -110,13 +109,10 @@ export default {
           // Otherwise, rely solely on appliedFilters.category_id
           ...this.appliedFilters,
         };
-
         // If this is a category-specific page, ensure category_id from route is respected
         if (this.$route.params.id && !params.category_id) {
              params.category_id = this.$route.params.id;
         }
-
-        console.log('Fetching paginated items with params:', params);
         const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories/${this.$route.params.id}/items`, {
           params: params,
           headers: {
@@ -133,7 +129,6 @@ export default {
         this.loadingItems = false;
       }
     },
-    
     async handlePageChange(newPage) {
       this.page = newPage;
       await this.fetchItems();
@@ -142,12 +137,10 @@ export default {
     viewOnMap() {
       // Get the current filter parameters directly from the ItemFilter component
       const currentFilters = this.$refs.itemFilter.currentFilterParams;
-
       // Ensure category_id from route param is always included if applicable to this page
       if (this.$route.params.id && !currentFilters.category_id) {
         currentFilters.category_id = this.$route.params.id;
       }
-      
       this.$router.push({
         name: 'FilteredItemsMap', // Make sure this name matches your router config
         query: currentFilters // Pass all current filter parameters

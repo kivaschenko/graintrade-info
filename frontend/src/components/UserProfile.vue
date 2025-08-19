@@ -393,13 +393,11 @@ export default {
       this.user = updatedUser;
       this.showEditModal = false; // Close modal on successful update
       this.$store.commit('setUser', updatedUser); // Update Vuex store
-      console.log('User updated successfully:', updatedUser);
     },
     async fetchUserData() {
       try {
         const response = await api.get('/users/me');
         this.user = response.data;
-        console.log('User data:', this.user);
         await this.fetchSubscription();
         await this.fetchUsageData();
         await this.fetchPreferences(); // Fetch preferences after user data is available
@@ -418,7 +416,6 @@ export default {
             ...this.subscription, // Keep initial structure
             ...response.data
         };
-        console.log('Subscription data:', this.subscription);
       } catch (error) {
         console.error('Error fetching subscription:', error);
         this.error = 'Failed to load subscription data';
@@ -446,7 +443,6 @@ export default {
           tarif_scope: '',
           is_active: false
         };
-        console.log('Usage data:', this.usage);
       } catch (error) {
         console.error('Error fetching usage data:', error);
         this.error = 'Failed to load usage data';
@@ -482,7 +478,6 @@ export default {
         });
         this.itemByUser = response.data.items || [];
         this.totalItems = response.data.total_items || 0;
-        console.log('Items by user:', this.itemByUser);
       } catch (error) {
         console.error('Error fetching items by user:', error);
         this.itemByUser = [];

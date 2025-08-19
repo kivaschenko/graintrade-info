@@ -126,7 +126,6 @@ export default {
           user_id: this.user.id,
           tarif_id: tariff.id
         });
-        console.log('Subscription response:', r.data);
         if (r.data.checkout_url) {
           // Redirect to the checkout URL in a new tab
           window.open(r.data.checkout_url, '_blank');

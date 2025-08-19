@@ -60,7 +60,6 @@ export default {
     fetch(`http://${this.chatRoomUrl}/chat/${this.itemId}/participants`)
       .then(res => res.json())
       .then(data => { this.participants = data.filter(u => u.username !== this.ownerId); });
-    console.log("Fetch participants:", this.participants);
   }
 };
 </script>
