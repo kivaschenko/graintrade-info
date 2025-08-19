@@ -339,6 +339,7 @@ export default {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
+        console.log('Item created:', response.status);
         this.successMessage = 'Offer created successfully!';
       } catch (error) {
         console.error(error.response.status, "<- response.status")
