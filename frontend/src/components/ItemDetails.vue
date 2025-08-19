@@ -185,14 +185,12 @@ export default {
           }
         );
         if (response.data.status === 'success') {
-          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
           // You might want to update your local usage state here
           // e.g., if you have userUsage data property
           // if (counterName === 'map_views') this.userUsage.map_views = response.data.counter;
           // ... similar for geo_search_count and navigation_count
           return true;
         } else if (response.data.status === 'denied') {
-          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
           alert(`${this.$t('profile.serviceLimitReached')}`)
           return false;
         }

@@ -3,7 +3,6 @@ import axios from 'axios';
 
 const backendUrl = process.env.VUE_APP_BACKEND_URL;
 // Ensure the backend URL is set corre
-console.log('Backend URL:', backendUrl);
 if (!backendUrl) {
   console.error('VUE_APP_BACKEND_URL is not defined. Please set it in your .env file.');
 }
@@ -54,7 +53,6 @@ export default createStore({
         const user = userResponse.data;
         commit('setUser', user);
         localStorage.setItem('user', JSON.stringify(user));
-        console.log('User info saved to localStorage:', user);
       } catch (error) {
         console.error('Login failed:', error.response ? error.response.data : error.message);
         commit('setAuthenticated', false);

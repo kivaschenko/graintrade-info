@@ -175,7 +175,6 @@ export default {
     addMapSources() {
       if (!this.map) return;
       const geoJsonData = this.getGeoJsonFromItems();
-      console.log('GeoJSON data:', geoJsonData);
       this.map.addSource('items', {
         type: 'geojson',
         data: geoJsonData,
@@ -283,31 +282,24 @@ export default {
 
         // Create and show the popup
         const popupContent = this.getPopupHTML(item);
-        console.log('Popup content:', popupContent);
-
         this.popup = new mapboxgl.Popup({ closeOnClick: false })
           .setLngLat(coordinates)
           .setHTML(popupContent)
           .addTo(this.map);
-        console.log('Popup added to map.'); // Додано лог
-
         // Add a 'open' event listener to the popup to ensure the button is in the DOM
         this.popup.on('open', () => {
-          console.log('Popup opened event fired.'); // Додано лог
           const popupButton = document.getElementById(`popup-view-details-${item.id}`);
           if (popupButton) {
-            console.log('Popup button found. Adding click listener.'); // Додано лог
             popupButton.addEventListener('click', (event) => {
               event.preventDefault(); // Prevent default anchor behavior
               this.$router.push(`/items/${item.id}`);
             });
           } else {
-            console.log('Popup button NOT found.'); // Лог, якщо кнопка не знайдена
+            console.error('Popup button NOT found.'); // Лог, якщо кнопка не знайдена
           }
         });
 
         this.popup.on('close', () => { // Додано обробник закриття для очищення
-          console.log('Popup closed.');
           this.popup = null;
         });
       });
@@ -338,7 +330,6 @@ export default {
       };
     },
     getPopupHTML(item) {
-    console.log('Generating popup HTML for item:', item);
       let popupContent = `
         <div class="popup-content">
           <h5><span class="badge bg-info text-dark">${item.offer_type.toUpperCase()}</span> ${item.title || ''}</h5>
@@ -356,13 +347,11 @@ export default {
           </a>
         </div>
       `;
-      console.log('Popup content:', popupContent);
       return popupContent;
     },
     // Translate Category
     getCategoryName(category) {
       const currentLocale = this.$store.state.currentLocale;
-      console.log('currentLocale', currentLocale);
       return currentLocale === 'ua' ? category.ua_name : category.name;
     },
     getCategoryDescription(category) {
