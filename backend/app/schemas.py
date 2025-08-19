@@ -123,6 +123,15 @@ class UserInCreate(User):
     password: str
 
 
+class UserInUpdate(User):
+    id: int
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+
+
 class UserInDB(User):
     hashed_password: str
 
@@ -153,6 +162,8 @@ class TarifInResponse(TarifInDB):
     map_views_limit: int
     geo_search_limit: int
     navigation_limit: int
+    notify_new_messages: bool = True
+    notify_new_items: bool = True
     created_at: datetime | None
 
     @property

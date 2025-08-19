@@ -125,14 +125,12 @@ export default {
           }
         );
         if (response.data.status === 'success') {
-          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
           // You might want to update your local usage state here
           // e.g., if you have userUsage data property
           // if (counterName === 'map_views') this.userUsage.map_views = response.data.counter;
           // ... similar for geo_search_count and navigation_count
           return true;
         } else if (response.data.status === 'denied') {
-          console.log('Counter:', counterName, ' updated by value:', response.data.counter);
           alert(`${this.$t('profile.serviceLimitReached')}`)
           return false;
         }
@@ -282,9 +280,8 @@ export default {
             'circle-stroke-color': '#fff'
           }
         },); // Place above road labels
-        console.log('Unclustered point layer added.');
       } else {
-          console.log('Unclustered point layer already exists.');
+          console.error('Unclustered pddoint layer already exists.');
       }
     },
     addMapInteractions() {
@@ -316,11 +313,6 @@ export default {
           .addTo(this.map);
         this.popup.on('open', () => {
           const popupButton = document.getElementById(`popup-view-details-${item.id}`);
-          if (popupButton) {
-            console.log('Popup button found. Adding click listener.');
-          } else {
-            console.log('Popup button NOT found.');
-          }
         });
         this.popup.on('close', () => {
           this.popup = null;

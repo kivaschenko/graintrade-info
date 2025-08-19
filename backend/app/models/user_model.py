@@ -104,6 +104,12 @@ async def delete(user_id: int) -> None:
         await conn.execute(query, user_id)
 
 
+async def cleanup_deleted_users():
+    query = "SELECT cleanup_disabled_users();"
+    async with database.pool.acquire() as conn:
+        await conn.execute(query)
+
+
 async def get_by_email(email: str) -> UserInResponse:
     query = """
         SELECT id, username, email, full_name, phone, disabled, hashed_password

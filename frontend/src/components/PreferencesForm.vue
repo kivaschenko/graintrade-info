@@ -183,7 +183,6 @@ export default {
 		// Fetch categories from the backend.
 		try {
 			const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories`);
-			console.log("Categories response:", response);
 			this.categories = response.data;
 		} catch (error) {
 			console.error('Error fetching categories:', error);
@@ -206,7 +205,6 @@ export default {
 						},
 					}
 				);
-				console.log("Update response:", response.status, response.data);
 				this.message = 'Preferences updated successfully!';
 				this.$emit('updated'); // Emit an event to notify the parent component to re-fetch preferences
 			} catch (error) {
