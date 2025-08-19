@@ -105,14 +105,16 @@ CREATE TABLE IF NOT EXISTS tarifs (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     description TEXT NOT NULL,
-    price DECIMAL(10, 2) NOT NULL DEFAULT 5.00,
-    currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
+    price DECIMAL(10, 2) NOT NULL DEFAULT 10.00,
+    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
     scope VARCHAR(100) NOT NULL DEFAULT 'basic',
     terms VARCHAR(50) NOT NULL DEFAULT 'monthly',
     items_limit INTEGER CONSTRAINT positive_items_limit CHECK (items_limit>=0),
     map_views_limit INTEGER CONSTRAINT positive_map_views_limit CHECK (map_views_limit>=0),
     geo_search_limit INTEGER CONSTRAINT positive_geo_search_limit CHECK (geo_search_limit>=0),
     navigation_limit INTEGER CONSTRAINT positive_navigation_limit CHECK (navigation_limit>=0),
+    notify_new_messages BOOLEAN DEFAULT TRUE,
+    notify_new_items BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
     CONSTRAINT tarifs_name_unique_constraint UNIQUE (name),
     CONSTRAINT tarifs_scope_unique_constraint UNIQUE (scope)
@@ -319,10 +321,9 @@ BEGIN
 	-- Insert default tarifs
 	INSERT INTO tarifs (name, description, price, currency, scope, terms, items_limit, map_views_limit, geo_search_limit, navigation_limit)
 	VALUES
-        ('Free', 'Free probation plan', 0.00, 'EUR', 'free', 'monthly', 5, 10, 10, 10),
-	    ('Basic', 'Basic subscription plan', 5.00, 'EUR', 'basic', 'monthly', 10, 100, 100, 100),
-        ('Premium', 'Premium subscription plan', 10.00, 'EUR', 'premium', 'monthly', 30, 300, 300, 300),
-        ('Pro', 'Pro subscription plan', 25.00, 'EUR', 'pro', 'monthly', 100, 1000, 1000, 1000);
+        ('Free', 'Free probation plan', 0.00, 'USD', 'free', 'monthly', 5, 10, 10, 10),
+	    ('Basic', 'Basic subscription plan', 10.00, 'USD', 'basic', 'monthly', 10, 100, 100, 100),
+        ('Premium', 'Premium subscription plan', 30.00, 'USD', 'premium', 'monthly', 30, 300, 300, 300),
     END IF;
 END $$;
 
@@ -569,3 +570,47 @@ CREATE TABLE IF NOT EXISTS user_notification_preferences (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Cleanup function for disabled users
+CREATE OR REPLACE FUNCTION cleanup_disabled_users()
+RETURNS void AS $$
+DECLARE
+    user_record RECORD;
+    deleted_rows INT;
+BEGIN
+    -- Start a transaction
+    BEGIN
+        -- Find all disabled users
+        FOR user_record IN
+            SELECT id, username FROM users WHERE disabled = true
+        LOOP
+            RAISE NOTICE 'Processing disabled user: % (ID: %)', user_record.username, user_record.id;
+            
+            -- Delete user's items from items_users table
+            DELETE FROM items_users WHERE user_id = user_record.id;
+            GET DIAGNOSTICS deleted_rows = ROW_COUNT;
+            RAISE NOTICE 'Deleted % row(s) from items_users for user %', deleted_rows, user_record.username;
+            
+            -- Delete user's subscriptions
+            DELETE FROM subscriptions WHERE user_id = user_record.id;
+            GET DIAGNOSTICS deleted_rows = ROW_COUNT;
+            RAISE NOTICE 'Deleted % row(s) from subscriptions for user %', deleted_rows, user_record.username;
+            
+            -- Delete user's notification preferences
+            DELETE FROM user_notification_preferences WHERE user_id = user_record.id;
+            GET DIAGNOSTICS deleted_rows = ROW_COUNT;
+            RAISE NOTICE 'Deleted % row(s) from user_notification_preferences for user %', deleted_rows, user_record.username;
+            
+            -- Finally, delete the user from the users table
+            DELETE FROM users WHERE id = user_record.id;
+            GET DIAGNOSTICS deleted_rows = ROW_COUNT;
+            RAISE NOTICE 'Deleted user record for %', user_record.username;
+        END LOOP;
+        
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- If an error occurs, roll back the transaction
+            RAISE EXCEPTION 'An error occurred during cleanup: %', SQLERRM;
+    END;
+END;
+$$ LANGUAGE plpgsql;

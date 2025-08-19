@@ -1,6 +1,7 @@
 import logging
 from ..schemas import UserInResponse
 from ..rabbit_mq import rabbitmq, QueueName
+from ..models.user_model import cleanup_deleted_users
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -32,3 +33,15 @@ async def create_free_subscription(user_id: int):
         raise ValueError("Failed to create free subscription")
     logging.info(f"Free subscription created for user {user_id}: {new_subscription.id}")
     return new_subscription
+
+
+async def cleanup_users():
+    """
+    Cleanup deleted users from the database.
+    """
+    try:
+        await cleanup_deleted_users()
+        logging.info("Cleanup of deleted users completed successfully.")
+    except Exception as e:
+        logging.error(f"Error during cleanup of deleted users: {e}")
+        raise
