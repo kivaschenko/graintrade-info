@@ -205,6 +205,7 @@ export default {
 						},
 					}
 				);
+				console.log("Update response:", response.status);
 				this.message = 'Preferences updated successfully!';
 				this.$emit('updated'); // Emit an event to notify the parent component to re-fetch preferences
 			} catch (error) {
