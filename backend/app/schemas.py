@@ -178,6 +178,8 @@ class SubscriptionInDB(BaseModel):
     user_id: int
     tarif_id: int
     order_id: Optional[str] = None
+    provider: str = "fondy"  # Default to Fondy payment provider
+    provider_payment_token: Optional[str] = None  # Token for Fondy payment
     start_date: date | None
     end_date: date | None
     status: SubscriptionStatus = SubscriptionStatus.INACTIVE
