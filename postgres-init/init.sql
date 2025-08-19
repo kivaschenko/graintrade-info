@@ -133,7 +133,11 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     map_views INTEGER DEFAULT 0,
     geo_search_count INTEGER DEFAULT 0,
     navigation_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    provider VARCHAR(50) DEFAULT 'fondy',
+    provider_customer_id VARCHAR(100),
+    provider_payment_token VARCHAR(100)
+
 );
 
 -- Indexes
