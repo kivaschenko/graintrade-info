@@ -313,6 +313,11 @@ export default {
           .addTo(this.map);
         this.popup.on('open', () => {
           const popupButton = document.getElementById(`popup-view-details-${item.id}`);
+          if (popupButton) {
+            console.log('Popup button found. Adding click listener.');
+          } else {
+            console.log('Popup button NOT found.');
+          }
         });
         this.popup.on('close', () => {
           this.popup = null;
