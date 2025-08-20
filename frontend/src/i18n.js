@@ -16,6 +16,7 @@ const messages = {
       tariffs: 'Tariff Plans',
       forgotPassword: 'Forgot Password?',
       viewAllItemsOnMap: 'View All Items on Map',
+      cryptoTariffs: 'Crypto Tarrifs',
     },
     footer: {
       about: 'About',
@@ -299,6 +300,7 @@ const messages = {
       tariffs: 'Тарифні плани',
       forgotPassword: 'Забули пароль?',
       viewAllItemsOnMap: 'Всі пропозиції на мапі',
+      cryptoTariffs: 'Крипто Тарифи',
     },
     footer: {
       about: 'Про нас',
