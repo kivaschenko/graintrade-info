@@ -258,3 +258,7 @@ http POST http://65.108.68.57:8000/payments/confirm \
 
 # Ngrok use static domain:
 ngrok http --url fox-grand-seriously.ngrok-free.app http://localhost:8000
+
+# NOW payments
+curl --location 'https://api.nowpayments.io/v1/currencies?fixed_rate=true' \
+--header 'x-api-key: {{api-key}}'
