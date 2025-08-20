@@ -11,6 +11,7 @@ import PasswordRecovery from '@/components/PasswordRecovery.vue';
 import AllItemsMap from '../components/AllItemsMap.vue'; 
 import PublicProfile from '@/components/PublicProfile.vue';
 import ContactsRequisites from '@/components/ContactsRequisites.vue';
+import CryptoCheckout from '@/components/CryptoCheckout.vue';
 
 const routes = [
     {
@@ -101,6 +102,11 @@ const routes = [
       name: 'ContactsRequisites',
       component: ContactsRequisites,
     },
+    {
+      path: '/crypto-checkout',
+      name: 'CryptoCheckout',
+      component: CryptoCheckout,
+    }
   ];
 const router = createRouter({
     history: createWebHistory(),
