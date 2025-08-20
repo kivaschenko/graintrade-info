@@ -4,7 +4,10 @@ from pydantic import BaseModel
 import os
 from .liqpay_client import LiqPayClient
 from .now_client import NowClient
-from . import payment_model  # твій існуючий save
+from ..models import payment_model  # має мати create(normalized)
+from ..schemas import SubscriptionInDB
+from ..database import redis_db
+from datetime import date, timedelta
 from databases import Database
 
 router = APIRouter(prefix="/checkout", tags=["checkout"])

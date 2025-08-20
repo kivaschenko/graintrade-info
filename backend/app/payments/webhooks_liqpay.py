@@ -1,6 +1,8 @@
 # payments/webhooks_liqpay.py
 from fastapi import APIRouter, Request, HTTPException
-import os, base64, json
+import os
+import base64
+import json
 from .liqpay_client import LiqPayClient
 from . import payment_model  # має мати create(normalized)
 
@@ -12,9 +14,9 @@ lq = LiqPayClient()
 async def liqpay_hook(request: Request):
     form = await request.form()
     data, signature = form.get("data"), form.get("signature")
-    if not data or not signature or not lq.verify(data, signature):
+    if not data or not signature or not lq.verify(data, signature):  # type: ignore
         raise HTTPException(401, "Invalid signature")
-    obj = json.loads(base64.b64decode(data))
+    obj = json.loads(base64.b64decode(data))  # type: ignore
     status = obj.get("status")
     if status not in ["success", "sandbox", "subscribed", "subscr_success"]:
         return {"ok": True, "ignored": status}
