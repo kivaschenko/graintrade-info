@@ -261,4 +261,7 @@ ngrok http --url fox-grand-seriously.ngrok-free.app http://localhost:8000
 
 # NOW payments
 curl --location 'https://api.nowpayments.io/v1/currencies?fixed_rate=true' \
---header 'x-api-key: {{api-key}}'
+--header 'x-api-key: S4AFSMN-Y4142XR-JX4MEMY-S0D1ASM'
+
+curl --location 'https://api.nowpayments.io/v1/min-amount?currency_from=eth&currency_to=trx&fiat_equivalent=usd&is_fee_paid_by_user=True' \
+--header 'x-api-key: S4AFSMN-Y4142XR-JX4MEMY-S0D1ASM'
