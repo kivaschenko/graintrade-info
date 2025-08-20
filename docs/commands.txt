@@ -254,3 +254,7 @@ http POST http://65.108.68.57:8000/payments/confirm \
         "tran_type": "purchase",
         "verification_status": ""
     }'
+
+
+# Ngrok use static domain:
+ngrok http --url fox-grand-seriously.ngrok-free.app http://localhost:8000
