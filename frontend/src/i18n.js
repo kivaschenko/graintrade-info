@@ -19,7 +19,7 @@ const messages = {
     },
     footer: {
       about: 'About',
-      contact: 'Contact',
+      contactsAndRequisites: 'Contacts and Requisites',
       pricing: 'Pricing',
       privacyPolicy: 'Privacy Policy',
       termsOfService: 'Terms of Service',
@@ -302,7 +302,7 @@ const messages = {
     },
     footer: {
       about: 'Про нас',
-      contact: 'Контакти',
+      contactsAndRequisites: 'Контакти і Реквізити',
       pricing: 'Ціни',
       privacyPolicy: 'Політика конфіденційності',
       termsOfService: 'Умови використання',
