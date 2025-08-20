@@ -10,6 +10,7 @@ import TariffPlans from '@/components/TariffPlans.vue';
 import PasswordRecovery from '@/components/PasswordRecovery.vue';
 import AllItemsMap from '../components/AllItemsMap.vue'; 
 import PublicProfile from '@/components/PublicProfile.vue';
+import ContactsRequisites from '@/components/ContactsRequisites.vue';
 
 const routes = [
     {
@@ -94,7 +95,12 @@ const routes = [
       path: '/terms-of-service',
       name: 'TermsOfService',
       component: () => import('@/components/TermsOfService.vue'), // Lazy loading
-    }
+    },
+    {
+      path: '/contacts-requisites',
+      name: 'ContactsRequisites',
+      component: ContactsRequisites,
+    },
   ];
 const router = createRouter({
     history: createWebHistory(),

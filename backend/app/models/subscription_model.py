@@ -12,9 +12,9 @@ from ..schemas import (
 # CRUD operations for Subscription
 async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
     query = """
-        INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, order_id, status)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status, created_at
+        INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, order_id, status, provider)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status, provider, created_at
     """
     if subscription.order_id is None:
         subscription.order_id = (
@@ -29,6 +29,7 @@ async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
             subscription.end_date,
             subscription.order_id,
             subscription.status,
+            subscription.provider,
         )
         new_subscription = SubscriptionInResponse(**row)
         return new_subscription
@@ -85,7 +86,7 @@ async def update_status_by_order_id(status: str, order_id: str):
 
 async def get_by_id(subscription_id: int) -> SubscriptionInResponse:
     query = """
-        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at
+        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at, provider, provider_payment_token
         FROM subscriptions
         WHERE id = $1
     """
@@ -111,7 +112,7 @@ async def delete(subscription_id: int) -> None:
 
 async def get_by_user_id(user_id: int) -> SubscriptionInResponse:
     query = """
-        SELECT id, user_id, tarif_id, start_date, end_date, order_id, status, created_at
+        SELECT id, user_id, tarif_id, start_date, end_date, order_id, status, created_at, provider, provider_payment_token
         FROM subscriptions
         WHERE user_id = $1
         ORDER BY created_at DESC
