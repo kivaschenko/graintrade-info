@@ -42,8 +42,8 @@ async def get_all() -> List[CategoryInResponse]:
 
 async def get_by_id(category_id: int) -> CategoryInResponse:
     query = """
-        SELECT id, name, description, ua_name, ua_description, parent_category
-        FROM categories
+        SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
+        FROM categories_hierarchy
         WHERE id = $1
     """
     async with database.pool.acquire() as conn:

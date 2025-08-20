@@ -70,6 +70,8 @@ class ItemInResponse(BaseModel):
     owner_id: Optional[str] = None
     category: Optional[CategoryInResponse] = None
     user_id: Optional[int] = None
+    category_name: Optional[str] = None
+    category_ua_name: Optional[str] = None
 
     @property
     def formatted_created_at(self) -> str:

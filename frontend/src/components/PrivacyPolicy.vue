@@ -100,7 +100,7 @@ export default {
           ],
           privacy_store_title: "3. Storage & protection",
           privacy_store_list: [
-            "Data is stored on secure servers.",
+            "The data is stored on secure servers located in European Union countries (currently in Finland).",
             "We do not sell or share personal data.",
             "Payments are processed via official gateways (LiqPay, crypto providers); we do not store private keys or card data."
           ],
@@ -145,7 +145,7 @@ export default {
           ],
           privacy_store_title: "3. Зберігання та захист",
           privacy_store_list: [
-            "Дані зберігаються на захищених серверах.",
+            "Дані зберігаються на захищених серверах, що розташовані в країнах Єропейського Союзу (на поточний момент у Фінляндії).",
             "Ми не продаємо та не передаємо персональні дані третім сторонам.",
             "Платежі обробляються через офіційні шлюзи (LiqPay, криптопровайдери); ми не зберігаємо приватні ключі чи дані карток."
           ],
