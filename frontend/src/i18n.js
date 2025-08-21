@@ -120,6 +120,8 @@ const messages = {
       error_401: 'Token expired or invalid. Please log in again.',
       error_403: 'Not enough permissions to create an offer or limit reached.',
       error_400: 'Offer not created. Please check the form and try again.',
+      error_not_authenticated: 'You are not authenticated. Please log in to create an offer.',
+      // Placeholders for form fields
       title_placeholder: 'Enter title',
       price_placeholder: 'Enter price',
       amount_placeholder: 'Enter amount',
@@ -404,6 +406,7 @@ const messages = {
       error_401: 'Термін дії токена закінчився або він недійсний. Будь ласка, увійдіть знову.',
       error_403: 'Недостатньо прав для створення пропозиції або ліміт вичерпано',
       error_400: 'Пропозиція не створена. Будь ласка, перевірте форму і спробуйте ще раз.',
+      error_not_authenticated: 'Ви не авторизовані. Будь ласка, увійдіть, щоб створити пропозицію.',
       title_placeholder: 'Введіть назву',
       price_placeholder: 'Введіть ціну',
       amount_placeholder: 'Введіть кількість',
