@@ -187,10 +187,18 @@ class SubscriptionInDB(BaseModel):
     status: SubscriptionStatus = SubscriptionStatus.INACTIVE
 
 
-class SubscriptionInResponse(SubscriptionInDB):
+class SubscriptionInResponse(BaseModel):
     id: int
+    user_id: int
+    tarif_id: int
+    order_id: str
+    provider: str
+    provider_payment_token: Optional[str] = None  # Token for Fondy payment
+    start_date: date
+    end_date: date
+    status: SubscriptionStatus
     created_at: datetime = Field(alias="created_at")
-    tarif: TarifInResponse | None = None
+    tarif: Optional[TarifInResponse]
 
     @property
     def formatted_created_at(self) -> str:
