@@ -1,12 +1,14 @@
 from pathlib import Path
 from typing import Optional, Any, Dict
 from datetime import date, timedelta, datetime
+import base64
 import asyncio
 import hashlib
 import httpx
 import logging
 import uuid
 import os
+import json
 from dotenv import load_dotenv
 import redis
 
@@ -22,6 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
 FONDY_MERCHANT_ID = os.getenv("FONDY_MERCHANT_ID")
 FONDY_MERCHANT_KEY = os.getenv("FONDY_MERCHANT_KEY")
+LIQPAY_PUBLIC_KEY = os.getenv("LIQPAY_PUBLIC_KEY")
+LIQPAY_PRIVATE_KEY = os.getenv("LIQPAY_PRIVATE_KEY")
 BASE_URL = os.getenv("BASE_URL", "localhost:8000")
 CALLBACK_URL = f"{BASE_URL}/payments/confirm"
 ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
@@ -127,7 +131,7 @@ class FondyPaymentService:
         params["signature"] = signature
         return params, signature
 
-    async def send_request_to_fondy_api(self, params: Dict[str, Any]):
+    async def send_request(self, params: Dict[str, Any]):
         async with httpx.AsyncClient() as client:
             r = await client.post(url=self.API_URL, json={"request": params})
         if r.status_code != 200:
@@ -285,7 +289,7 @@ async def payment_for_subscription_handler(
             amount, order_id, order_desc, currency, email, server_callback_url
         )
         logging.info("Payment data:", payment_data)
-        r = await fondy_payment_service.send_request_to_fondy_api(payment_data)
+        r = await fondy_payment_service.send_request(payment_data)
         checkout_url, payment_id = await fondy_payment_service.extract_checkout_url(r)
         logging.info("Result:", checkout_url, payment_id)
         if not order_id:
@@ -361,3 +365,168 @@ async def send_success_payment_details_to_queue(
     finally:
         await rabbitmq.close()
         # Ensure the connection is closed
+        logging.info("RabbitMQ connection closed after publishing payment details")
+        return True
+    return False
+
+
+# ----------------------
+# LiqPay payment service class
+
+# payments/liqpay_client.py
+
+LIQPAY_API_URL = "https://www.liqpay.ua/api/request"
+
+
+class LiqPayClient:
+    def __init__(self):
+        self.pub = os.getenv("LIQPAY_PUBLIC_KEY")
+        self.prv = os.getenv("LIQPAY_PRIVATE_KEY")
+
+    def _encode(self, params: dict) -> str:
+        return base64.b64encode(json.dumps(params).encode()).decode()
+
+    def _sign(self, data: str) -> str:
+        raw = f"{self.prv}{data}{self.prv}".encode()
+        return base64.b64encode(hashlib.sha1(raw).digest()).decode()
+
+    async def create_checkout(
+        self,
+        *,
+        amount: float,
+        currency: str,
+        order_id: str,
+        description: str,
+        recurring: bool,
+        result_url: str,
+        server_url: str,
+    ):
+        params = {
+            "version": "3",
+            "public_key": self.pub,
+            "action": "subscribe" if recurring else "pay",
+            "amount": str(amount),
+            "currency": currency,
+            "description": description,
+            "order_id": order_id,
+            "result_url": result_url,
+            "server_url": server_url,
+        }
+        if recurring:
+            params.update(
+                {
+                    "subscribe": "1",
+                    "subscribe_periodicity": "month",
+                    "subscribe_date_start": date.today().isoformat(),
+                    "subscribe_date_end": (
+                        date.today() + timedelta(days=31)
+                    ).isoformat(),
+                }
+            )
+        data = self._encode(params)
+        sign = self._sign(data)
+        # Send request to LiqPay API
+        async with httpx.AsyncClient() as c:
+            r = await c.post(LIQPAY_API_URL, data={"data": data, "signature": sign})
+            r.raise_for_status()
+            print(f"Response from LiqPay: {r.json()}")
+            return r.json()  # містить data + signature
+
+    def verify(self, data: str, signature: str) -> bool:
+        return self._sign(data) == signature
+
+
+class LiqPayPaymentService:
+    API_URL = "https://www.liqpay.ua/api/3/checkout"
+
+    def __init__(
+        self,
+        public_key: str = LIQPAY_PUBLIC_KEY,  # type: ignore
+        private_key: str = LIQPAY_PRIVATE_KEY,  # type: ignore
+    ):
+        self.public_key = public_key
+        self.private_key = private_key
+
+    def _generate_signature(self, data: dict) -> str:
+        """Generate signature for LiqPay API"""
+        data_str = f"{self.private_key}{data}{self.private_key}"
+        return hashlib.sha1(data_str.encode("utf-8")).hexdigest()
+
+    async def create_subscription_payment(
+        self,
+        amount: float,
+        order_id: str,
+        order_desc: str,
+        currency: str = "USD",
+        email: Optional[str] = None,
+        server_callback_url: Optional[str] = None,
+    ) -> tuple[Dict[str, Any], str]:
+        """Create payment for subscription using LiqPay"""
+        params = {
+            "version": 3,
+            "public_key": self.public_key,
+            "amount": amount,
+            "currency": currency,
+            "order_id": order_id,
+            "description": order_desc,
+        }
+        if email:
+            params["email"] = email
+        if server_callback_url:
+            params["server_url"] = server_callback_url
+
+        # Generate signature
+
+        data["signature"] = self._generate_signature(data)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(self.API_URL, json=data)
+            response.raise_for_status()
+            return response.json()
+
+    async def verify_payment(self, payment_data: dict) -> bool:
+        """Verify payment signature"""
+        received_signature = payment_data.pop("signature", None)
+        if not received_signature:
+            return False
+        calculated_signature = self._generate_signature(payment_data)
+        return received_signature == calculated_signature
+
+
+# ----------------------
+# Webhook handler for LiqPay payment confirmation
+async def handle_liqpay_webhook(payment_data: dict):
+    try:
+        # Extract necessary fields from payment_data
+        order_id = payment_data.get("order_id")
+        if not order_id:
+            logging.error("Order ID is missing in the payment data")
+            return False
+
+        # Verify payment signature
+        liqpay_service = LiqPayPaymentService(
+            public_key=LIQPAY_PUBLIC_KEY,  # type: ignore
+            private_key=LIQPAY_PRIVATE_KEY,  # type: ignore
+        )
+        if not await liqpay_service.verify_payment(payment_data):
+            logging.error("Invalid payment signature")
+            return False
+
+        # Save payment confirmation and update subscription status
+        await update_subscription_and_save_payment_confirmation(payment_data)
+
+        # Send success details to RabbitMQ queue
+        await send_success_payment_details_to_queue(payment_data)
+
+        return True
+    except Exception as e:
+        logging.error(f"Error handling LiqPay webhook: {str(e)}")
+        return False
+    finally:
+        logging.info("LiqPay webhook handler completed")
+        return True
+    return False
+
+
+if __name__ == "__main__":
+    # Example usage
+    pass
