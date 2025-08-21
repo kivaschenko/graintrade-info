@@ -63,6 +63,8 @@ app.add_middleware(
         "http://65.108.68.57",
         "https://graintrade.info",
         "https://www.graintrade.info",
+        "https://stage.graintrade.info",
+        "https://www.stage.graintrade.info",
     ],
     allow_credentials=True,
     allow_methods=["*"],
