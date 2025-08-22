@@ -16,6 +16,11 @@
           <li class="nav-item">
             <router-link class="nav-link" to="/tariffs">{{ $t('navbar.tariffs') }}</router-link>
           </li>
+          <!--
+          <li class="nav-item">
+            <router-link class="nav-link" to="/crypto-checkout">{{ $t('navbar.cryptoTariffs') }}</router-link>
+          </li>
+          -->
         </ul>
         <ul class="navbar-nav">
           <li class="nav-item" v-if="!isAuthenticated">

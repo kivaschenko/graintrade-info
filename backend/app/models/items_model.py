@@ -13,10 +13,12 @@ async def get_all(offset: int = 0, limit: int = 10) -> Tuple[List[ItemInResponse
     """Get all items according offset and limit cause."""
     query = """
         SELECT 
-            id, uuid, category_id, offer_type, title, description, price, currency, 
-            amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+            items.id, items.uuid, items.category_id, items.offer_type, items.title, items.description, items.price, items.currency, 
+            items.amount, items.measure, items.terms_delivery, items.country, items.region, items.latitude, items.longitude, items.created_at,
+            categories.name AS category_name, categories.ua_name AS category_ua_name
         FROM items
-        ORDER BY id DESC
+        LEFT JOIN categories ON items.category_id = categories.id
+        ORDER BY items.id DESC
         OFFSET $1
         LIMIT $2
     """

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Any
 import logging
 
 from fastapi import APIRouter, HTTPException, status, Body
@@ -43,7 +43,7 @@ async def get_tarif(tarif_id: int):
 
 @router.post(
     "/subscriptions",
-    response_model=dict[str, str],
+    response_model=Dict[str, Any],
     summary="Create a new subscription",
     description="Create a new subscription for a user. This will initiate the payment process.",
     responses={
@@ -66,8 +66,13 @@ async def get_tarif(tarif_id: int):
     status_code=status.HTTP_201_CREATED,
 )
 async def create_subscription(
-    user_id: int = Body(embed=True), tarif_id: int = Body(embed=True)
+    user_id: int = Body(embed=True),
+    tarif_id: int = Body(embed=True),
+    payment_provider: str = Body(embed=True),
 ):
+    """Create a new subscription for a user."""
+    if not payment_provider:
+        payment_provider = "liqpay"  # Default payment provider
     logging.info(
         f"Creating subscription with data: user_id={user_id}, tarif_id={tarif_id}"
     )
@@ -82,22 +87,18 @@ async def create_subscription(
                 "message": "Free subscription activated without payment",
             }
         current_user = await user_model.get_by_id(user_id)
-        ##import pdb; pdb.set_trace()
         amount = int(current_tarif.price)  # Make price as centes integer for Fondy API
-        checkout_url = await payment_for_subscription_handler(
+        checkout_result = await payment_for_subscription_handler(
             user_id=user_id,
             tarif_id=tarif_id,
             tarif_name=current_tarif.name,
             amount=amount,
             currency=current_tarif.currency,
             email=current_user.email,
+            payment_provider_name=payment_provider,
         )
-        if checkout_url:
-            return {
-                "status": "success",
-                "checkout_url": checkout_url,
-                "message": "Successful payment attemp",
-            }
+        if checkout_result:
+            return checkout_result
         else:
             return {"status": "error", "message": "Error during payment attemp"}
     except Exception as e:
