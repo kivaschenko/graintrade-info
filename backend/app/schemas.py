@@ -70,6 +70,8 @@ class ItemInResponse(BaseModel):
     owner_id: Optional[str] = None
     category: Optional[CategoryInResponse] = None
     user_id: Optional[int] = None
+    category_name: Optional[str] = None
+    category_ua_name: Optional[str] = None
 
     @property
     def formatted_created_at(self) -> str:
@@ -178,13 +180,23 @@ class SubscriptionInDB(BaseModel):
     user_id: int
     tarif_id: int
     order_id: Optional[str] = None
+    provider: str = "fondy"  # Default to Fondy payment provider
+    provider_payment_token: Optional[str] = None  # Token for Fondy payment
     start_date: date | None
     end_date: date | None
     status: SubscriptionStatus = SubscriptionStatus.INACTIVE
 
 
-class SubscriptionInResponse(SubscriptionInDB):
+class SubscriptionInResponse(BaseModel):
     id: int
+    user_id: int
+    tarif_id: int
+    order_id: str
+    provider: str
+    provider_payment_token: Optional[str] = None  # Token for Fondy payment
+    start_date: date
+    end_date: date
+    status: SubscriptionStatus
     created_at: datetime = Field(alias="created_at")
     tarif: TarifInResponse | None = None
 

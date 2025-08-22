@@ -318,6 +318,11 @@ export default {
         this.errorMessage = this.$t('create_form.error_validation_failed');
         return;
       }
+      // Check the user is authenticated
+      if (!this.$store.state.isAuthenticated) {
+        this.errorMessage = this.$t('create_form.error_not_authenticated');
+        return;
+      }
       try {
         const response = await axios.post(`${process.env.VUE_APP_BACKEND_URL}/items`, {
           user_id: this.user.id,

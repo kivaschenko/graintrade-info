@@ -7,6 +7,9 @@
             <h3 class="card-title text-primary mb-4">{{ $t('itemDetails.title', { title: item.title }) }}</h3>
             <div class="detail-group">
               <p><strong>ID:</strong> <span class="text-muted">{{ item.uuid }}</span></p>
+              <p><strong>{{ $t('common_text.category') }}:</strong> 
+                <span class="badge bg-primary">{{ $i18n.locale === 'en' ? item.category_name : item.category_ua_name }}</span>
+              </p>
               <p><strong>{{ $t('common_text.type') }}:</strong> <span class="badge bg-secondary">{{ $t(`offer_type.${item.offer_type}`) }}</span></p>
               <p><strong>{{ $t('common_text.description') }}:</strong> {{ item.description }}</p>
               <p><strong>{{ $t('common_text.price') }}:</strong> <span class="text-success fs-5">{{ item.price }} {{ item.currency }}</span></p>
