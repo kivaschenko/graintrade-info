@@ -63,6 +63,7 @@
     <!-- LiqPay Payment Form -->
     <div v-if="liqpayForm" class="liqpay-form mt-4">
       <form
+        ref="liqpayForm"
         :action="liqpayForm.action"
         method="POST"
         accept-charset="utf-8"
@@ -100,6 +101,19 @@ export default {
   },
   computed: {
     ...mapState(['user']),
+  },
+  watch: {
+    liqpayForm(newVal) {
+      if (newVal) {
+        this.$nextTick(() => {
+          if (this.$refs.liqpayForm) {
+            this.$refs.liqpayForm.submit();
+            // Reset the form after submission to avoid resubmission on next change
+            this.liqpayForm = null;
+          }
+        })
+      }
+    }
   },
   methods: {
     formatLimit(limit) {
