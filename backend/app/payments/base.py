@@ -8,13 +8,6 @@ class BasePaymentProvider(ABC):
     """
 
     @abstractmethod
-    def name(self) -> str:
-        """
-        Returns the name of the payment provider.
-        """
-        pass
-
-    @abstractmethod
     async def process_payment(
         self, amount: float, order_id: str, currency: str, **kwargs
     ) -> str:
@@ -24,7 +17,7 @@ class BasePaymentProvider(ABC):
         :param order_id: The ID of the order for which the payment is being processed.
         :param currency: The currency of the payment.
         :param kwargs: Additional parameters specific to the payment provider.
-        :return: A string containing the checkout URL.
+        :return: A dict containing the checkout URL or data for LiqPay form.
         """
         pass
 
