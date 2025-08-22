@@ -17,7 +17,7 @@ from ..schemas import (
     ItemInResponse,
     ItemsByUserResponse,
 )
-from ..models import items_model, subscription_model, tarif_model
+from ..models import items_model, subscription_model, tarif_model, category_model
 from ..service_layer import item_services
 from . import JWT_SECRET
 
@@ -146,6 +146,17 @@ async def read_item(
             user_id, scopes = await get_current_user_id(token)
             if "read:item" not in scopes:
                 raise HTTPException(status.HTTP_403_FORBIDDEN)
+        # Get Category data
+        category = await category_model.get_by_id(db_item.category_id)
+        print(f"Category ID: {db_item.category_id}, Category: {category}")
+        if category:
+            db_item.category_name = category.name
+            db_item.category_ua_name = category.ua_name
+        else:
+            logging.warning(f"Category with id {db_item.category_id} not found")
+            db_item.category_name = "Unknown"
+            db_item.category_ua_name = "Невідомо"
+        logging.info(f"Item read successfully: {db_item}")
         return db_item
     except Exception as e:
         logging.error(f"Error in read_item: {e}")

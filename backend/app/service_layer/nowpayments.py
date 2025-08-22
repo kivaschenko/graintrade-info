@@ -1,13 +1,19 @@
-# payments/now_client.py
-import httpx, os
+from pathlib import Path
+import httpx
+import os
 
+from dotenv import load_dotenv
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
 BASE = "https://api.nowpayments.io/v1"
 API_KEY = os.getenv("NOWPAYMENTS_API_KEY")
 
 
-class NowClient:
+class NowPaymentsClient:
     def __init__(self):
-        self.h = {"x-api-key": API_KEY, "Content-Type": "application/json"}
+        self.headers = {"x-api-key": API_KEY, "Content-Type": "application/json"}
 
     async def create_subscription(
         self,
@@ -20,7 +26,7 @@ class NowClient:
         cancel_url: str,
     ):
         payload = {
-            "interval": 30,
+            "interval": 30,  # days
             "interval_type": "day",
             "price_amount": amount,
             "price_currency": price_currency,
@@ -30,13 +36,15 @@ class NowClient:
             "success_url": success_url,
             "cancel_url": cancel_url,
         }
-        async with httpx.AsyncClient() as c:
-            r = await c.post(f"{BASE}/subscription", json=payload, headers=self.h)
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                f"{BASE}/subscription", headers=self.headers, json=payload
+            )
             r.raise_for_status()
             return r.json()
 
-    async def payment_status(self, payment_id: str):
-        async with httpx.AsyncClient() as c:
-            r = await c.get(f"{BASE}/payment/{payment_id}", headers=self.h)
+    async def get_payment_status(self, payment_id: str):
+        async with httpx.AsyncClient() as client:
+            r = await client.get(f"{BASE}/payment/{payment_id}", headers=self.headers)
             r.raise_for_status()
             return r.json()

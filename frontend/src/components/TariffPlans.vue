@@ -59,6 +59,27 @@
         </div>
       </div>
     </div>
+
+    <!-- LiqPay Payment Form -->
+    <div v-if="liqpayForm" class="liqpay-form mt-4">
+      <form
+        ref="liqpayForm"
+        :action="liqpayForm.action"
+        method="POST"
+        accept-charset="utf-8"
+        target="_blank"
+      >
+        <input type="hidden" name="data" :value="liqpayForm.data" />
+        <input type="hidden" name="signature" :value="liqpayForm.signature" />
+        <input
+          type="image"
+          src="//static.liqpay.ua/buttons/payUk.png"
+          alt="Pay with LiqPay"
+        />
+      </form>
+    </div>
+    <!-- ...existing code... -->
+
   </div>
 </template>
 
@@ -74,11 +95,25 @@ export default {
       isSubscribing: false,
       error: null,
       tariffs: [],
-      currentTariff: null
+      currentTariff: null,
+      liqpayForm: null,
     }
   },
   computed: {
     ...mapState(['user']),
+  },
+  watch: {
+    liqpayForm(newVal) {
+      if (newVal) {
+        this.$nextTick(() => {
+          if (this.$refs.liqpayForm) {
+            this.$refs.liqpayForm.submit();
+            // Reset the form after submission to avoid resubmission on next change
+            this.liqpayForm = null;
+          }
+        })
+      }
+    }
   },
   methods: {
     formatLimit(limit) {
@@ -124,7 +159,8 @@ export default {
       try {
         let r = await api.post('/subscriptions', {
           user_id: this.user.id,
-          tarif_id: tariff.id
+          tarif_id: tariff.id,
+          payment_provider: 'liqpay' // Default payment provider later get from radio button
         });
         if (r.data.checkout_url) {
           // Redirect to the checkout URL in a new tab
@@ -133,6 +169,8 @@ export default {
           // window.location.href = r.data.checkout_url;
         } else if (r.data.status === "free") {
           alert("Your Subscription was updated to Free plan!")
+        } else if (r.data.liqpay_form) {
+          this.liqpayForm = r.data.liqpay_form;
         } else {
           alert(this.$t('tariffs.noCheckoutUrl'));
         }
@@ -155,7 +193,7 @@ export default {
     } finally {
       this.isLoading = false;
     }
-  }
+  },
 }
 </script>
 
