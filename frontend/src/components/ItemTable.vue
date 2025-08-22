@@ -5,6 +5,7 @@
       <thead>
         <tr>
           <th scope="col">{{ $t( 'common_text.title' ) }}</th>
+          <th scope="col">{{ $t( 'create_form.category') }}</th>
           <th scope="col">{{ $t( 'common_text.type' ) }}</th>
           <th scope="col" class="text-end">{{ $t( 'common_text.price' ) }}</th>
           <th scope="col" class="text-start">{{ $t( 'common_text.currency' ) }}</th>
@@ -21,6 +22,9 @@
               {{ item.title }}
             </router-link>
           </th>
+          <td class="text-start">
+            {{ $i18n.locale === 'en' ? item.category_name : item.category_ua_name }}
+          </td>
           <td>{{ $t(`offer_type.${item.offer_type}`) }}</td>
           <td class="text-end">{{ item.price }} </td>
           <td class="text-start">{{ $t(`currency.${item.currency}`) }}</td>

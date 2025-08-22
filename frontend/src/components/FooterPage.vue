@@ -14,8 +14,12 @@
 				<li class="nav-item">
 					<router-link class="nav-link px-2 text-muted" to="/tariffs">{{ $t('footer.pricing') }}</router-link>
 				</li>
+				<!--
 				<li class="nav-item"><a href="#" class="nav-link px-2 text-muted">{{ $t('footer.faqs') }}</a></li>
-				<li class="nav-item"><a href="#" class="nav-link px-2 text-muted">{{ $t('footer.about') }}</a></li>
+				-->
+				<li class="nav-item">
+					<router-link class="nav-link px-2 text-muted" to="/about-us">{{ $t('footer.about') }}</router-link>
+				</li>
 			</ul>
 			<p class="text-center text-muted">&copy; 2025 Graintraide.Info</p>
 		</footer>
