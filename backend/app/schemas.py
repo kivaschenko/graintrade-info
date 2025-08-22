@@ -198,7 +198,7 @@ class SubscriptionInResponse(BaseModel):
     end_date: date
     status: SubscriptionStatus
     created_at: datetime = Field(alias="created_at")
-    tarif: Optional[TarifInResponse]
+    tarif: TarifInResponse | None = None
 
     @property
     def formatted_created_at(self) -> str:

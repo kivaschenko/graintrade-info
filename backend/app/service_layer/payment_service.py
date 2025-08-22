@@ -9,7 +9,6 @@ from ..schemas import (
     SubscriptionInResponse,
 )
 from ..payments import (
-    BasePaymentProvider,
     FondyPaymentService,
     LiqPayPaymentService,
     create_order_description,
@@ -74,7 +73,7 @@ async def payment_for_subscription_handler(
     currency: str,
     email: str,
     payment_provider_name: str = "fondy",
-) -> str | None:
+) -> Dict[str, Any] | None:
     """Handle payment for subscription using specified payment provider"""
     payment_service = PAYMENT_PROVIDERS.get(payment_provider_name)
     if not payment_service:
@@ -105,10 +104,10 @@ async def payment_for_subscription_handler(
         order_desc = create_order_description(tarif_name, start_date, end_date, user_id)
         # Process payment
         logging.info(f"Processing payment for order_id: {order_id}")
-        checkout_url = await payment_service.process_payment(
+        checkout_result: Dict[str, Any] = await payment_service.process_payment(
             amount, order_id, order_desc, currency, email
         )
-        return checkout_url
+        return checkout_result
     except Exception as e:
         logging.error(f"Error in payment_for_subscription_handler: {str(e)}")
         return None

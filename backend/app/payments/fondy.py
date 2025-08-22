@@ -10,8 +10,6 @@ from dotenv import load_dotenv
 
 from ..payments.base import BasePaymentProvider
 from .payment_helpers import (
-    create_order_description,
-    make_start_end_dates_for_monthly_case,
     save_signature_to_cache,
     get_signature_from_cache,
 )
@@ -25,7 +23,9 @@ FONDY_CALLBACK_URL = f"{BASE_URL}/payments/confirm"
 ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 # -------------------
@@ -41,9 +41,6 @@ class FondyPaymentService(BasePaymentProvider):
         self.merchant_id = merchant_id
         self.merchant_key = merchant_key
 
-    def name(self) -> str:
-        return "fondy"
-
     def _generate_signature(self, params: dict) -> str:
         """Generate signature for Fondy API"""
         signature_string = "|".join([str(params[key]) for key in sorted(params.keys())])
@@ -58,7 +55,7 @@ class FondyPaymentService(BasePaymentProvider):
         currency: str = "EUR",
         email: Optional[str] = None,
         server_callback_url: Optional[str] = FONDY_CALLBACK_URL,
-    ) -> str:
+    ) -> Dict[str, Any]:
         """Create recurring payment for subscription"""
         params = {
             "order_id": order_id,
@@ -84,8 +81,11 @@ class FondyPaymentService(BasePaymentProvider):
         checkout_url, payment_id = await self._get_checkout_url(r)
         logging.info(f"Checkout URL: {checkout_url}, Payment ID: {payment_id}")
 
-        # Return the checkout URL
-        return checkout_url
+        return {
+            "status": "success",
+            "checkout_url": checkout_url,
+            "message": "Successful payment attemp",
+        }
 
     async def _send_request(self, params: Dict[str, Any]):
         async with httpx.AsyncClient() as client:
