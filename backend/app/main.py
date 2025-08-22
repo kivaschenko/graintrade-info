@@ -16,6 +16,8 @@ from .routers import category_routers
 from .routers import payment_routers
 from .routers import password_recovery
 from .routers import map_routers
+from .routers import crypto as crypto_routers
+from .routers import webhooks as webhooks_routers
 
 
 JWT_SECRET = os.getenv("JWT_SECRET")
@@ -61,6 +63,8 @@ app.add_middleware(
         "http://65.108.68.57",
         "https://graintrade.info",
         "https://www.graintrade.info",
+        "https://stage.graintrade.info",
+        "https://www.stage.graintrade.info",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -74,6 +78,8 @@ app.include_router(subscription_routers.router)
 app.include_router(payment_routers.router)
 app.include_router(password_recovery.router)
 app.include_router(map_routers.router)
+app.include_router(crypto_routers.router)
+app.include_router(webhooks_routers.router)
 
 
 # ----------------

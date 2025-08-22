@@ -254,3 +254,28 @@ http POST http://65.108.68.57:8000/payments/confirm \
         "tran_type": "purchase",
         "verification_status": ""
     }'
+
+
+# Ngrok use static domain:
+ngrok http --url fox-grand-seriously.ngrok-free.app http://localhost:8000
+
+# NOW payments
+curl --location 'https://api.nowpayments.io/v1/currencies?fixed_rate=true' \
+--header 'x-api-key: S4AFSMN-Y4142XR-JX4MEMY-S0D1ASM'
+
+curl --location 'https://api.nowpayments.io/v1/min-amount?currency_from=eth&currency_to=trx&fiat_equivalent=usd&is_fee_paid_by_user=True' \
+--header 'x-api-key: S4AFSMN-Y4142XR-JX4MEMY-S0D1ASM'
+
+
+<Record 
+id=15 
+user_id=5 
+tarif_id=1 
+start_date=datetime.datetime(2025, 8, 22, 0, 0) 
+end_date=datetime.datetime(2025, 8, 29, 0, 0) 
+order_id='registration-teodor' 
+status='active' 
+created_at=datetime.datetime(2025, 8, 22, 12, 28, 30, 203969) 
+provider='fondy' 
+provider_payment_token=None
+>
