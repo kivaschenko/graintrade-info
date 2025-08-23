@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Optional, Any, Dict
-from datetime import timedelta, datetime
+from datetime import datetime, UTC
 import base64
-import asyncio
 import hashlib
 import httpx
 import logging
@@ -21,7 +20,7 @@ load_dotenv(BASE_DIR / ".env")
 LIQPAY_PUBLIC_KEY = os.getenv("LIQPAY_PUBLIC_KEY")
 LIQPAY_PRIVATE_KEY = os.getenv("LIQPAY_PRIVATE_KEY")
 BASE_URL = os.getenv("BASE_URL", "localhost:8000")
-LIQPAY_CALLBACK_URL = f"{BASE_URL}/payments/confirm"
+LIQPAY_CALLBACK_URL = f"{BASE_URL}/payments/confirm/liqpay"
 ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
 
 
@@ -137,17 +136,28 @@ class LiqPayPaymentService(BasePaymentProvider):
 
     def normalize(self, payment_data: dict) -> dict:
         """Normalize LiqPay payment data to common format"""
-        normalized_data = {
-            "order_id": payment_data.get("order_id"),
-            "amount": float(payment_data.get("amount", 0)),
-            "currency": payment_data.get("currency"),
-            "status": payment_data.get("status"),
-            "transaction_id": payment_data.get("transaction_id"),
-            "payment_method": payment_data.get("payment_method"),
-            "sender_phone": payment_data.get("sender_phone"),
-            "sender_email": payment_data.get("sender_email"),
-            "response": payment_data,
-        }
+        normalized_data = dict(
+            payment_id=payment_data.get("payment_id"),
+            order_id=payment_data.get("order_id"),
+            order_status=payment_data.get("status"),
+            currency=payment_data.get("currency"),
+            amount=int(payment_data.get("amoutn", 0) * 100),  # Convert to cents
+            card_type=payment_data.get("sender_card_type"),
+            masked_card=payment_data.get("sender_card_mask2"),
+            payment_system=payment_data.get("paytype"),
+            sender_ip=payment_data.get("ip"),
+            sender_cell_phone=payment_data.get("sender_phone"),
+            response_status=payment_data.get("status"),
+            tran_type=payment_data.get("action"),
+            order_time=datetime.strptime(
+                payment_data.get("completion_date", ""), "%Y-%m-%d %H:%M:%S"
+            )
+            if payment_data.get("completion_date")
+            else datetime.now(tz=UTC),
+            additional_info=payment_data,
+            provider="liqpay",
+        )
+
         return normalized_data
 
     def verify_signature(self, order_id: str, received_signature: str) -> bool:

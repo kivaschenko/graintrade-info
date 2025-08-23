@@ -33,3 +33,33 @@ async def confirm_payment(request: Request, background_tasks: BackgroundTasks):
         background_tasks.add_task(
             payment_service.send_success_payment_details_to_queue, r
         )
+
+
+@router.post("/confirm/liqpay")
+async def confirm_liqpay(request: Request, background_tasks: BackgroundTasks):
+    r = await request.json()
+    logging.info(r"Received payment confirmation: {r}")
+    try:
+        if r["status"] not in ["success", "subscribed"]:
+            return JSONResponse(
+                content={"status": "error", "message": "Payment not confirmed"},
+                status_code=400,
+            )
+        await payment_service.update_subscription_and_save_payment_confirmation(
+            r, payment_provider_name="liqpay"
+        )
+        return JSONResponse(content={"status": "recieved"})
+    except KeyError as e:
+        return JSONResponse(
+            content={"status": "error", "message": f"Missing required field: {str(e)}"},
+            status_code=400,
+        )
+    except Exception as e:
+        return JSONResponse(
+            content={"status": "error", "message": str(e)}, status_code=500
+        )
+        logging.error(f"Error sending message to queue: {str(e)}")
+    finally:
+        background_tasks.add_task(
+            payment_service.send_success_payment_details_to_queue, payment_dict=r
+        )
