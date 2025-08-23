@@ -153,19 +153,15 @@ CREATE TABLE IF NOT EXISTS payments (
     currency VARCHAR(3) NOT NULL,
     amount INTEGER NOT NULL,  -- Amount in cents
     card_type VARCHAR(20) NOT NULL,
-    card_bin INTEGER NOT NULL,
     masked_card VARCHAR(20) NOT NULL,
     payment_system VARCHAR(20) NOT NULL,
-    sender_email VARCHAR(255) NOT NULL,
+    sender_ip VARCHAR(255) NOT NULL,
     sender_cell_phone VARCHAR(20),
-    approval_code VARCHAR(10) NOT NULL,
     response_status VARCHAR(20) NOT NULL,
     tran_type VARCHAR(20) NOT NULL,
-    eci VARCHAR(10),
-    settlement_amount VARCHAR(20),
-    actual_amount VARCHAR(20) NOT NULL,
     order_time TIMESTAMP NOT NULL,
     additional_info JSONB NOT NULL DEFAULT '{}'::jsonb,
+    provider VARCHAR(50) NOT NULL DEFAULT 'fondy',
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -174,7 +170,6 @@ CREATE INDEX idx_payments_payment_id ON payments(payment_id);
 CREATE INDEX idx_payments_order_id ON payments(order_id);
 CREATE INDEX idx_payments_order_status ON payments(order_status);
 CREATE INDEX idx_payments_created_at ON payments(created_at);
-CREATE INDEX idx_payments_sender_email ON payments(sender_email);
 CREATE INDEX idx_payments_additional_info ON payments USING gin(additional_info);
 
 -- Add comments
