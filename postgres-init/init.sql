@@ -147,7 +147,7 @@ CREATE INDEX tarifs_terms_idx ON tarifs (terms);
 -- Create payments table
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
-    payment_id INTEGER UNIQUE NOT NULL,
+    payment_id BIGINT NOT NULL,
     order_id UUID NOT NULL,
     order_status VARCHAR(20) NOT NULL,
     currency VARCHAR(3) NOT NULL,
@@ -155,8 +155,6 @@ CREATE TABLE IF NOT EXISTS payments (
     card_type VARCHAR(20) NOT NULL,
     masked_card VARCHAR(20) NOT NULL,
     payment_system VARCHAR(20) NOT NULL,
-    sender_ip VARCHAR(255) NOT NULL,
-    sender_cell_phone VARCHAR(20),
     response_status VARCHAR(20) NOT NULL,
     tran_type VARCHAR(20) NOT NULL,
     order_time TIMESTAMP NOT NULL,

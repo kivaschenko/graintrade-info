@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from ..database import database
 
 logger = logging.getLogger(__name__)
@@ -30,15 +30,13 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
             "currency",
             "amount",
             "card_type",
-            "card_bin",
             "masked_card",
             "payment_system",
-            "sender_email",
-            "approval_code",
             "response_status",
             "tran_type",
-            "actual_amount",
             "order_time",
+            "additional_info",
+            "provider",
         ]
 
         # Validate required fields and data types
@@ -51,7 +49,6 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
         # Ensure numeric fields are properly typed
         try:
             data["amount"] = int(data["amount"])
-            data["card_bin"] = int(data["card_bin"])
             data["payment_id"] = int(data["payment_id"])
         except (ValueError, TypeError) as e:
             raise ValueError(f"Invalid numeric value: {str(e)}")
@@ -62,17 +59,10 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
         }
 
         query = """
-        INSERT INTO payments (
-            payment_id, order_id, order_status, currency,
-            amount, card_type, card_bin, masked_card,
-            payment_system, sender_email, sender_cell_phone,
-            approval_code, response_status, tran_type,
-            eci, settlement_amount, actual_amount,
-            order_time, additional_info
+        INSERT INTO payments (payment_id, order_id, order_status, currency, amount, card_type, masked_card, payment_system, response_status, tran_type, order_time, additional_info, provider
         )
         VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9,
-            $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
         )
         ON CONFLICT (payment_id) DO UPDATE
         SET 
@@ -97,19 +87,13 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
                     data["currency"],
                     data["amount"],
                     data["card_type"],
-                    data["card_bin"],
                     data["masked_card"],
                     data["payment_system"],
-                    data["sender_email"],
-                    data.get("sender_cell_phone"),  # Optional
-                    data["approval_code"],
                     data["response_status"],
                     data["tran_type"],
-                    data.get("eci"),  # Optional
-                    data.get("settlement_amount"),  # Optional
-                    data["actual_amount"],
                     order_time,
                     json.dumps(additional_info),
+                    data["provider"],
                 )
 
         if not payment:
