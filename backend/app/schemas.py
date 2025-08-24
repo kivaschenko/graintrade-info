@@ -185,6 +185,8 @@ class SubscriptionInDB(BaseModel):
     start_date: date | None
     end_date: date | None
     status: SubscriptionStatus = SubscriptionStatus.INACTIVE
+    provider: str = "fondy"  # Payment provider name
+    provider_payment_token: Optional[str] = None  # Token for payment provider
 
 
 class SubscriptionInResponse(BaseModel):

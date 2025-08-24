@@ -72,7 +72,7 @@ async def payment_for_subscription_handler(
     amount: float,
     currency: str,
     email: str,
-    payment_provider_name: str = "fondy",
+    payment_provider_name: str,
 ) -> Dict[str, Any] | None:
     """Handle payment for subscription using specified payment provider"""
     payment_service = PAYMENT_PROVIDERS.get(payment_provider_name)
@@ -94,6 +94,7 @@ async def payment_for_subscription_handler(
                 end_date=end_date,
                 order_id=order_id,
                 status=SubscriptionStatus.INACTIVE,
+                provider=payment_provider_name,
             )
         )
         if not subscription:
