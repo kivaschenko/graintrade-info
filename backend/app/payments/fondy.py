@@ -186,7 +186,7 @@ class FondyPaymentService(BasePaymentProvider):
                 response_status=payment_response["response_status"],
                 tran_type=payment_response["tran_type"],
                 order_time=payment_response["order_time"],
-                additional_info=payment_response,
+                additional_info=payment_response["additional_info"],
                 provider="fondy",
             )
             return normalized_data

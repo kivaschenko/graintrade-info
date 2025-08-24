@@ -146,7 +146,7 @@ class LiqPayPaymentService(BasePaymentProvider):
         except (ValueError, KeyError) as e:
             logging.error(f"Error parsing create_date: {str(e)}")
             order_time = datetime.now(tz=UTC).strftime("%d.%m.%Y %H:%M:%S")
-
+        additional_info = payment_data.copy()
         normalized_data = dict(
             payment_id=payment_data.get("payment_id"),
             order_id=payment_data.get("order_id"),
@@ -159,7 +159,7 @@ class LiqPayPaymentService(BasePaymentProvider):
             response_status=payment_data.get("status"),
             tran_type=payment_data.get("action"),
             order_time=order_time,
-            additional_info=payment_data,
+            additional_info=additional_info,
             provider="liqpay",
         )
 
