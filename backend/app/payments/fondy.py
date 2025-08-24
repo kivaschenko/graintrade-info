@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional, Any, Dict
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, UTC
 import asyncio
 import hashlib
 import httpx
@@ -174,32 +174,28 @@ class FondyPaymentService(BasePaymentProvider):
         :return: A dictionary containing the normalized payment data.
         """
         try:
-            payment_data = dict(
+            normalized_data = dict(
                 payment_id=payment_response["payment_id"],
                 order_id=payment_response["order_id"],
                 order_status=payment_response["order_status"],
                 currency=payment_response["currency"],
                 amount=payment_response["amount"],  # Amount in cents, already converted
                 card_type=payment_response["card_type"],
-                card_bin=payment_response["card_bin"],
                 masked_card=payment_response["masked_card"],
                 payment_system=payment_response["payment_system"],
-                sender_email=payment_response["sender_email"],
-                approval_code=payment_response["approval_code"],
                 response_status=payment_response["response_status"],
                 tran_type=payment_response["tran_type"],
-                eci=payment_response.get("eci"),
-                settlement_amount=payment_response.get("settlement_amount"),
-                actual_amount=payment_response["actual_amount"],
                 order_time=payment_response["order_time"],
-                additional_info=payment_response.get("additional_info", {}),
+                additional_info=payment_response,
+                provider="fondy",
             )
-            return payment_data
+            return normalized_data
         except KeyError as e:
             logging.error(f"Missing key in payment response: {e}")
             return {}
 
     def verify_signature(self, order_id: str, received_signature: str) -> bool:
+        # TODO: Implement signature verification logic - regenerate signature for received data and compare with received_signature
         calculated_signature = get_signature_from_cache(order_id)
         if not calculated_signature:
             return False
@@ -208,3 +204,44 @@ class FondyPaymentService(BasePaymentProvider):
         if isinstance(received_signature, bytes):
             received_signature = received_signature.decode("utf-8")
         return received_signature == calculated_signature
+
+
+fondy_response_example = {
+    "rrn": "413957824276",
+    "masked_card": "444455XXXXXX6666",
+    "sender_cell_phone": "",
+    "sender_account": "",
+    "currency": "USD",
+    "fee": "",
+    "reversal_amount": "0",
+    "settlement_amount": "0",
+    "actual_amount": "3000",
+    "response_description": "",
+    "sender_email": "teodorathome@yahoo.com",
+    "order_status": "approved",
+    "response_status": "success",
+    "order_time": "24.08.2025 11:55:00",
+    "actual_currency": "USD",
+    "order_id": "2aab9e19-5ae7-4915-b0c7-6f3c62ad2310",
+    "tran_type": "purchase",
+    "eci": "7",
+    "settlement_date": "",
+    "payment_system": "card",
+    "approval_code": "426504",
+    "merchant_id": 1396424,
+    "settlement_currency": "",
+    "payment_id": 876195373,
+    "card_bin": 444455,
+    "response_code": "",
+    "card_type": "VISA",
+    "amount": "3000",
+    "signature": "8374b7bd55c8f8306f65fe77a656f200d5f16cf5",
+    "product_id": "",
+    "merchant_data": "",
+    "rectoken": "",
+    "rectoken_lifetime": "",
+    "verification_status": "",
+    "parent_order_id": "",
+    "additional_info": '{"capture_status": null, "capture_amount": null, "reservation_data": "{}", "transaction_id": 2121158122, "bank_response_code": null, "bank_response_description": null, "client_fee": 0.0, "settlement_fee": 0.0, "bank_name": null, "bank_country": null, "card_type": "VISA", "card_product": "empty_visa", "card_category": null, "timeend": "24.08.2025 11:55:14", "ipaddress_v4": "188.163.31.56", "payment_method": "card", "version_3ds": 2, "flow": "frictionless", "is_test": true}',
+    "response_signature_string": '**********|3000|USD|{"capture_status": null, "capture_amount": null, "reservation_data": "{}", "transaction_id": 2121158122, "bank_response_code": null, "bank_response_description": null, "client_fee": 0.0, "settlement_fee": 0.0, "bank_name": null, "bank_country": null, "card_type": "VISA", "card_product": "empty_visa", "card_category": null, "timeend": "24.08.2025 11:55:14", "ipaddress_v4": "188.163.31.56", "payment_method": "card", "version_3ds": 2, "flow": "frictionless", "is_**********": true}|3000|426504|444455|VISA|USD|7|444455XXXXXX6666|1396424|2aab9e19-5ae7-4915-b0c7-6f3c62ad2310|approved|24.08.2025 11:55:00|876195373|card|success|0|413957824276|teodorathome@yahoo.com|0|purchase',
+}
