@@ -117,7 +117,10 @@ CREATE TABLE IF NOT EXISTS tarifs (
     notify_new_items BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
     CONSTRAINT tarifs_name_unique_constraint UNIQUE (name),
-    CONSTRAINT tarifs_scope_unique_constraint UNIQUE (scope)
+    CONSTRAINT tarifs_scope_unique_constraint UNIQUE (scope),
+    ua_name VARCHAR(50),
+    ua_description TEXT,
+    ua_terms VARCHAR(50) NOT NULL DEFAULT 'місячний'
 );
 
 CREATE TABLE IF NOT EXISTS subscriptions (
@@ -136,7 +139,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     created_at TIMESTAMP DEFAULT NOW(),
     provider VARCHAR(50) DEFAULT 'fondy',
     provider_customer_id VARCHAR(100),
-    provider_payment_token VARCHAR(100)
+    provider_payment_token VARCHAR(100),
+    CONSTRAINT subscriptions_order_id_unique_constraint UNIQUE (order_id)
 
 );
 
@@ -147,7 +151,7 @@ CREATE INDEX tarifs_terms_idx ON tarifs (terms);
 -- Create payments table
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
-    payment_id INTEGER UNIQUE NOT NULL,
+    payment_id BIGINT NOT NULL,
     order_id UUID NOT NULL,
     order_status VARCHAR(20) NOT NULL,
     currency VARCHAR(3) NOT NULL,
@@ -155,8 +159,6 @@ CREATE TABLE IF NOT EXISTS payments (
     card_type VARCHAR(20) NOT NULL,
     masked_card VARCHAR(20) NOT NULL,
     payment_system VARCHAR(20) NOT NULL,
-    sender_ip VARCHAR(255) NOT NULL,
-    sender_cell_phone VARCHAR(20),
     response_status VARCHAR(20) NOT NULL,
     tran_type VARCHAR(20) NOT NULL,
     order_time TIMESTAMP NOT NULL,
@@ -318,11 +320,13 @@ DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM tarifs) THEN
 	-- Insert default tarifs
-	INSERT INTO tarifs (name, description, price, currency, scope, terms, items_limit, map_views_limit, geo_search_limit, navigation_limit)
+	INSERT INTO tarifs (name, description, price, currency, scope, terms, items_limit, map_views_limit, geo_search_limit, navigation_limit, ua_name, ua_description, ua_terms)
 	VALUES
-        ('Free', 'Free probation plan', 0.00, 'USD', 'free', 'monthly', 5, 10, 10, 10),
-	    ('Basic', 'Basic subscription plan', 10.00, 'USD', 'basic', 'monthly', 10, 100, 100, 100),
-        ('Premium', 'Premium subscription plan', 30.00, 'USD', 'premium', 'monthly', 30, 300, 300, 300),
+        ('Free', 'Free probation plan', 0.00, 'USD', 'free', 'monthly', 5, 10, 10, 10, 'Безкоштовний', 'Безкоштовний пробний план', 'місячний'),
+	    ('Basic', 'Basic subscription plan', 10.00, 'USD', 'basic', 'monthly', 10, 100, 100, 100, 'Базовий', 'Базовий план підписки', 'місячний'),
+        ('Premium', 'Premium subscription plan', 30.00, 'USD', 'premium', 'monthly', 30, 300, 300, 300, 'Преміум', 'Преміум план підписки', 'місячний'),
+        ('Business', 'Business subscription plan', 100.00, 'USD', 'business', 'monthly', 100, 1000, 1000, 1000, 'Бізнес', 'Бізнес план підписки', 'місячний'),
+        ('Enterprise', 'Enterprise subscription plan', 300.00, 'USD', 'enterprise', 'monthly', 300, 3000, 3000, 3000, 'Підприємство', 'План підписки для підприємств', 'місячний');
     END IF;
 END $$;
 

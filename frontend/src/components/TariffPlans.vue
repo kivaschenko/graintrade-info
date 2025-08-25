@@ -1,5 +1,31 @@
 <template>
   <div class="container mt-4">
+
+    <!-- Payment Provider section -->
+    <div class="mb-4">
+      <label class="form-label me-3">{{ $t('tariffs.selectPaymentProvider') }}:</label>
+      <div class="form-check form-check-inline">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          id="liqpay" 
+          value="liqpay" 
+          v-model="paymentProvider"
+        >
+        <label class="form-check-label" for="liqpay">LiqPay (Card, Apple Pay, Google Pay, Privat 24)</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          id="fondy" 
+          value="fondy" 
+          v-model="paymentProvider"
+        >
+        <label class="form-check-label" for="fondy">Fondy (Card, Apple Pay, Google Pay)</label>
+      </div>
+    </div>
+
     <div v-if="error" class="alert alert-danger" role="alert">
       {{ error }}
     </div>
@@ -15,11 +41,11 @@
         <div class="card h-100" :class="{ 'border-primary': tariff.scope === currentTariff }">
           <div class="card-header text-center" 
                :class="{ 'bg-primary text-white': tariff.scope === currentTariff }">
-            <h3>{{ tariff.name }}</h3>
-            <h4>{{ tariff.price }} {{ tariff.currency }}/{{ tariff.terms }}</h4>
+            <h3>{{ getTariffName(tariff) }}</h3>
+            <h4>{{ tariff.price }} {{ tariff.currency }}/{{ getTariffTerms(tariff) }}</h4>
           </div>
           <div class="card-body">
-            <p class="card-text">{{ tariff.description }}</p>
+            <p class="card-text">{{ getTariffDescription(tariff) }}</p>
             <ul class="list-unstyled">
               <li>
                 <i class="bi bi-check-circle text-success"></i> 
@@ -78,8 +104,6 @@
         />
       </form>
     </div>
-    <!-- ...existing code... -->
-
   </div>
 </template>
 
@@ -97,6 +121,7 @@ export default {
       tariffs: [],
       currentTariff: null,
       liqpayForm: null,
+      paymentProvider: 'liqpay', // Default payment provider
     }
   },
   computed: {
@@ -160,7 +185,7 @@ export default {
         let r = await api.post('/subscriptions', {
           user_id: this.user.id,
           tarif_id: tariff.id,
-          payment_provider: 'liqpay' // Default payment provider later get from radio button
+          payment_provider: this.paymentProvider,
         });
         if (r.data.checkout_url) {
           // Redirect to the checkout URL in a new tab
@@ -181,7 +206,16 @@ export default {
       } finally {
         this.isSubscribing = false;
       }
-    }
+    },
+    getTariffName(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_name ? tariff.ua_name : tariff.name;
+    },
+    getTariffDescription(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_description ? tariff.ua_description : tariff.description;
+    },
+    getTariffTerms(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_terms ? tariff.ua_terms : tariff.terms;
+    },
   },
   async created() {
     this.isLoading = true;

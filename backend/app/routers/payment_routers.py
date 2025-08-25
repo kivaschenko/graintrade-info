@@ -10,6 +10,7 @@ router = APIRouter(prefix="/payments", tags=["Payments"])
 
 @router.post("/confirm")
 async def confirm_payment(request: Request, background_tasks: BackgroundTasks):
+    print("Fondy webhook called")
     r = await request.json()
     logging.info(f"Received payment confirmation: {r}")
     try:
@@ -35,18 +36,41 @@ async def confirm_payment(request: Request, background_tasks: BackgroundTasks):
         )
 
 
+# ...existing code...
+
+from fastapi import Form
+
+
 @router.post("/confirm/liqpay")
 async def confirm_liqpay(request: Request, background_tasks: BackgroundTasks):
-    r = await request.json()
-    logging.info(r"Received payment confirmation: {r}")
+    print("Liqpay webhook called")
     try:
-        if r["status"] not in ["success", "subscribed"]:
+        form = await request.form()
+        data = form.get("data")
+        signature = form.get("signature")
+        if not data or not signature:
+            return JSONResponse(
+                content={"status": "error", "message": "Missing data or signature"},
+                status_code=400,
+            )
+        import base64
+        import json
+
+        decoded_data = json.loads(base64.b64decode(data).decode("utf-8"))
+    except Exception as e:
+        return JSONResponse(
+            content={"status": "error", "message": f"Invalid LiqPay payload: {str(e)}"},
+            status_code=400,
+        )
+    logging.info(f"Received payment confirmation: {decoded_data}")
+    try:
+        if decoded_data["status"] not in ["success", "subscribed"]:
             return JSONResponse(
                 content={"status": "error", "message": "Payment not confirmed"},
                 status_code=400,
             )
         await payment_service.update_subscription_and_save_payment_confirmation(
-            r, payment_provider_name="liqpay"
+            decoded_data, payment_provider_name="liqpay"
         )
         return JSONResponse(content={"status": "recieved"})
     except KeyError as e:
@@ -58,8 +82,11 @@ async def confirm_liqpay(request: Request, background_tasks: BackgroundTasks):
         return JSONResponse(
             content={"status": "error", "message": str(e)}, status_code=500
         )
-        logging.error(f"Error sending message to queue: {str(e)}")
     finally:
         background_tasks.add_task(
-            payment_service.send_success_payment_details_to_queue, payment_dict=r
+            payment_service.send_success_payment_details_to_queue,
+            payment_dict=decoded_data,
         )
+
+
+# ...existing code...

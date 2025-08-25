@@ -252,6 +252,7 @@ const messages = {
       loginRequired: "You need to be logged in to subscribe to a plan",
       notifyNewMessages: "Notify me about new messages",
       notifyNewItems: "Notify me about new items",
+      selectPaymentProvider: "Select Payment Provider",
     },
     map: {
       registerToView: "Register to view items on the map",
@@ -537,6 +538,7 @@ const messages = {
       loginRequired: "Вам потрібно увійти, щоб підписатися на план",
       notifyNewMessages: "Сповіщати про нові повідомлення",
       notifyNewItems: "Сповіщати про нові товари",
+      selectPaymentProvider: "Виберіть платіжного провайдера",
     },
     map: {
       registerToView: "Щоб бачити пропозиції на мапі зареєструйтеся",
