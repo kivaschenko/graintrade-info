@@ -136,25 +136,30 @@ class LiqPayPaymentService(BasePaymentProvider):
 
     def normalize(self, payment_data: dict) -> dict:
         """Normalize LiqPay payment data to common format"""
+        #  "create_date": "1715597977414"
+        # Convert create_date from milliseconds to datetime string format
+        try:
+            order_time = datetime.fromtimestamp(
+                int(payment_data["create_date"]) / 1000, tz=UTC
+            ).strftime("%d.%m.%Y %H:%M:%S")
+            print(f"Parsed order_time: {order_time}")
+        except (ValueError, KeyError) as e:
+            logging.error(f"Error parsing create_date: {str(e)}")
+            order_time = datetime.now(tz=UTC).strftime("%d.%m.%Y %H:%M:%S")
+        additional_info = payment_data.copy()
         normalized_data = dict(
             payment_id=payment_data.get("payment_id"),
             order_id=payment_data.get("order_id"),
             order_status=payment_data.get("status"),
             currency=payment_data.get("currency"),
-            amount=int(payment_data.get("amoutn", 0) * 100),  # Convert to cents
+            amount=int(payment_data["amount"] * 100),  # Convert to cents
             card_type=payment_data.get("sender_card_type"),
             masked_card=payment_data.get("sender_card_mask2"),
             payment_system=payment_data.get("paytype"),
-            sender_ip=payment_data.get("ip"),
-            sender_cell_phone=payment_data.get("sender_phone"),
             response_status=payment_data.get("status"),
             tran_type=payment_data.get("action"),
-            order_time=datetime.strptime(
-                payment_data.get("completion_date", ""), "%Y-%m-%d %H:%M:%S"
-            )
-            if payment_data.get("completion_date")
-            else datetime.now(tz=UTC),
-            additional_info=payment_data,
+            order_time=order_time,
+            additional_info=additional_info,
             provider="liqpay",
         )
 
@@ -162,6 +167,7 @@ class LiqPayPaymentService(BasePaymentProvider):
 
     def verify_signature(self, order_id: str, received_signature: str) -> bool:
         """Verify the signature of the payment data"""
+        # TODO: Implement signature verification logic - regenerate signature for received data and compare with received_signature
         signature = get_signature_from_cache(order_id)
         if not signature:
             logging.error(f"Signature not found in cache for order_id: {order_id}")
@@ -202,3 +208,43 @@ class LiqPayPaymentService(BasePaymentProvider):
 #         logging.info("LiqPay webhook handler completed")
 #         return True
 #     return False
+
+payment_data_example = {
+    "payment_id": 2699352001,
+    "action": "pay",
+    "status": "success",
+    "version": 3,
+    "type": "buy",
+    "paytype": "card",
+    "public_key": "sandbox_i73022413705",
+    "acq_id": 414963,
+    "order_id": "560c6ed2-cf3e-4dcb-b2f2-3b6209d8b788",
+    "liqpay_order_id": "K3O5CGZE1756027569147559",
+    "description": "sub-Premium-2025-08-24-2025-09-24-5",
+    "sender_first_name": "Оксана",
+    "sender_last_name": "Іващенко",
+    "sender_card_mask2": "424242*42",
+    "sender_card_bank": "Test",
+    "sender_card_type": "visa",
+    "sender_card_country": 804,
+    "ip": "188.163.31.56",
+    "amount": 30.0,
+    "currency": "USD",
+    "sender_commission": 0.0,
+    "receiver_commission": 0.45,
+    "agent_commission": 0.0,
+    "amount_debit": 1250.0,
+    "amount_credit": 1250.0,
+    "commission_debit": 0.0,
+    "commission_credit": 18.75,
+    "currency_debit": "UAH",
+    "currency_credit": "UAH",
+    "sender_bonus": 0.0,
+    "amount_bonus": 0.0,
+    "mpi_eci": "7",
+    "is_3ds": False,
+    "language": "uk",
+    "create_date": 1756027569150,
+    "end_date": 1756027569317,
+    "transaction_id": 2699352001,
+}
