@@ -156,6 +156,8 @@ class TarifInDB(BaseModel):
     ua_name: Optional[str] = None
     ua_description: Optional[str] = None
     ua_terms: Optional[str] = None
+    ua_price: Optional[float] = None
+    ua_currency: Optional[str] = None
 
     class ConfigDict:
         from_attributes = True

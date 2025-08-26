@@ -2,7 +2,7 @@
   <div class="container mt-4">
 
     <!-- Payment Provider section -->
-    <div class="mb-4">
+    <div class="mb-4" hidden>
       <label class="form-label me-3">{{ $t('tariffs.selectPaymentProvider') }}:</label>
       <div class="form-check form-check-inline">
         <input 
@@ -24,6 +24,26 @@
         >
         <label class="form-check-label" for="fondy">Fondy (Card, Apple Pay, Google Pay)</label>
       </div>
+      <div class="form-check form-check-inline">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          id="paypal" 
+          value="paypal" 
+          v-model="paymentProvider"
+        >
+        <label class="form-check-label" for="paypal">PayPal</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          id="nowpayments" 
+          value="nowpayments" 
+          v-model="paymentProvider"
+        >
+        <label class="form-check-label" for="nowpayments">NOW Payments (Crypto currency)</label>
+      </div>
     </div>
 
     <div v-if="error" class="alert alert-danger" role="alert">
@@ -42,10 +62,10 @@
           <div class="card-header text-center" 
                :class="{ 'bg-primary text-white': tariff.scope === currentTariff }">
             <h3>{{ getTariffName(tariff) }}</h3>
-            <h4>{{ tariff.price }} {{ tariff.currency }}/{{ getTariffTerms(tariff) }}</h4>
+            <h4>{{ getTariffPrice(tariff) }} {{ getTariffCurrency(tariff) }}/{{ getTariffTerms(tariff) }}</h4>
           </div>
           <div class="card-body">
-            <p class="card-text">{{ getTariffDescription(tariff) }}</p>
+            <p id="tariff-description" class="card-text">{{ getTariffDescription(tariff) }}</p>
             <ul class="list-unstyled">
               <li>
                 <i class="bi bi-check-circle text-success"></i> 
@@ -216,6 +236,12 @@ export default {
     getTariffTerms(tariff) {
       return this.$i18n.locale === 'ua' && tariff.ua_terms ? tariff.ua_terms : tariff.terms;
     },
+    getTariffPrice(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_price ? tariff.ua_price : tariff.price;
+    },
+    getTariffCurrency(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_currency ? tariff.ua_currency : tariff.currency;
+    },
   },
   async created() {
     this.isLoading = true;
@@ -242,5 +268,12 @@ export default {
 
 .btn {
   width: 80%;
+}
+
+#tariff-description {
+  min-height: 60px; /* Adjust based on expected description length */
+  margin-bottom: 15px;
+  font-size: smaller;
+  color: #555;
 }
 </style>
