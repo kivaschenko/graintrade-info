@@ -1,6 +1,12 @@
 <template>
   <div class="container mt-4">
 
+    <!-- Page Header -->
+    <div class="page-header mb-3">
+      <h1 class="display-5 fw-bold">{{ $t('tariffs.pageTitle') }}</h1>
+      <p class="lead text-muted">{{ $t('tariffs.pageSubtitle') }}</p>
+    </div>
+
     <!-- Payment Provider section -->
     <div class="mb-4" hidden>
       <label class="form-label me-3">{{ $t('tariffs.selectPaymentProvider') }}:</label>
@@ -61,8 +67,13 @@
         <div class="card h-100" :class="{ 'border-primary': tariff.scope === currentTariff }">
           <div class="card-header text-center" 
                :class="{ 'bg-primary text-white': tariff.scope === currentTariff }">
-            <h3>{{ getTariffName(tariff) }}</h3>
-            <h4>{{ getTariffPrice(tariff) }} {{ getTariffCurrency(tariff) }}/{{ getTariffTerms(tariff) }}</h4>
+            <h3 class="mb-1">{{ getTariffName(tariff) }}</h3>
+            <h4 class="mb-0">
+              {{ $t( 'common_text.price' ) }}: 
+              <span class="fw-bold">
+                {{ getTariffPrice(tariff) }} {{ formatCurrency(getTariffCurrency(tariff)) }}/{{ getTariffTerms(tariff) }}
+              </span>
+            </h4>
           </div>
           <div class="card-body">
             <p id="tariff-description" class="card-text">{{ getTariffDescription(tariff) }}</p>
@@ -242,6 +253,15 @@ export default {
     getTariffCurrency(tariff) {
       return this.$i18n.locale === 'ua' && tariff.ua_currency ? tariff.ua_currency : tariff.currency;
     },
+    formatCurrency(currency) {
+      const currencyMap = {
+        'USD': '$',
+        'EUR': '€',
+        'UAH': 'грн.',
+        // Add more currencies as needed
+      };
+      return currencyMap[currency] || currency;
+    },
   },
   async created() {
     this.isLoading = true;
@@ -258,22 +278,44 @@ export default {
 </script>
 
 <style scoped>
+.page-header {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 25px;
+}
+
 .card {
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-radius: 12px;
 }
 
 .card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+}
+
+.card-header {
+  border-radius: 12px 12px 0 0;
 }
 
 .btn {
   width: 80%;
+  font-size: 1.1em;
 }
 
 #tariff-description {
-  min-height: 60px; /* Adjust based on expected description length */
+  min-height: 60px;
   margin-bottom: 15px;
-  font-size: smaller;
+  font-size: 0.98em;
   color: #555;
+}
+
+.list-unstyled li {
+  margin-bottom: 8px;
+  font-size: 0.97em;
+}
+
+.liqpay-form {
+  text-align: center;
 }
 </style>

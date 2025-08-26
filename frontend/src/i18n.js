@@ -253,6 +253,8 @@ const messages = {
       notifyNewMessages: "Notify me about new messages",
       notifyNewItems: "Notify me about new items",
       selectPaymentProvider: "Select Payment Provider",
+      pageTitle: "Tariff Plans",
+      pageSubtitle: "Choose a plan that suits your needs and start using our services to the fullest. Your subscription will automatically renew after each term unless you switch to the Free plan or delete your account.",
     },
     map: {
       registerToView: "Register to view items on the map",
@@ -539,6 +541,8 @@ const messages = {
       notifyNewMessages: "Сповіщати про нові повідомлення",
       notifyNewItems: "Сповіщати про нові товари",
       selectPaymentProvider: "Виберіть платіжного провайдера",
+      pageTitle: "Тарифні плани",
+      pageSubtitle: "Виберіть план, який відповідає вашим потребам, і почніть використовувати наші послуги на повну. Ваша підписка буде автоматично поновлюватися після кожного терміну, якщо ви не перейдете на Безкоштовний план або не видалите свій обліковий запис.",
     },
     map: {
       registerToView: "Щоб бачити пропозиції на мапі зареєструйтеся",
