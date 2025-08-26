@@ -21,6 +21,7 @@ LIQPAY_PUBLIC_KEY = os.getenv("LIQPAY_PUBLIC_KEY")
 LIQPAY_PRIVATE_KEY = os.getenv("LIQPAY_PRIVATE_KEY")
 BASE_URL = os.getenv("BASE_URL", "localhost:8000")
 LIQPAY_CALLBACK_URL = f"{BASE_URL}/payments/confirm/liqpay"
+RESULT_URL = f"{BASE_URL}/tariffs"
 ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
 
 
@@ -71,9 +72,10 @@ class LiqPayPaymentService(BasePaymentProvider):
         amount: float,
         order_id: str,
         order_desc: str,
-        currency: str = "EUR",
+        currency: str = "USD",
         email: Optional[str] = None,
         server_callback_url: Optional[str] = LIQPAY_CALLBACK_URL,
+        result_url: Optional[str] = None,
         language: str = "uk",
     ) -> Dict[str, Any]:
         """Create payment for subscription using LiqPay"""
