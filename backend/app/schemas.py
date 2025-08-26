@@ -153,11 +153,11 @@ class TarifInDB(BaseModel):
     currency: str
     scope: str  # e.g. "basic", "premium", "enterprise"
     terms: str  # e.g. "monthly", "annual", "yearly"
-    ua_name: Optional[str] = None
-    ua_description: Optional[str] = None
-    ua_terms: Optional[str] = None
-    ua_price: Optional[float] = None
-    ua_currency: Optional[str] = None
+    ua_name: str
+    ua_description: str
+    ua_terms: str
+    ua_price: float
+    ua_currency: str
 
     class ConfigDict:
         from_attributes = True

@@ -69,8 +69,11 @@ async def create_subscription(
     user_id: int = Body(embed=True),
     tarif_id: int = Body(embed=True),
     payment_provider: str = Body(embed=True),
+    language="en",
 ):
     """Create a new subscription for a user."""
+    if language == "ua":
+        language = "uk"
     if not payment_provider:
         payment_provider = "liqpay"  # Default payment provider
     logging.info(
@@ -87,15 +90,25 @@ async def create_subscription(
                 "message": "Free subscription activated without payment",
             }
         current_user = await user_model.get_by_id(user_id)
-        amount = int(current_tarif.price)  # Make price as centes integer for Fondy API
+        if language == "en":
+            amount = current_tarif.price
+            currency = current_tarif.currency
+            order_desc = current_tarif.description
+        # Adopt language preference for LiqPay and Fondy
+        elif language == "uk":
+            amount = current_tarif.ua_price
+            currency = current_tarif.ua_currency
+            order_desc = current_tarif.ua_description
+        # Handle payment and subscription creation
         checkout_result = await payment_for_subscription_handler(
             user_id=user_id,
             tarif_id=tarif_id,
-            tarif_name=current_tarif.name,
             amount=amount,
-            currency=current_tarif.currency,
+            currency=currency,
             email=current_user.email,
             payment_provider_name=payment_provider,
+            order_desc=order_desc,
+            language=language,
         )
         if checkout_result:
             return checkout_result
