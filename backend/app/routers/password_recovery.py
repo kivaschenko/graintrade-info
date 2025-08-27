@@ -52,6 +52,7 @@ async def request_password_recovery(
     # Generate recovery URL
     recovery_url = RECOVERY_URL.format(recovery_token=recovery_token)
     print(recovery_url)
+    # TODO: push to RabbirMQ and send email from notifications service
     # Send email in background
     background_tasks.add_task(
         send_recovery_email, email=user.email, recovery_url=recovery_url

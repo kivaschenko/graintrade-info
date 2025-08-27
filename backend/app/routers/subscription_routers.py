@@ -49,14 +49,6 @@ async def get_tarif(tarif_id: int):
     responses={
         status.HTTP_201_CREATED: {
             "description": "Subscription created successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status": "success",
-                        "checkout_url": "https://example.com/checkout",
-                    }
-                }
-            },
         },
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "description": "Internal server error",
@@ -69,8 +61,11 @@ async def create_subscription(
     user_id: int = Body(embed=True),
     tarif_id: int = Body(embed=True),
     payment_provider: str = Body(embed=True),
+    language: str = Body(embed=True),  # 'en' or 'uk'
 ):
     """Create a new subscription for a user."""
+    if language == "ua":
+        language = "uk"
     if not payment_provider:
         payment_provider = "liqpay"  # Default payment provider
     logging.info(
@@ -87,15 +82,25 @@ async def create_subscription(
                 "message": "Free subscription activated without payment",
             }
         current_user = await user_model.get_by_id(user_id)
-        amount = int(current_tarif.price)  # Make price as centes integer for Fondy API
+        if language == "en":
+            amount = current_tarif.price
+            currency = current_tarif.currency
+            order_desc = current_tarif.description
+        # Adopt language preference for LiqPay and Fondy
+        elif language == "uk":
+            amount = current_tarif.ua_price
+            currency = current_tarif.ua_currency
+            order_desc = current_tarif.ua_description
+        # Handle payment and subscription creation
         checkout_result = await payment_for_subscription_handler(
             user_id=user_id,
             tarif_id=tarif_id,
-            tarif_name=current_tarif.name,
             amount=amount,
-            currency=current_tarif.currency,
+            currency=currency,
             email=current_user.email,
             payment_provider_name=payment_provider,
+            order_desc=order_desc,
+            language=language,
         )
         if checkout_result:
             return checkout_result
@@ -140,70 +145,3 @@ async def get_subscriptions_by_user(user_id: int):
     logging.info(f"Fetching subscriptions for user ID: {user_id}")
     subscription = await subscription_model.get_by_user_id(user_id)
     return subscription
-
-
-# ---------------
-# Payment routes
-
-
-# @router.post("/subscriptions/{tarif_id}/payment", response_model=PaymentResponse)
-# async def create_subscription_payment(
-#     tarif_id: int,
-#     user_id: int,
-#     tarif_repo: AsyncpgTarifRepository = Depends(get_tarif_repository),
-# ):
-#     """Create recurring payment for subscription"""
-#     tarif = await tarif_repo.get_by_id(tarif_id)
-#     if not tarif:
-#         raise HTTPException(status_code=404, detail="Tarif not found")
-
-#     user = await user_repo.get_by_id(user_id)
-#     if not user:
-#         raise HTTPException(status_code=404, detail="User not found")
-
-#     payment_service = FondyPaymentService()
-#     order_id = str(uuid.uuid4())
-
-#     payment_data = await payment_service.create_subscription_payment(
-#         amount=tarif.price,
-#         currency=tarif.currency,
-#         order_id=order_id,
-#         subscription_id=f"sub_{user_id}_{tarif_id}",
-#         email=user.email,
-#     )
-
-#     return PaymentResponse(
-#         checkout_url=payment_data["response"]["checkout_url"], order_id=order_id
-#     )
-
-
-# @router.post("/subscriptions/payment/callback")
-# async def payment_callback(
-#     payment_data: dict,
-#     subscription_repo: AsyncpgSubscriptionRepository = Depends(
-#         get_subscription_repository
-#     ),
-# ):
-#     """Handle payment callback from Fondy"""
-#     payment_service = FondyPaymentService()
-
-#     if not payment_service.verify_payment(payment_data):
-#         raise HTTPException(status_code=400, detail="Invalid payment signature")
-
-#     if payment_data["status"] == "success":
-#         # Activate or extend subscription
-#         subscription_id = payment_data["subscription_id"]
-#         user_id, tarif_id = subscription_id.replace("sub_", "").split("_")
-
-#         print(f"User ID: {user_id}, Tarif ID: {tarif_id}")
-#         # Here you can add logic to activate or extend the subscription
-#         # For example, you can call a method to update the subscription status
-#         # in the database
-#         # subscription = await subscription_repo.get_by_id(subscription_id)
-#         # if subscription:
-#         #     await subscription_repo.extend(subscription_id)
-#         # await subscription_repo.create_or_extend(
-#         #     user_id=int(user_id), tarif_id=int(tarif_id)
-#         # )
-
-#     return {"status": "success"}

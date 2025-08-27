@@ -73,6 +73,20 @@ SCOPES = {
         "delete:item",
         "view:map",
     ],
+    "business": [
+        "me",
+        "create:item",
+        "read:item",
+        "delete:item",
+        "view:map",
+    ],
+    "enterprise": [
+        "me",
+        "create:item",
+        "read:item",
+        "delete:item",
+        "view:map",
+    ],
 }
 
 
@@ -407,7 +421,6 @@ async def update_preferences(
     prefs_data: PreferencesUpdateSchema,
     token: Annotated[str, Depends(oauth2_scheme)],
 ):
-    print(f"Received preferences data: {prefs_data}")
     if not prefs_data:
         logging.error("Preferences data is empty")
         raise HTTPException(
@@ -425,7 +438,6 @@ async def update_preferences(
         updated_prefs = await user_model.update_user_preferences(
             int(user_id), prefs_data
         )
-        print(f"Updated preferences: {updated_prefs}")
         return updated_prefs
     except Exception as e:
         logging.error(f"Error updating preferences: {e}")

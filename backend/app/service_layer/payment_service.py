@@ -11,7 +11,6 @@ from ..schemas import (
 from ..payments import (
     FondyPaymentService,
     LiqPayPaymentService,
-    create_order_description,
     make_start_end_dates_for_monthly_case,
 )
 from ..rabbit_mq import rabbitmq, QueueName
@@ -68,11 +67,12 @@ async def activate_free_subscription(user_id: int, tarif_id: int) -> bool:
 async def payment_for_subscription_handler(
     user_id: int,
     tarif_id: int,
-    tarif_name: str,
     amount: float,
     currency: str,
     email: str,
     payment_provider_name: str,
+    order_desc: str = "",
+    language: str = "en",
 ) -> Dict[str, Any] | None:
     """Handle payment for subscription using specified payment provider"""
     payment_service = PAYMENT_PROVIDERS.get(payment_provider_name)
@@ -101,12 +101,10 @@ async def payment_for_subscription_handler(
             raise ValueError("Failed to create subscription in the database")
         logging.info(f"Created a new subscription: {subscription}")
 
-        # Create order description
-        order_desc = create_order_description(tarif_name, start_date, end_date, user_id)
         # Process payment
         logging.info(f"Processing payment for order_id: {order_id}")
         checkout_result: Dict[str, Any] = await payment_service.process_payment(
-            amount, order_id, order_desc, currency, email
+            amount, order_id, order_desc, currency, email, language=language
         )
         return checkout_result
     except Exception as e:
