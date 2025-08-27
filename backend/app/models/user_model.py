@@ -63,8 +63,7 @@ async def get_by_username(username: str) -> UserInResponse:
             row = await conn.fetchrow(query, username)
             return UserInResponse(**row)
         except Exception as e:
-            print(f"Error fetching user by username: {e}")
-            raise ValueError(f"User with username {username} not found.")
+            raise ValueError(f"User with username {username} not found. {e}")
 
 
 async def get_by_id(user_id: int) -> UserInResponse:

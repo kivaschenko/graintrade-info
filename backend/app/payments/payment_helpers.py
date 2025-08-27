@@ -13,24 +13,9 @@ logging.basicConfig(level=logging.INFO)
 # Helpers for Payment Service
 
 
-def create_order_description(
-    tarif_name: str,
-    start_date: date,
-    end_date: date,
-    user_id: int,
-) -> str:
-    """Create description string for payment service"""
-    return ORDER_DESCRIPTION.format(
-        tarif_name=tarif_name,
-        start_date=start_date,
-        end_date=end_date,
-        user_id=user_id,
-    )
-
-
 def make_start_end_dates_for_monthly_case() -> tuple[date, date]:
     start_date = date.today()
-    end_date = start_date + timedelta(days=31)
+    end_date = start_date + timedelta(days=30)
     return start_date, end_date
 
 

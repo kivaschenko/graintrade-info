@@ -43,7 +43,6 @@ def get_chat_participants(db: Session, item_id: str):
         .distinct()
         .all()
     )
-    print(f"Rows: {rows}")
     return [{"id": row[0], "username": row[0]} for row in rows if row[0]]
 
 
