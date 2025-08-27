@@ -21,6 +21,7 @@ LIQPAY_PUBLIC_KEY = os.getenv("LIQPAY_PUBLIC_KEY")
 LIQPAY_PRIVATE_KEY = os.getenv("LIQPAY_PRIVATE_KEY")
 BASE_URL = os.getenv("BASE_URL", "localhost:8000")
 LIQPAY_CALLBACK_URL = f"{BASE_URL}/payments/confirm/liqpay"
+RESULT_URL = f"{BASE_URL}/tariffs"
 ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
 
 
@@ -71,9 +72,10 @@ class LiqPayPaymentService(BasePaymentProvider):
         amount: float,
         order_id: str,
         order_desc: str,
-        currency: str = "EUR",
+        currency: str = "USD",
         email: Optional[str] = None,
         server_callback_url: Optional[str] = LIQPAY_CALLBACK_URL,
+        result_url: Optional[str] = None,
         language: str = "uk",
     ) -> Dict[str, Any]:
         """Create payment for subscription using LiqPay"""
@@ -91,6 +93,8 @@ class LiqPayPaymentService(BasePaymentProvider):
             params["email"] = email
         if server_callback_url:
             params["server_url"] = server_callback_url
+        if result_url:
+            params["result_url"] = result_url
 
         data = self._generate_data(params)
         signature = self._generate_signature(data)
@@ -142,7 +146,6 @@ class LiqPayPaymentService(BasePaymentProvider):
             order_time = datetime.fromtimestamp(
                 int(payment_data["create_date"]) / 1000, tz=UTC
             ).strftime("%d.%m.%Y %H:%M:%S")
-            print(f"Parsed order_time: {order_time}")
         except (ValueError, KeyError) as e:
             logging.error(f"Error parsing create_date: {str(e)}")
             order_time = datetime.now(tz=UTC).strftime("%d.%m.%Y %H:%M:%S")

@@ -1,8 +1,14 @@
 <template>
   <div class="container mt-4">
 
+    <!-- Page Header -->
+    <div class="page-header mb-3">
+      <h1 class="display-5 fw-bold">{{ $t('tariffs.pageTitle') }}</h1>
+      <p class="lead text-muted">{{ $t('tariffs.pageSubtitle') }}</p>
+    </div>
+
     <!-- Payment Provider section -->
-    <div class="mb-4">
+    <div class="mb-4" hidden>
       <label class="form-label me-3">{{ $t('tariffs.selectPaymentProvider') }}:</label>
       <div class="form-check form-check-inline">
         <input 
@@ -24,6 +30,26 @@
         >
         <label class="form-check-label" for="fondy">Fondy (Card, Apple Pay, Google Pay)</label>
       </div>
+      <div class="form-check form-check-inline">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          id="paypal" 
+          value="paypal" 
+          v-model="paymentProvider"
+        >
+        <label class="form-check-label" for="paypal">PayPal</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          id="nowpayments" 
+          value="nowpayments" 
+          v-model="paymentProvider"
+        >
+        <label class="form-check-label" for="nowpayments">NOW Payments (Crypto currency)</label>
+      </div>
     </div>
 
     <div v-if="error" class="alert alert-danger" role="alert">
@@ -41,11 +67,16 @@
         <div class="card h-100" :class="{ 'border-primary': tariff.scope === currentTariff }">
           <div class="card-header text-center" 
                :class="{ 'bg-primary text-white': tariff.scope === currentTariff }">
-            <h3>{{ getTariffName(tariff) }}</h3>
-            <h4>{{ tariff.price }} {{ tariff.currency }}/{{ getTariffTerms(tariff) }}</h4>
+            <h3 class="mb-1">{{ getTariffName(tariff) }}</h3>
+            <h4 class="mb-0">
+              {{ $t( 'common_text.price' ) }}: 
+              <span class="fw-bold">
+                {{ getTariffPrice(tariff) }} {{ formatCurrency(getTariffCurrency(tariff)) }}/{{ getTariffTerms(tariff) }}
+              </span>
+            </h4>
           </div>
           <div class="card-body">
-            <p class="card-text">{{ getTariffDescription(tariff) }}</p>
+            <p id="tariff-description" class="card-text">{{ getTariffDescription(tariff) }}</p>
             <ul class="list-unstyled">
               <li>
                 <i class="bi bi-check-circle text-success"></i> 
@@ -186,6 +217,7 @@ export default {
           user_id: this.user.id,
           tarif_id: tariff.id,
           payment_provider: this.paymentProvider,
+          language: this.$i18n.locale,
         });
         if (r.data.checkout_url) {
           // Redirect to the checkout URL in a new tab
@@ -216,6 +248,21 @@ export default {
     getTariffTerms(tariff) {
       return this.$i18n.locale === 'ua' && tariff.ua_terms ? tariff.ua_terms : tariff.terms;
     },
+    getTariffPrice(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_price ? tariff.ua_price : tariff.price;
+    },
+    getTariffCurrency(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_currency ? tariff.ua_currency : tariff.currency;
+    },
+    formatCurrency(currency) {
+      const currencyMap = {
+        'USD': '$',
+        'EUR': '€',
+        'UAH': 'грн.',
+        // Add more currencies as needed
+      };
+      return currencyMap[currency] || currency;
+    },
   },
   async created() {
     this.isLoading = true;
@@ -232,15 +279,44 @@ export default {
 </script>
 
 <style scoped>
+.page-header {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 25px;
+}
+
 .card {
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-radius: 12px;
 }
 
 .card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+}
+
+.card-header {
+  border-radius: 12px 12px 0 0;
 }
 
 .btn {
   width: 80%;
+  font-size: 1.1em;
+}
+
+#tariff-description {
+  min-height: 60px;
+  margin-bottom: 15px;
+  font-size: 0.98em;
+  color: #555;
+}
+
+.list-unstyled li {
+  margin-bottom: 8px;
+  font-size: 0.97em;
+}
+
+.liqpay-form {
+  text-align: center;
 }
 </style>
