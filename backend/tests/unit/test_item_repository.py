@@ -81,7 +81,6 @@ async def test_create_item_unit():
 
     # Call the create method
     result = await repo.create(mock_item, user_id=1)
-    print(f"Result: {result}")
 
     # Assert that the result matches the expected output
     assert isinstance(result, ItemInResponse)

@@ -70,7 +70,7 @@
                     <div class="mb-3 d-flex align-items-center">
                         <i class="bi bi-gem me-2 text-muted"></i>
                         <strong>{{ $t('profile.plan') }}:</strong> 
-                        <span :class="['badge ms-2', subscription.tarif.scope === 'basic' ? 'bg-info' : 'bg-primary']">{{ subscription.tarif.name }}</span>
+                        <span :class="['badge ms-2', subscription.tarif.scope !== 'free' ? 'bg-primary' : 'bg-info']">{{getTariffName(subscription.tarif) }}</span>
                     </div>
                     <div class="mb-2 d-flex align-items-center">
                         <i class="bi bi-patch-check-fill me-2 text-muted"></i>
@@ -82,12 +82,12 @@
                     <div class="mb-2 d-flex align-items-center">
                         <i class="bi bi-currency-dollar me-2 text-muted"></i>
                         <strong>{{ $t('profile.price') }}:</strong> 
-                        <span class="ms-1">{{ subscription.tarif.price }} {{ subscription.tarif.currency }}</span>
+                        <span class="ms-1">{{ getTariffPrice(subscription.tarif) }} {{ formatCurrency(getTariffCurrency(subscription.tarif)) }}</span>
                     </div>
-                    <div class="mb-2 d-flex align-items-center">
+                    <div id="tariff-description" class="mb-2 d-flex">
                         <i class="bi bi-info-circle-fill me-2 text-muted"></i>
                         <strong>{{ $t('profile.description') }}:</strong>
-                        <span class="ms-1">{{ subscription.tarif.description }}</span>
+                        <span class="ms-1">{{ getTariffDescription(subscription.tarif) }}</span>
                     </div>
                     <div class="mb-2 d-flex align-items-center">
                         <i class="bi bi-calendar-check me-2 text-muted"></i>
@@ -383,11 +383,49 @@ export default {
   methods: {
     formatDate(date) {
       if (!date) return ''; // Handle empty date
-      return new Date(date).toLocaleDateString(this.$i18n.locale, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      // Add chack for language
+      if (this.$store.state.currentLocale === 'ua') {
+        return new Date(date).toLocaleDateString('uk-UA', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      } else if (this.$store.state.currentLocale === 'en') {
+        return new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      } else {
+        return new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });}
+    },
+    getTariffName(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_name ? tariff.ua_name : tariff.name;
+    },
+    getTariffDescription(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_description ? tariff.ua_description : tariff.description;
+    },
+    getTariffTerms(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_terms ? tariff.ua_terms : tariff.terms;
+    },
+    getTariffPrice(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_price ? tariff.ua_price : tariff.price;
+    },
+    getTariffCurrency(tariff) {
+      return this.$i18n.locale === 'ua' && tariff.ua_currency ? tariff.ua_currency : tariff.currency;
+    },
+    formatCurrency(currency) {
+      const currencyMap = {
+        'USD': '$',
+        'EUR': '€',
+        'UAH': 'грн.',
+        // Add more currencies as needed
+      };
+      return currencyMap[currency] || currency;
     },
     onUpdateSuccess(updatedUser) {
       this.user = updatedUser;
@@ -754,5 +792,11 @@ hr {
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
+}
+#tariff-description {
+  min-height: 60px;
+  margin-bottom: 15px;
+  font-size: 0.98em;
+  color: #555;
 }
 </style>

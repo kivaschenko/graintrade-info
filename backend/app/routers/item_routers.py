@@ -148,7 +148,6 @@ async def read_item(
                 raise HTTPException(status.HTTP_403_FORBIDDEN)
         # Get Category data
         category = await category_model.get_by_id(db_item.category_id)
-        print(f"Category ID: {db_item.category_id}, Category: {category}")
         if category:
             db_item.category_name = category.name
             db_item.category_ua_name = category.ua_name

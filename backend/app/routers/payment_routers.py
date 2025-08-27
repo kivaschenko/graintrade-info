@@ -10,7 +10,7 @@ router = APIRouter(prefix="/payments", tags=["Payments"])
 
 @router.post("/confirm")
 async def confirm_payment(request: Request, background_tasks: BackgroundTasks):
-    print("Fondy webhook called")
+    logging.info("Fondy webhook called")
     r = await request.json()
     logging.info(f"Received payment confirmation: {r}")
     try:
@@ -43,7 +43,7 @@ from fastapi import Form
 
 @router.post("/confirm/liqpay")
 async def confirm_liqpay(request: Request, background_tasks: BackgroundTasks):
-    print("Liqpay webhook called")
+    logging.info("Liqpay webhook called")
     try:
         form = await request.form()
         data = form.get("data")

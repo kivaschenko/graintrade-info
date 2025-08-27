@@ -20,7 +20,7 @@ async def get_all() -> List[TarifInResponse]:
 
 async def get_by_id(tarif_id: int) -> TarifInResponse:
     query = """
-        SELECT id, name, description, price, currency, scope, terms, ua_name, ua_description, ua_terms, ua_terms, ua_price, ua_currency,
+        SELECT id, name, description, price, currency, scope, terms, ua_name, ua_description, ua_terms, ua_price, ua_currency,
         items_limit, map_views_limit, geo_search_limit, navigation_limit, notify_new_messages, notify_new_items, created_at 
         FROM tarifs
         WHERE id = $1
