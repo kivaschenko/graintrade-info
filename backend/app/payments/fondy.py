@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional, Any, Dict
-from datetime import timedelta, datetime, UTC
+from datetime import timedelta, datetime
 import asyncio
 import hashlib
 import httpx
@@ -56,7 +56,7 @@ class FondyPaymentService(BasePaymentProvider):
         currency: str = "EUR",
         email: Optional[str] = None,
         server_callback_url: Optional[str] = FONDY_CALLBACK_URL,
-        response_url: Optional[str] = RESULT_URL,
+        result_url: Optional[str] = RESULT_URL,
         language: str = "en",
     ) -> Dict[str, Any]:
         """Create recurring payment for subscription"""
@@ -71,8 +71,8 @@ class FondyPaymentService(BasePaymentProvider):
             params["sender_email"] = email
         if server_callback_url:
             params["server_callback_url"] = server_callback_url
-        if response_url:
-            params["response_url"] = response_url
+        if result_url:
+            params["response_url"] = result_url
         if language:
             params["lang"] = language
         signature = self._generate_signature(params)

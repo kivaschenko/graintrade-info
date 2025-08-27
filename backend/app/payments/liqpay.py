@@ -93,6 +93,8 @@ class LiqPayPaymentService(BasePaymentProvider):
             params["email"] = email
         if server_callback_url:
             params["server_url"] = server_callback_url
+        if result_url:
+            params["result_url"] = result_url
 
         data = self._generate_data(params)
         signature = self._generate_signature(data)
@@ -144,7 +146,6 @@ class LiqPayPaymentService(BasePaymentProvider):
             order_time = datetime.fromtimestamp(
                 int(payment_data["create_date"]) / 1000, tz=UTC
             ).strftime("%d.%m.%Y %H:%M:%S")
-            print(f"Parsed order_time: {order_time}")
         except (ValueError, KeyError) as e:
             logging.error(f"Error parsing create_date: {str(e)}")
             order_time = datetime.now(tz=UTC).strftime("%d.%m.%Y %H:%M:%S")

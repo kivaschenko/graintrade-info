@@ -101,7 +101,7 @@ export default {
           terms_subs_list: [
             "Subscription is valid for the selected period (month, quarter, year).",
             "You can cancel anytime; unused days are not refunded.",
-            "For crypto, renewal reminders are sent before subscription period ends."
+            "For renew your subscription, renewal reminders are sent before subscription period ends."
           ],
           terms_resp_title: "4. Responsibility",
           terms_resp_list: [
@@ -148,7 +148,7 @@ export default {
           terms_subs_list: [
             "Підписка діє протягом обраного періоду (місяць, квартал, рік).",
             "Ви можете скасувати у будь-який час; невикористані дні не компенсуються.",
-            "Для крипти надсилаємо нагадування перед закінченням періоду підписки."
+            "Для поновлення підписки надсилаємо нагадування перед закінченням періоду підписки."
           ],
           terms_resp_title: "4. Відповідальність",
           terms_resp_list: [
