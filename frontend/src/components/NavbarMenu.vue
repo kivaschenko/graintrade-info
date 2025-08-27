@@ -35,8 +35,8 @@
           </li>
           <li class="nav-item">
             <select v-model="selectedLocale" @change="changeLocale" class="form-select bg-primary text-white border-0">
-              <option value="ua">UA</option>
-              <option value="en">EN</option>
+              <option value="ua">UKR</option>
+              <option value="en">ENG</option>
             </select>
           </li>
         </ul>

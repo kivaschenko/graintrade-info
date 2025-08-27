@@ -9,7 +9,6 @@ from alembic import context
 from dotenv import load_dotenv
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-print(f"BASE_DIR: {BASE_DIR}")
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 sys.path.append(BASE_DIR)
 # this is the Alembic Config object, which provides

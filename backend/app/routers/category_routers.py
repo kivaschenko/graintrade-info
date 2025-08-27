@@ -77,7 +77,6 @@ async def create_category(
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id, scopes = await get_current_user_id(token)
-    print(f"User ID: {user_id}, Scopes: {scopes}")
     if "create:category" not in scopes:
         logging.error("Not enough permissions")
         raise HTTPException(status_code=403, detail="Not enough permissions")

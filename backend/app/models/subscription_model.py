@@ -91,7 +91,7 @@ async def get_by_id(subscription_id: int) -> SubscriptionInResponse:
         WHERE id = $1
     """
     query_tarif = """
-        SELECT id, name, description, price, currency, scope, terms
+        SELECT id, name, description, price, currency, scope, terms, ua_name, ua_description, ua_price, ua_currency, ua_terms,
         FROM tarifs
         WHERE id = $1
     """
@@ -119,7 +119,7 @@ async def get_by_user_id(user_id: int) -> SubscriptionInResponse:
         LIMIT 1
     """
     query_tarif = """
-        SELECT id, name, description, price, currency, scope, terms, 
+        SELECT id, name, description, price, currency, scope, terms, ua_name, ua_description, ua_price, ua_currency, ua_terms,
         items_limit, map_views_limit, geo_search_limit, navigation_limit, created_at 
         FROM tarifs
         WHERE id = $1
