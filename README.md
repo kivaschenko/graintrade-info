@@ -330,6 +330,37 @@ sudo systemctl reload apache2
 
 ---
 
+## Manually deploying
+1. Update `dist/` in `frontend/`
+2. Copy to server:
+```
+rsync -avz --exclude '__pycache__/' --exclude '*.pyc' --exclude 'venv/' --exclude '.env' --exclude 'frontend/node_modules/' ./graintrade-info kivaschenko@65.108.68.57:/home/kivaschenko
+```
+3. Enter to server:
+```
+ssh kivaschenko@65.108.68.57
+```
+4. Stop and delete old backend dockers:
+```
+cd graintrade-info
+docker compose down
+```
+5. Rebuild new images:
+```
+docker compose build --no-cache
+```
+6. Run on backstage backend containers:
+```
+docker compose up -d
+```
+7. Check the frontend files updated in `var/www/graintrade.info` according new `frontend/dist/*` files.
+8. Reload Apache2 server:
+```
+sudo systemctl reload apache2.service
+sudo systemctl status apache2.service
+```
+9. Check main url: [https://graintrade.info](graintrade.info)
+
 ## 💻 CI/CD Setup with Jenkins (Local Dev Machine)
 
 ### 1. Run Jenkins in Docker:
@@ -517,6 +548,21 @@ rsync -avn ~/Documents/ /media/username/USB_DRIVE/
 0 3 * * * docker exec postgres pg_dump -U user db > /backups/db_$(date +\%F).sql
 ```
 - Store backups in **Hetzner Storage Box**, S3 or Dropbox.
+
+---
+## Development mode
+### Run backend and frontend on local machine
+In separated terminals run each microservise:
+```
+# backend/
+source venv/bin/activate
+fastapi dev
+```
+```
+# chat-rooms/
+source venv/bin/activate
+fastapi dev --port 8001
+```
 
 ---
 
