@@ -17,10 +17,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 # Get RabbitMQ connection parameters from environment variables
-rabbitmq_host = os.getenv("RABBITMQ_HOST")
-rabbitmq_port = os.getenv("RABBITMQ_PORT", 5672)
-rabbitmq_username = os.getenv("RABBITMQ_USER")
-rabbitmq_password = os.getenv("RABBITMQ_PASS")
+rabbitmq_host = os.getenv("RABBITMQ_HOST", "localhost")
+rabbitmq_port = int(os.getenv("RABBITMQ_PORT", 5672))
+rabbitmq_username = os.getenv("RABBITMQ_USER", "guest")
+rabbitmq_password = os.getenv("RABBITMQ_PASS", "guest")
 rabbitmq_vhost = os.getenv("RABBITMQ_VHOST", "/")
 
 if not rabbitmq_host or not rabbitmq_username or not rabbitmq_password:
@@ -31,7 +31,8 @@ class QueueName(StrEnum):
     ITEM_EVENTS = "item.events"
     USER_EVENTS = "user.events"
     PAYMENT_EVENTS = "payment.events"
-    # MESSAGE_EVENTS = "message.events"
+    MESSAGE_EVENTS = "message.events"
+    RECOVERY_EVENTS = "recovery.events"
 
 
 # Generate the list of all queue names dynamically
@@ -77,7 +78,7 @@ class RabbitMQ:
         if not self.channel:
             await self.connect()
         try:
-            await self.channel.default_exchange.publish(
+            await self.channel.default_exchange.publish(  # type: ignore
                 aio_pika.Message(
                     body=json.dumps(message).encode(),
                     delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
@@ -92,9 +93,9 @@ class RabbitMQ:
         if not self.channel:
             await self.connect()
         try:
-            queue_created = await self.channel.declare_queue(queue, durable=True)
+            queue_created = await self.channel.declare_queue(queue, durable=True)  # type: ignore
             await queue_created.consume(callback, no_ack=False)
-            await self.connection.connected.wait()
+            await self.connection.connected.wait()  # type: ignore
         except Exception as e:
             logger.error(f"Failed to consume messages from RabbitMQ: {e}")
 
