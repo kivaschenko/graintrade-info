@@ -190,6 +190,25 @@ async def handle_payment_notification(msg: aio_pika.abc.AbstractIncomingMessage)
             logging.error(f"Error processing payment notification: {e}")
 
 
+async def handle_password_recovery_notification(
+    msg: aio_pika.abc.AbstractIncomingMessage,
+):
+    async with msg.process():
+        data = json.loads(msg.body.decode())
+        print(data)
+
+        try:
+            subject = "Password Recovery"
+            html_body = env.get_template("password_recovery_email.html").render(
+                user_name=data["full_name"] or data["username"],
+                recovery_url=data["recovery_url"],
+            )
+            await send_email(data["email"], subject, html_body)
+            logging.info(f"Password recovery email sent to {data['email']}")
+        except Exception as e:
+            logging.error(f"Error processing password recovery notification: {e}")
+
+
 async def main():
     rabbitmq = await get_rabbitmq_connection()
     logging.info("RabbitMQ connection established and consumers started.")
@@ -211,6 +230,14 @@ async def main():
         queue=QueueName.PAYMENT_EVENTS.value,
         callback=handle_payment_notification,
     )
+
+    # Start consuming password recovery notifications
+    logging.info(f"Consuming from queue: {QueueName.RECOVERY_EVENTS.value}")
+    await rabbitmq.consume(
+        queue=QueueName.RECOVERY_EVENTS.value,
+        callback=handle_password_recovery_notification,
+    )
+
     # Keep the script running to listen for messages
     logging.info("Waiting for notifications...")
     return rabbitmq
@@ -226,6 +253,8 @@ if __name__ == "__main__":
     logging.info("Connected to RabbitMQ.")
     try:
         loop.run_forever()
+    except KeyboardInterrupt:
+        logging.info("Shutting down notification service...")
     finally:
         loop.run_until_complete(rabbitmq.close())
         loop.run_until_complete(database.disconnect())

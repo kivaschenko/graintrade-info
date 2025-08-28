@@ -1,18 +1,29 @@
 from datetime import timedelta, datetime, timezone
+from pathlib import Path
+import os
 from fastapi import APIRouter, HTTPException, status, BackgroundTasks
 from pydantic import BaseModel, EmailStr
+from dotenv import load_dotenv
 import jwt
 import bcrypt
 from ..models import user_model
-from ..utils.email_sender import send_recovery_email
-from . import JWT_SECRET, ALGORITHM
+from ..service_layer.user_services import send_recovery_event
+
+# Load environment variables
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+RECOVERY_TOKEN_EXPIRE_MINUTES = int(os.getenv("RECOVERY_TOKEN_EXPIRE_MINUTES", 30))
+RECOVERY_SECRET = os.getenv("RECOVERY_SECRET")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:8080")
 
 router = APIRouter(tags=["password-recovery"])
 
 # Constants
-RECOVERY_TOKEN_EXPIRE_MINUTES = 30
-RECOVERY_SECRET = "your-recovery-secret-key"  # Move to environment variables
-RECOVERY_URL = "http://localhost:8081/reset-password?token={recovery_token}"  # Update to your actual URL
+RECOVERY_URL = (
+    FRONTEND_BASE_URL + "/reset-password?token={recovery_token}"
+)  # Update to your actual URL
 
 
 class PasswordResetRequest(BaseModel):
@@ -45,17 +56,19 @@ async def request_password_recovery(
             "exp": datetime.now(timezone.utc)
             + timedelta(minutes=RECOVERY_TOKEN_EXPIRE_MINUTES),
         },
-        JWT_SECRET,
+        RECOVERY_SECRET,
         algorithm=ALGORITHM,
     )
-
     # Generate recovery URL
     recovery_url = RECOVERY_URL.format(recovery_token=recovery_token)
-    print(recovery_url)
-    # TODO: push to RabbirMQ and send email from notifications service
-    # Send email in background
+
+    # Send to RabbitMQ in the background
     background_tasks.add_task(
-        send_recovery_email, email=user.email, recovery_url=recovery_url
+        send_recovery_event,
+        email=user.email,
+        recovery_url=recovery_url,
+        username=user.username,
+        full_name=user.full_name,
     )
 
     return {"message": "If the email exists, a recovery link has been sent"}
@@ -65,7 +78,7 @@ async def request_password_recovery(
 async def reset_password(reset_data: PasswordReset):
     try:
         # Verify token
-        payload = jwt.decode(reset_data.token, JWT_SECRET, algorithms=[ALGORITHM])
+        payload = jwt.decode(reset_data.token, RECOVERY_SECRET, algorithms=[ALGORITHM])
         user_id = payload.get("user_id")
 
         # Get user
