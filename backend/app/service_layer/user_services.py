@@ -48,14 +48,23 @@ async def cleanup_users():
 
 
 async def send_recovery_event(
-    email: str, recovery_url: str, queue: QueueName = QueueName.RECOVERY_EVENTS
+    email: str,
+    recovery_url: str,
+    username: str,
+    full_name: str | None = None,
+    queue: QueueName = QueueName.RECOVERY_EVENTS,
 ):
     """
     Send a password recovery event to RabbitMQ.
     """
     try:
         await rabbitmq.connect()
-        message_body = {"email": email, "recovery_url": recovery_url}
+        message_body = {
+            "email": email,
+            "recovery_url": recovery_url,
+            "username": username,
+            "full_name": full_name,
+        }
         await rabbitmq.publish(message=message_body, queue=queue)
         logging.info(f"Recovery event sent for email {email}")
     except Exception as e:

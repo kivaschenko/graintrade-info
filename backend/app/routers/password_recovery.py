@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime, timezone
+from pathlib import Path
 import os
 from fastapi import APIRouter, HTTPException, status, BackgroundTasks
 from pydantic import BaseModel, EmailStr
@@ -8,15 +9,21 @@ import bcrypt
 from ..models import user_model
 from ..service_layer.user_services import send_recovery_event
 
-load_dotenv()
+# Load environment variables
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
 RECOVERY_TOKEN_EXPIRE_MINUTES = int(os.getenv("RECOVERY_TOKEN_EXPIRE_MINUTES", 30))
 RECOVERY_SECRET = os.getenv("RECOVERY_SECRET")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:8080")
 
 router = APIRouter(tags=["password-recovery"])
 
 # Constants
-RECOVERY_URL = "http://localhost:8081/reset-password?token={recovery_token}"  # Update to your actual URL
+RECOVERY_URL = (
+    FRONTEND_BASE_URL + "/reset-password?token={recovery_token}"
+)  # Update to your actual URL
 
 
 class PasswordResetRequest(BaseModel):
@@ -57,7 +64,11 @@ async def request_password_recovery(
 
     # Send to RabbitMQ in the background
     background_tasks.add_task(
-        send_recovery_event, email=user.email, recovery_url=recovery_url
+        send_recovery_event,
+        email=user.email,
+        recovery_url=recovery_url,
+        username=user.username,
+        full_name=user.full_name,
     )
 
     return {"message": "If the email exists, a recovery link has been sent"}
