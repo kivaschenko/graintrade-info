@@ -31,6 +31,7 @@ MAPBOX_SECRET_TOKEN=***********************************
 FONDY_MERCHANT_ID=****************
 FONDY_MERCHANT_KEY=test
 BASE_URL=https://fox-grand-seriously.ngrok-free.app  # Ngrok URL for local development
+FRONTEND_BASE_URL=http://localhost:8080  # Frontend URL for password recovery links
 
 # LiqPay
 LIQPAY_PUBLIC_KEY=************************
