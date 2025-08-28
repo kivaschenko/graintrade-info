@@ -1,0 +1,46 @@
+# PostgreSQL Configuration
+DATABASE_URL=postgresql://postgres:dev_password@localhost:5432/postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=dev_password
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=postgres
+
+# JWT Configuration
+JWT_SECRET="dev-jwt-secret-key"
+JWT_EXPIRES_IN=3600
+ALGORITHM="HS256"
+
+# Redis Configuration
+REDIS_HOST=redis
+REDIS_PORT=6379
+# Redis URL
+REDIS_URL="redis://:foobared@localhost:6379/0"
+#
+# RabbitMQ Configuration
+RABBITMQ_USER=user
+RABBITMQ_PASS=password
+RABBITMQ_HOST=localhost
+RABBITMQ_URL="amqp://user:password@localhost:5672/"
+RABBITMQ_VHOST=/
+
+# Mapbox
+MAPBOX_SECRET_TOKEN=***********************************
+
+# Payment API
+FONDY_MERCHANT_ID=****************
+FONDY_MERCHANT_KEY=test
+BASE_URL=https://fox-grand-seriously.ngrok-free.app  # Ngrok URL for local development
+FRONTEND_BASE_URL=http://localhost:8080  # Frontend URL for password recovery links
+
+# LiqPay
+LIQPAY_PUBLIC_KEY=************************
+LIQPAY_PRIVATE_KEY=************************
+
+# NOWPayment
+NOWPAYMENTS_API_KEY=************************
+NOWPAYMENTS_IPN=https://fox-grand-seriously.ngrok-free.app/api/payments/nowpayments/ipn
+
+# Password recovery
+RECOVERY_TOKEN_EXPIRE_MINUTES=30
+RECOVERY_SECRET="dev-recovery-secret-key"
