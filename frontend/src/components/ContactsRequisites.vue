@@ -26,9 +26,9 @@
       </ul>
       <h2 class="fs-5 mt-3">{{ t('bank_details_title') }}</h2>
       <ul>
-        <li><strong>{{ t('account') }}:</strong> UA 66 300528 0000026002000011282</li>
+        <li><strong>{{ t('account') }}:</strong> UA063052990000026002001610810</li>
         <li><strong>{{ t('bank') }}:</strong> {{ t('bank_full_name') }}</li>
-        <li><strong>{{ t('mfo') }}:</strong> 300528</li>
+        <li><strong>{{ t('mfo') }}:</strong> 305299</li>
       </ul>
       <h2 class="fs-5 mt-3">{{ t('contact_details_title') }}</h2>
       <ul>
@@ -70,7 +70,7 @@ export default {
           account: "Account/IBAN",
           bank: "Bank Name",
           mfo: "MFO",
-          bank_full_name: "JOINT-STOCK COMPANY OTP BANK (OTP BANK JSC) 43 Zhylyanska str., Kyiv, Ukraine, 01033",
+          bank_full_name: "JSC CB «PrivatBank» 1, Hrushevskoho St., Kyiv, Ukraine, 01001",
           contact_details_title: "Contact Information",
           phone: "Phone",
         },
@@ -91,7 +91,7 @@ export default {
           account: "Рахунок/IBAN",
           bank: "Банк",
           mfo: "МФО",
-          bank_full_name: "АТ ОТП Банк вулиця Жилянська, 43, м. Київ, Україна, 01033",
+          bank_full_name: "АТ КБ «ПриватБанк» 1, вул. Грушевського, м. Київ, Україна, 01001",
           contact_details_title: "Контактна інформація",
           phone: "Телефон",
         }
