@@ -59,13 +59,16 @@
                       <strong>{{ $t('preferences.interestedCategories') }}:</strong>
                       <div class="ms-2">
                         <span v-if="preferences.interested_categories && preferences.interested_categories.length">
-                          <span
-                            v-for="(category, index) in preferences.interested_categories"
-                            :key="index"
-                            class="badge bg-info me-1 mb-1"
-                          >
-                            {{ category }}
+                          <span v-if="$store.state.currentLocale === 'ua'">
+                            <span v-for="(category, index) in preferences.ua_interested_categories" :key="index" class="badge bg-info me-1 mb-1">
+                              {{ category }}
+                            </span>
                           </span>
+                          <span v-else>
+                            <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-info me-1 mb-1">
+                              {{ category }}
+                            </span>
+                          </span> 
                         </span>
                         <span v-else class="text-muted">
                           None selected
