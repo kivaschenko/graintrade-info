@@ -289,6 +289,10 @@ const messages = {
       yes: 'Yes',
       no: 'No',
       selectCountry: 'Select Country',
+      notificationLanguage: 'Notification Language',
+      selectNotificationLanguage: 'Select language for notifications',
+      showPreferencesForm: 'Show Preferences Form',
+      hidePreferencesForm: 'Hide Preferences Form',
     }
   },
   ua: {
@@ -580,6 +584,10 @@ const messages = {
       yes: 'Так',
       no: 'Ні',
       selectCountry: 'Виберіть країну',
+      notificationLanguage: 'Мова сповіщень',
+      selectNotificationLanguage: 'Виберіть мову для сповіщень',
+      showPreferencesForm: 'Показати форму налаштувань',
+      hidePreferencesForm: 'Приховати форму налаштувань',
     }
   },
 };
