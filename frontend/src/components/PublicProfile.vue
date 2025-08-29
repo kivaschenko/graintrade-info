@@ -1,6 +1,10 @@
 <template>
   <div class="container mt-4">
-    <div class="card shadow-sm border-0">
+    <div v-if="!isAuthenticated" class="alert alert-warning text-center my-4" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ $t('profile.loginToView') || 'Please log in to view user profiles.' }}
+    </div>
+    <div v-else class="card shadow-sm border-0">
       <div class="card-header bg-primary text-white text-center py-3">
         <h3 class="mb-0"> {{ $t('profile.title') }}: {{ user.full_name || user.username }}</h3>
       </div>
@@ -132,6 +136,11 @@ export default {
       page: 1,
       pageSize: 10,
     };
+  },
+  computed: {
+    isAuthenticated() {
+      return !!localStorage.getItem('access_token');
+    },
   },
   watch: {
     // Watch for changes in the route params, specifically 'id'
