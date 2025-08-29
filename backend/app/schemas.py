@@ -268,3 +268,5 @@ class PreferencesUpdateSchema(BaseModel):
     notify_new_items: Optional[bool] = True
     interested_categories: Optional[List[str]] = []
     country: Optional[str]  # Default to Ukraine if not set
+    language: Optional[str] = "en"  # Default to English if not set
+    ua_interested_categories: Optional[List[str]] = []
