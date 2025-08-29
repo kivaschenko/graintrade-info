@@ -232,6 +232,7 @@ const messages = {
       deleteAccountConfirm: 'Are you sure you want to delete your account? This action cannot be undone.',
       deleteAccountSuccess: 'Account deleted successfully!',
       deleteAccountError: 'Error deleting account',
+      loginToView: 'Please log in to view user profiles.',
     },
     tariff: {
       basic: "Basic",
@@ -520,6 +521,7 @@ const messages = {
       deleteAccountConfirm: 'Ви впевнені, що хочете видалити свій обліковий запис? Цю дію не можна скасувати.',
       deleteAccountSuccess: 'Обліковий запис успішно видалено!',
       deleteAccountError: 'Помилка видалення облікового запису',
+      loginToView: 'Будь ласка, увійдіть, щоб переглянути профілі користувачів.',
     },
     tariff: {
       basic: "Базовий",
