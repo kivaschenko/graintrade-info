@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 BASE_DIR = Path(__file__).resolve().parent.parent
 logging.info(f"BASE_DIR: {BASE_DIR}")
 load_dotenv(BASE_DIR / ".env")
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
