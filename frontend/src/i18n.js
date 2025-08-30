@@ -72,6 +72,7 @@ const messages = {
       itemNotFoundMessage: 'The item you are looking for does not exist or has been deleted.',
       itemDeletedError: 'Error deleting item',
       itemNotFoundError: 'Error: Item not found',
+      messagesCounter: 'Messages',
     },
     itemDetails: {
       title: 'Item Details: {title}',
@@ -365,7 +366,8 @@ const messages = {
       itemNotFound: 'Товар не знайдено',
       itemNotFoundMessage: 'Товар, який ви шукаєте, не існує або був видалений.',
       itemDeletedError: 'Помилка видалення товару',
-      itemNotFoundError: 'Помилка: Товар не знайдено',  
+      itemNotFoundError: 'Помилка: Товар не знайдено',
+      messagesCounter: 'Повідомлення',  
     },
     homePage: {
       showMapWithMarkers: "Показати карту з маркерами товарів",

@@ -1,6 +1,6 @@
 <template>
   <div class="container mt-5">
-    <table class="table table-striped table-hover">
+    <table class="table table-responsive table-striped">
       <thead>
         <tr>
           <th scope="col" class="text-start">ID</th>
@@ -12,6 +12,7 @@
           <th scope="col" class="text-start">{{ $t( 'create_form.measure' ) }}</th>
           <th scope="col" class="text-end">{{ $t( 'common_text.incoterms' ) }}</th>
           <th scope="col" class="text-end">{{ $t( 'common_text.createdAt') }}</th>
+          <th scope="col" class="text-end">{{ $t( 'common_text.messagesCounter' ) }}</th>
           <th scope="col" class="text-end">{{ $t( 'common_text.action' ) }}</th>
         </tr>
       </thead>
@@ -30,13 +31,11 @@
           <td class="text-start">{{ item.measure }}</td>
           <td class="text-end">{{ item.terms_delivery }} ({{ item.country }} {{ item.region }})</td>
           <td class="text-end">{{ new Date(item.created_at).toLocaleDateString() }}</td>
+          <td class="text-end">{{ item.messages_counter }}</td>
           <td class="text-end">
-            <!-- <router-link :to="{ name: 'EditItem', params: { id: item.id } }" class="btn btn-primary btn-sm">
-              {{ $t( 'common_text.edit' ) }} -->
-            <!-- </router-link> -->
-            <button class="btn btn-danger btn-sm" @click="deleteItem(item.id)">
-              {{ $t( 'common_text.delete' ) }}
-            </button>
+          <button class="btn btn-danger btn-sm" @click="deleteItem(item.id)">
+            {{ $t( 'common_text.delete' ) }}
+          </button>
           </td>
         </tr>
       </tbody>
@@ -65,11 +64,9 @@ export default {
           })
           .then(() => {
             this.$emit('delete-item', itemId);
-            // this.$toast.success(this.$t('common_text.itemDeleted'));
           })
           .catch(error => {
             console.error('Error deleting item:', error);
-            // this.$toast.error(this.$t('common_text.itemDeleteError'));
           });
       }
     },
