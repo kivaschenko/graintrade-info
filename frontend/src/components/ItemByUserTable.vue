@@ -1,6 +1,6 @@
 <template>
-  <div class="container mt-5">
-    <table class="table table-responsive table-striped">
+  <div class="container mt-5 table-responsive">
+    <table class="table">
       <thead>
         <tr>
           <th scope="col" class="text-start">ID</th>

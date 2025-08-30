@@ -1,5 +1,5 @@
 <template>
-  <div class="container mt-5">
+  <div class="container mt-5 table-responsive">
     <h1 class="mb-4">{{ $t( 'common_text.offers' ) }}</h1>
     <table class="table table-striped table-hover">
       <thead>
