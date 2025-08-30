@@ -51,7 +51,7 @@ export default {
     itemId: {type: String, required: true}, 
     userId: {type: String, required: true},
     otherUserId: {type: String, required: true},
-    chatRoomUrl: {type: String, default: process.env.VUE_APP_CHAT_ROOM_URL || 'localhost:8001'},
+    chatRoomUrl: {type: String, default: process.env.VUE_APP_CHAT_ROOM_URL || 'http://localhost:8001'},
   },
   data() {
     return {
@@ -100,7 +100,7 @@ export default {
       }
     },
     fetchHistory() {
-      fetch(`http://${this.chatRoomUrl}/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`)
+      fetch(`${this.chatRoomUrl}/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`)
         .then(res => res.json())
         .then(data => { this.messages = data; });
     },

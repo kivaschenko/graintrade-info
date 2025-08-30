@@ -17,10 +17,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 # Get RabbitMQ connection parameters from environment variables
-rabbitmq_host = os.getenv("RABBITMQ_HOST")
-rabbitmq_port = os.getenv("RABBITMQ_PORT", 5672)
-rabbitmq_username = os.getenv("RABBITMQ_USER")
-rabbitmq_password = os.getenv("RABBITMQ_PASS")
+rabbitmq_host = os.getenv("RABBITMQ_HOST", "localhost")
+rabbitmq_port = int(os.getenv("RABBITMQ_PORT", 5672))
+rabbitmq_username = os.getenv("RABBITMQ_USER", "guest")
+rabbitmq_password = os.getenv("RABBITMQ_PASS", "guest")
 rabbitmq_vhost = os.getenv("RABBITMQ_VHOST", "/")
 
 if not rabbitmq_host or not rabbitmq_username or not rabbitmq_password:
@@ -32,6 +32,7 @@ class QueueName(StrEnum):
     USER_EVENTS = "user.events"
     PAYMENT_EVENTS = "payment.events"
     MESSAGE_EVENTS = "message.events"
+    RECOVERY_EVENTS = "recovery.events"
 
 
 # Generate the list of all queue names dynamically

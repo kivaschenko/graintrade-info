@@ -65,171 +65,172 @@
           
           <div class="col-md-6">
             <div class="card h-100 border-0 shadow-sm custom-card-nested">
-                <div class="card-body">
-                    <h4 class="card-title text-primary mb-3">{{ $t('profile.subscription') }}</h4>
-                    <div class="mb-3 d-flex align-items-center">
-                        <i class="bi bi-gem me-2 text-muted"></i>
-                        <strong>{{ $t('profile.plan') }}:</strong> 
-                        <span :class="['badge ms-2', subscription.tarif.scope !== 'free' ? 'bg-primary' : 'bg-info']">{{getTariffName(subscription.tarif) }}</span>
-                    </div>
-                    <div class="mb-2 d-flex align-items-center">
-                        <i class="bi bi-patch-check-fill me-2 text-muted"></i>
-                        <strong>{{ $t('profile.status') }}:</strong>
-                        <span :class="['badge ms-2', subscription.status === 'active' ? 'bg-success' : 'bg-warning']">
-                            {{ subscription.status }}
-                        </span>
-                    </div>
-                    <div class="mb-2 d-flex align-items-center">
-                        <i class="bi bi-currency-dollar me-2 text-muted"></i>
-                        <strong>{{ $t('profile.price') }}:</strong> 
-                        <span class="ms-1">{{ getTariffPrice(subscription.tarif) }} {{ formatCurrency(getTariffCurrency(subscription.tarif)) }}</span>
-                    </div>
-                    <div id="tariff-description" class="mb-2 d-flex">
-                        <i class="bi bi-info-circle-fill me-2 text-muted"></i>
-                        <strong>{{ $t('profile.description') }}:</strong>
-                        <span class="ms-1">{{ getTariffDescription(subscription.tarif) }}</span>
-                    </div>
-                    <div class="mb-2 d-flex align-items-center">
-                        <i class="bi bi-calendar-check me-2 text-muted"></i>
-                        <strong>{{ $t('profile.startDate') }}:</strong>
-                        <span class="ms-1">{{ formatDate(subscription.start_date) }}</span>
-                    </div>
-                    <div class="mb-2 d-flex align-items-center">
-                        <i class="bi bi-calendar-x me-2 text-muted"></i>
-                        <strong>{{ $t('profile.endDate') }}:</strong>
-                        <span class="ms-1">{{ formatDate(subscription.end_date) }}</span>
-                    </div>
-                    <div class="mb-2">
-                        <strong>{{ $t('profile.features') }}:</strong>
-                        <ul class="list-unstyled mt-2 ms-4">
-                          <li><i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.basicFeatures') }}</li>
-                          <li v-if="subscription.tarif.scope !== 'free'">
-                            <i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.advancedFeatures') }}
-                          </li>
-                        </ul>
-                    </div>
+							<div class="card-body">
+								<h4 class="card-title text-primary mb-3">{{ $t('profile.subscription') }}</h4>
+								<div class="mb-3 d-flex align-items-center">
+									<i class="bi bi-gem me-2 text-muted"></i>
+									<strong>{{ $t('profile.plan') }}:</strong> 
+									<span :class="['badge ms-2', subscription.tarif.scope !== 'free' ? 'bg-primary' : 'bg-info']">{{getTariffName(subscription.tarif) }}</span>
+								</div>
+								<div class="mb-2 d-flex align-items-center">
+									<i class="bi bi-patch-check-fill me-2 text-muted"></i>
+									<strong>{{ $t('profile.status') }}:</strong>
+									<span :class="['badge ms-2', subscription.status === 'active' ? 'bg-success' : 'bg-warning']">
+											{{ subscription.status }}
+									</span>
+								</div>
+								<div class="mb-2 d-flex align-items-center">
+									<i class="bi bi-currency-dollar me-2 text-muted"></i>
+									<strong>{{ $t('profile.price') }}:</strong> 
+									<span class="ms-1">{{ getTariffPrice(subscription.tarif) }} {{ formatCurrency(getTariffCurrency(subscription.tarif)) }}</span>
+								</div>
+								<div id="tariff-description" class="mb-2 d-flex">
+									<i class="bi bi-info-circle-fill me-2 text-muted"></i>
+									<strong>{{ $t('profile.description') }}:</strong>
+									<span class="ms-1">{{ getTariffDescription(subscription.tarif) }}</span>
+								</div>
+								<div class="mb-2 d-flex align-items-center">
+									<i class="bi bi-calendar-check me-2 text-muted"></i>
+									<strong>{{ $t('profile.startDate') }}:</strong>
+									<span class="ms-1">{{ formatDate(subscription.start_date) }}</span>
+								</div>
+								<div class="mb-2 d-flex align-items-center">
+									<i class="bi bi-calendar-x me-2 text-muted"></i>
+									<strong>{{ $t('profile.endDate') }}:</strong>
+									<span class="ms-1">{{ formatDate(subscription.end_date) }}</span>
+								</div>
+								<div class="mb-2">
+									<strong>{{ $t('profile.features') }}:</strong>
+									<ul class="list-unstyled mt-2 ms-4">
+										<li><i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.basicFeatures') }}</li>
+										<li v-if="subscription.tarif.scope !== 'free'">
+											<i class="bi bi-check-circle text-success me-2"></i> {{ $t('profile.advancedFeatures') }}
+										</li>
+									</ul>
+								</div>
+							</div>
+                <div class="card-footer text-muted text-end">
+                  <div class="text-center mt-4">
+										<button class="btn btn-warning btn-sm" @click="upgradePlan">
+											<i class="bi bi-arrow-up-circle me-2"></i>{{ $t('profile.upgrade') }}
+										</button>
+                  </div>
                 </div>
             </div>
           </div>
         </div>
 
         <div class="card shadow-sm border-0 mt-4 custom-card-nested">
-            <div class="card-body">
-                <h4 class="card-title text-primary mb-3">{{ $t('profile.usageTitle') }}</h4>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <strong>
-                              {{ $t('profile.itemsUsage') }}:
-                              {{ usage.items_count }} / {{ subscription.tarif.items_limit }}
-                            </strong>
-                            <div class="progress mt-1" style="height: 28px;">
-                                <div 
-                                    class="progress-bar progress-bar-striped progress-bar-animated"
-                                    role="progressbar"
-                                    :style="{ width: (usage.items_count / subscription.tarif.items_limit * 100) + '%' }"
-                                    :class="{
-                                        'bg-success': usage.items_count < subscription.tarif.items_limit * 0.7,
-                                        'bg-warning': usage.items_count >= subscription.tarif.items_limit * 0.7 && usage.items_count < subscription.tarif.items_limit,
-                                        'bg-danger': usage.items_count >= subscription.tarif.items_limit
-                                    }"
-                                >
-                                    {{ usage.items_count }} / {{ subscription.tarif.items_limit }}
-                                </div>
-                            </div>
-                            <div v-if="usage.items_count >= subscription.tarif.items_limit" class="alert alert-danger alert-sm mt-2 p-2">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.itemLimitReached') }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <strong>
-                              {{ $t('profile.mapViewsUsage') }}:
-                              {{ usage.map_views }} / {{ subscription.tarif.map_views_limit }}
-                            </strong>
-                            <div class="progress mt-1" style="height: 28px;">
-                                <div 
-                                    class="progress-bar progress-bar-striped progress-bar-animated"
-                                    role="progressbar"
-                                    :style="{ width: (usage.map_views / subscription.tarif.map_views_limit * 100) + '%' }"
-                                    :class="{
-                                        'bg-success': usage.map_views < subscription.tarif.map_views_limit * 0.7,
-                                        'bg-warning': usage.map_views >= subscription.tarif.map_views_limit * 0.7 && usage.map_views < subscription.tarif.map_views_limit,
-                                        'bg-danger': usage.map_views >= subscription.tarif.map_views_limit
-                                    }"
-                                >
-                                    {{ usage.map_views }} / {{ subscription.tarif.map_views_limit }}
-                                </div>
-                            </div>
-                            <div v-if="usage.map_views >= subscription.tarif.map_views_limit" class="alert alert-danger alert-sm mt-2 p-2">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.mapViewsLimitReached') }}
-                            </div>
-                        </div>
-                    </div>
-                     <div class="col-md-6" v-if="subscription.tarif.geo_search_limit !== undefined">
-                        <div class="mb-3">
-                            <strong>
-                              {{ $t('profile.geoSearchUsage') }}:
-                              {{ usage.geo_search_count }} / {{ subscription.tarif.geo_search_limit }}
-                            </strong>
-                            <div class="progress mt-1" style="height: 28px;">
-                                <div 
-                                    class="progress-bar progress-bar-striped progress-bar-animated" 
-                                    role="progressbar"
-                                    :style="{ width: (usage.geo_search_count / subscription.tarif.geo_search_limit * 100) + '%' }"
-                                    :class="{
-                                        'bg-success': usage.geo_search_count < subscription.tarif.geo_search_limit * 0.7,
-                                        'bg-warning': usage.geo_search_count >= subscription.tarif.geo_search_limit * 0.7 && usage.geo_search_count < subscription.tarif.geo_search_limit,
-                                        'bg-danger': usage.geo_search_count >= subscription.tarif.geo_search_limit
-                                    }"
-                                >
-                                    {{ usage.geo_search_count }} / {{ subscription.tarif.geo_search_limit }}
-                                </div>
-                            </div>
-                            <div v-if="usage.geo_search_count >= subscription.tarif.geo_search_limit" class="alert alert-danger alert-sm mt-2 p-2">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.geoSearchLimitReached') }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6" v-if="subscription.tarif.navigation_limit !== undefined">
-                        <div class="mb-3">
-                            <strong>
-                              {{ $t('profile.navigationUsage') }}:
-                              {{ usage.navigation_count }} / {{ subscription.tarif.navigation_limit }}
-                            </strong>
-                            <div class="progress mt-1" style="height: 28px;">
-                                <div 
-                                    class="progress-bar progress-bar-striped progress-bar-animated" 
-                                    role="progressbar"
-                                    :style="{ width: (usage.navigation_count / subscription.tarif.navigation_limit * 100) + '%' }"
-                                    :class="{
-                                        'bg-success': usage.navigation_count < subscription.tarif.navigation_limit * 0.7,
-                                        'bg-warning': usage.navigation_count >= subscription.tarif.navigation_limit * 0.7 && usage.navigation_count < subscription.tarif.navigation_limit,
-                                        'bg-danger': usage.navigation_count >= subscription.tarif.navigation_limit
-                                    }"
-                                >
-                                    {{ usage.navigation_count }} / {{ subscription.tarif.navigation_limit }}
-                                </div>
-                            </div>
-                            <div v-if="usage.navigation_count >= subscription.tarif.navigation_limit" class="alert alert-danger alert-sm mt-2 p-2">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.navigationLimitReached') }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+					<div class="card-body">
+						<h4 class="card-title text-primary mb-3">{{ $t('profile.usageTitle') }}</h4>
+						<div class="row g-3">
+							<div class="col-md-6">
+								<div class="mb-3">
+									<strong>
+										{{ $t('profile.itemsUsage') }}:
+										{{ usage.items_count }} / {{ subscription.tarif.items_limit }}
+									</strong>
+									<div class="progress mt-1" style="height: 28px;">
+										<div 
+											class="progress-bar progress-bar-striped progress-bar-animated"
+											role="progressbar"
+											:style="{ width: (usage.items_count / subscription.tarif.items_limit * 100) + '%' }"
+											:class="{
+													'bg-success': usage.items_count < subscription.tarif.items_limit * 0.7,
+													'bg-warning': usage.items_count >= subscription.tarif.items_limit * 0.7 && usage.items_count < subscription.tarif.items_limit,
+													'bg-danger': usage.items_count >= subscription.tarif.items_limit
+											}"
+										>
+											{{ usage.items_count }} / {{ subscription.tarif.items_limit }}
+										</div>
+									</div>
+									<div v-if="usage.items_count >= subscription.tarif.items_limit" class="alert alert-danger alert-sm mt-2 p-2">
+											<i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.itemLimitReached') }}
+									</div>
+								</div>
+							</div>
+							<div class="col-md-6">
+									<div class="mb-3">
+											<strong>
+												{{ $t('profile.mapViewsUsage') }}:
+												{{ usage.map_views }} / {{ subscription.tarif.map_views_limit }}
+											</strong>
+											<div class="progress mt-1" style="height: 28px;">
+													<div 
+															class="progress-bar progress-bar-striped progress-bar-animated"
+															role="progressbar"
+															:style="{ width: (usage.map_views / subscription.tarif.map_views_limit * 100) + '%' }"
+															:class="{
+																	'bg-success': usage.map_views < subscription.tarif.map_views_limit * 0.7,
+																	'bg-warning': usage.map_views >= subscription.tarif.map_views_limit * 0.7 && usage.map_views < subscription.tarif.map_views_limit,
+																	'bg-danger': usage.map_views >= subscription.tarif.map_views_limit
+															}"
+													>
+															{{ usage.map_views }} / {{ subscription.tarif.map_views_limit }}
+													</div>
+											</div>
+											<div v-if="usage.map_views >= subscription.tarif.map_views_limit" class="alert alert-danger alert-sm mt-2 p-2">
+													<i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.mapViewsLimitReached') }}
+											</div>
+									</div>
+							</div>
+								<div class="col-md-6" v-if="subscription.tarif.geo_search_limit !== undefined">
+									<div class="mb-3">
+											<strong>
+												{{ $t('profile.geoSearchUsage') }}:
+												{{ usage.geo_search_count }} / {{ subscription.tarif.geo_search_limit }}
+											</strong>
+											<div class="progress mt-1" style="height: 28px;">
+													<div 
+															class="progress-bar progress-bar-striped progress-bar-animated" 
+															role="progressbar"
+															:style="{ width: (usage.geo_search_count / subscription.tarif.geo_search_limit * 100) + '%' }"
+															:class="{
+																	'bg-success': usage.geo_search_count < subscription.tarif.geo_search_limit * 0.7,
+																	'bg-warning': usage.geo_search_count >= subscription.tarif.geo_search_limit * 0.7 && usage.geo_search_count < subscription.tarif.geo_search_limit,
+																	'bg-danger': usage.geo_search_count >= subscription.tarif.geo_search_limit
+															}"
+													>
+															{{ usage.geo_search_count }} / {{ subscription.tarif.geo_search_limit }}
+													</div>
+											</div>
+											<div v-if="usage.geo_search_count >= subscription.tarif.geo_search_limit" class="alert alert-danger alert-sm mt-2 p-2">
+													<i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.geoSearchLimitReached') }}
+											</div>
+									</div>
+							</div>
+							<div class="col-md-6" v-if="subscription.tarif.navigation_limit !== undefined">
+									<div class="mb-3">
+											<strong>
+												{{ $t('profile.navigationUsage') }}:
+												{{ usage.navigation_count }} / {{ subscription.tarif.navigation_limit }}
+											</strong>
+											<div class="progress mt-1" style="height: 28px;">
+													<div 
+															class="progress-bar progress-bar-striped progress-bar-animated" 
+															role="progressbar"
+															:style="{ width: (usage.navigation_count / subscription.tarif.navigation_limit * 100) + '%' }"
+															:class="{
+																	'bg-success': usage.navigation_count < subscription.tarif.navigation_limit * 0.7,
+																	'bg-warning': usage.navigation_count >= subscription.tarif.navigation_limit * 0.7 && usage.navigation_count < subscription.tarif.navigation_limit,
+																	'bg-danger': usage.navigation_count >= subscription.tarif.navigation_limit
+															}"
+													>
+															{{ usage.navigation_count }} / {{ subscription.tarif.navigation_limit }}
+													</div>
+											</div>
+											<div v-if="usage.navigation_count >= subscription.tarif.navigation_limit" class="alert alert-danger alert-sm mt-2 p-2">
+													<i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.navigationLimitReached') }}
+											</div>
+									</div>
+							</div>
+						</div>
+					</div>
         </div>
             
-        <div class="text-center mt-4" v-if="subscription.tarif.scope === 'basic'">
-            <button class="btn btn-warning btn-lg px-5 py-3" @click="upgradePlan">
-                <i class="bi bi-arrow-up-circle me-2"></i>{{ $t('profile.upgrade') }}
-            </button>
-        </div>
-
         <!-- Preferences Section -->
         <div class="row g-4">
-          <div class="col-md-6">
+          <div class="col-md-12">
             <div class="card shadow-sm border-0 mt-4 custom-card-nested">
               <div class="card-body">
                 <h4 class="card-title text-primary mb-3">{{ $t('preferences.notificationPreferencesStatus') }}</h4>
@@ -253,15 +254,36 @@
                         </span>
                       </div>
                     </div>
+                    <div class="col-6">
+                      <div class="d-flex align-items-start">
+                        <i class="bi bi-globe2 me-2 text-muted mt-1"></i>
+                        <strong>{{ $t('common_text.country') }}:</strong>
+                        <span class="badge bg-warning ms-2">{{ preferences.country }}</span>
+                      </div>
+                    </div>
+										<div class="col-6">
+											<div class="d-flex align-items-start">
+												<i class="bi bi-translate me-2 text-muted mt-1"></i>
+												<strong>{{ $t('preferences.notificationLanguage') }}:</strong>
+												<span class="badge bg-warning ms-2">{{ preferences.language === 'ua' ? 'Ukrainian / Українська' : 'English / Англійська' }}</span>
+											</div>
+										</div>
                     <div class="col-12">
                       <div class="d-flex align-items-start">
                         <i class="bi bi-tags-fill me-2 text-muted mt-1"></i>
                         <strong>{{ $t('preferences.interestedCategories') }}:</strong>
                         <div class="ms-2">
                           <span v-if="preferences.interested_categories && preferences.interested_categories.length">
-                            <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-info me-1 mb-1">
-                              {{ category }}
+                            <span v-if="$store.state.currentLocale === 'ua'">
+                              <span v-for="(category, index) in preferences.ua_interested_categories" :key="index" class="badge bg-info me-1 mb-1">
+                                {{ category }}
+                              </span>
                             </span>
+                            <span v-else>
+                              <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-info me-1 mb-1">
+                                {{ category }}
+                              </span>
+                            </span> 
                           </span>
                           <span v-else class="text-muted">
                             None selected
@@ -269,19 +291,12 @@
                         </div>
                       </div>
                     </div>
-                    <div class="col-12">
-                      <div class="d-flex align-items-start">
-                        <i class="bi bi-globe2 me-2 text-muted mt-1"></i>
-                        <strong>{{ $t('common_text.country') }}:</strong>
-                        <span class="badge bg-warning ms-2">{{ preferences.country }}</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-12">
             <PreferencesForm :initialPreferences="preferences" @updated="fetchPreferences" :key="preferences.country" />
           </div>
         </div>
@@ -372,6 +387,8 @@ export default {
         notify_new_items: false,
         interested_categories: [],
         country: '',
+        ua_interested_categories: [],
+        language: 'en'
       },
       showEditModal: false,
       errorMessage: '',
@@ -545,11 +562,14 @@ export default {
           return;
         }
         const response = await api.get(`/preferences`);
+        console.log('Fetched preferences:', response.data);
         this.preferences = response.data || {
           notify_new_messages: false,
           notify_new_items: false,
           interested_categories: [],
-          country: ''
+          country: '',
+          ua_categories: [],
+          notification_language: 'en',
         };
       } catch (error) {
         console.error('Error fetching preferences:', error);

@@ -81,8 +81,40 @@ class ItemInResponse(BaseModel):
         from_attributes = True
 
 
+class UserOwnerItemInResponse(BaseModel):
+    id: int
+    uuid: UUID
+    category_id: int
+    offer_type: str
+    title: str
+    description: str | None
+    price: float
+    currency: str
+    amount: int
+    measure: str
+    terms_delivery: str
+    country: str
+    region: str | None
+    latitude: float
+    longitude: float
+    created_at: datetime = Field(alias="created_at")
+    owner_id: Optional[str] = None
+    category: Optional[CategoryInResponse] = None
+    user_id: Optional[int] = None
+    category_name: Optional[str] = None
+    category_ua_name: Optional[str] = None
+    messages_counter: Optional[int] = None
+
+    @property
+    def formatted_created_at(self) -> str:
+        return self.created_at.isoformat()
+
+    class ConfigDict:
+        from_attributes = True
+
+
 class ItemsByUserResponse(BaseModel):
-    items: List[ItemInResponse]
+    items: List[UserOwnerItemInResponse]
     total_items: int
 
 
@@ -268,3 +300,5 @@ class PreferencesUpdateSchema(BaseModel):
     notify_new_items: Optional[bool] = True
     interested_categories: Optional[List[str]] = []
     country: Optional[str]  # Default to Ukraine if not set
+    language: Optional[str] = "en"  # Default to English if not set
+    ua_interested_categories: Optional[List[str]] = []
