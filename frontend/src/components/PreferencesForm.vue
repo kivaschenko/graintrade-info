@@ -1,62 +1,100 @@
 <template>
-	<div class="card shadow-sm border-0 custom-card-nested mt-4">
-		<div class="card-body">
-			<h4 class="card-title text-primary mb-3">{{ $t('preferences.notificationPreferencesEdit') }}</h4>
-			
-			<!-- Notification preferences -->
-			<div class="mb-3 form-check">
-				<input type="checkbox" class="form-check-input" id="notifyMessages" v-model="notify_new_messages" />
-				<label class="form-check-label" for="notifyMessages">{{ $t('preferences.notifyMeAboutNewMessages') }}</label>
-			</div>
+	<div>
+		<!-- Toggle button for preferences form -->
+		<button
+			id="togglePreferencesForm"
+			class="btn btn-outline-primary mb-3"
+			@click="showForm = !showForm"
+		>
+			{{ showForm ? $t('preferences.hidePreferencesForm') : $t('preferences.showPreferencesForm') }}
+		</button>
+		<div v-if="showForm" class="card shadow-sm border-0 custom-card-nested mt-4">
+			<div class="card-body">
+				<h4 class="card-title text-primary mb-3">{{ $t('preferences.notificationPreferencesEdit') }}</h4>
+				
+				<!-- Notification preferences -->
+				<div class="mb-3 form-check">
+					<input type="checkbox" class="form-check-input" id="notifyMessages" v-model="notify_new_messages" />
+					<label class="form-check-label" for="notifyMessages">{{ $t('preferences.notifyMeAboutNewMessages') }}</label>
+				</div>
 
-			<!-- New items notification -->
-			<div class="mb-3 form-check">
-				<input type="checkbox" class="form-check-input" id="notifyItems" v-model="notify_new_items" />
-				<label class="form-check-label" for="notifyItems">{{ $t('preferences.notifyMeAboutNewItems') }}</label>
-			</div>
+				<!-- New items notification -->
+				<div class="mb-3 form-check">
+					<input type="checkbox" class="form-check-input" id="notifyItems" v-model="notify_new_items" />
+					<label class="form-check-label" for="notifyItems">{{ $t('preferences.notifyMeAboutNewItems') }}</label>
+				</div>
 
-			<!-- Categories selection -->
-			<div class="mb-3">
-				<label for="category_idx" class="form-label">{{ $t('preferences.interestedCategories') }}</label>
-				<select
-					id="category_idx"
-					v-model="selectedCategories"
-					class="form-select"
-					multiple
-					size="6"
+				<!-- Categories selection -->
+				<div class="mb-3">
+					<label for="category_idx" class="form-label">{{ $t('preferences.interestedCategories') }}</label>
+					<select
+						id="category_idx"
+						v-model="selectedCategories"
+						class="form-select"
+						multiple
+						size="6"
+					>
+						<option v-for="category in categories" :key="category.id" :value="category.name">
+							{{ getCategoryName(category) }}
+						</option>
+					</select>
+					<small class="form-text text-muted">{{ $t('preferences.helpText') }}</small>
+				</div>
+
+				<!-- Country selection -->
+				<div class="mb-3">
+					<label for="country" class="form-label">{{ $t('common_text.country') }}</label>
+					<select
+						id="country"
+						v-model="selectedCountry"
+						class="form-select"
+					>
+						<option v-for="country in countriesList" :key="country.value" :value="country.value">
+							{{ currentLocale === 'ua' ? country.ua_name : country.name }}
+						</option>
+					</select>
+					<small class="form-text text-muted">{{ $t('preferences.selectCountry') }}</small>
+				</div>
+
+				<!-- Language selection for notifications (radio toggle) -->
+				<div class="mb-3">
+					<label class="form-label">{{ $t('preferences.notificationLanguage') }}</label>
+					<div>
+						<div class="form-check form-check-inline">
+							<input
+								class="form-check-input"
+								type="radio"
+								id="langEn"
+								value="en"
+								v-model="notificationLanguage"
+							/>
+							<label class="form-check-label" for="langEn">English</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input
+								class="form-check-input"
+								type="radio"
+								id="langUa"
+								value="ua"
+								v-model="notificationLanguage"
+							/>
+							<label class="form-check-label" for="langUa">Українська</label>
+						</div>
+					</div>
+					<small class="form-text text-muted">{{ $t('preferences.selectNotificationLanguage') }}</small>
+				</div>
+
+				<!-- Save button -->
+				<button
+					@click="updatePreferences"
+					class="btn btn-primary"
 				>
-					<option v-for="category in categories" :key="category.id" :value="category.name">
-						{{ getCategoryName(category) }}
-					</option>
-				</select>
-				<small class="form-text text-muted">{{ $t('preferences.helpText') }}</small>
-			</div>
+					{{ $t('preferences.savePreferences') }}
+				</button>
 
-			<!-- Country selection -->
-			<div class="mb-3">
-				<label for="country" class="form-label">{{ $t('common_text.country') }}</label>
-				<select
-					id="country"
-					v-model="selectedCountry"
-					class="form-select"
-				>
-					<option v-for="country in countriesList" :key="country.value" :value="country.value">
-						{{ currentLocale === 'ua' ? country.ua_name : country.name }}
-					</option>
-				</select>
-				<small class="form-text text-muted">{{ $t('preferences.selectCountry') }}</small>
-			</div>
-
-			<!-- Save button -->
-			<button
-				@click="updatePreferences"
-				class="btn btn-primary"
-			>
-				{{ $t('preferences.savePreferences') }}
-			</button>
-
-			<div v-if="message" :class="['mt-3', message.includes('successfully') ? 'alert alert-success' : 'alert alert-danger']" role="alert">
-				{{ message }}
+				<div v-if="message" :class="['mt-3', message.includes('successfully') ? 'alert alert-success' : 'alert alert-danger']" role="alert">
+					{{ message }}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -74,18 +112,22 @@ export default {
 				notify_new_messages: false,
 				notify_new_items: false,
 				interested_categories: [],
-				country: ''
+				country: '',
+				notification_language: 'en',
 			})
 		}
 	},
 	data() {
 		return {
+			showForm: false,
 			notify_new_messages: this.initialPreferences.notify_new_messages,
 			notify_new_items: this.initialPreferences.notify_new_items,
 			selectedCategories: this.initialPreferences.interested_categories,
 			categories: [],
 			message: '',
 			selectedCountry: this.initialPreferences.country,
+			notificationLanguage: this.initialPreferences.notification_language || 'en',
+			ua_categories: [],
 		};
 	},
 	computed: {
@@ -96,6 +138,7 @@ export default {
 				notify_new_items: this.notify_new_items,
 				interested_categories: this.selectedCategories,
 				country: this.selectedCountry,
+				notificationLanguage: this.notificationLanguage,
 			};
 		},
 		extractedCategories() {
@@ -174,6 +217,8 @@ export default {
 				// Ensure selectedCategories are names, as the select component uses names
 				this.selectedCategories = newVal.interested_categories;
 				this.selectedCountry = newVal.country;
+				this.notificationLanguage = newVal.notification_language || 'en';
+				this.ua_categories = newVal.ua_interested_categories || [];
 			},
 			deep: true,
 			immediate: true // Run the handler immediately when the component is mounted
@@ -198,6 +243,7 @@ export default {
 						notify_new_items: this.notify_new_items,
 						interested_categories: this.selectedCategories,
 						country: this.selectedCountry,
+						language: this.notificationLanguage,
 					},
 					{
 						headers: {
@@ -273,5 +319,11 @@ export default {
     color: #721c24;
     background-color: #f8d7da;
     border-color: #f5c6cb;
+}
+
+#togglePreferencesForm {
+		transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+		margin-top: 2rem;
+		margin-bottom: 1rem;
 }
 </style>

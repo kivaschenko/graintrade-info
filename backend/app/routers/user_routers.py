@@ -293,7 +293,7 @@ async def create_user(
 def hide_sensitive_data(user: UserInResponse) -> UserInResponse:
     """Hide sensitive data in the user response."""
     user.email = "****@********"
-    user.phone = "**********"
+    # user.phone = "**********"  # Uncomment if phone needs to be hidden
     user.hashed_password = "**********"
     return user
 

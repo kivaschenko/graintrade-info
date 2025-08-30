@@ -2,7 +2,7 @@ import asyncpg
 import logging
 from typing import List, Optional, Tuple
 from ..database import database
-from ..schemas import ItemInDB, ItemInResponse
+from ..schemas import ItemInDB, ItemInResponse, UserOwnerItemInResponse
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -90,17 +90,42 @@ async def delete(item_id: int, user_id: int) -> None:
 
 async def get_items_by_user_id(
     user_id: int, offset: int = 0, limit: int = 10
-) -> Tuple[List[ItemInResponse], int]:
+) -> Tuple[List[UserOwnerItemInResponse], int]:
     query = """
-        SELECT i.id, i.uuid, i.category_id, i.offer_type, i.title, i.description, 
-        i.price, i.currency, i.amount, i.measure, i.terms_delivery, i.country, 
-        i.region, i.latitude, i.longitude, i.created_at
+        SELECT 
+            i.id, 
+            i.uuid, 
+            i.category_id, 
+            i.offer_type, 
+            i.title, 
+            i.description, 
+            i.price, 
+            i.currency, 
+            i.amount, 
+            i.measure, 
+            i.terms_delivery, 
+            i.country, 
+            i.region, 
+            i.latitude, 
+            i.longitude, 
+            i.created_at, 
+            COALESCE(mc.messages_counter, 0) AS messages_counter
         FROM items i
-        JOIN items_users iu ON i.id = iu.item_id
+        JOIN items_users iu 
+            ON i.id = iu.item_id
+        LEFT JOIN (
+            SELECT 
+                item_id::INTEGER, 
+                COUNT(*) AS messages_counter
+            FROM public.messages
+            GROUP BY item_id::INTEGER
+        ) AS mc 
+            ON mc.item_id = i.id
         WHERE iu.user_id = $1
         ORDER BY i.id DESC
         OFFSET $2
-        LIMIT $3
+        LIMIT $3;
+
     """
     query_count = "SELECT COUNT(*) FROM items_users WHERE user_id = $1"
     async with database.pool.acquire() as conn:
@@ -109,7 +134,7 @@ async def get_items_by_user_id(
         total_items = total_items_row["count"] if total_items_row else 0
         if not rows:
             return [], 0
-        items_list = [ItemInResponse(**row) for row in rows]
+        items_list = [UserOwnerItemInResponse(**row) for row in rows]
         logging.info(f"Found {len(rows)} items for user {user_id}")
         logging.info(f"Total items count: {total_items}")
         return items_list, total_items

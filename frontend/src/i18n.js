@@ -72,6 +72,7 @@ const messages = {
       itemNotFoundMessage: 'The item you are looking for does not exist or has been deleted.',
       itemDeletedError: 'Error deleting item',
       itemNotFoundError: 'Error: Item not found',
+      messagesCounter: 'Messages',
     },
     itemDetails: {
       title: 'Item Details: {title}',
@@ -232,6 +233,7 @@ const messages = {
       deleteAccountConfirm: 'Are you sure you want to delete your account? This action cannot be undone.',
       deleteAccountSuccess: 'Account deleted successfully!',
       deleteAccountError: 'Error deleting account',
+      loginToView: 'Please log in to view user profiles.',
     },
     tariff: {
       basic: "Basic",
@@ -288,6 +290,10 @@ const messages = {
       yes: 'Yes',
       no: 'No',
       selectCountry: 'Select Country',
+      notificationLanguage: 'Notification Language',
+      selectNotificationLanguage: 'Select language for notifications',
+      showPreferencesForm: 'Show Preferences Form',
+      hidePreferencesForm: 'Hide Preferences Form',
     }
   },
   ua: {
@@ -360,7 +366,8 @@ const messages = {
       itemNotFound: 'Товар не знайдено',
       itemNotFoundMessage: 'Товар, який ви шукаєте, не існує або був видалений.',
       itemDeletedError: 'Помилка видалення товару',
-      itemNotFoundError: 'Помилка: Товар не знайдено',  
+      itemNotFoundError: 'Помилка: Товар не знайдено',
+      messagesCounter: 'Повідомлення',  
     },
     homePage: {
       showMapWithMarkers: "Показати карту з маркерами товарів",
@@ -520,6 +527,7 @@ const messages = {
       deleteAccountConfirm: 'Ви впевнені, що хочете видалити свій обліковий запис? Цю дію не можна скасувати.',
       deleteAccountSuccess: 'Обліковий запис успішно видалено!',
       deleteAccountError: 'Помилка видалення облікового запису',
+      loginToView: 'Будь ласка, увійдіть, щоб переглянути профілі користувачів.',
     },
     tariff: {
       basic: "Базовий",
@@ -578,6 +586,10 @@ const messages = {
       yes: 'Так',
       no: 'Ні',
       selectCountry: 'Виберіть країну',
+      notificationLanguage: 'Мова сповіщень',
+      selectNotificationLanguage: 'Виберіть мову для сповіщень',
+      showPreferencesForm: 'Показати форму налаштувань',
+      hidePreferencesForm: 'Приховати форму налаштувань',
     }
   },
 };

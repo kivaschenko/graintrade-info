@@ -148,18 +148,30 @@ async def update_password(user_id: int, hashed_password: str) -> UserInResponse 
 
 
 async def update_user_preferences(user_id: int, prefs_data: PreferencesUpdateSchema):
+    categories_in_ua = """
+        SELECT ua_name
+        FROM categories
+        WHERE name IN (SELECT unnest($1::text[]))
+    """
     query = """
         UPDATE user_notification_preferences
         SET notify_new_messages = $1,
             notify_new_items = $2,
             interested_categories = $3,
             country = $4,
-            updated_at = $5
-        WHERE user_id = $6
-        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories, country
+            updated_at = $5,
+            language = $6,
+            ua_interested_categories = $7
+        WHERE user_id = $8
+        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories, country, language, ua_interested_categories
     """
     timestamp = datetime.now()
     async with database.pool.acquire() as connection:
+        # Get Ukrainian names for interested categories
+        ua_categories = await connection.fetch(
+            categories_in_ua, prefs_data.interested_categories
+        )
+        ua_category_names = [row["ua_name"] for row in ua_categories]
         row = await connection.fetchrow(
             query,
             prefs_data.notify_new_messages,
@@ -167,21 +179,25 @@ async def update_user_preferences(user_id: int, prefs_data: PreferencesUpdateSch
             prefs_data.interested_categories,
             prefs_data.country,
             timestamp,
+            prefs_data.language or "en",  # Default to English if not set
+            ua_category_names,
             user_id,
         )
         if row is None:
-            raise ValueError("User prefernces not found for the given user_id.")
+            raise ValueError("User preferences not found for the given user_id.")
         return PreferencesUpdateSchema(
             notify_new_messages=row["notify_new_messages"],
             notify_new_items=row["notify_new_items"],
             interested_categories=row["interested_categories"],
             country=row.get("country", "Ukraine"),  # Default to Ukraine if not set
+            language=row.get("language", "en"),  # Default to English if not set
+            ua_interested_categories=row.get("ua_interested_categories", []),
         )
 
 
 async def get_user_preferences(user_id: int) -> PreferencesUpdateSchema:
     query = """
-        SELECT user_id, notify_new_messages, notify_new_items, interested_categories, country
+        SELECT user_id, notify_new_messages, notify_new_items, interested_categories, country, language, ua_interested_categories
         FROM user_notification_preferences
         WHERE user_id = $1
     """
@@ -194,14 +210,16 @@ async def get_user_preferences(user_id: int) -> PreferencesUpdateSchema:
             notify_new_items=row["notify_new_items"],
             interested_categories=row["interested_categories"],
             country=row["country"],
+            language=row.get("language", "en"),  # Default to English if not set
+            ua_interested_categories=row.get("ua_interested_categories", []),
         )
 
 
 async def create_user_preferences(user_id: int, prefs_data: PreferencesUpdateSchema):
     query = """
-        INSERT INTO user_notification_preferences (user_id, notify_new_messages, notify_new_items, interested_categories, country)
+        INSERT INTO user_notification_preferences (user_id, notify_new_messages, notify_new_items, interested_categories, country, ua_interested_categories, language)
         VALUES ($1, $2, $3, $4, $5)
-        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories, country
+        RETURNING user_id, notify_new_messages, notify_new_items, interested_categories, country, language, ua_interested_categories
     """
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(
@@ -211,12 +229,16 @@ async def create_user_preferences(user_id: int, prefs_data: PreferencesUpdateSch
             prefs_data.notify_new_items,
             prefs_data.interested_categories,
             prefs_data.country or "Ukraine",  # Default to Ukraine if not set
+            prefs_data.ua_interested_categories or [],
+            prefs_data.language or "en",  # Default to English if not set
         )
         return PreferencesUpdateSchema(
             notify_new_messages=row["notify_new_messages"],
             notify_new_items=row["notify_new_items"],
             interested_categories=row["interested_categories"],
             country=row.get("country", "Ukraine"),  # Default to Ukraine if not set
+            language=row.get("language", "en"),  # Default to English if not set
+            ua_interested_categories=row.get("ua_interested_categories", []),
         )
 
 
@@ -230,5 +252,7 @@ async def get_or_create_user_preferences(user_id: int) -> PreferencesUpdateSchem
             notify_new_items=False,
             interested_categories=[],
             country="Ukraine",
+            language="en",
+            ua_interested_categories=[],
         )
         return await create_user_preferences(user_id, default_prefs)
