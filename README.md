@@ -551,7 +551,16 @@ rsync -avn ~/Documents/ /media/username/USB_DRIVE/
 
 ---
 ## Development mode
-### Run backend and frontend on local machine
+### Run the RabbitMQ in Docker container:
+To get more convinient use Docker desktop
+```
+# inside project directory graintrade-info
+cd rabbitmq-init
+docker compose up -d
+```
+### Run backend and frontend on local machine as microservices
+Before make sure the **PostgreSQL** database is running and **Redis** is working too.
+
 In separated terminals run each microservise:
 ```
 # backend/
@@ -563,6 +572,23 @@ fastapi dev
 source venv/bin/activate
 fastapi dev --port 8001
 ```
+```
+# notifications/
+source venv/bin/activate
+python -m app.main
+```
+```
+# frontend
+npm install
+npm run serve
+```
+
+Run `ngrok` https server to redirect test payments callback to backend API (use your static domain on ngrok platform and make sure this one was added to `.env` file as `BASE_URL`):
+```
+ngrok http --url fox-grand-seriously.ngrok-free.app http://localhost:8000
+```
+
+Check [localhost:8080](http://localhost:8080)
 
 ---
 
