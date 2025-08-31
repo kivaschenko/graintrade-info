@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Request, BackgroundTasks
+from fastapi import APIRouter, Request, BackgroundTasks, Form
 from fastapi.responses import JSONResponse
 
 from ..service_layer import payment_service
@@ -35,10 +35,6 @@ async def confirm_payment(request: Request, background_tasks: BackgroundTasks):
             payment_service.send_success_payment_details_to_queue, r
         )
 
-
-# ...existing code...
-
-from fastapi import Form
 
 
 @router.post("/confirm/liqpay")
