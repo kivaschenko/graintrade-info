@@ -34,7 +34,7 @@ export default {
   props: { 
     itemId: {type: String, required: true}, 
     ownerId: {type: String, required: true},
-    chatRoomUrl: {type: String, default: process.env.VUE_APP_CHAT_ROOM_URL || 'http://localhost:8001'},
+    chatRoomUrl: {type: String, default: process.env.VUE_APP_CHAT_ROOM_URL || 'localhost:8001'},
   },
   data() {
     return {
@@ -57,7 +57,7 @@ export default {
     }
   },
   mounted() {
-    fetch(`${this.chatRoomUrl}/chat/${this.itemId}/participants`)
+    fetch(`http://${this.chatRoomUrl}/chat/${this.itemId}/participants`)
       .then(res => res.json())
       .then(data => { this.participants = data.filter(u => u.username !== this.ownerId); });
   }
