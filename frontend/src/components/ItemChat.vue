@@ -51,7 +51,7 @@ export default {
     itemId: {type: String, required: true}, 
     userId: {type: String, required: true},
     otherUserId: {type: String, required: true},
-    chatRoomUrl: {type: String, default: process.env.VUE_APP_CHAT_ROOM_URL || 'http://localhost:8001'},
+    chatRoomUrl: {type: String, default: process.env.VUE_APP_CHAT_ROOM_URL || 'localhost:8001'},
   },
   data() {
     return {
@@ -100,7 +100,7 @@ export default {
       }
     },
     fetchHistory() {
-      fetch(`${this.chatRoomUrl}/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`)
+      fetch(`http://${this.chatRoomUrl}/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`)
         .then(res => res.json())
         .then(data => { this.messages = data; });
     },
@@ -127,13 +127,18 @@ export default {
           console.warn("Attempted to send message with validation error.");
           return;
         }
-        this.ws.send(JSON.stringify({
-          sender_id: this.userId,
-          receiver_id: this.otherUserId,
-          item_id: this.itemId,
-          content: this.newMessage,
-        }));
-        this.newMessage = '';
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({
+            sender_id: this.userId,
+            receiver_id: this.otherUserId,
+            item_id: this.itemId,
+            content: this.newMessage,
+          }));
+          this.newMessage = '';
+        } else {
+          console.error("Websocket is not open. Attempting to reconnect or waiting for connection.");
+          this.initChat();
+        }
       }
     },
     async deleteChatHistory() {
