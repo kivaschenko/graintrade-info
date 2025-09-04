@@ -52,15 +52,13 @@ services:
       retries: 3
 
   frontend:
-    build: 
+    build:
       context: ./frontend
     restart: always
     env_file:
       - ./frontend/.env.production
     ports:
-      - "8080:80"
-    volumes:
-      - ./frontend:/frontend
+      - "8080:80" 
     networks:
       - grain-network
     depends_on:
