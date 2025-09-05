@@ -1,6 +1,6 @@
 from email.message import EmailMessage
-from pathlib import Path
 from typing import List
+from pathlib import Path
 import os
 import asyncio
 import json
@@ -9,7 +9,6 @@ import aiosmtplib
 import logging
 
 from jinja2 import Environment, FileSystemLoader
-from dotenv import load_dotenv
 
 from .database import database
 from .model import (
@@ -21,54 +20,32 @@ from .model import (
 )
 from .schemas import PreferencesSchema, CategoryInResponse, UserInResponse
 from .rabbit_mq import QueueName, get_rabbitmq_connection
+from .channels.email import send_email
+from .channels.telegram_ptb import send_telegram_message
+from .channels.viber import send_viber_message
 
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
+# Import environment variables
+from .config import (
+    BASE_URL,
+    SMTP_HOST,
+    SMTP_PORT,
+    SMTP_USER,
+    SMTP_PASS,
+    EMAIL_FROM,
+    BULK_MAILTRAP_HOST,
+    BULK_MAILTRAP_PASS,
+    RABBITMQ_URL,
+    TELEGRAM_CHANNEL_ID,
+    ENABLE_EMAIL,
+    ENABLE_TELEGRAM,
+    ENABLE_VIBER,
+)
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-BASE_DIR = Path(__file__).resolve().parent.parent
-env = Environment(loader=FileSystemLoader(BASE_DIR / "app" / "templates"))
-# Load environment variables
-if not BASE_DIR.joinpath(".env").exists():
-    raise FileNotFoundError("Environment file .env not found in the base directory.")
-else:
-    logging.info("Loading environment variables from .env file.")
-load_dotenv(BASE_DIR / ".env")
-
-# Load environment (Mailtrap)
-SMTP_USER = os.getenv("MAILTRAP_USER")
-SMTP_PASS = os.getenv("MAILTRAP_PASS")
-SMTP_HOST = os.getenv("MAILTRAP_HOST", "live.smtp.mailtrap.io")
-SMTP_PORT = int(os.getenv("MAILTRAP_PORT", 587))
-EMAIL_FROM = os.getenv("EMAIL_FROM")
-BULK_MAILTRAP_HOST = os.getenv("BULK_MAILTRAP_HOST", "bulk.smtp.mailtrap.io")
-BULK_MAILTRAP_PASS = os.getenv("BULK_MAILTRAP_PASS")
-# RabbitMQ variables
-RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://user:password@localhost:5672/")
-
-
-async def send_email(to_email, subject, body, bulk=False):
-    message = EmailMessage()
-    message["From"] = EMAIL_FROM
-    message["To"] = to_email
-    message["Subject"] = subject
-    message.set_content(body, subtype="html")
-    if bulk:
-        hostname = BULK_MAILTRAP_HOST
-        password = BULK_MAILTRAP_PASS
-    else:
-        hostname = SMTP_HOST
-        password = SMTP_PASS
-
-    logging.info(f"Sending email to {to_email} with subject: {subject}")
-    # Send the email using aiosmtplib
-    await aiosmtplib.send(
-        message,
-        hostname=hostname,
-        port=SMTP_PORT,
-        username=SMTP_USER,
-        password=password,
-        start_tls=True,
-    )
 
 
 async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage):
@@ -125,7 +102,29 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
         except Exception as e:
             logging.error(f"Error fetching user emails: {e}")
             return
-        subject = "New item created: {}".format(data["title"])
+
+        # Telegram broadcast
+        if ENABLE_TELEGRAM and TELEGRAM_CHANNEL_ID:
+            tg_text = (
+                f"🆕 <b>{data['title']}</b>\n"
+                f"{data.get('description', 'Опис відсутній')}\n\n"
+                f"💰 <b>Ціна:</b> {data.get('price')} {data.get('currency')} | {data.get('amount')} {data.get('measure')}\n"
+                f"📍 <b>Місце:</b> {data.get('country')}{', ' + data.get('region') if data.get('region') else ''}\n"
+                f"🚚 <b>Умови (Incoterms):</b> {data.get('terms_delivery', '—')}\n\n"
+                f"➡️ <a href='{BASE_URL}/items/{data['id']}'>Детальніше</a>"
+            )
+            await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
+
+        # Viber broadcast to users (if you have IDs)
+        if ENABLE_VIBER:
+            viber_text = (
+                f"🆕 Новий товар!\n"
+                f"{data['title']}\n"
+                f"Ціна: {data.get('price')} {data.get('currency')}\n"
+                f"Деталі: {BASE_URL}/items/{data['id']}"
+            )
+            # Example: if you collect viber_ids in DB
+            # for pref in preferences: await send_viber_message(pref.viber_id, viber_text)
         for pref in preferences:
             user = UserInResponse(
                 id=pref.user_id,  # type: ignore
@@ -138,6 +137,9 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
                 logging.warning(f"User {user.username} has no email, skipping.")
                 continue
             logging.info(f"Sending email to {user.email}")
+            # TODO: check language of notifications and make flow to separate templates
+            # Prepare subject for email
+            subject = "New item created: {}".format(data["title"])
             # Prepare the HTML body using Jinja2 template
             if not user.full_name:
                 user.full_name = user.username
@@ -182,9 +184,9 @@ async def handle_payment_notification(msg: aio_pika.abc.AbstractIncomingMessage)
                 amount=data["amount"] / 100,  # Assuming amount is in cents
                 currency=data["currency"],
                 status=data["response_status"],
-                subscription_details=f"{user_subscription.tarif.name} - {user_subscription.tarif.price} {user_subscription.tarif.currency}",
+                subscription_details=f"{user_subscription.tarif.name} - {user_subscription.tarif.price} {user_subscription.tarif.currency}",  # type: ignore
             )
-            await send_email(user.email, subject, html_body)
+            await send_email(to_email=user.email, subject=subject, body_html=html_body)
             logging.info(f"Payment confirmation email sent to {user.email}")
         except Exception as e:
             logging.error(f"Error processing payment notification: {e}")
