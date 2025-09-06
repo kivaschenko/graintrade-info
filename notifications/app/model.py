@@ -112,6 +112,7 @@ async def get_all_users_preferences() -> List[PreferencesSchema]:
             unp.notify_new_items, 
             unp.interested_categories, 
             unp.country,
+            unp.language,
             u.full_name,
             u.username,
             u.email

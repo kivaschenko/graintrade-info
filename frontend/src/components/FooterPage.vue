@@ -1,7 +1,9 @@
 <template>
   <div class="container">
 		<footer class="py-3 my-4">
-			<ul class="nav justify-content-center border-bottom pb-3 mb-3">
+			<div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+
+			<ul class="nav mb-3 mb-md-0">
 				<li class="nav-item">
 					<router-link class="nav-link px-2 text-muted" to="/contacts-requisites">{{ $t('footer.contactsAndRequisites') }}</router-link>
 				</li>
@@ -21,7 +23,17 @@
 					<router-link class="nav-link px-2 text-muted" to="/about-us">{{ $t('footer.about') }}</router-link>
 				</li>
 			</ul>
+			<div>
+				<a
+					href="https://t.me/graintradeinfo"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="btn btn-primary d-flex"
+					><i class="bi bi-telegram me-2"></i>{{ $t('footer.telegram') }}
+				</a>
+			</div>
 			<p class="text-center text-muted">&copy; 2025 Graintraide.Info</p>
+			</div>
 		</footer>
 	</div>
 </template>
