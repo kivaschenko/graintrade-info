@@ -16,6 +16,7 @@ from ..schemas import (
     ItemInDB,
     ItemInResponse,
     ItemsByUserResponse,
+    CategoryInResponse,
 )
 from ..models import items_model, subscription_model, tarif_model, category_model
 from ..service_layer import item_services
@@ -95,6 +96,14 @@ async def create_item(
     if new_item is None:
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
+    # Extend new Item with ctagories name, ua_name etc.
+    new_item.user_id = user_id
+    # Get category by id
+    category: CategoryInResponse = await category_model.get_by_id(
+        category_id=item.category_id
+    )
+    new_item.category_name = category.name
+    new_item.category_ua_name = category.ua_name
     logging.info(f"New item created: {new_item}")
     background_tasks.add_task(item_services.send_item_to_queue, new_item)
     return new_item
@@ -107,6 +116,11 @@ async def read_items(
     token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
     """Get all items with count value"""
+    if limit > 100:
+        logging.error(f"The number of limit excited: {limit}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Limit of items excited."
+        )
     try:
         # Add map access permission check
         if token != "null":
@@ -147,14 +161,15 @@ async def read_item(
             if "read:item" not in scopes:
                 raise HTTPException(status.HTTP_403_FORBIDDEN)
         # Get Category data
-        category = await category_model.get_by_id(db_item.category_id)
-        if category:
-            db_item.category_name = category.name
-            db_item.category_ua_name = category.ua_name
-        else:
-            logging.warning(f"Category with id {db_item.category_id} not found")
-            db_item.category_name = "Unknown"
-            db_item.category_ua_name = "Невідомо"
+        # Already realized in items_model
+        # category = await category_model.get_by_id(db_item.category_id)
+        # if category:
+        #     db_item.category_name = category.name
+        #     db_item.category_ua_name = category.ua_name
+        # else:
+        #     logging.warning(f"Category with id {db_item.category_id} not found")
+        #     db_item.category_name = "Unknown"
+        #     db_item.category_ua_name = "Невідомо"
         logging.info(f"Item read successfully: {db_item}")
         return db_item
     except Exception as e:
