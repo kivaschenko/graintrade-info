@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Item Notification</title>
+    <title>Повідомлення про новий товар</title>
     <style type="text/css">
         body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
         table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
@@ -33,7 +33,7 @@
 <body style="margin: 0 !important; padding: 0 !important; background-color: #f4f4f4;">
 
 <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-    A new item has been added that matches your preferences.
+    Пропозиція про новий товар відповідно вашим уподобанням з'явилася на сайті.
 </div>
 
 <table border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -42,17 +42,17 @@
             <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
                 <tr>
                     <td bgcolor="#ffffff" align="center" style="padding: 30px 30px 20px 30px; border-radius: 4px 4px 0px 0px; color: #111111; font-family: Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                        <h1 style="font-size: 32px; font-weight: 700; margin: 0;">New Item Notification</h1>
+                        <h1 style="font-size: 32px; font-weight: 700; margin: 0;">Повідомлення про новий товар</h1>
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="#ffffff" align="left" style="padding: 20px 30px 10px 30px; color: #666666; font-family: Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px;">
-                        <p style="margin: 0;">Dear {{ user_name }},</p>
+                        <p style="margin: 0;">Шановний(а) {{ user_name }},</p>
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="#ffffff" align="left" style="padding: 10px 30px 20px 30px; color: #666666; font-family: Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px;">
-                        <p style="margin: 0;">A new item has been added that matches your preferences:</p>
+                        <p style="margin: 0;">Пропозиція про новий товар відповідно вашим уподобанням з'явилася на сайт:</p>
                     </td>
                 </tr>
                 <tr>
@@ -61,14 +61,14 @@
                             <tr>
                                 <td bgcolor="#f4f4f4" align="left" style="padding: 20px; border-radius: 4px;">
                                     <h2 style="font-size: 20px; font-weight: 700; color: #333333; margin-top: 0; margin-bottom: 15px;">{{ item_title }}</h2>
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 0;"><strong>Description:</strong> {{ item_description }}</p>
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Price:</strong> {{ item_price }} {{ item_currency }}</p>
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Measure:</strong> {{ item_measure }}</p>
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Amount:</strong> {{ item_amount }}</p>
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Country:</strong> {{ item_country }}</p>
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Region:</strong> {{ item_region }}</p>
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Terms of Delivery:</strong> {{ item_terms_delivery }}</p>
-                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Date Created:</strong> {{ item_created_at }}</p>
+                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 0;"><strong>Опис:</strong> {{ item_description }}</p>
+                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Ціна:</strong> {{ item_price }} {{ item_currency }}</p>
+                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Одиниця виміру:</strong> {{ item_measure }}</p>
+                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Кількість:</strong> {{ item_amount }}</p>
+                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Країна:</strong> {{ item_country }}</p>
+                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Регіон:</strong> {{ item_region }}</p>
+                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Умови поставки:</strong> {{ item_terms_delivery }}</p>
+                                    <p style="font-size: 16px; font-weight: 400; line-height: 24px; color: #666666; margin: 5px 0;"><strong>Дата публікації:</strong> {{ item_created_at }}</p>
                                 </td>
                             </tr>
                         </table>
@@ -76,7 +76,7 @@
                 </tr>
                 <tr>
                     <td bgcolor="#ffffff" align="left" style="padding: 20px 30px 20px 30px; color: #666666; font-family: Arial, sans-serif; font-size: 16px; font-weight: 400; line-height: 24px;">
-                        <p style="margin: 0;">You can view the item details and contact the seller by clicking the button below:</p>
+                        <p style="margin: 0;">Ви можете переглянути деталі товару та зв'язатися з продавцем, натиснувши кнопку нижче:</p>
                     </td>
                 </tr>
                 <tr>
@@ -97,8 +97,8 @@
                 </tr>
                 <tr>
                     <td bgcolor="#f4f4f4" align="center" style="padding: 20px 30px 20px 30px; color: #666666; font-family: Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 18px;">
-                        <p style="margin: 0;">If you no longer wish to receive these notifications, please <a href="https://graintrade.info/profile" target="_blank" style="color: #999999; text-decoration: underline;">update your preferences</a> in your account settings.</p>
-                        <p style="margin: 10px 0 0 0;">This is an automated message. Please do not reply to this email.</p>
+                        <p style="margin: 0;">Якщо ви більше не бажаєте отримувати ці сповіщення, будь ласка <a href="https://graintrade.info/profile" target="_blank" style="color: #999999; text-decoration: underline;">оновіть свої налаштуванняs</a> у налаштуваннях вашого облікового запису.</p>
+                        <p style="margin: 10px 0 0 0;">Це автоматичне повідомлення. Будь ласка, не відповідайте на цей лист.</p>
                     </td>
                 </tr>
             </table>

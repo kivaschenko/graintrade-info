@@ -27,7 +27,9 @@ from .channels.telegram_ptb import send_telegram_message
 from .channels.viber import send_viber_message
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
+env = Environment(loader=FileSystemLoader(BASE_DIR / "app" / "templates"))
+
+OFFER_TYPES_UA = {"sell": "Продаю", "buy": "Купую"}
 
 
 async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage):
@@ -73,16 +75,30 @@ async def get_users_preferences(
 async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
     async with msg.process():
         data = json.loads(msg.body.decode())
-
-        # Telegram broadcast
+        # Data for item notifications: {'id': '63', 'uuid': '1667dc20-333f-48a0-98e5-4e351d5eeca3', 'category_id': '15',
+        # 'offer_type': 'sell', 'title': 'Продаю Гречка', 'description': 'без сміття, чиста',
+        # 'price': '34500.0', 'currency': 'UAH', 'amount': '230', 'measure': 'metric ton',
+        # 'terms_delivery': 'FCA', 'country': 'Ukraine', 'region': 'Cherkasy Oblast',
+        # 'latitude': '49.675243', 'longitude': '32.034566',
+        # 'created_at': '2025-09-06 11:52:41.205496',
+        # 'owner_id': 'None', 'category': 'None', 'user_id': '6',
+        # 'category_name': 'Buckwheat', 'category_ua_name': 'Гречка'}
+        offer_type = data.get("offer_type")
+        ua_offer_type = OFFER_TYPES_UA.get(offer_type)
+        en_offer_type = offer_type.capitalize()
+        ua_title = f"{ua_offer_type} {data.get('category_ua_name')}"
+        en_title = f"{en_offer_type} {data.get('category_name')}"
         if ENABLE_TELEGRAM and TELEGRAM_CHANNEL_ID:
+            item_url = f"{BASE_URL}/items/{data['id']}"
+            type_icon = "🟢" if offer_type == "sell" else "🔴"
+
             tg_text = (
-                f"🆕 <b>{data['title']}</b>\n"
-                f"{data.get('description', 'Опис відсутній')}\n\n"
-                f"💰 <b>Ціна:</b> {data.get('price')} {data.get('currency')} | {data.get('amount')} {data.get('measure')}\n"
-                f"📍 <b>Місце:</b> {data.get('country')}{', ' + data.get('region') if data.get('region') else ''}\n"
+                f"{type_icon} <b>{ua_title} ({en_title})</b>\n\n"
+                f"💰 <b>Ціна (Price):</b> {data.get('price')} {data.get('currency')}\n"
+                f"📦 <b>Кількість (Amount):</b> {data.get('amount')} {data.get('measure')}\n"
+                f"📍 <b>Місце (Point):</b> {data.get('country')}{', ' + data.get('region') if data.get('region') else ''}\n"
                 f"🚚 <b>Умови (Incoterms):</b> {data.get('terms_delivery', '—')}\n\n"
-                f"➡️ <a href='{BASE_URL}/items/{data['id']}'>Детальніше</a>"
+                f'➡️ <a href="{item_url}">Детальніше (Details)</a>'
             )
             await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
 
@@ -110,26 +126,43 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
                     logging.warning(f"User {user.username} has no email, skipping.")
                     continue
                 logging.info(f"Sending email to {user.email}")
-                # TODO: check language of notifications and make flow to separate templates
-                # Prepare subject for email
-                subject = "New item created: {}".format(data["title"])
+
                 # Prepare the HTML body using Jinja2 template
                 if not user.full_name:
                     user.full_name = user.username
-                html_body = env.get_template("new_item_email.html").render(
-                    user_name=user.full_name or user.username,
-                    item_title=data["title"],
-                    item_description=data["description"],
-                    item_price=data["price"],
-                    item_currency=data["currency"],
-                    item_measure=data["measure"],
-                    item_amount=data["amount"],
-                    item_country=data["country"],
-                    item_region=data["region"],
-                    item_terms_delivery=data["terms_delivery"],
-                    item_created_at=data["created_at"],
-                    item_url=f"{BASE_URL}/items/{data['id']}",
-                )
+                # Choose template according language of notifications
+                if pref.language == "ua":
+                    template_name = "ua_new_item_email.html"
+                    subject = "New item created: {}".format(data["title"])
+                    html_body = env.get_template(template_name).render(
+                        user_name=user.full_name or user.username,
+                        item_title=ua_title,
+                        item_price=data["price"],
+                        item_currency=data["currency"],
+                        item_measure=data["measure"],
+                        item_amount=data["amount"],
+                        item_country=data["country"],
+                        item_region=data["region"],
+                        item_terms_delivery=data["terms_delivery"],
+                        item_created_at=data["created_at"],
+                        item_url=f"{BASE_URL}/items/{data['id']}",
+                    )
+                else:
+                    template_name = "new_item_email.html"
+                    subject = "Нова пропозиція створена: {}".format(data["title"])
+                    html_body = env.get_template(template_name).render(
+                        user_name=user.full_name or user.username,
+                        item_title=en_title,
+                        item_price=data["price"],
+                        item_currency=data["currency"],
+                        item_measure=data["measure"],
+                        item_amount=data["amount"],
+                        item_country=data["country"],
+                        item_region=data["region"],
+                        item_terms_delivery=data["terms_delivery"],
+                        item_created_at=data["created_at"],
+                        item_url=f"{BASE_URL}/items/{data['id']}",
+                    )
                 await send_email(user.email, subject, html_body)
             logging.info(f"Email sent to {user.email} with subject: {subject}")
         # Viber broadcast to users (if you have IDs)
@@ -181,7 +214,6 @@ async def handle_password_recovery_notification(
 ):
     async with msg.process():
         data = json.loads(msg.body.decode())
-        print(data)
 
         try:
             subject = "Password Recovery"
