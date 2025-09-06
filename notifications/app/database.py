@@ -1,15 +1,7 @@
-# app/database.py
-from pathlib import Path
-import os
 import logging
 import asyncpg
 import redis
-from dotenv import load_dotenv
-
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
-DATABASE_URL = os.getenv("DATABASE_URL")
+from .config import DATABASE_URL, REDIS_URL
 
 
 class Database:
@@ -34,8 +26,6 @@ else:
 
 # ---------------------
 # Redis connector
-
-REDIS_URL = os.getenv("REDIS_URL")
 
 
 class RedisDB:

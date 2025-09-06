@@ -67,7 +67,7 @@ class ItemInResponse(BaseModel):
     latitude: float
     longitude: float
     created_at: datetime = Field(alias="created_at")
-    owner_id: Optional[str] = None
+    owner_id: Optional[str] = None  # literally 'username' to show in ItemDetails.vue
     category: Optional[CategoryInResponse] = None
     user_id: Optional[int] = None
     category_name: Optional[str] = None
