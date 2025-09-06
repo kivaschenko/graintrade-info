@@ -1,4 +1,4 @@
-name: grain
+name: grain-dev
 services:
   backend:
     build: ./backend
