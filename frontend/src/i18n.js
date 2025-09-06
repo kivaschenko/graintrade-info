@@ -25,6 +25,7 @@ const messages = {
       privacyPolicy: 'Privacy Policy',
       termsOfService: 'Terms of Service',
       faqs: 'FAQs',   
+      telegram: 'Join us in Telegram',
     },
     pagination: {
       prev: 'Prev',
@@ -320,6 +321,7 @@ const messages = {
       privacyPolicy: 'Політика конфіденційності',
       termsOfService: 'Умови використання',
       faqs: 'Питання та відповіді',   
+      telegram: 'Приєднатися в Telegram',
     },
     pagination: {
       prev: 'Попередня',
@@ -367,7 +369,7 @@ const messages = {
       itemNotFoundMessage: 'Товар, який ви шукаєте, не існує або був видалений.',
       itemDeletedError: 'Помилка видалення товару',
       itemNotFoundError: 'Помилка: Товар не знайдено',
-      messagesCounter: 'Повідомлення',  
+      messagesCounter: 'Повідомлення',
     },
     homePage: {
       showMapWithMarkers: "Показати карту з маркерами товарів",
