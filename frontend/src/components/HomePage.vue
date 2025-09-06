@@ -6,13 +6,13 @@
         :disabled="page === 1"
         @click="handlePageChange(page -1)"
         class="btn btn-outline-secondary btn-sm"
-      >&lt; Prev</button>
+      >&lt; {{ $t('pagination.prev') }}</button>
       <span> {{ page }} / {{ Math.ceil(totalItems /pageSize) }}</span>
       <button
         :disabled="page * pageSize >= totalItems"
         @click="handlePageChange(page + 1)"
         class="btn btn-outline-secondary btn-sm"
-      >Next &gt;</button>
+      >{{ $t('pagination.next') }} &gt;</button>
     </div>
     <div class="container mt-5">
       <div v-if="!hasMapAccess" class="alert alert-info">
