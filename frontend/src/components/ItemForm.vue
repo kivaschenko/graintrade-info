@@ -42,7 +42,7 @@
                 <label for="description" class="form-label">{{ $t('common_text.description') }}</label>
                 <textarea
                   type="text"
-                  maxlength="600"
+                  maxlength="300"
                   rows="4"
                   class="form-control"
                   id="description"

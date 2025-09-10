@@ -162,14 +162,14 @@ async def read_item(
                 raise HTTPException(status.HTTP_403_FORBIDDEN)
         # Get Category data
         # Already realized in items_model
-        # category = await category_model.get_by_id(db_item.category_id)
-        # if category:
-        #     db_item.category_name = category.name
-        #     db_item.category_ua_name = category.ua_name
-        # else:
-        #     logging.warning(f"Category with id {db_item.category_id} not found")
-        #     db_item.category_name = "Unknown"
-        #     db_item.category_ua_name = "Невідомо"
+        category = await category_model.get_by_id(db_item.category_id)
+        if category:
+            db_item.category_name = category.name
+            db_item.category_ua_name = category.ua_name
+        else:
+            logging.warning(f"Category with id {db_item.category_id} not found")
+            db_item.category_name = "Unknown"
+            db_item.category_ua_name = "Невідомо"
         logging.info(f"Item read successfully: {db_item}")
         return db_item
     except Exception as e:

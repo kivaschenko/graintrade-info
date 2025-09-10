@@ -97,7 +97,8 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
                 f"💰 <b>Ціна (Price):</b> {data.get('price')} {data.get('currency')}\n"
                 f"📦 <b>Кількість (Amount):</b> {data.get('amount')} {data.get('measure')}\n"
                 f"📍 <b>Місце (Point):</b> {data.get('country')}{', ' + data.get('region') if data.get('region') else ''}\n"
-                f"🚚 <b>Умови (Incoterms):</b> {data.get('terms_delivery', '—')}\n\n"
+                f"🚚 <b>Умови (Incoterms):</b> {data.get('terms_delivery', '—')}\n"
+                f"   <b>Опис (Description):</b> {data.get('description')}\n\n"
                 f'➡️ <a href="{item_url}">Детальніше (Details)</a>'
             )
             await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
