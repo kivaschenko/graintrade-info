@@ -254,21 +254,21 @@
                         </span>
                       </div>
                     </div>
-                    <div class="col-6">
+                    <div class="col-md-6">
                       <div class="d-flex align-items-start">
                         <i class="bi bi-globe2 me-2 text-muted mt-1"></i>
                         <strong>{{ $t('common_text.country') }}:</strong>
                         <span class="badge bg-warning ms-2">{{ preferences.country }}</span>
                       </div>
                     </div>
-										<div class="col-6">
+										<div class="col-md-6">
 											<div class="d-flex align-items-start">
 												<i class="bi bi-translate me-2 text-muted mt-1"></i>
 												<strong>{{ $t('preferences.notificationLanguage') }}:</strong>
 												<span class="badge bg-warning ms-2">{{ preferences.language === 'ua' ? 'Ukrainian / Українська' : 'English / Англійська' }}</span>
 											</div>
 										</div>
-                    <div class="col-12">
+                    <div class="col-md-12">
                       <div class="d-flex align-items-start">
                         <i class="bi bi-tags-fill me-2 text-muted mt-1"></i>
                         <strong>{{ $t('preferences.interestedCategories') }}:</strong>
