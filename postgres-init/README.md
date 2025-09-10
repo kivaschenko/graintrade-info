@@ -187,3 +187,178 @@ Restart database
 cp ~/graintrade-info/postgres-init/init.sql /tmp/init.sql
 sudo -u postgres psql -d graintrade -f /tmp/init.sql
 ```
+
+# Backup
+The easiest way on Ubuntu is to create a small **bash script** that calls `pg_dump` and run it daily with **cron**.
+
+Here’s a working example:
+
+---
+
+### 1. Create backup script
+
+`/usr/local/bin/pg_backup.sh`:
+
+```bash
+#!/bin/bash
+
+# Database connection settings
+DB_NAME="devdb"
+DB_USER="devuser"
+DB_PASS="devpassword"
+
+# Backup directory
+BACKUP_DIR="/var/backups/postgres"
+DATE=$(date +\%Y-\%m-\%d_\%H-\%M)
+
+# Ensure directory exists
+mkdir -p "$BACKUP_DIR"
+
+# Export password so pg_dump won't ask
+export PGPASSWORD="$DB_PASS"
+
+# Run pg_dump
+pg_dump -U "$DB_USER" -d "$DB_NAME" -F c -b -v -f "$BACKUP_DIR/${DB_NAME}_${DATE}.dump"
+
+# Optional: remove backups older than 7 days
+find "$BACKUP_DIR" -type f -name "*.dump" -mtime +7 -delete
+```
+
+Make it executable:
+
+```bash
+sudo chmod +x /usr/local/bin/pg_backup.sh
+```
+
+---
+
+### 2. Test script manually
+
+```bash
+/usr/local/bin/pg_backup.sh
+```
+
+It should create a file like:
+
+```
+/var/backups/postgres/devdb_2025-09-08_18-32.dump
+```
+
+---
+
+### 3. Add to cron (daily at 02:00)
+
+Edit cron:
+
+```bash
+crontab -e
+```
+
+Add line:
+
+```cron
+0 2 * * * /usr/local/bin/pg_backup.sh >> /var/log/pg_backup.log 2>&1
+```
+
+---
+
+### 4. Restore from backup (when needed)
+
+```bash
+pg_restore -U devuser -d devdb /var/backups/postgres/devdb_2025-09-08_18-32.dump
+```
+
+---
+
+Ага, зрозумів 👍
+Помилка така:
+
+```
+pg_dump: connection to server on socket "/var/run/postgresql/.s.PGSQL.5433" failed: 
+FATAL:  Peer authentication failed for user "grain"
+```
+
+### Чому так:
+
+1. **pg\_dump не отримав пароль** → PostgreSQL спробував автентифікувати через `peer` (локальна авторизація по Linux-користувачу), і відхилив.
+2. Ти явно під `root`, а користувач бази інший (`grain` або `devuser`).
+3. PostgreSQL слухає на **5433** (не 5432). Це може бути:
+
+   * встановлений не один PostgreSQL,
+   * або ти вручну змінив порт у `postgresql.conf`.
+
+---
+
+### 🔧 Рішення:
+
+#### Варіант 1. Вказати порт і хост в скрипті
+
+У скрипті `/usr/local/bin/pg_backup.sh` заміни рядок `pg_dump` на:
+
+```bash
+pg_dump -h 127.0.0.1 -p 5433 -U "$DB_USER" -d "$DB_NAME" -F c -b -v -f "$BACKUP_DIR/${DB_NAME}_${DATE}.dump"
+```
+
+---
+
+#### Варіант 2. Додати `.pgpass`
+
+Щоб уникнути проблем із паролем, створюєш файл `/root/.pgpass`:
+
+```bash
+nano /root/.pgpass
+```
+
+Вставляєш:
+
+```
+127.0.0.1:5433:devdb:devuser:devpassword
+```
+
+Права доступу:
+
+```bash
+chmod 600 /root/.pgpass
+```
+
+Тепер можна робити просто:
+
+```bash
+pg_dump -h 127.0.0.1 -p 5433 -U "$DB_USER" -d "$DB_NAME" -F c -f "$BACKUP_DIR/${DB_NAME}_${DATE}.dump"
+```
+
+і пароль підхопиться автоматично.
+
+---
+
+#### Варіант 3. Перевести `pg_hba.conf` на `md5`
+
+Відкрити:
+
+```bash
+sudo nano /etc/postgresql/16/main/pg_hba.conf
+```
+
+Заміни рядок для `local` на:
+
+```
+local   all             all                                     md5
+```
+
+Потім:
+
+```bash
+sudo systemctl restart postgresql
+```
+
+---
+
+👉 Запитання: у тебе PostgreSQL справді на порту **5433** (а не 5432)?
+Можеш перевірити:
+
+```bash
+ss -ltnp | grep postgres
+```
+
+Тоді я підкажу фінальну версію скрипта під твій порт.
+
