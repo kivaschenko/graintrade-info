@@ -1,0 +1,82 @@
+name: Deploy to Remote Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container:
+      image: docker:latest
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Install dependencies
+        run: |
+          apk add --no-cache openssh-client rsync
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Build and push to remote
+        env:
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          REMOTE_PATH: ${{ secrets.REMOTE_PATH }}
+        run: |
+          # Sync project files
+          rsync -avz --delete \
+            --exclude '.git/' \
+            --exclude '.gitea/' \
+            --exclude 'node_modules/' \
+            --exclude '__pycache__/' \
+            ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/
+
+      - name: Deploy on remote server
+        env:
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          REMOTE_PATH: ${{ secrets.REMOTE_PATH }}
+        run: |
+          ssh ${REMOTE_USER}@${REMOTE_HOST} "bash -s" << 'EOF'
+            cd ${REMOTE_PATH}
+            
+            # Stop existing containers
+            docker compose down || true
+            
+            # Rebuild images
+            docker compose build --no-cache
+            
+            # Start services
+            docker compose up -d
+            
+            # Wait for health checks
+            echo "Waiting for services to be healthy..."
+            timeout=300
+            while [ $timeout -gt 0 ]; do
+              if docker compose ps | grep -q "healthy"; then
+                echo "Services are healthy!"
+                exit 0
+              fi
+              echo "Waiting... ($timeout seconds remaining)"
+              sleep 5
+              timeout=$((timeout-5))
+            done
+            
+            echo "Deployment failed - services did not become healthy"
+            docker compose logs
+            exit 1
+          EOF
