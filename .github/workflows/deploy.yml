@@ -1,0 +1,66 @@
+# name: Deploy to Remote Server
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production_environment
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main' && github.repository == 'kostiantyn/graintrade-info'
+    timeout-minutes: 10
+
+    environment:
+      name: production
+      url: https://graintrade.info
+
+    env:
+      REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+      REMOTE_USER: ${{ secrets.REMOTE_USER }}
+      REMOTE_PATH: ${{ secrets.REMOTE_PATH }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Copy project to remote Server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'node_modules' \
+            ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/
+        continue-on-error: false
+
+      - name: Remote build and up
+        run: |
+          ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} <<'EOF'
+            cd ${REMOTE_PATH}
+            docker compose down || true
+            docker compose build --no-cache
+            docker compose up -d
+            
+            # Wait for containers to be healthy
+            timeout=60
+            while [ $timeout -gt 0 ]; do
+              if docker compose ps | grep -q "healthy"; then
+                echo "Deployment successful!"
+                exit 0
+              fi
+              sleep 1
+              timeout=$((timeout-1))
+            done
+            echo "Deployment timeout"
+            exit 1
+          EOF
