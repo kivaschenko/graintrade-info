@@ -12,7 +12,6 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main' && github.repository == 'kostiantyn/graintrade-info'
     timeout-minutes: 10
 
     environment:
