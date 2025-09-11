@@ -11,12 +11,13 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main' && github.repository == 'kostiantyn/graintrade-info'
     timeout-minutes: 10
 
     environment:
       name: production
-      url: http://${{ secrets.REMOTE_HOST }}
+      url: https://graintrade.info
 
     env:
       REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
