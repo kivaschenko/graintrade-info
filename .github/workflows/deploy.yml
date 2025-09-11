@@ -69,4 +69,3 @@ jobs:
             done
             echo "Deployment timeout"
             exit 1
-          EOF
