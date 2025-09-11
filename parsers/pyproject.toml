@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "parsers"
+version = "0.1.0"
+description = ""
+authors = ["Kostiantyn Ivashchenko <kivaschenko@protonmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+telethon = "^1.41.2"
+python-dotenv = "^1.1.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
