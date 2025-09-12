@@ -21,7 +21,6 @@ app.add_middleware(
 # Directory to store uploaded/downloaded files
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 RESULTS_DIR.mkdir(exist_ok=True)
-API_TOKEN = os.getenv("API_TOKEN", "your_default_token_here")
 
 
 # Upload items endpoint (csv/xls/xlsx)
@@ -29,8 +28,6 @@ API_TOKEN = os.getenv("API_TOKEN", "your_default_token_here")
 async def upload_items(
     file: UploadFile = File(...), token: Optional[str] = Query(None)
 ):
-    if token != API_TOKEN:
-        raise HTTPException(status_code=401, detail="Unauthorized")
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded.")
     file_ext = file.filename.split(".")[-1].lower()
