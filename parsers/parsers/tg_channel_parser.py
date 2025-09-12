@@ -12,14 +12,17 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class TGChannelParser(BaseParser):
-    def __init__(self, session_name: str = "anonymous"):
+    def __init__(self, session_name: str = "session"):
         super().__init__()
         self.client = TelegramClient(
             session_name, int(TELEGRAM_API_ID), TELEGRAM_API_HASH
         )
 
     async def start(self):
-        await self.client.start(bot_token=TELEGRAM_BOT_TOKEN)  # type: ignore
+        await self.client.start(
+            phone="+380662760451",
+            # bot_token=TELEGRAM_BOT_TOKEN,
+        )  # type: ignore
         print("Telegram client started")
 
     async def stop(self):
@@ -37,9 +40,41 @@ class TGChannelParser(BaseParser):
         async for message in self.client.iter_messages(entity, limit=limit):
             messages.append(message.to_dict())
         return messages
-    
-    def save_results(self, results: List[Dict[str, Any]], filepath: str, file_ext: str = "json") -> None:
-        
+
+    def save_results(
+        self, results: List[Dict[str, Any]], filepath: str, file_ext: str = "json"
+    ) -> None:
+        messages = []
+        for result in results:
+            try:
+                from_id = result.get("from_id")
+                if from_id is None:
+                    sender_id = None
+                else:
+                    sender_id = (
+                        result.get("from_id").user_id
+                        if hasattr(result.get("from_id"), "user_id")
+                        else None
+                    )
+            except Exception as e:
+                print(f"Error occurred while processing from_id: {e}")
+
+            finally:
+                pass
+            message_info = {
+                "id": result.get("id"),
+                "date": result.get("date").strftime("%Y-%m-%d %H:%M:%S")  # type: ignore
+                if result.get("date")
+                else None,
+                "message": result.get("message"),
+                "sender_id": sender_id,
+            }
+            messages.append(message_info)
+        import json
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(json.dumps(messages, ensure_ascii=False, indent=4))
+            print(f"Results saved to {filepath}")
 
     def parse(self, channel_username: str, limit: int = 100):
         import asyncio
@@ -47,9 +82,9 @@ class TGChannelParser(BaseParser):
         async def main():
             await self.start()
             messages = await self.fetch_messages(channel_username, limit)
-            # Save messages to a file
             datetime_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_path = f"{RESULTS_DIR}/{channel_username}_{datetime_str}_messages.json"
+            # Save messages to a file
+            file_path = f"{RESULTS_DIR}/{channel_username}_messages_{datetime_str}.json"
             self.save_results(messages, file_path)
             await self.stop()
             return messages
@@ -60,5 +95,5 @@ class TGChannelParser(BaseParser):
 if __name__ == "__main__":
     parser = TGChannelParser()
     channel_username = "Zernovaya_Birzha"  # Example channel username
-    messages = parser.parse(channel_username, limit=50)
+    messages = parser.parse(channel_username, limit=100)
     print(f"Fetched {len(messages)} messages from {channel_username}")
