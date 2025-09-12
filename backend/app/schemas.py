@@ -203,6 +203,7 @@ class TarifInResponse(TarifInDB):
     navigation_limit: int
     notify_new_messages: bool = True
     notify_new_items: bool = True
+    allow_import_export: bool = False
     created_at: datetime | None
 
     @property
