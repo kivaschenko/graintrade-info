@@ -154,6 +154,6 @@ def process_messages(input_file: str, output_file: str):
 
 
 if __name__ == "__main__":
-    input_file = "results/Zernovaya_Birzha_messages_20250911_193215.json"
-    output_file = "results/processed_messages.json"
+    input_file = "parsers/results/Zernovaya_Birzha_20250911_153533_messages.json"
+    output_file = "parsers/results/processed_messages.json"
     process_messages(input_file, output_file)

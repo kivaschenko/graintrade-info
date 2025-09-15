@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 else:
     OpenAIType = Any  # fallback for typing
 
+OPENAI_API_KEY = "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"
+OPENAI_MODEL = "gpt-5-mini"
 
 # Load environment variables from parsers/.env if present
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -67,6 +69,14 @@ SYSTEM_PROMPT = (
     "Infer offer_type (buy/sell) when obvious. currency must be one of UAH or USD. "
     "amount is numeric (tonnes). price is numeric per tonne if possible. "
     "Use 't' as measure for tonnes. Prefer short title like 'Закупка пшениця' or 'Продаж кукурудза'."
+    "Map common Ukrainian commodity names to English: пшениця=Wheat, ячмінь=Barley, кукурудза=Corn, горох=Peas, соя=Soy, рапс=Rapeseed, соняшник=Sunflower, льон=Flax. "
+    "If location is a known region (e.g. Полтавська), set region field. "
+    "If location is a city, set location field. "
+    "If country is mentioned (e.g. Україна), set country field. "
+    "If multiple offers are present, return them all in the offers list. "
+    "If no offers can be extracted, return an empty offers list. "
+    "Output strictly valid JSON without extra text. "
+    "Use the samples delimited by triple backticks as a guide."
 )
 
 
@@ -75,18 +85,25 @@ USER_INSTRUCTIONS = (
     "return multiple items in offers. Do not add fields not present. Phone is optional."
 )
 
+SAMPLE_1 = (
+    "Example message:\n"
+    "Пшеница 3 класс 500 тонн. Оржица. 18,5/11,5.\nБаза. Маниту\n\nПШЕНИЦА 4й класс. Ф1 EXW из хозяйства Лубны 900 тонн. База. 10,5%. Маниту \nЯрослав 0675352060 \n\nПРОДАМ ЯЧМЕНЬ. 500 тонн. Ф1. КАРЛОВКА. FCA с жд элеватора. \nБаза. \n0675352060 Ярослав\n\nПРОДАМ ГОРОХ зеленый. 1000 т.\nФ1. Слобожанське. Харьковская\nБаза. Есть фото и качество. \nВозможна погрузка в ваши ББ. \n0675352060 Ярослав",
+    "Expected JSON:\n"
+    '{\n  "offers": [\n    {\n      "category_name": "Wheat 3rd grade",\n "category_ua_name": "Пшениця 3 клас",\n      "offer_type": "sell",\n      "title": "Продаж пшениця 3 клас",\n      "amount": 500.0,\n      "measure": "t",\n      "price": 18500.0,\n      "currency": "UAH",\n      "country": "Ukraine",\n      "region": "Poltava Oblast",\n      "latitude": 49.789894,\n      "longitude": 32.698616"\n      "terms_delivery": "EXW",\n      "description": "Оржица. 18,5/11,5 тел.0675352060 Ярослав"\n     },\n'
+    '{\n      "category_name": "Wheat 4th grade",\n "category_ua_name": "Пшениця 4 клас",\n      "offer_type": "sell",\n      "title": "Продаж пшениця 4 клас",\n      "amount": 900.0,\n      "measure": "t",\n      "price": 10500.0,\n      "currency": "UAH",\n      "country": "Ukraine",\n      "region": "Poltava Oblast",\n      "latitude": 49.789894,\n      "longitude": 34.551417\n     "terms_delivery": "EXW",\n      "description": "Ф1 EXW из хозяйства Лубны тел.0675352060 Ярослав"\n    },\n'
+    '{\n      "category_name": "Barley",\n "category_ua_name": "Ячмінь",\n      "offer_type": "sell",\n      "title": "Продаж ячмінь",\n      "amount": 500.0,\n      "measure": "t",\n      "price": 0.0,\n      "currency": "UAH",\n      "country": "Ukraine",\n      "region": "Poltava Oblast",\n      "latitude": 49.789894,\n      "longitude": 34.551417\n      "terms_delivery": "FCA",\n      "description": "Карловка жд елеватор тел.0675352060 Ярослав"\n   },\n'
+    '{\n      "category_name": "Peas",\n "category_ua_name": "Горох",\n      "offer_type": "sell",\n      "title": "Продаж горох зелений",\n      "amount": 1000.0,\n      "measure": "t",\n      "price": 0.0,\n      "currency": "UAH",\n      "country": "Ukraine",\n      "region": "Kharkiv Oblast",\n      "latitude": 49.992318,\n      "longitude": 36.231015\n     "terms_delivery": "FCA",\n      "description": "Слобожанське тел.0675352060 Ярослав"\n    }\n  ]\n}',
+)
+
+SYSTEM_PROMPT += f"\n\n + ```{SAMPLE_1}```"
+
 
 def _get_client() -> OpenAIType:
-    api_key = os.getenv("OPENAI_API_KEY")
-    base_url = os.getenv("OPENAI_BASE_URL")  # optional for Azure/other gateways
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is not set")
+    api_key = OPENAI_API_KEY
     if OpenAI is None:
         raise RuntimeError(
             "openai package not available. Ensure it's installed in this env."
         )
-    if base_url:
-        return OpenAI(api_key=api_key, base_url=base_url)
     return OpenAI(api_key=api_key)
 
 
@@ -113,7 +130,7 @@ def _map_category_name_to_id(name: Optional[str]) -> Optional[int]:
 def _call_openai(client: OpenAIType, content: str) -> Dict[str, Any]:
     # Prefer JSON mode with a clear schema hint
     response = client.chat.completions.create(
-        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        model=OPENAI_MODEL,
         temperature=0.1,
         response_format={"type": "json_object"},
         messages=[
@@ -122,6 +139,7 @@ def _call_openai(client: OpenAIType, content: str) -> Dict[str, Any]:
         ],
     )
     txt = response.choices[0].message.content or "{}"
+    print(f"OpenAI response: {txt}")
     return json.loads(txt)
 
 
@@ -230,7 +248,9 @@ if __name__ == "__main__":
     in_file = os.getenv(
         "INPUT_FILE",
         os.path.join(
-            BASE_DIR, "results", "Zernovaya_Birzha_messages_20250911_193215.json"
+            BASE_DIR,
+            "results",
+            "Zernovaya_Birzha_20250911_153533_messages.json",
         ),
     )
     out_file = os.getenv(

@@ -6,7 +6,7 @@ authors = ["Kostiantyn Ivashchenko <kivaschenko@protonmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.12,<3.14"
 telethon = "^1.41.2"
 python-dotenv = "^1.1.1"
 openai = "^1.47.0"
@@ -14,6 +14,7 @@ pydantic = "^2.9.2"
 backoff = "^2.2.1"
 pandas = "^2.3.2"
 fastapi = {extras = ["standard"], version = "^0.116.1"}
+spacy = "^3.8.7"
 
 
 [build-system]

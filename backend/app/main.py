@@ -2,11 +2,14 @@ from contextlib import asynccontextmanager
 import logging
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import (
     OAuth2PasswordBearer,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_redoc_html
+from typing import Annotated, Dict
+from .utils.openapi_filters import filter_schema_for_premium
 
 from .database import database, redis_db
 from .routers import user_routers
@@ -18,6 +21,7 @@ from .routers import password_recovery
 from .routers import map_routers
 from .routers import crypto as crypto_routers
 from .routers import webhooks as webhooks_routers
+from .models import subscription_model
 
 
 JWT_SECRET = os.getenv("JWT_SECRET")
@@ -36,7 +40,13 @@ async def lifespan(app: FastAPI):
         redis_db.disconnect()
 
 
-app = FastAPI(lifespan=lifespan, title="GraintradeInfo, version=0.1")
+app = FastAPI(
+    lifespan=lifespan,
+    title="GraintradeInfo, version=0.1",
+    docs_url=None if os.getenv("ENV") == "production" else "/docs",
+    redoc_url=None if os.getenv("ENV") == "production" else "/redoc",
+    openapi_url=None if os.getenv("ENV") == "production" else "/openapi.json",
+)
 
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -90,6 +100,68 @@ async def health_check():
     Health check endpoint.
     """
     return {"status": "ok"}
+
+
+# ----------------
+# Premium-only filtered OpenAPI and ReDoc
+
+oauth2_premium_scheme = oauth2_scheme
+
+
+async def _decode_token(token: Annotated[str, Depends(oauth2_premium_scheme)]):
+    """Decode JWT and return payload with basic validation."""
+    import jwt
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        if not isinstance(payload, dict):
+            raise credentials_exception
+        return payload
+    except jwt.PyJWTError:
+        raise credentials_exception
+
+
+async def premium_only(payload: Annotated[Dict, Depends(_decode_token)]):
+    """Allow only users with premium (or higher) subscription to proceed."""
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
+    sub = await subscription_model.get_by_user_id(int(user_id))
+    scope = getattr(getattr(sub, "tarif", None), "scope", None)
+    # Consider premium and above as allowed
+    if scope not in {"premium", "business", "enterprise"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Premium subscription required",
+        )
+    return True
+
+
+def _filter_openapi_schema(schema: Dict) -> Dict:
+    return filter_schema_for_premium(schema)
+
+
+@app.get("/openapi-premium.json", include_in_schema=False)
+async def openapi_premium(_: Annotated[bool, Depends(premium_only)]):
+    """Premium-filtered OpenAPI schema."""
+    base_schema = app.openapi()
+    return _filter_openapi_schema(base_schema)
+
+
+@app.get("/redoc/premium", include_in_schema=False)
+async def redoc_premium(_: Annotated[bool, Depends(premium_only)]):
+    """Premium-only ReDoc view that points to filtered OpenAPI JSON."""
+    return get_redoc_html(
+        openapi_url="/openapi-premium.json",
+        title="Graintrade Premium API docs",
+    )
 
 
 # ----------------
