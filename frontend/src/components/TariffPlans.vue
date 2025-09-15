@@ -102,6 +102,10 @@
                 <i class="bi bi-check-circle text-success"></i> 
                 {{ $t('tariffs.notifyNewItems') }}
               </li>
+              <li v-if="tariff.allow_import_export">
+                <i class="bi bi-check-circle text-success"></i> 
+                {{ $t('tariffs.importExport') }}
+              </li>
             </ul>
           </div>
           <div class="card-footer text-center">
