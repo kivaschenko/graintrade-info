@@ -202,3 +202,16 @@ pnpm-debug.log*
 *.tar
 # Ignore zip files
 *.zip
+
+# Ignore inside docs
+docs/
+
+# Ignore parser inputs
+parsers/inputs/
+# Ignore parser outputs
+parsers/results/
+parsers/outputs/
+# Ignore parser logs
+parsers/logs/
+# Ignore parser temporary files
+parsers/tmp/
