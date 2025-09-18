@@ -124,6 +124,8 @@ celerybeat.pid
 # Environments
 .env
 .env.prod
+.env.production
+.en.prod
 .envprod
 .venv
 env/
@@ -165,7 +167,7 @@ cython_debug/
 
 # VS Code
 #  Add .vscode/ to the .gitignore file if you are using Visual Studio Code
-.vscode/
+# .vscode/
 
 
 ## FRONTEND
@@ -202,3 +204,16 @@ pnpm-debug.log*
 *.tar
 # Ignore zip files
 *.zip
+
+# Ignore inside docs
+docs/
+
+# Ignore parser inputs
+parsers/inputs/
+# Ignore parser outputs
+parsers/results/
+parsers/outputs/
+# Ignore parser logs
+parsers/logs/
+# Ignore parser temporary files
+parsers/tmp/

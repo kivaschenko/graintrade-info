@@ -39,7 +39,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 # Dependency
 
 
-async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = None):
+async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -71,13 +71,13 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)] = No
 async def create_category(
     category: CategoryInDB,
     # background_tasks: BackgroundTasks,
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
+    token: Annotated[str, Depends(oauth2_scheme)],
 ):
     if token is None:
         logging.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id, scopes = await get_current_user_id(token)
-    if "create:category" not in scopes:
+    if "add:category" not in scopes:
         logging.error("Not enough permissions")
         raise HTTPException(status_code=403, detail="Not enough permissions")
     new_category = await category_model.create(category=category)

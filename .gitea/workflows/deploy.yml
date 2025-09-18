@@ -43,6 +43,8 @@ jobs:
             --exclude '.gitea/' \
             --exclude 'node_modules/' \
             --exclude '__pycache__/' \
+            --exclude '.env' \
+            --exclude '.env.production' \
             ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/
 
       - name: Deploy on remote server

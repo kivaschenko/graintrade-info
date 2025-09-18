@@ -73,6 +73,45 @@ async def create(item: ItemInDB, user_id: int) -> ItemInResponse:
     return None
 
 
+async def create_batch(items: List[ItemInDB], user_id: int) -> List[ItemInResponse]:
+    created_items = []
+    async with database.pool.acquire() as conn:
+        # Open a transaction
+        async with conn.transaction():
+            for item in items:
+                query = """
+                    INSERT INTO items (category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, geom)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::numeric, $13::numeric, ST_SetSRID(ST_MakePoint($13::numeric, $12::numeric), 4326))
+                    RETURNING id, uuid, category_id, offer_type, title, description, price, currency, 
+                            amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+                """
+                query2 = (
+                    """INSERT INTO items_users (item_id, user_id) VALUES ($1, $2)"""
+                )
+                query3 = "SELECT increment_items_count($1)"
+                row = await conn.fetchrow(
+                    query,
+                    item.category_id,
+                    item.offer_type,
+                    item.title,
+                    item.description,
+                    item.price,
+                    item.currency,
+                    item.amount,
+                    item.measure,
+                    item.terms_delivery,
+                    item.country,
+                    item.region,
+                    item.latitude,
+                    item.longitude,
+                )
+                new_item = ItemInResponse(**row)
+                created_items.append(new_item)
+                await conn.execute(query2, new_item.id, user_id)
+            await conn.execute(query3, user_id)
+    return created_items
+
+
 async def delete(item_id: int, user_id: int) -> None:
     query = "DELETE FROM items_users WHERE item_id = $1 AND user_id = $2"
     query2 = "DELETE FROM items WHERE id = $1"

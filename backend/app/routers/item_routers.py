@@ -97,7 +97,7 @@ async def create_item(
         logging.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
     # Extend new Item with ctagories name, ua_name etc.
-    new_item.user_id = user_id
+    new_item.user_id = int(user_id)
     # Get category by id
     category: CategoryInResponse = await category_model.get_by_id(
         category_id=item.category_id
@@ -107,6 +107,37 @@ async def create_item(
     logging.info(f"New item created: {new_item}")
     background_tasks.add_task(item_services.send_item_to_queue, new_item)
     return new_item
+
+
+@router.post(
+    "/create-batches-item",
+    response_model=List[ItemInResponse],
+    status_code=201,
+    tags=["Items"],
+)
+async def create_items_batch(
+    items: List[ItemInDB],
+    token: Annotated[str, Depends(oauth2_scheme)],
+):
+    """Create multiple items in a single request for the authenticated user."""
+    if token is None or token == "null" or token == "":
+        logging.error("No token provided")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user_id, scopes = await get_current_user_id(token)
+    if "create:item" not in scopes:
+        logging.error("Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    try:
+        created = await items_model.create_batch(items=items, user_id=int(user_id))
+        for it in created:
+            it.user_id = user_id  # type: ignore
+        return created
+    except Exception as e:
+        logging.error(f"Error in create_items_batch: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
 
 
 @router.get("/items", status_code=200, tags=["Items"])
