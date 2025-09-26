@@ -56,17 +56,3 @@
 #             docker compose down || true
 #             docker compose build --no-cache
 #             docker compose up -d
-            
-#             # Wait for containers to be healthy
-#             timeout=60
-#             while [ $timeout -gt 0 ]; do
-#               if docker compose ps | grep -q "healthy"; then
-#                 echo "Deployment successful!"
-#                 exit 0
-#               fi
-#               sleep 1
-#               timeout=$((timeout-1))
-#               done
-#               echo "Deployment timeout"
-#               exit 1
-#             EOF
