@@ -202,3 +202,10 @@ pnpm-debug.log*
 *.tar
 # Ignore zip files
 *.zip
+
+# Parsers
+parsers/__pycache__/
+parsers/parsers/__pycache__/
+parsers/parsers/results/
+parsers/parsers/.env
+parsers/inputs/
