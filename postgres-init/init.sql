@@ -332,7 +332,7 @@ BEGIN
         (
             'Free',
             'Free plan on graintrade.info for 30 days: add 5 items, 10 map views, 10 geo-search, 10 navigation.',
-            0.00, 'USD', 'free', '30 days', 5, 10, 10, 10,
+            0.00, 'USD', 'free', '30 days', 10, 10, 10, 10,
             'Безкоштовний',
             'Безкоштовний план на graintrade.info на 30 днів: до 5 товарів, 10 переглядів карти, 10 геопошуків, 10 навігацій.',
             '30 днів', 0.00, 'UAH'
@@ -340,7 +340,7 @@ BEGIN
         (
             'Basic',
             'Basic plan on graintrade.info for 30 days: add 10 items, 100 map views, 100 geo-search, 100 navigation, email notifications.',
-            10.00, 'USD', 'basic', '30 days', 10, 100, 100, 100,
+            10.00, 'USD', 'basic', '30 days', 100, 100, 100, 100,
             'Базовий',
             'Базовий план на graintrade.info на 30 днів: до 10 товарів, 100 переглядів карти, 100 геопошуків, 100 навігацій, email сповіщення.',
             '30 днів', 400.00, 'UAH'
@@ -348,7 +348,7 @@ BEGIN
         (
             'Premium',
             'Premium plan on graintrade.info for 30 days: add 30 items, 300 map views, 300 geo-search, 300 navigation, email notifications.',
-            30.00, 'USD', 'premium', '30 days', 30, 300, 300, 300,
+            30.00, 'USD', 'premium', '30 days', 300, 300, 300, 300,
             'Преміум',
             'Преміум план на graintrade.info на 30 днів: до 30 товарів, 300 переглядів карти, 300 геопошуків, 300 навігацій, email сповіщення.',
             '30 днів', 1200.00, 'UAH'
@@ -356,7 +356,7 @@ BEGIN
         (
             'Business',
             'Business plan on graintrade.info for 30 days: add 100 items, 1000 map views, 1000 geo-search, 1000 navigation, email notifications.',
-            100.00, 'USD', 'business', '30 days', 100, 1000, 1000, 1000,
+            100.00, 'USD', 'business', '30 days', 1000, 1000, 1000, 1000,
             'Бізнес',
             'Бізнес план на graintrade.info на 30 днів: до 100 товарів, 1000 переглядів карти, 1000 геопошуків, 1000 навігацій, email сповіщення.',
             '30 днів', 4000.00, 'UAH'
@@ -364,7 +364,7 @@ BEGIN
         (
             'Enterprise',
             'Enterprise plan on graintrade.info for 30 days: add 300 items, 3000 map views, 3000 geo-search, 3000 navigation, email notifications. Export/import items via Excel/CSV.',
-            300.00, 'USD', 'enterprise', '30 days', 300, 3000, 3000, 3000,
+            300.00, 'USD', 'enterprise', '30 days', 3000, 3000, 3000, 3000,
             'Підприємство',
             'План Підприємство на graintrade.info на 30 днів: до 300 товарів, 3000 переглядів карти, 3000 геопошуків, 3000 навігацій, email сповіщення. Експорт/імпорт товарів через Excel/CSV.',
             '30 днів', 12000.00, 'UAH'
