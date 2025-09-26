@@ -4,7 +4,12 @@ from typing import Any, Dict, List
 from telethon import TelegramClient, events
 from telethon.tl.types import Channel, Chat, User
 
-from config import TELEGRAM_API_HASH, TELEGRAM_API_ID, BASE_DIR, TELEGRAM_BOT_TOKEN
+from config import (
+    TELEGRAM_API_HASH,
+    TELEGRAM_API_ID,
+    BASE_DIR,
+    TELEGRAM_PASSWORD,
+)
 from base_parser import BaseParser
 
 RESULTS_DIR = BASE_DIR / "results"
@@ -21,6 +26,7 @@ class TGChannelParser(BaseParser):
     async def start(self):
         await self.client.start(
             phone="+380662760451",
+            # password=TELEGRAM_PASSWORD,
             # bot_token=TELEGRAM_BOT_TOKEN,
         )  # type: ignore
         print("Telegram client started")
@@ -94,6 +100,11 @@ class TGChannelParser(BaseParser):
 
 if __name__ == "__main__":
     parser = TGChannelParser()
-    channel_username = "Zernovaya_Birzha"  # Example channel username
+    # channel_username = "Zernovaya_Birzha"  # Example channel username
+    # channel_username = "zerno_agro_ua"  # Example channel username
+    # channel_username = "zerno_sfera_ua"  # Example channel username
+    # channel_username = "graintorg"  # Example channel username
+    channel_username = "zernou"  # Example channel username
+    # channel_username = "agro_trade"  # Example channel username
     messages = parser.parse(channel_username, limit=100)
     print(f"Fetched {len(messages)} messages from {channel_username}")
