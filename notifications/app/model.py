@@ -1,4 +1,5 @@
 from typing import List
+import logging
 from .database import database
 from .schemas import (
     UserInResponse,
@@ -54,6 +55,33 @@ async def get_item_by_id(item_id: int) -> ItemInResponse:
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, item_id)
     return ItemInResponse(**row)
+
+
+async def create_item_telegram_message_id(
+    item_id: int, telegram_message_id: int, chat_id: int
+):
+    query = """
+        INSERT INTO item_telegram_messages (item_id, telegram_message_id, chat_id)
+        VALUES ($1, $2, $3)
+    """
+    async with database.pool.acquire() as connection:
+        await connection.execute(query, item_id, telegram_message_id, chat_id)
+        logging.info(
+            f"Created/Updated telegram message_id {telegram_message_id} for item_id {item_id} in chat {chat_id}"
+        )
+
+
+async def get_item_telegram_message_id(item_id: int):
+    query = """
+        SELECT telegram_message_id, chat_id
+        FROM item_telegram_messages
+        WHERE item_id = $1
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, item_id)
+        if row:
+            return row["telegram_message_id"], row["chat_id"]
+        return None, None
 
 
 # ------------------

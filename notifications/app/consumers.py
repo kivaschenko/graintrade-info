@@ -25,6 +25,8 @@ from .config import (
 from .channels.email import send_email
 from .channels.telegram_ptb import send_telegram_message
 from .channels.viber import send_viber_message
+from .model import create_item_telegram_message_id
+from .channels.telegram_ptb import delete_telegram_message
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = Environment(loader=FileSystemLoader(BASE_DIR / "app" / "templates"))
@@ -83,13 +85,14 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
         # 'created_at': '2025-09-06 11:52:41.205496',
         # 'owner_id': 'None', 'category': 'None', 'user_id': '6',
         # 'category_name': 'Buckwheat', 'category_ua_name': 'Гречка'}
+        item_id = int(data["id"])
         offer_type = data.get("offer_type")
         ua_offer_type = OFFER_TYPES_UA.get(offer_type)
         en_offer_type = offer_type.capitalize()
         ua_title = f"{ua_offer_type} {data.get('category_ua_name')}"
         en_title = f"{en_offer_type} {data.get('category_name')}"
         if ENABLE_TELEGRAM and TELEGRAM_CHANNEL_ID:
-            item_url = f"{BASE_URL}/items/{data['id']}"
+            item_url = f"{BASE_URL}/items/{item_id}"
             type_icon = "🟢" if offer_type == "sell" else "🔴"
 
             tg_text = (
@@ -101,8 +104,15 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
                 f"   <b>Опис (Description):</b> {data.get('description')}\n\n"
                 f'➡️ <a href="{item_url}">Детальніше (Details)</a>'
             )
-            await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
-
+            message = await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
+            if not message:
+                logging.error("Failed to send Telegram message.")
+                return
+            message_id = message.message_id
+            chat = message.chat
+            if message and chat:
+                await create_item_telegram_message_id(item_id, message_id, chat.id)
+                logging.info(f"Telegram message sent to channel {TELEGRAM_CHANNEL_ID}")
         try:
             preferences = await get_users_preferences(
                 int(data["category_id"]), data["country"]
@@ -226,3 +236,30 @@ async def handle_password_recovery_notification(
             logging.info(f"Password recovery email sent to {data['email']}")
         except Exception as e:
             logging.error(f"Error processing password recovery notification: {e}")
+
+
+async def handle_delete_item_notification(
+    msg: aio_pika.abc.AbstractIncomingMessage,
+):
+    async with msg.process():
+        data = json.loads(msg.body.decode())
+        item_id = int(data["id"])
+        if ENABLE_TELEGRAM and TELEGRAM_CHANNEL_ID:
+            item_telegram_message = await get_item_telegram_message(item_id)
+            if not item_telegram_message:
+                logging.warning(f"No telegram message found for item ID: {item_id}")
+                return
+            telegram_message_id = item_telegram_message.telegram_message_id
+            chat_id = item_telegram_message.chat_id
+            if not telegram_message_id or not chat_id:
+                logging.warning(f"Invalid telegram message data for item ID: {item_id}")
+                return
+            deleted = await delete_telegram_message(chat_id, telegram_message_id)
+            if deleted is False:
+                logging.error(
+                    f"Failed to delete Telegram message {telegram_message_id} in chat {chat_id}"
+                )
+            else:
+                logging.info(
+                    f"Telegram message {telegram_message_id} in chat {chat_id} deleted successfully"
+                )
