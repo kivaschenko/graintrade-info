@@ -115,14 +115,14 @@ async def create_batch(items: List[ItemInDB], user_id: int) -> List[ItemInRespon
 async def delete(item_id: int, user_id: int) -> None:
     query = "DELETE FROM items_users WHERE item_id = $1 AND user_id = $2"
     query2 = "DELETE FROM items WHERE id = $1"
-    count_query = "SELECT decrement_items_count($1)"
+    # count_query = "SELECT decrement_items_count($1)"
     try:
         async with database.pool.acquire() as conn:
             # Open a transaction
             async with conn.transaction():
                 await conn.execute(query, item_id, user_id)
                 await conn.execute(query2, item_id)
-                await conn.execute(count_query, user_id)
+                # await conn.execute(count_query, user_id)
     except asyncpg.exceptions.ForeignKeyViolationError:
         raise ValueError("Item does not belong to the user")
 
