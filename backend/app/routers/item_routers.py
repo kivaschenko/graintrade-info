@@ -222,6 +222,7 @@ async def delete_item_bound_to_user(
     token: Annotated[
         str, Depends(oauth2_scheme)
     ] = "null",  # Default to 'null' if no token is provided
+    background_tasks: BackgroundTasks = None,
 ):
     """Delete an item by its ID, only if the user has the 'delete:item' scope."""
     if token == "null":
@@ -232,7 +233,22 @@ async def delete_item_bound_to_user(
         user_id, scopes = await get_current_user_id(token)
         if "delete:item" not in scopes:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        # Get telegram message_id and chat_id before deleting the item
+        telegram_message_id, chat_id = await items_model.get_item_telegram_message(
+            item_id
+        )
+        if telegram_message_id is None or chat_id is None:
+            telegram_message_id = 0
+            chat_id = 0
+        # Proceed to delete the item
         await items_model.delete(item_id, int(user_id))
+        background_tasks.add_task(
+            item_services.send_deleted_item_to_queue,
+            item_id=item_id,
+            telegram_message_id=telegram_message_id,
+            chat_id=chat_id,
+        )
+        logging.info(f"Item with id {item_id} deleted by user {user_id}")
         return {"status": "success", "message": "Item deleted successfully"}
     except Exception as e:
         return {"status": "error", "message": f"Something went wrong: {e}"}

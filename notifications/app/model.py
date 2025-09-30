@@ -71,19 +71,6 @@ async def create_item_telegram_message_id(
         )
 
 
-async def get_item_telegram_message_id(item_id: int):
-    query = """
-        SELECT telegram_message_id, chat_id
-        FROM item_telegram_messages
-        WHERE item_id = $1
-    """
-    async with database.pool.acquire() as connection:
-        row = await connection.fetchrow(query, item_id)
-        if row:
-            return row["telegram_message_id"], row["chat_id"]
-        return None, None
-
-
 # ------------------
 # GET Category models
 
@@ -100,7 +87,7 @@ async def get_all_categories() -> List[CategoryInResponse]:
         return [CategoryInResponse(**row) for row in rows]
 
 
-async def get_category_by_name(name: str) -> CategoryInResponse:
+async def get_category_by_name(name: str) -> CategoryInResponse | None:
     """Retrieve a category by its name."""
     query = """
         SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
@@ -114,7 +101,7 @@ async def get_category_by_name(name: str) -> CategoryInResponse:
         return None
 
 
-async def get_category_by_id(category_id: int) -> CategoryInResponse:
+async def get_category_by_id(category_id: int) -> CategoryInResponse | None:
     """Retrieve a category by its ID."""
     query = """
         SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua

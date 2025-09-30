@@ -15,18 +15,24 @@ bot = Bot(token=TELEGRAM_TOKEN)
 async def send_telegram_message(
     chat_id: str, text: str, parse_mode: str = ParseMode.HTML
 ):
+    """Send a telegram message and return the Message object.
+
+    Returns None on failure.
+    """
     if not bot:
         logging.warning("Telegram disabled: TELEGRAM_TOKEN not set")
-        return
+        return None
     try:
         message = await bot.send_message(
             chat_id=chat_id, text=text, parse_mode=parse_mode
         )
-        logging.info(f"[TELEGRAM] -> {chat_id} Message ID: {message.message_id}")
+        logging.info(
+            f"[TELEGRAM] Sent message_id={message.message_id} to chat_id={message.chat.id}"
+        )
         return message
     except Exception as e:
-        logging.error(f"Telegram error: {e}")
-        return 0
+        logging.error(f"Telegram send error (chat {chat_id}): {e}")
+        return None
 
 
 # Message(
@@ -47,13 +53,18 @@ async def send_telegram_message(
 # sender_chat=Chat(id=-1003098631999, title='Graintrade.info - зернова біржа', type=<ChatType.CHANNEL>, username='graintradeinfo'), supergroup_chat_created=False, text='🔴 Купую Коріандр (Buy Coriander)\n\n💰 Ціна (Price): 550.0 USD\n📦 Кількість (Amount): 20 metric ton\n📍 Місце (Point): Ukraine, Odesa Oblast\n🚚 Умови (Incoterms): CPT\n   Опис (Description): \n\n➡️ Детальніше (Details)')
 
 
-async def delete_telegram_message(chat_id: int, message_id: int):
+async def delete_telegram_message(chat_id: int, message_id: int) -> bool:
+    """Delete a telegram message. Returns True on success, False on failure."""
+    logging.info(f"Deleting telegram message_id={message_id} in chat_id={chat_id}")
     if not bot:
         logging.warning("Telegram disabled: TELEGRAM_TOKEN not set")
-        return
+        return False
     try:
         await bot.delete_message(chat_id=chat_id, message_id=message_id)
-        logging.info(f"[TELEGRAM] Deleted message {message_id} in chat {chat_id}")
+        logging.info(f"[TELEGRAM] Deleted message_id={message_id} in chat_id={chat_id}")
+        return True
     except Exception as e:
-        logging.error(f"Telegram delete message error: {e}")
+        logging.error(
+            f"Telegram delete message error for message_id={message_id} chat_id={chat_id}: {e}"
+        )
         return False

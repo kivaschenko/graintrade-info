@@ -61,7 +61,7 @@ async def get_users_preferences(
     category_id: int, country: str = "Ukraine"
 ) -> List[PreferencesSchema]:
     preferences: List[PreferencesSchema] = await get_all_users_preferences()
-    category: CategoryInResponse = await get_category_by_id(category_id)
+    category: CategoryInResponse = await get_category_by_id(category_id)  # type: ignore
     if not category:
         return []
     users = []
@@ -89,19 +89,21 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
         offer_type = data.get("offer_type")
         ua_offer_type = OFFER_TYPES_UA.get(offer_type)
         en_offer_type = offer_type.capitalize()
-        ua_title = f"{ua_offer_type} {data.get('category_ua_name')}"
-        en_title = f"{en_offer_type} {data.get('category_name')}"
+        ua_title = f"{ua_offer_type} #{data.get('category_ua_name')}"
+        en_title = f"{en_offer_type} #{data.get('category_name')}"
         if ENABLE_TELEGRAM and TELEGRAM_CHANNEL_ID:
             item_url = f"{BASE_URL}/items/{item_id}"
             type_icon = "🟢" if offer_type == "sell" else "🔴"
-
+            description = (data.get("description") or "—").strip()
+            if len(description) > 300:
+                description = description[:297] + "..."
             tg_text = (
                 f"{type_icon} <b>{ua_title} ({en_title})</b>\n\n"
                 f"💰 <b>Ціна (Price):</b> {data.get('price')} {data.get('currency')}\n"
                 f"📦 <b>Кількість (Amount):</b> {data.get('amount')} {data.get('measure')}\n"
                 f"📍 <b>Місце (Point):</b> {data.get('country')}{', ' + data.get('region') if data.get('region') else ''}\n"
                 f"🚚 <b>Умови (Incoterms):</b> {data.get('terms_delivery', '—')}\n"
-                f"   <b>Опис (Description):</b> {data.get('description')}\n\n"
+                f"📝 <b>Опис (Description):</b> description\n\n"
                 f'➡️ <a href="{item_url}">Детальніше (Details)</a>'
             )
             message = await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
@@ -238,23 +240,28 @@ async def handle_password_recovery_notification(
             logging.error(f"Error processing password recovery notification: {e}")
 
 
-async def handle_delete_item_notification(
+async def handle_deleted_item_notification(
     msg: aio_pika.abc.AbstractIncomingMessage,
 ):
     async with msg.process():
         data = json.loads(msg.body.decode())
         item_id = int(data["id"])
+        telegram_message_id = int(data.get("telegram_message_id", 0))
+        chat_id = int(data.get("chat_id", 0))
         if ENABLE_TELEGRAM and TELEGRAM_CHANNEL_ID:
-            item_telegram_message = await get_item_telegram_message(item_id)
-            if not item_telegram_message:
-                logging.warning(f"No telegram message found for item ID: {item_id}")
+            if not telegram_message_id:
+                logging.warning(
+                    f"No telegram message found for item ID: {item_id} (cannot delete)"
+                )
                 return
-            telegram_message_id = item_telegram_message.telegram_message_id
-            chat_id = item_telegram_message.chat_id
-            if not telegram_message_id or not chat_id:
-                logging.warning(f"Invalid telegram message data for item ID: {item_id}")
+            if not chat_id:
+                logging.warning(
+                    f"Chat id missing for stored telegram message {telegram_message_id} (item {item_id})"
+                )
                 return
-            deleted = await delete_telegram_message(chat_id, telegram_message_id)
+            deleted = await delete_telegram_message(
+                chat_id=chat_id, message_id=telegram_message_id
+            )
             if deleted is False:
                 logging.error(
                     f"Failed to delete Telegram message {telegram_message_id} in chat {chat_id}"
