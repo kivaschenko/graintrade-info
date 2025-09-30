@@ -403,3 +403,13 @@ async def get_countries_list():
         if not rows:
             return []
     return [r.get("country") for r in rows]
+
+
+async def get_item_telegram_message(item_id: int):
+    query = """SELECT telegram_message_id, chat_id FROM public.item_telegram_messages WHERE item_id = $1 LIMIT 1;
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, item_id)
+        if row:
+            return row["telegram_message_id"], row["chat_id"]
+        return None, None

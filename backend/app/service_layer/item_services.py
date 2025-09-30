@@ -18,3 +18,25 @@ async def send_item_to_queue(
     finally:
         await rabbitmq.close()
         # Ensure the connection is closed
+
+
+async def send_deleted_item_to_queue(
+    item_id: int,
+    telegram_message_id: int,
+    chat_id: int,
+    queue: QueueName = QueueName.DELETED_ITEMS,
+):
+    try:
+        await rabbitmq.connect()
+        message_body = {
+            "id": str(item_id),
+            "telegram_message_id": str(telegram_message_id),
+            "chat_id": str(chat_id),
+        }
+        await rabbitmq.publish(message=message_body, queue=queue)
+        logging.info(f"Sent deleted item ID {item_id} to queue {queue}")
+    except Exception as e:
+        logging.error(f"Failed to send deleted item to RabbitMQ: {e}")
+    finally:
+        await rabbitmq.close()
+        # Ensure the connection is closed

@@ -9,6 +9,7 @@ from .consumers import (
     handle_message_notification,
     handle_password_recovery_notification,
     handle_payment_notification,
+    handle_deleted_item_notification,
 )
 
 
@@ -42,6 +43,13 @@ async def main():
     await rabbitmq.consume(
         queue=QueueName.RECOVERY_EVENTS.value,
         callback=handle_password_recovery_notification,
+    )
+
+    # Start consuming deleted item notifications
+    logging.info(f"Consuming from queue: {QueueName.DELETED_ITEMS.value}")
+    await rabbitmq.consume(
+        queue=QueueName.DELETED_ITEMS.value,
+        callback=handle_deleted_item_notification,
     )
 
     # Keep the script running to listen for messages

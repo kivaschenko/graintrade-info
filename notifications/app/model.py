@@ -1,4 +1,5 @@
 from typing import List
+import logging
 from .database import database
 from .schemas import (
     UserInResponse,
@@ -56,6 +57,20 @@ async def get_item_by_id(item_id: int) -> ItemInResponse:
     return ItemInResponse(**row)
 
 
+async def create_item_telegram_message_id(
+    item_id: int, telegram_message_id: int, chat_id: int
+):
+    query = """
+        INSERT INTO item_telegram_messages (item_id, telegram_message_id, chat_id)
+        VALUES ($1, $2, $3)
+    """
+    async with database.pool.acquire() as connection:
+        await connection.execute(query, item_id, telegram_message_id, chat_id)
+        logging.info(
+            f"Created/Updated telegram message_id {telegram_message_id} for item_id {item_id} in chat {chat_id}"
+        )
+
+
 # ------------------
 # GET Category models
 
@@ -72,7 +87,7 @@ async def get_all_categories() -> List[CategoryInResponse]:
         return [CategoryInResponse(**row) for row in rows]
 
 
-async def get_category_by_name(name: str) -> CategoryInResponse:
+async def get_category_by_name(name: str) -> CategoryInResponse | None:
     """Retrieve a category by its name."""
     query = """
         SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
@@ -86,7 +101,7 @@ async def get_category_by_name(name: str) -> CategoryInResponse:
         return None
 
 
-async def get_category_by_id(category_id: int) -> CategoryInResponse:
+async def get_category_by_id(category_id: int) -> CategoryInResponse | None:
     """Retrieve a category by its ID."""
     query = """
         SELECT id, name, description, ua_name, ua_description, parent_category, parent_category_ua
