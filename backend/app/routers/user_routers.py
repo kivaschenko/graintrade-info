@@ -73,20 +73,6 @@ SCOPES = {
         "delete:item",
         "view:map",
     ],
-    "business": [
-        "me",
-        "create:item",
-        "read:item",
-        "delete:item",
-        "view:map",
-    ],
-    "enterprise": [
-        "me",
-        "create:item",
-        "read:item",
-        "delete:item",
-        "view:map",
-    ],
 }
 
 

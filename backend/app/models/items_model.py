@@ -115,14 +115,14 @@ async def create_batch(items: List[ItemInDB], user_id: int) -> List[ItemInRespon
 async def delete(item_id: int, user_id: int) -> None:
     query = "DELETE FROM items_users WHERE item_id = $1 AND user_id = $2"
     query2 = "DELETE FROM items WHERE id = $1"
-    count_query = "SELECT decrement_items_count($1)"
+    # count_query = "SELECT decrement_items_count($1)"
     try:
         async with database.pool.acquire() as conn:
             # Open a transaction
             async with conn.transaction():
                 await conn.execute(query, item_id, user_id)
                 await conn.execute(query2, item_id)
-                await conn.execute(count_query, user_id)
+                # await conn.execute(count_query, user_id)
     except asyncpg.exceptions.ForeignKeyViolationError:
         raise ValueError("Item does not belong to the user")
 
@@ -403,3 +403,13 @@ async def get_countries_list():
         if not rows:
             return []
     return [r.get("country") for r in rows]
+
+
+async def get_item_telegram_message(item_id: int):
+    query = """SELECT telegram_message_id, chat_id FROM public.item_telegram_messages WHERE item_id = $1 LIMIT 1;
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, item_id)
+        if row:
+            return row["telegram_message_id"], row["chat_id"]
+        return None, None

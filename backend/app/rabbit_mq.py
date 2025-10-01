@@ -33,6 +33,7 @@ class QueueName(StrEnum):
     PAYMENT_EVENTS = "payment.events"
     MESSAGE_EVENTS = "message.events"
     RECOVERY_EVENTS = "recovery.events"
+    DELETED_ITEMS = "deleted.items"
 
 
 # Generate the list of all queue names dynamically
