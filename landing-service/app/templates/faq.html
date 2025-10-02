@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t.nav.faq }} - {{ t.site_title }}{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1 class="page-title">{{ t.faq.title }}</h1>
+        <p class="page-subtitle">Find answers to commonly asked questions about GrainTrade</p>
+        <nav class="breadcrumb">
+            <a href="?lang={{ lang }}">{{ t.nav.home }}</a>
+            <span>/</span>
+            <span>{{ t.nav.faq }}</span>
+        </nav>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="section">
+    <div class="container">
+        <div class="faq-container">
+            <div class="faq-sidebar">
+                <h3>Categories</h3>
+                <ul class="faq-categories">
+                    <li><a href="#getting-started" class="faq-category-link active">Getting Started</a></li>
+                    <li><a href="#trading" class="faq-category-link">Trading</a></li>
+                    <li><a href="#payments" class="faq-category-link">Payments</a></li>
+                    <li><a href="#technical" class="faq-category-link">Technical</a></li>
+                </ul>
+            </div>
+            
+            <div class="faq-content">
+                <div class="faq-section" id="getting-started">
+                    <h2 class="faq-section-title">Getting Started</h2>
+                    {% for item in t.faq.items %}
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ item.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ item.answer }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Additional FAQ items for English version -->
+                    {% if lang == 'en' %}
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>Can I use GrainTrade on mobile devices?</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Yes, GrainTrade is fully responsive and works great on all mobile devices and tablets. We also have mobile apps in development.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="faq-section" id="trading">
+                    <h2 class="faq-section-title">Trading Process</h2>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>How do I know if a seller is trustworthy?</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>We have a comprehensive rating system where users rate each other after transactions. You can also see verification badges, transaction history, and read reviews from other traders.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>What happens if there's a dispute?</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>GrainTrade offers mediation services for disputes. Our support team reviews chat logs, transaction details, and helps resolve conflicts fairly. We also have escrow services for larger transactions.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>Can I trade internationally?</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Currently, GrainTrade focuses on domestic trading within Ukraine. International trading features are planned for future releases.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="faq-section" id="payments">
+                    <h2 class="faq-section-title">Payments & Security</h2>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>What payment methods are accepted?</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>We support bank transfers, LiqPay (PrivatBank), and cash payments. For large transactions, we recommend using our escrow service for added security.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>How secure are transactions on GrainTrade?</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>We use SSL encryption, secure payment processors, and offer escrow services. All user data is protected according to international security standards.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="faq-section" id="technical">
+                    <h2 class="faq-section-title">Technical Support</h2>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>I'm having trouble uploading photos. What should I do?</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Make sure your photos are under 5MB and in JPG or PNG format. Clear your browser cache or try a different browser. Contact support if issues persist.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>How do I change my account settings?</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Go to your profile page and click "Edit Profile." You can update your contact information, notification preferences, and account details there.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Support Section -->
+<section class="section section-alt">
+    <div class="container">
+        <div class="support-section">
+            <h2 class="section-title">Still Need Help?</h2>
+            <p class="section-subtitle">Our support team is here to help you with any questions</p>
+            
+            <div class="support-options">
+                <div class="support-option">
+                    <div class="support-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3>Email Support</h3>
+                    <p>Send us an email and we'll respond within 24 hours</p>
+                    <a href="mailto:support@graintrade.info" class="btn btn-secondary">
+                        Contact Support
+                    </a>
+                </div>
+                
+                <div class="support-option">
+                    <div class="support-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <h3>Phone Support</h3>
+                    <p>Call us during business hours for immediate assistance</p>
+                    <a href="tel:+380123456789" class="btn btn-secondary">
+                        Call Now
+                    </a>
+                </div>
+                
+                <div class="support-option">
+                    <div class="support-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h3>Live Chat</h3>
+                    <p>Chat with our support team in real-time</p>
+                    <button class="btn btn-secondary" onclick="openLiveChat()">
+                        Start Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// FAQ functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const faqItems = document.querySelectorAll('.faq-item');
+    const categoryLinks = document.querySelectorAll('.faq-category-link');
+    
+    // FAQ toggle functionality
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        const toggle = item.querySelector('.faq-toggle i');
+        
+        question.addEventListener('click', () => {
+            const isOpen = answer.style.display === 'block';
+            
+            // Close all other FAQ items
+            faqItems.forEach(otherItem => {
+                const otherAnswer = otherItem.querySelector('.faq-answer');
+                const otherToggle = otherItem.querySelector('.faq-toggle i');
+                otherAnswer.style.display = 'none';
+                otherToggle.className = 'fas fa-plus';
+            });
+            
+            // Toggle current item
+            if (!isOpen) {
+                answer.style.display = 'block';
+                toggle.className = 'fas fa-minus';
+            }
+        });
+    });
+    
+    // Category navigation
+    categoryLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Remove active class from all links
+            categoryLinks.forEach(l => l.classList.remove('active'));
+            
+            // Add active class to clicked link
+            link.classList.add('active');
+            
+            // Scroll to section
+            const targetId = link.getAttribute('href');
+            const targetSection = document.querySelector(targetId);
+            if (targetSection) {
+                targetSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+});
+
+function openLiveChat() {
+    // Placeholder for live chat functionality
+    alert('Live chat feature coming soon! Please use email support for now.');
+}
+</script>
+{% endblock %}

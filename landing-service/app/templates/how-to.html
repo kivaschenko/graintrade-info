@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t.nav.how_to }} - {{ t.site_title }}{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1 class="page-title">{{ t.how_to_use.title }}</h1>
+        <p class="page-subtitle">Complete guide to using GrainTrade platform</p>
+        <nav class="breadcrumb">
+            <a href="?lang={{ lang }}">{{ t.nav.home }}</a>
+            <span>/</span>
+            <span>{{ t.nav.how_to }}</span>
+        </nav>
+    </div>
+</section>
+
+<!-- How-to Steps Section -->
+<section class="section">
+    <div class="container">
+        <div class="how-to-content">
+            {% for step in t.how_to_use.steps %}
+            <div class="how-to-step">
+                <div class="step-header">
+                    <div class="step-number-large">{{ loop.index }}</div>
+                    <h2 class="step-title-large">{{ step.title }}</h2>
+                </div>
+                
+                <div class="step-content">
+                    <div class="step-text">
+                        <p>{{ step.description }}</p>
+                        
+                        <!-- Additional detailed instructions for each step -->
+                        {% if loop.index == 1 %}
+                        <div class="step-details">
+                            <h4>Registration Details:</h4>
+                            <ul>
+                                <li>Click the "Sign Up" button on the main page</li>
+                                <li>Fill in your email, password, and basic information</li>
+                                <li>Verify your email address</li>
+                                <li>Complete your profile with contact details</li>
+                            </ul>
+                        </div>
+                        {% elif loop.index == 2 %}
+                        <div class="step-details">
+                            <h4>Creating Listings:</h4>
+                            <ul>
+                                <li>Choose "Sell" or "Buy" option</li>
+                                <li>Select grain type and specify quantity</li>
+                                <li>Set your price and location</li>
+                                <li>Add photos and detailed description</li>
+                                <li>Publish your listing</li>
+                            </ul>
+                        </div>
+                        {% elif loop.index == 3 %}
+                        <div class="step-details">
+                            <h4>Finding Partners:</h4>
+                            <ul>
+                                <li>Use the interactive map to see offers near you</li>
+                                <li>Filter by grain type, quantity, and distance</li>
+                                <li>Browse categories and saved searches</li>
+                                <li>Check seller/buyer ratings and reviews</li>
+                            </ul>
+                        </div>
+                        {% elif loop.index == 4 %}
+                        <div class="step-details">
+                            <h4>Negotiation Process:</h4>
+                            <ul>
+                                <li>Start a chat conversation with potential partners</li>
+                                <li>Discuss price, quantity, and delivery terms</li>
+                                <li>Exchange necessary documentation</li>
+                                <li>Agree on payment and delivery methods</li>
+                            </ul>
+                        </div>
+                        {% elif loop.index == 5 %}
+                        <div class="step-details">
+                            <h4>Completing Transactions:</h4>
+                            <ul>
+                                <li>Use platform's secure payment system</li>
+                                <li>Arrange logistics and delivery</li>
+                                <li>Confirm receipt and quality</li>
+                                <li>Leave feedback for your trading partner</li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="step-image">
+                        <img src="{{ url_for('static', filename='images/how-to/step-' + loop.index|string + '.jpg') }}" 
+                             alt="{{ step.title }}" 
+                             class="step-img"
+                             loading="lazy">
+                        <div class="image-caption">{{ step.title }} - Screenshot</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Tips Section -->
+<section class="section section-alt">
+    <div class="container">
+        <h2 class="section-title">Pro Tips for Success</h2>
+        <div class="tips-grid">
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3>Quality Photos</h3>
+                <p>Upload high-quality photos of your grain to attract more buyers and build trust.</p>
+            </div>
+            
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>Respond Quickly</h3>
+                <p>Fast response times in chat conversations lead to more successful deals.</p>
+            </div>
+            
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Competitive Pricing</h3>
+                <p>Research market prices and offer competitive rates to close deals faster.</p>
+            </div>
+            
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <h3>Build Reputation</h3>
+                <p>Complete transactions professionally to build positive reviews and repeat business.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Video Tutorial Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Video Tutorial</h2>
+        <div class="video-container">
+            <div class="video-placeholder">
+                <i class="fas fa-play-circle"></i>
+                <p>Video tutorial coming soon</p>
+                <p class="video-description">Watch our comprehensive video guide to get started with GrainTrade quickly and efficiently.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content">
+            <h2>Ready to Start Trading?</h2>
+            <p>Join GrainTrade today and connect with grain traders worldwide</p>
+            <div class="cta-buttons">
+                <a href="https://graintrade.info" class="btn btn-primary btn-large" target="_blank">
+                    Start Now
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+                <a href="/faq?lang={{ lang }}" class="btn btn-secondary btn-large">
+                    View FAQ
+                    <i class="fas fa-question-circle"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

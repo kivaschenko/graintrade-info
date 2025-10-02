@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title">{{ t.hero.title }}</h1>
+            <p class="hero-subtitle">{{ t.hero.subtitle }}</p>
+            <a href="https://graintrade.info" class="btn btn-primary btn-large" target="_blank">
+                {{ t.hero.cta }}
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="hero-image">
+            <img src="{{ url_for('static', filename='images/hero-grain.jpg') }}" alt="Grain Trading" class="hero-img">
+        </div>
+    </div>
+</section>
+
+<!-- What is GrainTrade Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">{{ t.what_is.title }}</h2>
+        <div class="section-content">
+            <p class="section-text">{{ t.what_is.description | safe }}</p>
+        </div>
+    </div>
+</section>
+
+<!-- Advantages Section -->
+<section class="section section-alt">
+    <div class="container">
+        <h2 class="section-title">{{ t.advantages.title }}</h2>
+        <div class="advantages-grid">
+            {% if t.advantages.items %}
+            {% for advantage in t.advantages.items %}
+            <div class="advantage-card">
+                <div class="advantage-icon">
+                    {% if loop.index == 1 %}
+                        <i class="fas fa-map-marked-alt"></i>
+                    {% elif loop.index == 2 %}
+                        <i class="fas fa-comments"></i>
+                    {% elif loop.index == 3 %}
+                        <i class="fas fa-bell"></i>
+                    {% elif loop.index == 4 %}
+                        <i class="fas fa-globe"></i>
+                    {% elif loop.index == 5 %}
+                        <i class="fas fa-shield-alt"></i>
+                    {% else %}
+                        <i class="fas fa-rocket"></i>
+                    {% endif %}
+                </div>
+                <p class="advantage-text">{{ advantage | safe }}</p>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- For Whom Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">{{ t.for_whom.title }}</h2>
+        <div class="for-whom-grid">
+            <div class="for-whom-card">
+                <div class="for-whom-emoji">🌾</div>
+                <h3>{{ t.for_whom.farmers.split('–')[0] }}</h3>
+                <p>{{ t.for_whom.farmers.split('–')[1] if '–' in t.for_whom.farmers else t.for_whom.farmers }}</p>
+            </div>
+            <div class="for-whom-card">
+                <div class="for-whom-emoji">🚛</div>
+                <h3>{{ t.for_whom.traders.split('–')[0] }}</h3>
+                <p>{{ t.for_whom.traders.split('–')[1] if '–' in t.for_whom.traders else t.for_whom.traders }}</p>
+            </div>
+            <div class="for-whom-card">
+                <div class="for-whom-emoji">🌍</div>
+                <h3>{{ t.for_whom.agribusiness.split('–')[0] }}</h3>
+                <p>{{ t.for_whom.agribusiness.split('–')[1] if '–' in t.for_whom.agribusiness else t.for_whom.agribusiness }}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick How-to Section -->
+<section class="section section-alt">
+    <div class="container">
+        <h2 class="section-title">{{ t.how_to_use.title }}</h2>
+        <div class="steps-grid">
+            {% for step in t.how_to_use.steps %}
+            <div class="step-card">
+                <div class="step-number">{{ loop.index }}</div>
+                <h3 class="step-title">{{ step.title }}</h3>
+                <p class="step-description">{{ step.description }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="section-cta">
+            <a href="/how-to?lang={{ lang }}" class="btn btn-secondary">
+                {{ t.nav.how_to }}
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content">
+            <h2>{{ t.hero.cta }}</h2>
+            <p>Join thousands of farmers and traders already using GrainTrade</p>
+            <a href="https://graintrade.info" class="btn btn-primary btn-large" target="_blank">
+                {{ t.nav.platform }}
+                <i class="fas fa-external-link-alt"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
