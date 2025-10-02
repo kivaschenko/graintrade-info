@@ -44,43 +44,43 @@
                         </div>
                         {% elif loop.index == 2 %}
                         <div class="step-details">
-                            <h4>Creating Listings:</h4>
+                            <h4>{% if lang == 'uk' %}Розміщення пропозицій:{% else %}Posting Offers:{% endif %}</h4>
                             <ul>
-                                <li>Choose "Sell" or "Buy" option</li>
-                                <li>Select grain type and specify quantity</li>
-                                <li>Set your price and location</li>
-                                <li>Add photos and detailed description</li>
-                                <li>Publish your listing</li>
+                                <li>{% if lang == 'uk' %}Оберіть "Продати" або "Купити"{% else %}Choose "Sell" or "Buy" option{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Оберіть тип зерна та вкажіть кількість{% else %}Select grain type and specify quantity{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Встановіть орієнтовну ціну та місцезнаходження{% else %}Set indicative price and location{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Додайте фото та детальний опис{% else %}Add photos and detailed description{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Опублікуйте свою пропозицію{% else %}Publish your offer{% endif %}</li>
                             </ul>
                         </div>
                         {% elif loop.index == 3 %}
                         <div class="step-details">
-                            <h4>Finding Partners:</h4>
+                            <h4>{% if lang == 'uk' %}Пошук партнерів:{% else %}Finding Partners:{% endif %}</h4>
                             <ul>
-                                <li>Use the interactive map to see offers near you</li>
-                                <li>Filter by grain type, quantity, and distance</li>
-                                <li>Browse categories and saved searches</li>
-                                <li>Check seller/buyer ratings and reviews</li>
+                                <li>{% if lang == 'uk' %}Використовуйте інтерактивну карту для перегляду пропозицій поблизу{% else %}Use the interactive map to see offers near you{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Фільтруйте за типом зерна, кількістю та відстанню{% else %}Filter by grain type, quantity, and distance{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Переглядайте категорії та збережені пошуки{% else %}Browse categories and saved searches{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Перевіряйте рейтинги та відгуки користувачів{% else %}Check user ratings and reviews{% endif %}</li>
                             </ul>
                         </div>
                         {% elif loop.index == 4 %}
                         <div class="step-details">
-                            <h4>Negotiation Process:</h4>
+                            <h4>{% if lang == 'uk' %}Процес переговорів:{% else %}Negotiation Process:{% endif %}</h4>
                             <ul>
-                                <li>Start a chat conversation with potential partners</li>
-                                <li>Discuss price, quantity, and delivery terms</li>
-                                <li>Exchange necessary documentation</li>
-                                <li>Agree on payment and delivery methods</li>
+                                <li>{% if lang == 'uk' %}Розпочніть розмову в чаті з потенційними партнерами{% else %}Start a chat conversation with potential partners{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Обговоріть ціну, кількість та умови поставки{% else %}Discuss price, quantity, and delivery terms{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Обміняйтеся необхідною документацією{% else %}Exchange necessary documentation{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Домовтеся про методи оплати та доставки{% else %}Agree on payment and delivery methods{% endif %}</li>
                             </ul>
                         </div>
                         {% elif loop.index == 5 %}
                         <div class="step-details">
-                            <h4>Completing Transactions:</h4>
+                            <h4>{% if lang == 'uk' %}Самостійні домовленості:{% else %}Independent Arrangements:{% endif %}</h4>
                             <ul>
-                                <li>Use platform's secure payment system</li>
-                                <li>Arrange logistics and delivery</li>
-                                <li>Confirm receipt and quality</li>
-                                <li>Leave feedback for your trading partner</li>
+                                <li>{% if lang == 'uk' %}Домовтеся про спосіб оплати між собою{% else %}Agree on payment method between yourselves{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Організуйте логістику та доставку{% else %}Arrange logistics and delivery{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Підтвердьте отримання та якість{% else %}Confirm receipt and quality{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Залиште відгук про вашого торговельного партнера{% else %}Leave feedback for your trading partner{% endif %}</li>
                             </ul>
                         </div>
                         {% endif %}
@@ -117,24 +117,24 @@
                 <div class="tip-icon">
                     <i class="fas fa-clock"></i>
                 </div>
-                <h3>Respond Quickly</h3>
-                <p>Fast response times in chat conversations lead to more successful deals.</p>
+                <h3>{% if lang == 'uk' %}Швидко відповідайте{% else %}Respond Quickly{% endif %}</h3>
+                <p>{% if lang == 'uk' %}Швидкі відповіді в чаті призводять до більш успішних переговорів.{% else %}Fast response times in chat conversations lead to more successful negotiations.{% endif %}</p>
             </div>
             
             <div class="tip-card">
                 <div class="tip-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
-                <h3>Competitive Pricing</h3>
-                <p>Research market prices and offer competitive rates to close deals faster.</p>
+                <h3>{% if lang == 'uk' %}Конкурентні ціни{% else %}Fair Pricing{% endif %}</h3>
+                <p>{% if lang == 'uk' %}Досліджуйте ринкові ціни та пропонуйте справедливі ставки для успішних переговорів.{% else %}Research market prices and offer fair rates for successful negotiations.{% endif %}</p>
             </div>
             
             <div class="tip-card">
                 <div class="tip-icon">
                     <i class="fas fa-handshake"></i>
                 </div>
-                <h3>Build Reputation</h3>
-                <p>Complete transactions professionally to build positive reviews and repeat business.</p>
+                <h3>{% if lang == 'uk' %}Будуйте репутацію{% else %}Build Reputation{% endif %}</h3>
+                <p>{% if lang == 'uk' %}Ведіть переговори професійно, щоб створити позитивні відгуки та повторний бізнес.{% else %}Conduct negotiations professionally to build positive reviews and repeat business.{% endif %}</p>
             </div>
         </div>
     </div>

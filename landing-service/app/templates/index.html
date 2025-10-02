@@ -31,22 +31,21 @@
 <!-- Advantages Section -->
 <section class="section section-alt">
     <div class="container">
-        <h2 class="section-title">{{ t.advantages.title }}</h2>
+        <h2 class="section-title">{{ t['advantages']['title'] }}</h2>
         <div class="advantages-grid">
-            {% if t.advantages.items %}
-            {% for advantage in t.advantages.items %}
+            {% for advantage in t['advantages']['items'] %}
             <div class="advantage-card">
                 <div class="advantage-icon">
                     {% if loop.index == 1 %}
-                        <i class="fas fa-map-marked-alt"></i>
+                        <i class="fas fa-search-location"></i>
                     {% elif loop.index == 2 %}
-                        <i class="fas fa-comments"></i>
+                        <i class="fas fa-handshake"></i>
                     {% elif loop.index == 3 %}
                         <i class="fas fa-bell"></i>
                     {% elif loop.index == 4 %}
                         <i class="fas fa-globe"></i>
                     {% elif loop.index == 5 %}
-                        <i class="fas fa-shield-alt"></i>
+                        <i class="fas fa-users"></i>
                     {% else %}
                         <i class="fas fa-rocket"></i>
                     {% endif %}
@@ -54,7 +53,6 @@
                 <p class="advantage-text">{{ advantage | safe }}</p>
             </div>
             {% endfor %}
-            {% endif %}
         </div>
     </div>
 </section>
@@ -110,7 +108,11 @@
     <div class="container">
         <div class="cta-content">
             <h2>{{ t.hero.cta }}</h2>
+            {% if lang == 'uk' %}
+            <p>Приєднуйтесь до тисяч фермерів та трейдерів, які вже користуються GrainTrade</p>
+            {% else %}
             <p>Join thousands of farmers and traders already using GrainTrade</p>
+            {% endif %}
             <a href="https://graintrade.info" class="btn btn-primary btn-large" target="_blank">
                 {{ t.nav.platform }}
                 <i class="fas fa-external-link-alt"></i>

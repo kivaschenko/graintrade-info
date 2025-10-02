@@ -30,9 +30,7 @@ def get_current_language():
 @app.route("/")
 def index():
     lang = get_current_language()
-    print(lang)
     translations = load_translations()
-    print(translations)
     return render_template(
         "index.html",
         lang=lang,

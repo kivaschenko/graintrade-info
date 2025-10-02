@@ -1,6 +1,6 @@
 {
-  "site_title": "GrainTrade - Online Platform for Grain Trading",
-  "site_description": "GrainTrade is an online platform for farmers and traders. Buy and sell grain, agricultural products without intermediaries. Map search, chats, notifications.",
+  "site_title": "GrainTrade - Platform for Grain Search and Negotiations",
+  "site_description": "GrainTrade is an online platform for farmers and traders. Search for grain offers and agricultural products, negotiate with potential partners. Offer map, chats, notifications.",
   "nav": {
     "home": "Home",
     "how_to": "How to Use",
@@ -9,29 +9,29 @@
   },
   "hero": {
     "title": "GrainTrade.info",
-    "subtitle": "Online platform for buying and selling grain without intermediaries",
-    "cta": "Start Trading"
+    "subtitle": "Platform for finding grain offers and negotiating with potential partners",
+    "cta": "Start Searching"
   },
   "what_is": {
     "title": "What is GrainTrade?",
-    "description": "<strong>GrainTrade.info</strong> is a modern online exchange for farmers and grain traders. Here you can <strong>buy grain wholesale</strong>, <strong>sell grain</strong>, find reliable partners and negotiate deals directly, without unnecessary intermediaries."
+    "description": "<strong>GrainTrade.info</strong> is a platform for search and negotiations in grain trading. Here you can <strong>find grain offers</strong>, <strong>post your requirements</strong>, find potential partners and conduct negotiations directly. The platform does not process payments - all financial matters are resolved between parties independently."
   },
   "advantages": {
     "title": "Platform Advantages",
     "items": [
-      "Search advertisements by map with clustering",
-      "Convenient <strong>chat under each advertisement</strong>",
-      "Email notifications about new products and messages",
+      "Search offers by map with clustering",
+      "Convenient <strong>chat for negotiations</strong> under each offer",
+      "Email notifications about new offers and messages",
       "Two interface languages: Ukrainian and English",
-      "Secure payments through <strong>LiqPay (PrivatBank)</strong>",
+      "Secure communication between market participants",
       "Fast performance thanks to modern architecture (Python, FastAPI, PostgreSQL, Redis)"
     ]
   },
   "for_whom": {
     "title": "Who is GrainTrade for?",
-    "farmers": "🌾 Farmers – to quickly sell grain",
-    "traders": "🚛 Traders – to buy grain in large quantities",
-    "agribusiness": "🌍 Agribusiness – for transparent and efficient deals"
+    "farmers": "🌾 Farmers – to find buyers for grain",
+    "traders": "🚛 Traders – to find grain suppliers",
+    "agribusiness": "🌍 Agribusiness – to find reliable partners"
   },
   "how_to_use": {
     "title": "How to Use GrainTrade",
@@ -41,7 +41,7 @@
         "description": "Create your account on the platform. It's free and takes just a few minutes."
       },
       {
-        "title": "Create Listing",
+        "title": "Post Offer",
         "description": "Post your grain for sale or create a purchase request with all necessary details."
       },
       {
@@ -50,16 +50,16 @@
       },
       {
         "title": "Negotiate",
-        "description": "Chat directly with buyers or sellers to discuss terms and finalize the deal."
+        "description": "Chat directly with buyers or sellers to discuss terms and conditions of the deal."
       },
       {
-        "title": "Complete Deal",
-        "description": "Use secure payment methods to complete your transaction safely."
+        "title": "Arrange Independently",
+        "description": "Agree on price, payment method, logistics and other deal terms between yourselves."
       }
     ]
   },
   "footer": {
-    "copyright": "© 2025 GrainTrade.info – Exchange for farmers and traders. All rights reserved.",
+    "copyright": "© 2025 GrainTrade.info – Platform for finding partners and negotiations. All rights reserved.",
     "contact": "Contact us: info@graintrade.info"
   },
   "faq": {
@@ -71,15 +71,15 @@
       },
       {
         "question": "Is it safe to use the platform?",
-        "answer": "Yes, we use secure payment systems and verify all users. All transactions are protected."
+        "answer": "Yes, we ensure secure communication between users and verify all participants. However, financial transactions are conducted at your own discretion."
       },
       {
         "question": "What grain types can I trade?",
-        "answer": "You can trade all major grain types: wheat, corn, barley, sunflower seeds, soybeans, and other agricultural products."
+        "answer": "You can post offers for all major grain types: wheat, corn, barley, sunflower seeds, soybeans, and other agricultural products."
       },
       {
         "question": "Are there any fees?",
-        "answer": "Basic platform usage is free. We only charge a small commission on completed transactions."
+        "answer": "Basic platform usage is free. We do not process payments or charge commissions on deals - you handle all of this independently."
       },
       {
         "question": "How does the map search work?",
