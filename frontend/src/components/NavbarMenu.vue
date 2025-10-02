@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white">
     <div class="container-fluid">
       <router-link class="navbar-brand" to="/">Graintrade.Info</router-link>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,17 +24,17 @@
         </ul>
         <ul class="navbar-nav">
           <li class="nav-item" v-if="!isAuthenticated">
-            <router-link class="btn btn-outline-light me-2" to="/login">{{ $t('navbar.login') }}</router-link>
-            <router-link class="btn btn-warning me-2" to="/register">{{ $t('navbar.register') }}</router-link>
+            <router-link class="btn btn-outline-primary me-2" to="/login">{{ $t('navbar.login') }}</router-link>
+            <router-link class="btn btn-primary me-2" to="/register">{{ $t('navbar.register') }}</router-link>
           </li>
           <li class="nav-item" v-if="isAuthenticated">
-            <router-link class="btn btn-outline-light me-2" to="/profile">{{ $t('navbar.profile') }}</router-link>
+            <router-link class="btn btn-outline-primary me-2" to="/profile">{{ $t('navbar.profile') }}</router-link>
           </li>
           <li class="nav-item" v-if="isAuthenticated">
             <a class="btn btn-danger me-2" href="#" @click="logout">{{ $t('navbar.logout') }}</a>
           </li>
           <li class="nav-item">
-            <select v-model="selectedLocale" @change="changeLocale" class="form-select bg-primary text-white border-0">
+            <select v-model="selectedLocale" @change="changeLocale" class="form-select language-selector">
               <option value="ua">UKR</option>
               <option value="en">ENG</option>
             </select>
@@ -94,30 +94,5 @@ export default {
 </script>
 
 <style scoped>
-.navbar {
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.05);
-}
-
-.navbar-brand {
-  font-weight: bold;
-  font-size: 1.5rem;
-}
-
-.nav-link {
-  font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-.nav-link:hover {
-  color: var(--bs-warning) !important; /* Example hover effect */
-}
-
-.btn {
-  font-weight: 500;
-}
-
-.form-select {
-  cursor: pointer;
-}
+/* Custom navbar styles are handled by graintrade-theme.css */
 </style>

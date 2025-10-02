@@ -1,92 +1,147 @@
 <template>
-  <div class="registration-container">
-    <form @submit.prevent="handleSubmit" class="registration-form">
-      <h2>{{ $t('registration.title') }}</h2>
-      
-      <div class="form-group">
-        <label for="username">{{ $t('registration.username') }}</label>
-        <input
-          type="text"
-          id="username"
-          v-model="formData.username"
-          :class="{ 'is-invalid': errors.username }"
-          required
-        />
-        <div class="invalid-feedback" v-if="errors.username">
-          {{ errors.username }}
+  <div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card shadow-graintrade">
+          <div class="card-header text-center bg-graintrade-primary text-white">
+            <h2 class="mb-0 text-white">{{ $t('registration.title') }}</h2>
+          </div>
+          <div class="card-body p-4">
+            <form @submit.prevent="handleSubmit" class="registration-form">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="username" class="form-label">{{ $t('registration.username') }}</label>
+                    <input
+                      type="text"
+                      id="username"
+                      v-model="formData.username"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.username }"
+                      required
+                      :placeholder="$t('registration.usernamePlaceholder') || 'Enter your username'"
+                    />
+                    <div class="invalid-feedback" v-if="errors.username">
+                      {{ errors.username }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="email" class="form-label">{{ $t('registration.email') }}</label>
+                    <input
+                      type="email"
+                      id="email"
+                      v-model="formData.email"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.email }"
+                      required
+                      :placeholder="$t('registration.emailPlaceholder') || 'Enter your email'"
+                    />
+                    <div class="invalid-feedback" v-if="errors.email">
+                      {{ errors.email }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="full_name" class="form-label">{{ $t('registration.fullName') }}</label>
+                    <input
+                      type="text"
+                      id="full_name"
+                      v-model="formData.full_name"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.full_name }"
+                      :placeholder="$t('registration.fullNamePlaceholder') || 'Enter your full name'"
+                    />
+                    <div class="invalid-feedback" v-if="errors.full_name">
+                      {{ errors.full_name }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="phone" class="form-label">{{ $t('registration.phone') }}</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      v-model="formData.phone"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.phone }"
+                      :placeholder="$t('registration.phonePlaceholder') || 'Enter your phone number'"
+                    />
+                    <div class="invalid-feedback" v-if="errors.phone">
+                      {{ errors.phone }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="password" class="form-label">{{ $t('registration.password') }}</label>
+                    <input
+                      type="password"
+                      id="password"
+                      v-model="formData.password"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.password }"
+                      required
+                      :placeholder="$t('registration.passwordPlaceholder') || 'Enter your password'"
+                    />
+                    <div class="invalid-feedback" v-if="errors.password">
+                      {{ errors.password }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="confirmPassword" class="form-label">{{ $t('registration.confirmPassword') }}</label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      v-model="formData.confirmPassword"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.confirmPassword }"
+                      required
+                      :placeholder="$t('registration.confirmPasswordPlaceholder') || 'Confirm your password'"
+                    />
+                    <div class="invalid-feedback" v-if="errors.confirmPassword">
+                      {{ errors.confirmPassword }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100 py-2 mt-3" :disabled="isSubmitting">
+                <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {{ isSubmitting ? $t('registration.submitting') : $t('registration.submit') }}
+              </button>
+
+              <div v-if="submitError" class="alert alert-danger mt-3">
+                {{ submitError }}
+              </div>
+              
+              <hr class="my-4">
+              
+              <div class="text-center">
+                <p class="mb-2">{{ $t('auth.hasAccount') || 'Already have an account?' }}</p>
+                <router-link to="/login" class="btn btn-outline-primary">
+                  {{ $t('navbar.login') }}
+                </router-link>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-
-      <div class="form-group">
-        <label for="email">{{ $t('registration.email') }}</label>
-        <input
-          type="email"
-          id="email"
-          v-model="formData.email"
-          :class="{ 'is-invalid': errors.email }"
-          required
-        />
-        <div class="invalid-feedback" v-if="errors.email">
-          {{ errors.email }}
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="full_name">{{ $t('registration.fullName') }}</label>
-        <input
-          type="text"
-          id="full_name"
-          v-model="formData.full_name"
-          :class="{ 'is-invalid': errors.full_name }"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="phone">{{ $t('registration.phone') }}</label>
-        <input
-          type="tel"
-          id="phone"
-          v-model="formData.phone"
-          :class="{ 'is-invalid': errors.phone }"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="password">{{ $t('registration.password') }}</label>
-        <input
-          type="password"
-          id="password"
-          v-model="formData.password"
-          :class="{ 'is-invalid': errors.password }"
-          required
-        />
-        <div class="invalid-feedback" v-if="errors.password">
-          {{ errors.password }}
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="confirmPassword">{{ $t('registration.confirmPassword') }}</label>
-        <input
-          type="password"
-          id="confirmPassword"
-          v-model="formData.confirmPassword"
-          :class="{ 'is-invalid': errors.confirmPassword }"
-          required
-        />
-        <div class="invalid-feedback" v-if="errors.confirmPassword">
-          {{ errors.confirmPassword }}
-        </div>
-      </div>
-
-      <button type="submit" :disabled="isSubmitting">
-        {{ isSubmitting ? $t('registration.submitting') : $t('registration.submit') }}
-      </button>
-
-      <div v-if="submitError" class="alert alert-danger mt-3">
-        {{ submitError }}
-      </div>
-    </form>
+    </div>
   </div>
 </template>
 
@@ -187,83 +242,74 @@ export default {
 </script>
 
 <style scoped>
-.registration-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-  background: linear-gradient(145deg, #f2f7f5, #dff1e1);
+.card {
+  transition: var(--graintrade-transition);
+  border: none;
 }
 
-.registration-form {
-  width: 100%;
-  max-width: 400px;
-  padding: 2rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.card:hover {
+  transform: translateY(-2px);
 }
 
-.form-group {
-  margin-bottom: 1rem;
+.card-header {
+  border-radius: var(--graintrade-border-radius-large) var(--graintrade-border-radius-large) 0 0 !important;
+  border-bottom: none;
 }
 
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #2c3e50;
+.form-control:focus {
+  border-color: var(--graintrade-primary);
+  box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
 }
 
-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+.form-control.is-invalid {
+  border-color: var(--graintrade-accent);
 }
 
-input.is-invalid {
-  border-color: #dc3545;
+.form-control.is-invalid:focus {
+  border-color: var(--graintrade-accent);
+  box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
 }
 
 .invalid-feedback {
-  color: #dc3545;
+  color: var(--graintrade-accent);
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
 
-button {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #3FB1CE;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.btn-primary {
+  font-weight: 500;
+  font-size: 1.1rem;
 }
 
-button:hover {
-  background-color: #2d8ba8;
+.btn-outline-primary:hover {
+  transform: translateY(-1px);
 }
 
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
 }
 
-.alert {
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-top: 1rem;
+hr {
+  border-color: var(--graintrade-border);
+  opacity: 0.5;
 }
 
 .alert-danger {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  color: var(--graintrade-accent);
+  border-radius: var(--graintrade-border-radius);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1.5rem !important;
+  }
+  
+  .btn {
+    font-size: 1rem;
+  }
 }
 </style>

@@ -1,26 +1,59 @@
 <template>
-    <div class="container mt-5">
-      <div class="card text-dark bg-info mb-3 text-center"
-            style="width: 18rem;">
-        <div class="card-body">
-          <h5 class="card-title">Login</h5>
-          <form @submit.prevent="handleLogin">
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-4">
+        <div class="card shadow-graintrade">
+          <div class="card-header text-center bg-graintrade-primary text-white">
+            <h5 class="card-title mb-0 text-white">{{ $t('auth.login') || 'Login' }}</h5>
+          </div>
+          <div class="card-body p-4">
+            <form @submit.prevent="handleLogin">
               <div class="mb-3">
-                  <label for="username"  class="form-label">Username:</label>
-                  <input type="text" id="username" v-model="username"  class="form-control" />
+                <label for="username" class="form-label">{{ $t('auth.username') || 'Username' }}:</label>
+                <input 
+                  type="text" 
+                  id="username" 
+                  v-model="username" 
+                  class="form-control" 
+                  required
+                  :placeholder="$t('auth.usernamePlaceholder') || 'Enter your username'"
+                />
               </div>
               <div class="mb-3">
-                  <label for="password" class="form-label">Password:</label>
-                  <input type="password" id="password" v-model="password" class="form-control" />
+                <label for="password" class="form-label">{{ $t('auth.password') || 'Password' }}:</label>
+                <input 
+                  type="password" 
+                  id="password" 
+                  v-model="password" 
+                  class="form-control" 
+                  required
+                  :placeholder="$t('auth.passwordPlaceholder') || 'Enter your password'"
+                />
               </div>
-              <button type="submit" class="btn btn-primary">Login</button>
-          </form>
-          <p class="mt-3">
-              <router-link to="/reset-password">{{ $t('navbar.forgotPassword') }}</router-link>
-            </p>
+              <button type="submit" class="btn btn-primary w-100 mb-3">
+                {{ $t('auth.loginButton') || 'Login' }}
+              </button>
+            </form>
+            
+            <div class="text-center">
+              <router-link to="/reset-password" class="text-graintrade-primary text-decoration-none">
+                {{ $t('navbar.forgotPassword') }}
+              </router-link>
+            </div>
+            
+            <hr class="my-3">
+            
+            <div class="text-center">
+              <p class="mb-2">{{ $t('auth.noAccount') || "Don't have an account?" }}</p>
+              <router-link to="/register" class="btn btn-outline-primary">
+                {{ $t('navbar.register') }}
+              </router-link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  </div>
 </template>
 
 <script>
@@ -46,3 +79,34 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.card {
+  transition: var(--graintrade-transition);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card-header {
+  border-radius: var(--graintrade-border-radius-large) var(--graintrade-border-radius-large) 0 0 !important;
+}
+
+.form-control:focus {
+  border-color: var(--graintrade-primary);
+  box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+}
+
+.btn-primary {
+  font-weight: 500;
+}
+
+.btn-outline-primary:hover {
+  transform: translateY(-1px);
+}
+
+hr {
+  border-color: var(--graintrade-border);
+}
+</style>
