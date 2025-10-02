@@ -88,6 +88,28 @@ a:visited {
     color: var(--graintrade-primary-dark) !important;
 }
 
+/* Special handling for router-link buttons */
+router-link.btn,
+.router-link-active.btn,
+.router-link-exact-active.btn {
+    text-decoration: none !important;
+}
+
+/* Ensure router-link buttons maintain proper colors */
+router-link.btn-primary,
+a.btn-primary {
+    color: white !important;
+    background: var(--graintrade-primary) !important;
+    border-color: var(--graintrade-primary) !important;
+}
+
+router-link.btn-outline-primary,
+a.btn-outline-primary {
+    color: var(--graintrade-primary) !important;
+    background: transparent !important;
+    border-color: var(--graintrade-primary) !important;
+}
+
 /* Override Bootstrap link colors */
 .link-primary {
     color: var(--graintrade-primary) !important;
@@ -116,24 +138,69 @@ h3, .h3 { font-size: 1.5rem; }
     border-radius: var(--graintrade-border-radius);
     font-weight: 500;
     transition: var(--graintrade-transition);
-    border: none;
-    text-decoration: none;
+    text-decoration: none !important;
+    border-width: 1px;
+}
+
+/* Override Bootstrap's focus styles */
+.btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25) !important;
+}
+
+/* Ensure buttons maintain their styling when used as links */
+a.btn,
+a.btn:visited,
+a.btn:link {
+    text-decoration: none !important;
+}
+
+a.btn:hover,
+a.btn:focus {
+    text-decoration: none !important;
 }
 
 .btn-primary {
-    background: var(--graintrade-primary);
-    border-color: var(--graintrade-primary);
-    color: white;
+    background: var(--graintrade-primary) !important;
+    border-color: var(--graintrade-primary) !important;
+    color: white !important;
+    text-decoration: none !important;
 }
 
 .btn-primary:hover,
 .btn-primary:focus,
-.btn-primary:active {
-    background: var(--graintrade-primary-dark);
-    border-color: var(--graintrade-primary-dark);
-    color: white;
+.btn-primary:active,
+.btn-primary:active:focus,
+.btn-primary.active,
+.btn-primary.show {
+    background: var(--graintrade-primary-dark) !important;
+    border-color: var(--graintrade-primary-dark) !important;
+    color: white !important;
     transform: translateY(-2px);
     box-shadow: var(--graintrade-shadow-hover);
+    text-decoration: underline !important;
+}
+
+.btn-primary:visited,
+.btn-primary:link {
+    color: white !important;
+    text-decoration: none !important;
+}
+
+/* Fix for router-link styled as btn-primary */
+.router-link-active.btn-primary,
+.router-link-exact-active.btn-primary {
+    background: var(--graintrade-primary-dark) !important;
+    border-color: var(--graintrade-primary-dark) !important;
+    color: white !important;
+    text-decoration: underline !important;
+}
+
+/* Ensure all primary button variants have white text */
+.btn-primary,
+.btn-primary:not(:disabled):not(.disabled),
+.btn-primary:not(:disabled):not(.disabled):active,
+.btn-primary:not(:disabled):not(.disabled).active {
+    color: white !important;
 }
 
 .btn-secondary {
@@ -150,16 +217,37 @@ h3, .h3 { font-size: 1.5rem; }
 }
 
 .btn-outline-primary {
-    color: var(--graintrade-primary);
-    border-color: var(--graintrade-primary);
+    color: var(--graintrade-primary) !important;
+    border-color: var(--graintrade-primary) !important;
+    background: transparent !important;
+    text-decoration: none !important;
 }
 
 .btn-outline-primary:hover,
 .btn-outline-primary:focus,
-.btn-outline-primary:active {
-    background: var(--graintrade-primary);
-    border-color: var(--graintrade-primary);
-    color: white;
+.btn-outline-primary:active,
+.btn-outline-primary:active:focus,
+.btn-outline-primary.active,
+.btn-outline-primary.show {
+    background: var(--graintrade-primary) !important;
+    border-color: var(--graintrade-primary) !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+.btn-outline-primary:visited,
+.btn-outline-primary:link {
+    color: var(--graintrade-primary) !important;
+    text-decoration: none !important;
+}
+
+/* Fix for router-link styled as btn-outline-primary */
+.router-link-active.btn-outline-primary,
+.router-link-exact-active.btn-outline-primary {
+    background: var(--graintrade-primary) !important;
+    border-color: var(--graintrade-primary) !important;
+    color: white !important;
+    text-decoration: none !important;
 }
 
 .btn-success {
