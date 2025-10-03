@@ -12,61 +12,67 @@
 
     <div class="filter-group offer-type-group">
       <label>{{ $t('common_text.offerType') }}:</label>
-      <button
-        @click="setOfferType('all')"
-        :class="{ 'active-filter': currentSelectedOfferType === 'all' }"
-      >
-        {{ $t('common_text.all') }}
-      </button>
-      <button
-        @click="setOfferType('buy')"
-        :class="{ 'active-filter': currentSelectedOfferType === 'buy' }"
-      >
-        {{ $t('common_text.buy') }}
-      </button>
-      <button
-        @click="setOfferType('sell')"
-        :class="{ 'active-filter': currentSelectedOfferType === 'sell' }"
-      >
-        {{ $t('common_text.sell') }}
-      </button>
+      <div>
+        <button
+          @click="setOfferType('all')"
+          :class="{ 'active-filter': currentSelectedOfferType === 'all' }"
+        >
+          {{ $t('common_text.all') }}
+        </button>
+        <button
+          @click="setOfferType('buy')"
+          :class="{ 'active-filter': currentSelectedOfferType === 'buy' }"
+        >
+          {{ $t('common_text.buy') }}
+        </button>
+        <button
+          @click="setOfferType('sell')"
+          :class="{ 'active-filter': currentSelectedOfferType === 'sell' }"
+        >
+          {{ $t('common_text.sell') }}
+        </button>
+      </div>
     </div>
 
     <!-- Price range filter -->
     <div class="filter-group price-group">
       <label>{{ $t('common_text.price') }}:</label>
-      <input type="number" v-model.number="currentMinPrice" :placeholder="$t('common_text.from')" @input="debounceApplyFilters">
-      <span class="price-separator">-</span>
-      <input type="number" v-model.number="currentMaxPrice" :placeholder="$t('common_text.to')" @input="debounceApplyFilters">
+      <div>
+        <input type="number" v-model.number="currentMinPrice" :placeholder="$t('common_text.from')" @input="debounceApplyFilters">
+        <span class="price-separator">-</span>
+        <input type="number" v-model.number="currentMaxPrice" :placeholder="$t('common_text.to')" @input="debounceApplyFilters">
+      </div>
     </div>
 
     <!-- Currency filter -->
     <div class="filter-group offer-type-group">
       <label>{{ $t('common_text.currency') }}:</label>
-      <button
-        @click="setCurrency('all')"
-        :class="{ 'active-filter': currentSelectedCurrency === 'all' }"
-      >
-        {{ $t('common_text.all') }}
-      </button>
-      <button
-        @click="setCurrency('uah')"
-        :class="{ 'active-filter': currentSelectedCurrency === 'uah' }"
-      >
-        UAH
-      </button>
-      <button
-        @click="setCurrency('usd')"
-        :class="{ 'active-filter': currentSelectedCurrency === 'usd' }"
-      >
-        USD
-      </button>
-      <button
-        @click="setCurrency('eur')"
-        :class="{ 'active-filter': currentSelectedCurrency === 'eur' }"
-      >
-        EUR
-      </button>
+      <div>
+        <button
+          @click="setCurrency('all')"
+          :class="{ 'active-filter': currentSelectedCurrency === 'all' }"
+        >
+          {{ $t('common_text.all') }}
+        </button>
+        <button
+          @click="setCurrency('uah')"
+          :class="{ 'active-filter': currentSelectedCurrency === 'uah' }"
+        >
+          UAH
+        </button>
+        <button
+          @click="setCurrency('usd')"
+          :class="{ 'active-filter': currentSelectedCurrency === 'usd' }"
+        >
+          USD
+        </button>
+        <button
+          @click="setCurrency('eur')"
+          :class="{ 'active-filter': currentSelectedCurrency === 'eur' }"
+        >
+          EUR
+        </button>
+      </div>
     </div>
 
     <!-- Country filter -->
@@ -87,38 +93,42 @@
     <!-- Amount filter -->
     <div class="filter-group price-group">
       <label>{{ $t('common_text.amount') }}:</label>
-      <input type="number" v-model.number="currentMinAmount" :placeholder="$t('common_text.from')" @input="debounceApplyFilters">
-      <span class="price-separator">-</span>
-      <input type="number" v-model.number="currentMaxAmount" :placeholder="$t('common_text.to')" @input="debounceApplyFilters">
+      <div>
+        <input type="number" v-model.number="currentMinAmount" :placeholder="$t('common_text.from')" @input="debounceApplyFilters">
+        <span class="price-separator">-</span>
+        <input type="number" v-model.number="currentMaxAmount" :placeholder="$t('common_text.to')" @input="debounceApplyFilters">
+      </div>
     </div>
 
     <!-- Measure filter -->
     <div class="filter-group offer-type-group">
       <label>{{ $t('create_form.measure') }}:</label>
-      <button
-        @click="setMeasure('all')"
-        :class="{ 'active-filter': currentSelectedMeasure === 'all' }"
-      >
-        {{ $t('common_text.all') }}
-      </button>
-      <button
-        @click="setMeasure('kg')"
-        :class="{ 'active-filter': currentSelectedMeasure === 'kg' }"
-      >
-        {{ $t('create_form.kg') }}
-      </button>
-      <button
-        @click="setMeasure('liter')"
-        :class="{ 'active-filter': currentSelectedMeasure === 'l' }"
-      >
-        {{ $t('create_form.liter') }}
-      </button>
-      <button
-        @click="setMeasure('metric ton')"
-        :class="{ 'active-filter': currentSelectedMeasure === 'metric ton' }"
-      >
-        {{ $t('create_form.metric_ton') }}
-      </button>
+      <div>
+        <button
+          @click="setMeasure('all')"
+          :class="{ 'active-filter': currentSelectedMeasure === 'all' }"
+        >
+          {{ $t('common_text.all') }}
+        </button>
+        <button
+          @click="setMeasure('kg')"
+          :class="{ 'active-filter': currentSelectedMeasure === 'kg' }"
+        >
+          {{ $t('create_form.kg') }}
+        </button>
+        <button
+          @click="setMeasure('liter')"
+          :class="{ 'active-filter': currentSelectedMeasure === 'l' }"
+        >
+          {{ $t('create_form.liter') }}
+        </button>
+        <button
+          @click="setMeasure('metric ton')"
+          :class="{ 'active-filter': currentSelectedMeasure === 'metric ton' }"
+        >
+          {{ $t('create_form.metric_ton') }}
+        </button>
+      </div>
     </div>
 
     <!-- Incoterms filter -->
@@ -494,68 +504,92 @@ export default {
 </script>
 
 <style scoped>
-/* Your existing styles remain here */
+/* GrainTrade ItemFilter Styles */
 .filters-container {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  align-self: center;
-  flex-wrap: wrap;
-  gap: 15px;
   justify-content: center;
   align-items: flex-end;
-  margin-bottom: 25px;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: var(--graintrade-bg);
+  border-radius: var(--graintrade-border-radius-large);
+  box-shadow: var(--graintrade-shadow);
+  border: 1px solid var(--graintrade-border);
+  transition: var(--graintrade-transition);
 }
 
+.filters-container:hover {
+  box-shadow: var(--graintrade-shadow-hover);
+}
+
+/* Filter Group Styling */
 .filter-group {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  min-width: 140px;
 }
 
 .filter-group label {
-  font-size: 0.9em;
-  color: #555;
-  margin-bottom: 6px;
-  margin-right: 6px;
+  font-size: 0.95rem;
   font-weight: 600;
+  color: var(--graintrade-secondary);
+  margin-bottom: 0.5rem;
+  font-family: var(--graintrade-font-family);
 }
 
+/* Form Controls */
 .filters-container select,
 .filters-container input[type="number"] {
-  padding: 10px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 8px;
-  font-size: 1em;
-  color: #333;
-  min-width: 120px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--graintrade-border);
+  border-radius: var(--graintrade-border-radius);
+  font-size: 0.95rem;
+  color: var(--graintrade-text);
+  background-color: var(--graintrade-bg-light);
+  font-family: var(--graintrade-font-family);
+  transition: var(--graintrade-transition);
+  min-width: 140px;
 }
 
 .filters-container select:focus,
 .filters-container input[type="number"]:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  border-color: var(--graintrade-primary);
+  box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
   outline: none;
+  background-color: var(--graintrade-bg);
+}
+
+.filters-container select:hover,
+.filters-container input[type="number"]:hover {
+  border-color: var(--graintrade-primary);
+}
+
+/* Button Groups */
+.offer-type-group,
+.incoterms-group {
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .offer-type-group button {
-  padding: 10px 15px;
-  border: 1px solid #007bff;
-  background-color: #fff;
-  color: #007bff;
-  border-radius: 8px;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--graintrade-border);
+  background-color: var(--graintrade-bg);
+  color: var(--graintrade-text);
+  border-radius: var(--graintrade-border-radius);
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: var(--graintrade-transition);
   font-weight: 500;
-  margin-right: 5px;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-family: var(--graintrade-font-family);
+  min-width: 80px;
 }
 
 .offer-type-group button:last-child {
@@ -563,119 +597,238 @@ export default {
 }
 
 .offer-type-group button.active-filter {
-  flex-direction: row;
-  background-color: #007bff;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+  background-color: var(--graintrade-primary);
+  color: white;
+  border-color: var(--graintrade-primary);
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.25);
 }
 
 .offer-type-group button:hover:not(.active-filter) {
-  background-color: #e9f5ff;
+  background-color: rgba(39, 174, 96, 0.1);
+  border-color: var(--graintrade-primary);
+  color: var(--graintrade-primary);
 }
 
+.offer-type-group button.active-filter:hover {
+  background-color: var(--graintrade-primary-dark);
+  border-color: var(--graintrade-primary-dark);
+}
+
+/* Price and Amount Groups */
 .price-group {
-  flex-direction: row;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.price-group > div {
+  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .price-group input {
-  width: 90px;
+  width: 100px;
+  min-width: 100px;
 }
 
 .price-separator {
-  font-size: 1.2em;
-  color: #666;
-  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--graintrade-text-muted);
+  font-weight: 500;
+  padding: 0 0.25rem;
 }
 
+/* Country and Category Groups */
+.country-group,
+.category-group {
+  min-width: 180px;
+}
+
+.country-group select,
+.category-group select,
+.incoterms-group select {
+  min-width: 180px;
+}
+
+/* Action Buttons */
 .btn-apply-filters,
 .btn-clear-filters {
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--graintrade-border-radius);
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.2s ease-in-out;
-  min-width: 120px;
+  font-size: 0.95rem;
+  transition: var(--graintrade-transition);
+  min-width: 140px;
   align-self: center;
-  margin: 5px;
+  margin: 0.25rem;
+  font-family: var(--graintrade-font-family);
+  border: none;
 }
 
 .btn-apply-filters {
-  background-color: #28a745;
-  color: #fff;
-  border: 1px solid #28a745;
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+  background: var(--graintrade-primary);
+  color: white;
+  box-shadow: 0 4px 8px rgba(39, 174, 96, 0.2);
 }
 
 .btn-apply-filters:hover:not(:disabled) {
-  background-color: #218838;
-  border-color: #1e7e34;
-  transform: translateY(-2px);
+  background: var(--graintrade-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
 }
 
 .btn-apply-filters:disabled {
-  background-color: #95d6a7;
-  border-color: #95d6a7;
+  background: rgba(39, 174, 96, 0.6);
   cursor: not-allowed;
   opacity: 0.8;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-clear-filters {
-  background-color: #dc3545;
-  color: #fff;
-  border: 1px solid #dc3545;
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+  background: var(--graintrade-accent);
+  color: white;
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.2);
 }
 
 .btn-clear-filters:hover {
-  background-color: #c82333;
-  border-color: #bd2130;
-  transform: translateY(-2px);
+  background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(231, 76, 60, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .filters-container {
+    gap: 1rem;
+    padding: 1.5rem;
+  }
 }
 
 @media (max-width: 768px) {
   .filters-container {
     flex-direction: column;
     align-items: stretch;
-    padding: 15px;
-    gap: 10px;
+    padding: 1.5rem;
+    gap: 1rem;
   }
 
   .filter-group {
     width: 100%;
+    min-width: unset;
   }
 
   .filters-container select,
-  .filters-container input[type="number"],
-  .offer-type-group button,
+  .filters-container input[type="number"] {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .offer-type-group {
+    width: 100%;
+  }
+
+  .offer-type-group > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .offer-type-group button {
+    flex: 1;
+    margin-right: 0;
+    margin-bottom: 0;
+    min-width: unset;
+  }
+
+  .price-group {
+    width: 100%;
+  }
+
+  .price-group > div {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .price-group input {
+    flex: 1;
+    width: auto;
+    min-width: 80px;
+  }
+
   .btn-apply-filters,
   .btn-clear-filters {
     width: 100%;
     min-width: unset;
-    margin-right: 0;
+    margin: 0.25rem 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .filters-container {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
   }
 
-  .offer-type-group {
-    flex-direction: row;
-    justify-content: stretch;
-    width: 100%;
+  .filter-group label {
+    font-size: 0.9rem;
   }
+
+  .filters-container select,
+  .filters-container input[type="number"],
   .offer-type-group button {
-      flex-grow: 1;
-      margin-right: 5px;
-  }
-  .offer-type-group button:last-child {
-      margin-right: 0;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.9rem;
   }
 
-  .price-group {
-    flex-direction: row;
-    width: 100%;
-    justify-content: space-between;
+  .btn-apply-filters,
+  .btn-clear-filters {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
   }
-  .price-group input {
-    flex-grow: 1;
-  }
+}
+
+/* Loading State */
+.filters-container[data-loading="true"] {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Focus Styles for Accessibility */
+.filters-container select:focus-visible,
+.filters-container input[type="number"]:focus-visible,
+.offer-type-group button:focus-visible,
+.btn-apply-filters:focus-visible,
+.btn-clear-filters:focus-visible {
+  outline: 2px solid var(--graintrade-primary);
+  outline-offset: 2px;
+}
+
+/* Enhanced Visual Hierarchy */
+.filter-group:first-child {
+  margin-left: 0;
+}
+
+.filter-group:last-child {
+  margin-right: 0;
+}
+
+/* Improved Button Group Layout */
+.offer-type-group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Price Range Styling */
+.price-group > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 </style>
