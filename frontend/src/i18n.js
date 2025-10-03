@@ -185,7 +185,13 @@ const messages = {
       "submit": "Register",
       "submitting": "Registering...",
       "success": "Registration successful!",
-      "error": "Registration failed"
+      "error": "Registration failed",
+      "usernamePlaceholder": "Enter username",
+      "emailPlaceholder": "Enter email",
+      "fullNamePlaceholder": "Enter full name",
+      "phonePlaceholder": "Enter phone number",
+      "passwordPlaceholder": "Enter password",
+      "confirmPasswordPlaceholder": "Confirm password",
     },
     userUpdate: {
       "title": "Update Profile",
@@ -492,7 +498,13 @@ const messages = {
       "submit": "Зареєструватися",
       "submitting": "Реєстрація...",
       "success": "Реєстрація успішна!",
-      "error": "Помилка реєстрації"
+      "error": "Помилка реєстрації",
+      "usernamePlaceholder": "Введіть ім'я користувача",
+      "emailPlaceholder": "Введіть електронну пошту",
+      "fullNamePlaceholder": "Введіть повне ім'я",
+      "phonePlaceholder": "Введіть номер телефону",
+      "passwordPlaceholder": "Введіть пароль",
+      "confirmPasswordPlaceholder": "Підтвердіть пароль",
     },
     userUpdate: {
       "title": "Оновити профіль",

@@ -1,19 +1,24 @@
 <template>
   <div class="container my-5">
-    <h1 class="text-center mb-4">{{ $t('create_form.form_title') }}</h1>
+    <h1 class="text-center mb-4 graintrade-title">{{ $t('create_form.form_title') }}</h1>
 
     <div class="row">
       <div class="col-lg-6 mb-4">
-        <div class="card h-100 shadow-sm">
+        <div class="card h-100 graintrade-card">
+          <div class="card-header text-center">
+            <h2 class="mb-0">{{ $t('create_form.map_title') }}</h2>
+          </div>
           <div class="card-body">
-            <h2 class="card-title text-center mb-3">{{ $t('create_form.map_title') }}</h2>
-            <div id="map" class="map mb-3 border rounded"></div>
+            <div id="map" class="map mb-3"></div>
           </div>
         </div>
       </div>
 
       <div class="col-lg-6 mb-4">
-        <div class="card h-100 shadow-sm">
+        <div class="card h-100 graintrade-card">
+          <div class="card-header text-center">
+            <h2 class="mb-0">{{ $t('create_form.form_title') }}</h2>
+          </div>
           <div class="card-body">
             <form @submit.prevent="createItem">
               <div class="mb-3">
@@ -128,15 +133,17 @@
                 </div>
               </div>
 
-              <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary btn-lg">{{ $t('create_form.submit') }}</button>
+              <div class="d-grid gap-2 mb-4">
+                <button type="submit" class="btn btn-primary btn-lg graintrade-btn-primary">
+                  {{ $t('create_form.submit') }}
+                </button>
               </div>
 
-              <div v-if="successMessage" class="alert alert-success" role="alert">
-                {{ successMessage }}
+              <div v-if="successMessage" class="alert alert-success graintrade-alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>{{ successMessage }}
               </div>
-              <div v-if="errorMessage" class="alert alert-danger" role="alert">
-                {{ errorMessage }}
+              <div v-if="errorMessage" class="alert alert-danger graintrade-alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ errorMessage }}
               </div>
 
             </form>
@@ -366,64 +373,163 @@ export default {
 };
 </script>
 
-<style scoped> /* Added 'scoped' to prevent global style leakage */
+<style scoped>
+/* GrainTrade ItemForm Styles */
 .container {
   max-width: 1200px;
 }
 
+/* Map Styling */
 .map {
   width: 100%;
-  height: 400px; /* Adjusted height for better visual balance */
+  height: 400px;
+  border-radius: var(--graintrade-border-radius);
+  border: 1px solid var(--graintrade-border);
+  overflow: hidden;
 }
 
-.card {
+/* Title Styling */
+.graintrade-title {
+  color: var(--graintrade-secondary);
+  font-weight: 700;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Card Enhancements */
+.graintrade-card {
+  border-radius: var(--graintrade-border-radius-large);
   border: none;
-  border-radius: 0.75rem; /* Slightly rounded corners for a softer look */
+  box-shadow: var(--graintrade-shadow);
+  transition: var(--graintrade-transition);
+  background: var(--graintrade-bg);
 }
 
-.card-body {
-  padding: 2rem; /* More internal padding */
+.graintrade-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--graintrade-shadow-hover);
 }
 
+.graintrade-card .card-header {
+  background: var(--graintrade-bg-alt);
+  border-bottom: 1px solid var(--graintrade-border);
+  border-radius: var(--graintrade-border-radius-large) var(--graintrade-border-radius-large) 0 0 !important;
+  font-weight: 600;
+  color: var(--graintrade-secondary);
+  padding: 1.25rem 1.5rem;
+}
+
+.graintrade-card .card-body {
+  padding: 2rem;
+}
+
+/* Form Elements */
 .form-label {
-  font-weight: 600; /* Make labels a bit bolder */
-  margin-bottom: 0.5rem; /* Add some space below labels */
-  color: #343a40; /* Darker text for labels */
+  font-weight: 600;
+  color: var(--graintrade-secondary);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
 }
 
 .form-control,
 .form-select {
-  border-radius: 0.35rem; /* Slightly rounded input fields */
-  border-color: #ced4da; /* A standard border color */
+  border-radius: var(--graintrade-border-radius);
+  border: 1px solid var(--graintrade-border);
+  font-family: var(--graintrade-font-family);
+  transition: var(--graintrade-transition);
+  background-color: var(--graintrade-bg-light);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
 }
 
 .form-control:focus,
 .form-select:focus {
-  border-color: #80bdff; /* Bootstrap's default focus color */
-  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); /* Bootstrap's default focus shadow */
+  border-color: var(--graintrade-primary);
+  box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+  outline: none;
 }
 
-.btn-primary {
-  background-color: #007bff; /* Bootstrap primary blue */
-  border-color: #007bff;
-  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out; /* Smooth transition on hover */
+.form-control:read-only {
+  background-color: var(--graintrade-bg-alt);
+  color: var(--graintrade-text-muted);
 }
 
-.btn-primary:hover {
-  background-color: #0056b3; /* Darker blue on hover */
-  border-color: #004085;
+/* Button Styling */
+.graintrade-btn-primary {
+  background: var(--graintrade-primary) !important;
+  border-color: var(--graintrade-primary) !important;
+  color: white !important;
+  font-weight: 600;
+  padding: 0.875rem 2rem;
+  border-radius: var(--graintrade-border-radius);
+  transition: var(--graintrade-transition);
+  font-size: 1.1rem;
+  box-shadow: 0 4px 8px rgba(39, 174, 96, 0.2);
 }
 
-.alert {
-  margin-bottom: 1.5rem; /* Space below alerts */
+.graintrade-btn-primary:hover,
+.graintrade-btn-primary:focus,
+.graintrade-btn-primary:active {
+  background: var(--graintrade-primary-dark) !important;
+  border-color: var(--graintrade-primary-dark) !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
 }
 
-/* Specific styles for the form card background */
-.col-lg-6 > .card:last-child { /* Targets the card containing the form */
-  background-color: #f8f9fa; /* Light grey background for the form area */
+/* Alert Styling */
+.graintrade-alert-success {
+  border: none;
+  background: linear-gradient(135deg, rgba(39, 174, 96, 0.1), rgba(39, 174, 96, 0.05));
+  color: var(--graintrade-primary-dark);
+  border-radius: var(--graintrade-border-radius);
+  border-left: 4px solid var(--graintrade-primary);
+  font-weight: 500;
 }
 
-.text-center {
-  text-align: center;
+.graintrade-alert-danger {
+  border: none;
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(231, 76, 60, 0.05));
+  color: var(--graintrade-accent);
+  border-radius: var(--graintrade-border-radius);
+  border-left: 4px solid var(--graintrade-accent);
+  font-weight: 500;
+}
+
+/* Validation Error Text */
+.text-danger {
+  color: var(--graintrade-accent) !important;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .graintrade-title {
+    font-size: 2rem;
+  }
+  
+  .graintrade-card .card-body {
+    padding: 1.5rem;
+  }
+  
+  .map {
+    height: 300px;
+  }
+}
+
+@media (max-width: 576px) {
+  .graintrade-title {
+    font-size: 1.75rem;
+  }
+  
+  .graintrade-card .card-body {
+    padding: 1rem;
+  }
+  
+  .graintrade-btn-primary {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
 }
 </style>
