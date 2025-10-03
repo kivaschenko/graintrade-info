@@ -30,12 +30,41 @@
               </div>
 
               <div class="mb-3">
-                <label for="category_id" class="form-label">{{ $t('create_form.category') }}</label>
-                <select class="form-select" id="category_id" v-model="category_id" required>
-                  <option v-for="category in categories" :key="category.id" :value="category.id">
-                    {{ getCategoryName(category) }}
-                  </option>
-                </select>
+                <label for="category_search" class="form-label">{{ $t('create_form.category') }}</label>
+                <div class="autocomplete-container">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="category_search"
+                    v-model="categorySearch"
+                    @input="handleCategorySearch"
+                    @blur="handleCategoryBlur"
+                    @keydown="handleKeyDown"
+                    :placeholder="$t('create_form.category_placeholder') || 'Type at least 3 characters to search categories...'"
+                    autocomplete="off"
+                    required
+                  />
+                  <div 
+                    v-if="showCategorySuggestions && filteredCategories.length > 0" 
+                    class="autocomplete-suggestions"
+                  >
+                    <div
+                      v-for="(category, index) in filteredCategories"
+                      :key="category.id"
+                      :class="['autocomplete-item', { 'autocomplete-item-active': index === selectedSuggestionIndex }]"
+                      @mousedown="selectCategory(category)"
+                      @mouseover="selectedSuggestionIndex = index"
+                    >
+                      {{ getCategoryName(category) }}
+                    </div>
+                  </div>
+                  <div 
+                    v-if="showCategorySuggestions && categorySearch.length >= 3 && filteredCategories.length === 0"
+                    class="autocomplete-no-results"
+                  >
+                    {{ $t('create_form.no_categories_found') || 'No categories found' }}
+                  </div>
+                </div>
               </div>
 
               <div class="mb-3">
@@ -168,6 +197,10 @@ export default {
     return {
       category_id: null,
       categories: [],
+      categorySearch: '',
+      filteredCategories: [],
+      showCategorySuggestions: false,
+      selectedSuggestionIndex: -1,
       title: '', // Initialize as empty, it will be computed
       description: '',
       price: 0,
@@ -307,6 +340,69 @@ export default {
     });
   },
   methods: {
+    // Category Autocomplete Methods
+    handleCategorySearch() {
+      if (this.categorySearch.length >= 3) {
+        this.filterCategories();
+        this.showCategorySuggestions = true;
+        this.selectedSuggestionIndex = -1;
+      } else {
+        this.showCategorySuggestions = false;
+        this.filteredCategories = [];
+        this.category_id = null;
+      }
+    },
+    
+    filterCategories() {
+      const searchTerm = this.categorySearch.toLowerCase();
+      this.filteredCategories = this.categories.filter(category => {
+        const categoryName = this.getCategoryName(category).toLowerCase();
+        return categoryName.includes(searchTerm);
+      }).slice(0, 10); // Limit to 10 suggestions
+    },
+    
+    selectCategory(category) {
+      this.category_id = category.id;
+      this.categorySearch = this.getCategoryName(category);
+      this.showCategorySuggestions = false;
+      this.selectedSuggestionIndex = -1;
+    },
+    
+    handleCategoryBlur() {
+      // Delay hiding suggestions to allow for click events
+      setTimeout(() => {
+        this.showCategorySuggestions = false;
+      }, 200);
+    },
+    
+    handleKeyDown(event) {
+      if (!this.showCategorySuggestions || this.filteredCategories.length === 0) return;
+      
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          this.selectedSuggestionIndex = Math.min(
+            this.selectedSuggestionIndex + 1, 
+            this.filteredCategories.length - 1
+          );
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          this.selectedSuggestionIndex = Math.max(this.selectedSuggestionIndex - 1, -1);
+          break;
+        case 'Enter':
+          event.preventDefault();
+          if (this.selectedSuggestionIndex >= 0) {
+            this.selectCategory(this.filteredCategories[this.selectedSuggestionIndex]);
+          }
+          break;
+        case 'Escape':
+          this.showCategorySuggestions = false;
+          this.selectedSuggestionIndex = -1;
+          break;
+      }
+    },
+    
     validateDescription() {
       // Simple frontend check for common script patterns
       const scriptPattern = /<script\b[^>]*>(.*?)<\/script>|<img\b[^>]*onerror\b[^>]*>/i;
@@ -452,6 +548,58 @@ export default {
 .form-control:read-only {
   background-color: var(--graintrade-bg-alt);
   color: var(--graintrade-text-muted);
+}
+
+/* Autocomplete Styling */
+.autocomplete-container {
+  position: relative;
+}
+
+.autocomplete-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--graintrade-bg);
+  border: 1px solid var(--graintrade-border);
+  border-top: none;
+  border-radius: 0 0 var(--graintrade-border-radius) var(--graintrade-border-radius);
+  box-shadow: var(--graintrade-shadow);
+  z-index: 1000;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.autocomplete-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: var(--graintrade-transition);
+  border-bottom: 1px solid var(--graintrade-bg-alt);
+  font-size: 0.95rem;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item-active {
+  background-color: var(--graintrade-bg-alt);
+  color: var(--graintrade-primary);
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-no-results {
+  padding: 0.75rem 1rem;
+  color: var(--graintrade-text-muted);
+  font-style: italic;
+  text-align: center;
+  background-color: var(--graintrade-bg-alt);
+  border-radius: 0 0 var(--graintrade-border-radius) var(--graintrade-border-radius);
+}
+
+/* Enhanced focus state for autocomplete input */
+.autocomplete-container .form-control:focus {
+  border-radius: var(--graintrade-border-radius) var(--graintrade-border-radius) 0 0;
 }
 
 /* Button Styling */
