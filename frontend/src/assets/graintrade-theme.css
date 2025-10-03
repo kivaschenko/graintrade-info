@@ -293,6 +293,7 @@ a.btn:focus {
     border: 1px solid var(--graintrade-border);
     font-family: var(--graintrade-font-family);
     transition: var(--graintrade-transition);
+    background-color: var(--graintrade-bg-light);
 }
 
 .form-control:focus,
@@ -633,18 +634,43 @@ a.btn:focus {
     box-shadow: var(--graintrade-shadow-hover);
 }
 
-/* Language Selector Styling */
-.form-select.language-selector {
-    background: transparent;
-    border: 1px solid var(--graintrade-border);
-    color: var(--graintrade-text);
-    font-weight: 500;
-    max-width: 100px;
+/* Language Switcher Styling (Landing Service Style) */
+.lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.form-select.language-selector:focus {
-    border-color: var(--graintrade-primary);
-    box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+.lang-link {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--graintrade-border-radius);
+    font-weight: 500;
+    color: var(--graintrade-text-light);
+    text-decoration: none;
+    transition: var(--graintrade-transition);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.lang-link:hover {
+    color: var(--graintrade-primary);
+    text-decoration: none;
+}
+
+.lang-link.active {
+    background: var(--graintrade-primary);
+    color: white;
+}
+
+.lang-link.active:hover {
+    background: var(--graintrade-primary-dark);
+    color: white;
+}
+
+.lang-separator {
+    color: var(--graintrade-border);
+    font-weight: 300;
+    margin: 0 0.25rem;
 }
 
 /* Responsive Design Helpers */

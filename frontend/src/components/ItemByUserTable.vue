@@ -91,14 +91,14 @@
                   </small>
                 </td>
                 <td class="text-end">
-                  <span class="badge bg-info">
+                  <span class="badge bg-light text-dark">
                     <i class="bi bi-chat-dots me-1"></i>
                     {{ item.messages_counter }}
                   </span>
                 </td>
                 <td class="text-end">
                   <button 
-                    class="btn btn-danger btn-sm hover-lift" 
+                    class="btn btn-sm btn-outline-secondary" 
                     @click="deleteItem(item.id)"
                     :title="$t('common_text.delete')"
                   >

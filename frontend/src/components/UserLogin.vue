@@ -30,7 +30,7 @@
                   :placeholder="$t('auth.passwordPlaceholder') || 'Enter your password'"
                 />
               </div>
-              <button type="submit" class="btn btn-primary w-100 mb-3">
+              <button type="submit" class="btn btn-outline-primary w-100 mb-3">
                 {{ $t('auth.loginButton') || 'Login' }}
               </button>
             </form>

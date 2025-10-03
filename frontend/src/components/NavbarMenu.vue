@@ -31,13 +31,22 @@
             <router-link class="btn btn-outline-primary me-2" to="/profile">{{ $t('navbar.profile') }}</router-link>
           </li>
           <li class="nav-item" v-if="isAuthenticated">
-            <a class="btn btn-danger me-2" href="#" @click="logout">{{ $t('navbar.logout') }}</a>
+            <a class="btn btn-outline-secondary me-2" href="#" @click="logout">{{ $t('navbar.logout') }}</a>
           </li>
           <li class="nav-item">
-            <select v-model="selectedLocale" @change="changeLocale" class="form-select language-selector">
-              <option value="ua">UKR</option>
-              <option value="en">ENG</option>
-            </select>
+            <div class="lang-switcher">
+              <a href="#" 
+                 @click.prevent="setLocale('en')" 
+                 :class="['lang-link', { 'active': selectedLocale === 'en' }]">
+                EN
+              </a>
+              <span class="lang-separator">|</span>
+              <a href="#" 
+                 @click.prevent="setLocale('ua')" 
+                 :class="['lang-link', { 'active': selectedLocale === 'ua' }]">
+                УКР
+              </a>
+            </div>
           </li>
         </ul>
       </div>
@@ -71,11 +80,14 @@ export default {
       this.$router.push('/');
       this.collapseNavbar(); // Collapse navbar after logout
     },
-    changeLocale(event) {
-      const newLocale = event.target.value;
+    changeLocale(newLocale) {
       this.$store.commit('setLocale', newLocale);
       this.$i18n.locale = newLocale;
       this.collapseNavbar(); // Collapse navbar after changing locale
+    },
+    setLocale(locale) {
+      this.selectedLocale = locale;
+      this.changeLocale(locale);
     },
     collapseNavbar() {
       const navbarCollapse = document.getElementById('navbarNav');
@@ -94,5 +106,40 @@ export default {
 </script>
 
 <style scoped>
-/* Custom navbar styles are handled by graintrade-theme.css */
+/* Language switcher styling to match landing service */
+.lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lang-link {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--graintrade-border-radius);
+  font-weight: 500;
+  color: var(--graintrade-text-light);
+  text-decoration: none;
+  transition: var(--graintrade-transition);
+  cursor: pointer;
+}
+
+.lang-link:hover {
+  color: var(--graintrade-primary);
+  text-decoration: none;
+}
+
+.lang-link.active {
+  background: var(--graintrade-primary);
+  color: white;
+}
+
+.lang-link.active:hover {
+  background: var(--graintrade-primary-dark);
+  color: white;
+}
+
+.lang-separator {
+  color: var(--graintrade-border);
+  font-weight: 300;
+}
 </style>

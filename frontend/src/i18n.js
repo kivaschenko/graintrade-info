@@ -2,6 +2,16 @@ import { createI18n } from 'vue-i18n';
 
 const messages = {
   en: {
+    auth: {
+      login: 'Login',
+      register: 'Register',
+      username: 'Username',
+      usernamePlaceholder: 'Enter username',
+      password: 'Password',
+      passwordPlaceholder: 'Enter password',
+      loginButton: 'Login',
+      noAccount: "Don't have an account? Register here.",
+    },
     navbar: {
       home: 'Home',
       addNew: 'Add new',
@@ -74,6 +84,7 @@ const messages = {
       itemDeletedError: 'Error deleting item',
       itemNotFoundError: 'Error: Item not found',
       messagesCounter: 'Messages',
+      myOffers: 'My Offers',
     },
     itemDetails: {
       title: 'Item Details: {title}',
@@ -299,6 +310,16 @@ const messages = {
     }
   },
   ua: {
+    auth: {
+      login: 'Увійти',
+      register: 'Реєстрація',
+      username: 'Ім\'я користувача',
+      password: 'Пароль',
+      usernamePlaceholder: 'Введіть ім\'я користувача',
+      passwordPlaceholder: 'Введіть пароль',
+      loginButton: 'Увійти',
+      noAccount: 'Немає облікового запису? Зареєструйтесь тут.',
+    },
     navbar: {
       home: 'Головна',
       addNew: 'Додати нове',
@@ -371,6 +392,7 @@ const messages = {
       itemDeletedError: 'Помилка видалення товару',
       itemNotFoundError: 'Помилка: Товар не знайдено',
       messagesCounter: 'Повідомлення',
+      myOffers: 'Мої пропозиції',
     },
     homePage: {
       showMapWithMarkers: "Показати карту з маркерами товарів",
