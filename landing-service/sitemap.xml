@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    
+    <!-- Home page in both languages -->
+    <url>
+        <loc>https://home.graintrade.info/?lang=en</loc>
+        <lastmod>2025-10-02</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+        <xhtml:link rel="alternate" hreflang="uk" href="https://home.graintrade.info/?lang=uk"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://home.graintrade.info/?lang=en"/>
+    </url>
+    
+    <url>
+        <loc>https://home.graintrade.info/?lang=uk</loc>
+        <lastmod>2025-10-02</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+        <xhtml:link rel="alternate" hreflang="uk" href="https://home.graintrade.info/?lang=uk"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://home.graintrade.info/?lang=en"/>
+    </url>
+    
+    <!-- How-to page in both languages -->
+    <url>
+        <loc>https://home.graintrade.info/how-to?lang=en</loc>
+        <lastmod>2025-10-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+        <xhtml:link rel="alternate" hreflang="uk" href="https://home.graintrade.info/how-to?lang=uk"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://home.graintrade.info/how-to?lang=en"/>
+    </url>
+    
+    <url>
+        <loc>https://home.graintrade.info/how-to?lang=uk</loc>
+        <lastmod>2025-10-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+        <xhtml:link rel="alternate" hreflang="uk" href="https://home.graintrade.info/how-to?lang=uk"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://home.graintrade.info/how-to?lang=en"/>
+    </url>
+    
+    <!-- FAQ page in both languages -->
+    <url>
+        <loc>https://home.graintrade.info/faq?lang=en</loc>
+        <lastmod>2025-10-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+        <xhtml:link rel="alternate" hreflang="uk" href="https://home.graintrade.info/faq?lang=uk"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://home.graintrade.info/faq?lang=en"/>
+    </url>
+    
+    <url>
+        <loc>https://home.graintrade.info/faq?lang=uk</loc>
+        <lastmod>2025-10-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+        <xhtml:link rel="alternate" hreflang="uk" href="https://home.graintrade.info/faq?lang=uk"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://home.graintrade.info/faq?lang=en"/>
+    </url>
+    
+</urlset>

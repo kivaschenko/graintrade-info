@@ -1,15 +1,15 @@
 <template>
   <div class="container mt-4">
-    <div class="card shadow-sm border-0">
-      <div class="card-header bg-primary text-white text-center py-3">
-        <h3 class="mb-0">{{ $t('profile.title') }}</h3>
+    <div class="card shadow-graintrade border-0">
+      <div class="card-header bg-graintrade-primary text-white text-center py-3">
+        <h3 class="mb-0 text-white">{{ $t('profile.title') }}</h3>
       </div>
       <div class="card-body p-4">
         <div class="row g-4">
           <div class="col-md-6">
-            <div class="card h-100 border-0 shadow-sm custom-card-nested">
+            <div class="card h-100 border-0 shadow-graintrade custom-card-nested">
                 <div class="card-body">
-                    <h4 class="card-title text-primary mb-3">{{ $t('profile.userInfo') }}</h4>
+                    <h4 class="card-title text-graintrade-secondary mb-3">{{ $t('profile.userInfo') }}</h4>
                     <div class="mb-3 d-flex align-items-center">
                         <i class="bi bi-person-fill me-2 text-muted"></i>
                         <strong>{{ $t('profile.username') }}:</strong> <span class="ms-1">{{ user.username }}</span>
@@ -29,7 +29,7 @@
                 </div>
                 <div class="card-footer text-muted text-end">
                   <div class="row">
-                    <div v-if="errorMessage" class="alert alert-danger mt-3">
+                    <div v-if="errorMessage" class="alert alert-warning mt-3">
                       <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
                     </div>
                     <div class="col">
@@ -43,7 +43,7 @@
                     <div class="col text-end">
                       <!-- Add edit button -->
                       <div class="text-end mb-3">
-                        <button class="btn btn-sm btn-warning" @click="showEditModal = true">
+                        <button class="btn btn-sm btn-outline-secondary" @click="showEditModal = true">
                           <i class="bi bi-pencil-square me-2"></i>{{ $t('profile.editProfile') }}
                         </button> 
                       </div>
@@ -64,13 +64,13 @@
           </div>
           
           <div class="col-md-6">
-            <div class="card h-100 border-0 shadow-sm custom-card-nested">
+            <div class="card h-100 border-0 shadow-graintrade custom-card-nested">
 							<div class="card-body">
-								<h4 class="card-title text-primary mb-3">{{ $t('profile.subscription') }}</h4>
+								<h4 class="card-title text-graintrade-secondary mb-3">{{ $t('profile.subscription') }}</h4>
 								<div class="mb-3 d-flex align-items-center">
 									<i class="bi bi-gem me-2 text-muted"></i>
 									<strong>{{ $t('profile.plan') }}:</strong> 
-									<span :class="['badge ms-2', subscription.tarif.scope !== 'free' ? 'bg-primary' : 'bg-info']">{{getTariffName(subscription.tarif) }}</span>
+									<span :class="['badge ms-2', subscription.tarif.scope !== 'free' ? 'bg-graintrade-primary text-white' : 'bg-info']">{{getTariffName(subscription.tarif) }}</span>
 								</div>
 								<div class="mb-2 d-flex align-items-center">
 									<i class="bi bi-patch-check-fill me-2 text-muted"></i>
@@ -111,7 +111,7 @@
 							</div>
                 <div class="card-footer text-muted text-end">
                   <div class="text-center mt-4">
-										<button class="btn btn-warning btn-sm" @click="upgradePlan">
+										<button class="btn btn-primary btn-hover-lift" @click="upgradePlan">
 											<i class="bi bi-arrow-up-circle me-2"></i>{{ $t('profile.upgrade') }}
 										</button>
                   </div>
@@ -120,9 +120,9 @@
           </div>
         </div>
 
-        <div class="card shadow-sm border-0 mt-4 custom-card-nested">
+        <div class="card shadow-graintrade border-0 mt-4 custom-card-nested">
 					<div class="card-body">
-						<h4 class="card-title text-primary mb-3">{{ $t('profile.usageTitle') }}</h4>
+						<h4 class="card-title text-graintrade-secondary mb-3">{{ $t('profile.usageTitle') }}</h4>
 						<div class="row g-3">
 							<div class="col-md-6">
 								<div class="mb-3">
@@ -136,15 +136,15 @@
 											role="progressbar"
 											:style="{ width: (usage.items_count / subscription.tarif.items_limit * 100) + '%' }"
 											:class="{
-													'bg-success': usage.items_count < subscription.tarif.items_limit * 0.7,
+													'bg-graintrade-primary': usage.items_count < subscription.tarif.items_limit * 0.7,
 													'bg-warning': usage.items_count >= subscription.tarif.items_limit * 0.7 && usage.items_count < subscription.tarif.items_limit,
-													'bg-danger': usage.items_count >= subscription.tarif.items_limit
+													'bg-graintrade-accent': usage.items_count >= subscription.tarif.items_limit
 											}"
 										>
 											{{ usage.items_count }} / {{ subscription.tarif.items_limit }}
 										</div>
 									</div>
-									<div v-if="usage.items_count >= subscription.tarif.items_limit" class="alert alert-danger alert-sm mt-2 p-2">
+									<div v-if="usage.items_count >= subscription.tarif.items_limit" class="alert alert-warning alert-sm mt-2 p-2">
 											<i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.itemLimitReached') }}
 									</div>
 								</div>
@@ -161,15 +161,15 @@
 															role="progressbar"
 															:style="{ width: (usage.map_views / subscription.tarif.map_views_limit * 100) + '%' }"
 															:class="{
-																	'bg-success': usage.map_views < subscription.tarif.map_views_limit * 0.7,
+																	'bg-graintrade-primary': usage.map_views < subscription.tarif.map_views_limit * 0.7,
 																	'bg-warning': usage.map_views >= subscription.tarif.map_views_limit * 0.7 && usage.map_views < subscription.tarif.map_views_limit,
-																	'bg-danger': usage.map_views >= subscription.tarif.map_views_limit
+																	'bg-graintrade-accent': usage.map_views >= subscription.tarif.map_views_limit
 															}"
 													>
 															{{ usage.map_views }} / {{ subscription.tarif.map_views_limit }}
 													</div>
 											</div>
-											<div v-if="usage.map_views >= subscription.tarif.map_views_limit" class="alert alert-danger alert-sm mt-2 p-2">
+											<div v-if="usage.map_views >= subscription.tarif.map_views_limit" class="alert alert-warning alert-sm mt-2 p-2">
 													<i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.mapViewsLimitReached') }}
 											</div>
 									</div>
@@ -186,15 +186,15 @@
 															role="progressbar"
 															:style="{ width: (usage.geo_search_count / subscription.tarif.geo_search_limit * 100) + '%' }"
 															:class="{
-																	'bg-success': usage.geo_search_count < subscription.tarif.geo_search_limit * 0.7,
+																	'bg-graintrade-primary': usage.geo_search_count < subscription.tarif.geo_search_limit * 0.7,
 																	'bg-warning': usage.geo_search_count >= subscription.tarif.geo_search_limit * 0.7 && usage.geo_search_count < subscription.tarif.geo_search_limit,
-																	'bg-danger': usage.geo_search_count >= subscription.tarif.geo_search_limit
+																	'bg-graintrade-accent': usage.geo_search_count >= subscription.tarif.geo_search_limit
 															}"
 													>
 															{{ usage.geo_search_count }} / {{ subscription.tarif.geo_search_limit }}
 													</div>
 											</div>
-											<div v-if="usage.geo_search_count >= subscription.tarif.geo_search_limit" class="alert alert-danger alert-sm mt-2 p-2">
+											<div v-if="usage.geo_search_count >= subscription.tarif.geo_search_limit" class="alert alert-warning alert-sm mt-2 p-2">
 													<i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.geoSearchLimitReached') }}
 											</div>
 									</div>
@@ -211,15 +211,15 @@
 															role="progressbar"
 															:style="{ width: (usage.navigation_count / subscription.tarif.navigation_limit * 100) + '%' }"
 															:class="{
-																	'bg-success': usage.navigation_count < subscription.tarif.navigation_limit * 0.7,
+																	'bg-graintrade-primary': usage.navigation_count < subscription.tarif.navigation_limit * 0.7,
 																	'bg-warning': usage.navigation_count >= subscription.tarif.navigation_limit * 0.7 && usage.navigation_count < subscription.tarif.navigation_limit,
-																	'bg-danger': usage.navigation_count >= subscription.tarif.navigation_limit
+																	'bg-graintrade-accent': usage.navigation_count >= subscription.tarif.navigation_limit
 															}"
 													>
 															{{ usage.navigation_count }} / {{ subscription.tarif.navigation_limit }}
 													</div>
 											</div>
-											<div v-if="usage.navigation_count >= subscription.tarif.navigation_limit" class="alert alert-danger alert-sm mt-2 p-2">
+											<div v-if="usage.navigation_count >= subscription.tarif.navigation_limit" class="alert alert-warning alert-sm mt-2 p-2">
 													<i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $t('profile.navigationLimitReached') }}
 											</div>
 									</div>
@@ -231,9 +231,9 @@
         <!-- Preferences Section -->
         <div class="row g-4">
           <div class="col-md-12">
-            <div class="card shadow-sm border-0 mt-4 custom-card-nested">
+            <div class="card shadow-graintrade border-0 mt-4 custom-card-nested">
               <div class="card-body">
-                <h4 class="card-title text-primary mb-3">{{ $t('preferences.notificationPreferencesStatus') }}</h4>
+                <h4 class="card-title text-graintrade-secondary mb-3">{{ $t('preferences.notificationPreferencesStatus') }}</h4>
                 <div v-if="preferences">
                   <div class="row g-3 mb-3">
                     <div class="col-md-6">
@@ -258,14 +258,14 @@
                       <div class="d-flex align-items-start">
                         <i class="bi bi-globe2 me-2 text-muted mt-1"></i>
                         <strong>{{ $t('common_text.country') }}:</strong>
-                        <span class="badge bg-warning ms-2">{{ preferences.country }}</span>
+                        <span class="badge bg-secondary ms-2">{{ preferences.country }}</span>
                       </div>
                     </div>
 										<div class="col-md-6">
 											<div class="d-flex align-items-start">
 												<i class="bi bi-translate me-2 text-muted mt-1"></i>
 												<strong>{{ $t('preferences.notificationLanguage') }}:</strong>
-												<span class="badge bg-warning ms-2">{{ preferences.language === 'ua' ? 'Ukrainian / Українська' : 'English / Англійська' }}</span>
+												<span class="badge bg-secondary ms-2">{{ preferences.language === 'ua' ? 'Ukrainian / Українська' : 'English / Англійська' }}</span>
 											</div>
 										</div>
                     <div class="col-md-12">
@@ -275,12 +275,12 @@
                         <div class="ms-2">
                           <span v-if="preferences.interested_categories && preferences.interested_categories.length">
                             <span v-if="$store.state.currentLocale === 'ua'">
-                              <span v-for="(category, index) in preferences.ua_interested_categories" :key="index" class="badge bg-info me-1 mb-1">
+                              <span v-for="(category, index) in preferences.ua_interested_categories" :key="index" class="badge bg-secondary me-1 mb-1">
                                 {{ category }}
                               </span>
                             </span>
                             <span v-else>
-                              <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-info me-1 mb-1">
+                              <span v-for="(category, index) in preferences.interested_categories" :key="index" class="badge bg-secondary me-1 mb-1">
                                 {{ category }}
                               </span>
                             </span> 
@@ -303,7 +303,7 @@
 
         <hr class="my-5">
 
-        <h4 class="card-title text-primary mb-3">{{ $t('profile.myItems') }}</h4>
+        <h4 class="card-title text-graintrade-secondary mb-3">{{ $t('profile.myItems') }}</h4>
         <ItemByUserTable
           :items="itemByUser" 
           :ref="itemTable"
@@ -615,21 +615,25 @@ export default {
 <style scoped>
 /* Main Card Styling */
 .card {
-  border-radius: 12px;
+  border-radius: var(--graintrade-border-radius-large);
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); /* More prominent shadow for main card */
+  box-shadow: var(--graintrade-shadow);
+  transition: var(--graintrade-transition);
+}
+
+.card:hover {
+  box-shadow: var(--graintrade-shadow-hover);
 }
 
 .card-header {
   border-bottom: none;
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--graintrade-border-radius-large) var(--graintrade-border-radius-large) 0 0;
   font-weight: 600;
   letter-spacing: 0.5px;
-  background-image: linear-gradient(to right, #007bff, #0056b3); /* Subtle gradient */
 }
 
 .card-body {
-  padding: 2.5rem;
+  padding: 2rem;
 }
 
 /* Section Titles */
@@ -637,60 +641,72 @@ export default {
   font-weight: 600;
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08); /* Slightly stronger separator */
-  color: #007bff; /* Primary color for titles */
+  border-bottom: 1px solid var(--graintrade-border);
+  color: var(--graintrade-secondary);
 }
 
 /* Nested Card Styling (for User Info, Subscription, Usage) */
 .custom-card-nested {
-    background-color: #fcfdff; /* Slightly different background for nested cards */
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    background-color: var(--graintrade-bg-light);
+    border: 1px solid var(--graintrade-border);
+    border-radius: var(--graintrade-border-radius-large);
+    transition: var(--graintrade-transition);
 }
 
 .custom-card-nested:hover {
     transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); /* Subtle lift and shadow on hover */
+    box-shadow: var(--graintrade-shadow-hover);
 }
 
 /* Info Details (strong tags and icons) */
 .mb-3 strong {
-  color: #343a40;
-  min-width: 90px; /* Adjust as needed for alignment */
+  color: var(--graintrade-secondary);
+  min-width: 90px;
 }
 
 .bi {
   margin-right: 0.5rem;
   font-size: 1.1em;
   vertical-align: middle;
-  color: #6c757d; /* Muted color for icons */
+  color: var(--graintrade-text-light);
 }
 
 /* Badges */
 .badge {
   font-size: 0.85em;
   padding: 0.5em 0.8em;
-  border-radius: 0.5rem;
+  border-radius: var(--graintrade-border-radius);
   font-weight: 600;
-  min-width: 70px; /* Give badges a consistent width */
+  min-width: 70px;
   text-align: center;
 }
 
-.badge.bg-primary { background-color: #007bff !important; }
-.badge.bg-info { background-color: #17a2b8 !important; }
-.badge.bg-success { background-color: #28a745 !important; }
+.badge.bg-graintrade-primary { 
+    background-color: var(--graintrade-primary) !important; 
+    color: white !important;
+}
+
+.badge.bg-info { 
+    background-color: #17a2b8 !important; 
+    color: white !important;
+}
+
+.badge.bg-success { 
+    background-color: var(--graintrade-primary) !important; 
+    color: white !important;
+}
+
 .badge.bg-warning { 
     background-color: #ffc107 !important; 
-    color: #343a40 !important; /* Ensure readable text on warning badge */
+    color: var(--graintrade-secondary) !important;
 }
 
 /* Progress Bars */
 .progress {
   height: 28px;
-  border-radius: 0.5rem;
-  background-color: #e9ecef;
-  overflow: hidden; /* Ensure progress bar content stays within bounds */
+  border-radius: var(--graintrade-border-radius);
+  background-color: var(--graintrade-bg-alt);
+  overflow: hidden;
 }
 
 .progress-bar {
@@ -698,61 +714,60 @@ export default {
   font-weight: 600;
   color: white;
   transition: width 0.6s ease;
-  border-radius: 0.5rem;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Slight text shadow for readability */
+  border-radius: var(--graintrade-border-radius);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+.bg-graintrade-primary {
+    background-color: var(--graintrade-primary) !important;
+}
+
+.bg-graintrade-accent {
+    background-color: var(--graintrade-accent) !important;
 }
 
 /* Alert for Usage Warnings */
 .alert.alert-sm {
   font-size: 0.85rem;
   padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--graintrade-border-radius);
   margin-top: 0.75rem;
   display: flex;
   align-items: center;
-  background-color: #f8d7da; /* Light red for danger alerts */
-  color: #721c24; /* Dark red text */
-  border-color: #f5c6cb;
+  border: 1px solid transparent;
 }
 
-/* Upgrade Button */
-.btn-warning {
-  background-color: #ffc107;
-  border-color: #ffc107;
-  color: #343a40;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  box-shadow: 0 4px 10px rgba(255, 193, 7, 0.3);
-  transition: all 0.3s ease;
+.alert-warning {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #856404;
+  border-color: rgba(255, 193, 7, 0.2);
 }
 
-.btn-warning:hover {
-  background-color: #e0a800;
-  border-color: #e0a800;
+/* Upgrade and Action Buttons */
+.btn-outline-primary.hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(255, 193, 7, 0.4);
+  box-shadow: var(--graintrade-shadow);
 }
 
 .btn-danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  color: #fff;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+  background-color: var(--graintrade-accent);
+  border-color: var(--graintrade-accent);
+  color: white;
+  font-weight: 500;
+  transition: var(--graintrade-transition);
 }
+
 .btn-danger:hover {
   background-color: #c82333;
   border-color: #c82333;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(220, 53, 69, 0.4);
+  box-shadow: var(--graintrade-shadow);
 }
 
 /* Horizontal Rule Separator */
 hr {
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid var(--graintrade-border);
+  opacity: 0.5;
 }
 
 /* Pagination controls */
@@ -765,32 +780,30 @@ hr {
 }
 
 .pagination-controls button {
-  min-width: 80px; /* Slightly wider buttons */
-  padding: 8px 18px; /* More padding */
-  border-radius: 50px; /* Fully rounded pills */
+  min-width: 80px;
+  padding: 8px 18px;
+  border-radius: var(--graintrade-border-radius-large);
   font-weight: 600;
-  transition: all 0.2s ease-in-out;
+  transition: var(--graintrade-transition);
 }
 
 .pagination-controls button:disabled {
-  background: #e9ecef;
-  color: #aaa;
-  border-color: #e9ecef;
+  background: var(--graintrade-bg-alt);
+  color: var(--graintrade-text-muted);
+  border-color: var(--graintrade-border);
   cursor: not-allowed;
 }
 
 .pagination-controls button:not(:disabled):hover {
-  background: #007bff;
-  color: #fff;
-  border-color: #007bff;
-  transform: translateY(-1px); /* Subtle lift on hover */
+  transform: translateY(-1px);
 }
 
 .pagination-controls span {
   font-weight: 500;
-  color: #6c757d;
+  color: var(--graintrade-text-light);
 }
-/* Add simple modal styles */
+
+/* Modal styles */
 .modal-backdrop {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -800,23 +813,54 @@ hr {
   align-items: center;
   justify-content: center;
 }
+
 .modal-dialog {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  background: white;
+  border-radius: var(--graintrade-border-radius-large);
+  box-shadow: var(--graintrade-shadow-hover);
   max-width: 500px;
   width: 100%;
 }
+
 .btn-close {
   background: none;
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
+  color: var(--graintrade-text-light);
+  transition: var(--graintrade-transition);
 }
+
+.btn-close:hover {
+  color: var(--graintrade-secondary);
+}
+
 #tariff-description {
   min-height: 60px;
   margin-bottom: 15px;
   font-size: 0.98em;
-  color: #555;
+  color: var(--graintrade-text);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1.5rem;
+  }
+  
+  .badge {
+    font-size: 0.75em;
+    padding: 0.4em 0.6em;
+    min-width: 60px;
+  }
+  
+  .progress {
+    height: 24px;
+  }
+  
+  .progress-bar {
+    line-height: 24px;
+    font-size: 0.8rem;
+  }
 }
 </style>

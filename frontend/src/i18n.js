@@ -2,6 +2,16 @@ import { createI18n } from 'vue-i18n';
 
 const messages = {
   en: {
+    auth: {
+      login: 'Login',
+      register: 'Register',
+      username: 'Username',
+      usernamePlaceholder: 'Enter username',
+      password: 'Password',
+      passwordPlaceholder: 'Enter password',
+      loginButton: 'Login',
+      noAccount: "Don't have an account? Register here.",
+    },
     navbar: {
       home: 'Home',
       addNew: 'Add new',
@@ -74,6 +84,7 @@ const messages = {
       itemDeletedError: 'Error deleting item',
       itemNotFoundError: 'Error: Item not found',
       messagesCounter: 'Messages',
+      myOffers: 'My Offers',
     },
     itemDetails: {
       title: 'Item Details: {title}',
@@ -132,6 +143,8 @@ const messages = {
       latitude_placeholder: 'Search or pick on map filled automatically',
       longitude_placeholder: 'Search or pick on map filled automatically',
       description_placeholder: 'Enter description (optional) until 600 characters',
+      category_placeholder: 'Type at least 3 characters to search categories...',
+      no_categories_found: 'No categories found',
       validation_xss_description: 'The text looks like JS script and will be denied',
       error_validation_failed: 'The form did not pas validation',
       validation_xss_message: 'The text looks like JS script and will be denied',
@@ -174,7 +187,13 @@ const messages = {
       "submit": "Register",
       "submitting": "Registering...",
       "success": "Registration successful!",
-      "error": "Registration failed"
+      "error": "Registration failed",
+      "usernamePlaceholder": "Enter username",
+      "emailPlaceholder": "Enter email",
+      "fullNamePlaceholder": "Enter full name",
+      "phonePlaceholder": "Enter phone number",
+      "passwordPlaceholder": "Enter password",
+      "confirmPasswordPlaceholder": "Confirm password",
     },
     userUpdate: {
       "title": "Update Profile",
@@ -235,6 +254,8 @@ const messages = {
       deleteAccountSuccess: 'Account deleted successfully!',
       deleteAccountError: 'Error deleting account',
       loginToView: 'Please log in to view user profiles.',
+      noCategories: 'None selected',
+      noCountry: 'Not specified',
     },
     tariff: {
       basic: "Basic",
@@ -288,7 +309,7 @@ const messages = {
       savePreferences: "Save Preferences",
       preferencesSaved: "Preferences saved successfully!",
       preferencesSaveError: "Error saving preferences. Please try again.",
-      helpText: "Select categories you are interested in for notifications with Ctrl/Cmd + Click",
+      helpText: "Select categories you are interested in for notifications",
       yes: 'Yes',
       no: 'No',
       selectCountry: 'Select Country',
@@ -296,9 +317,22 @@ const messages = {
       selectNotificationLanguage: 'Select language for notifications',
       showPreferencesForm: 'Show Preferences Form',
       hidePreferencesForm: 'Hide Preferences Form',
+      notificationSettings: 'Notification Settings',
+      country_placeholder: 'Type at least 3 characters to search countries...',
+      no_countries_found: 'No countries found',
     }
   },
   ua: {
+    auth: {
+      login: 'Увійти',
+      register: 'Реєстрація',
+      username: 'Ім\'я користувача',
+      password: 'Пароль',
+      usernamePlaceholder: 'Введіть ім\'я користувача',
+      passwordPlaceholder: 'Введіть пароль',
+      loginButton: 'Увійти',
+      noAccount: 'Немає облікового запису? Зареєструйтесь тут.',
+    },
     navbar: {
       home: 'Головна',
       addNew: 'Додати нове',
@@ -371,6 +405,7 @@ const messages = {
       itemDeletedError: 'Помилка видалення товару',
       itemNotFoundError: 'Помилка: Товар не знайдено',
       messagesCounter: 'Повідомлення',
+      myOffers: 'Мої пропозиції',
     },
     homePage: {
       showMapWithMarkers: "Показати карту з маркерами товарів",
@@ -428,6 +463,8 @@ const messages = {
       latitude_placeholder: 'Шукати або вибрати на карті автоматично заповнюється',
       longitude_placeholder: 'Шукати або вибрати на карті автоматично заповнюється',
       description_placeholder: 'Введіть опис (необов\'язково) до 600 символів',
+      category_placeholder: 'Введіть принаймні 3 символи для пошуку категорій...',
+      no_categories_found: 'Категорії не знайдено',
       validation_xss_description: 'Цей текст виглядає як скрипт і буде відхилений',
       error_validation_failed: 'Форма не пройшла перевірку',
       validation_xss_message: 'Цей текст виглядає як скрипт і буде відхилений',
@@ -470,7 +507,13 @@ const messages = {
       "submit": "Зареєструватися",
       "submitting": "Реєстрація...",
       "success": "Реєстрація успішна!",
-      "error": "Помилка реєстрації"
+      "error": "Помилка реєстрації",
+      "usernamePlaceholder": "Введіть ім'я користувача",
+      "emailPlaceholder": "Введіть електронну пошту",
+      "fullNamePlaceholder": "Введіть повне ім'я",
+      "phonePlaceholder": "Введіть номер телефону",
+      "passwordPlaceholder": "Введіть пароль",
+      "confirmPasswordPlaceholder": "Підтвердіть пароль",
     },
     userUpdate: {
       "title": "Оновити профіль",
@@ -531,6 +574,8 @@ const messages = {
       deleteAccountSuccess: 'Обліковий запис успішно видалено!',
       deleteAccountError: 'Помилка видалення облікового запису',
       loginToView: 'Будь ласка, увійдіть, щоб переглянути профілі користувачів.',
+      noCategories: 'Не вибрано',
+      noCountry: 'Не вказано',
     },
     tariff: {
       basic: "Базовий",
@@ -586,7 +631,7 @@ const messages = {
       savePreferences: "Зберегти налаштування",
       preferencesSaved: "Налаштування успішно збережено!",
       preferencesSaveError: "Помилка збереження налаштувань. Будь ласка, спробуйте ще раз.",
-      helpText: "Виберіть категорії, які вас цікавлять для сповіщень, використовуючи Ctrl/Cmd + Клік",
+      helpText: "Виберіть категорії, які вас цікавлять для сповіщень",
       yes: 'Так',
       no: 'Ні',
       selectCountry: 'Виберіть країну',
@@ -594,6 +639,9 @@ const messages = {
       selectNotificationLanguage: 'Виберіть мову для сповіщень',
       showPreferencesForm: 'Показати форму налаштувань',
       hidePreferencesForm: 'Приховати форму налаштувань',
+      notificationSettings: 'Налаштування сповіщень',
+      country_placeholder: 'Введіть принаймні 3 символи для пошуку країн...',
+      no_countries_found: 'Країни не знайдено',
     }
   },
 };

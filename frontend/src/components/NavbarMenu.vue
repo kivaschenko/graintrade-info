@@ -1,7 +1,10 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white">
     <div class="container-fluid">
-      <router-link class="navbar-brand" to="/">Graintrade.Info</router-link>
+      <router-link class="navbar-brand d-flex align-items-center" to="/">
+        <img src="@/assets/logo.png" alt="GrainTrade Logo" class="navbar-logo me-2">
+        <span class="brand-text">Graintrade.Info</span>
+      </router-link>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -24,20 +27,29 @@
         </ul>
         <ul class="navbar-nav">
           <li class="nav-item" v-if="!isAuthenticated">
-            <router-link class="btn btn-outline-light me-2" to="/login">{{ $t('navbar.login') }}</router-link>
-            <router-link class="btn btn-warning me-2" to="/register">{{ $t('navbar.register') }}</router-link>
+            <router-link class="btn btn-outline-primary me-2" to="/login">{{ $t('navbar.login') }}</router-link>
+            <router-link class="btn btn-primary me-2" to="/register">{{ $t('navbar.register') }}</router-link>
           </li>
           <li class="nav-item" v-if="isAuthenticated">
-            <router-link class="btn btn-outline-light me-2" to="/profile">{{ $t('navbar.profile') }}</router-link>
+            <router-link class="btn btn-outline-primary me-2" to="/profile">{{ $t('navbar.profile') }}</router-link>
           </li>
           <li class="nav-item" v-if="isAuthenticated">
-            <a class="btn btn-danger me-2" href="#" @click="logout">{{ $t('navbar.logout') }}</a>
+            <a class="btn btn-outline-secondary me-2" href="#" @click="logout">{{ $t('navbar.logout') }}</a>
           </li>
           <li class="nav-item">
-            <select v-model="selectedLocale" @change="changeLocale" class="form-select bg-primary text-white border-0">
-              <option value="ua">UKR</option>
-              <option value="en">ENG</option>
-            </select>
+            <div class="lang-switcher">
+              <a href="#" 
+                 @click.prevent="setLocale('en')" 
+                 :class="['lang-link', { 'active': selectedLocale === 'en' }]">
+                EN
+              </a>
+              <span class="lang-separator">|</span>
+              <a href="#" 
+                 @click.prevent="setLocale('ua')" 
+                 :class="['lang-link', { 'active': selectedLocale === 'ua' }]">
+                УКР
+              </a>
+            </div>
           </li>
         </ul>
       </div>
@@ -71,11 +83,14 @@ export default {
       this.$router.push('/');
       this.collapseNavbar(); // Collapse navbar after logout
     },
-    changeLocale(event) {
-      const newLocale = event.target.value;
+    changeLocale(newLocale) {
       this.$store.commit('setLocale', newLocale);
       this.$i18n.locale = newLocale;
       this.collapseNavbar(); // Collapse navbar after changing locale
+    },
+    setLocale(locale) {
+      this.selectedLocale = locale;
+      this.changeLocale(locale);
     },
     collapseNavbar() {
       const navbarCollapse = document.getElementById('navbarNav');
@@ -94,30 +109,89 @@ export default {
 </script>
 
 <style scoped>
-.navbar {
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.05);
-}
-
+/* Navbar brand with logo styling */
 .navbar-brand {
-  font-weight: bold;
+  font-weight: 700;
   font-size: 1.5rem;
+  color: var(--graintrade-secondary) !important;
+  text-decoration: none;
+  transition: var(--graintrade-transition);
 }
 
-.nav-link {
+.navbar-brand:hover {
+  color: var(--graintrade-primary) !important;
+}
+
+.navbar-logo {
+  height: 40px;
+  width: auto;
+  transition: var(--graintrade-transition);
+}
+
+.navbar-logo:hover {
+  transform: scale(1.05);
+}
+
+.brand-text {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Responsive logo sizing */
+@media (max-width: 768px) {
+  .navbar-logo {
+    height: 32px;
+  }
+  
+  .brand-text {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-logo {
+    height: 28px;
+  }
+  
+  .brand-text {
+    font-size: 1.1rem;
+  }
+}
+
+/* Language switcher styling to match landing service */
+.lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lang-link {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--graintrade-border-radius);
   font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-.nav-link:hover {
-  color: var(--bs-warning) !important; /* Example hover effect */
-}
-
-.btn {
-  font-weight: 500;
-}
-
-.form-select {
+  color: var(--graintrade-text-light);
+  text-decoration: none;
+  transition: var(--graintrade-transition);
   cursor: pointer;
+}
+
+.lang-link:hover {
+  color: var(--graintrade-primary);
+  text-decoration: none;
+}
+
+.lang-link.active {
+  background: var(--graintrade-primary);
+  color: white;
+}
+
+.lang-link.active:hover {
+  background: var(--graintrade-primary-dark);
+  color: white;
+}
+
+.lang-separator {
+  color: var(--graintrade-border);
+  font-weight: 300;
 }
 </style>

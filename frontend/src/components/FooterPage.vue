@@ -1,41 +1,44 @@
 <template>
-  <div class="container">
-		<footer class="py-3 my-4">
-			<div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
-
-			<ul class="nav mb-3 mb-md-0">
-				<li class="nav-item">
-					<router-link class="nav-link px-2 text-muted" to="/contacts-requisites">{{ $t('footer.contactsAndRequisites') }}</router-link>
-				</li>
-				<li class="nav-item">
-					<router-link class="nav-link px-2 text-muted" to="/privacy-policy">{{ $t('footer.privacyPolicy') }}</router-link>
-				</li>
-				<li class="nav-item">
-					<router-link class="nav-link px-2 text-muted" to="/terms-of-service">{{ $t('footer.termsOfService') }}</router-link>
-				</li>
-				<li class="nav-item">
-					<router-link class="nav-link px-2 text-muted" to="/tariffs">{{ $t('footer.pricing') }}</router-link>
-				</li>
-				<!--
-				<li class="nav-item"><a href="#" class="nav-link px-2 text-muted">{{ $t('footer.faqs') }}</a></li>
-				-->
-				<li class="nav-item">
-					<router-link class="nav-link px-2 text-muted" to="/about-us">{{ $t('footer.about') }}</router-link>
-				</li>
-			</ul>
-			<div>
-				<a
-					href="https://t.me/graintradeinfo"
-					target="_blank"
-					rel="noopener noreferrer"
-					class="btn btn-primary d-flex"
-					><i class="bi bi-telegram me-2"></i>{{ $t('footer.telegram') }}
-				</a>
-			</div>
-			<p class="text-center text-muted">&copy; 2025 Graintraide.Info</p>
-			</div>
-		</footer>
-	</div>
+  <footer class="footer bg-graintrade-secondary text-white mt-auto">
+    <div class="container">
+      <div class="row py-4">
+        <div class="col-md-8">
+          <ul class="nav flex-column flex-md-row">
+            <li class="nav-item mb-2 mb-md-0">
+              <router-link class="nav-link text-white-50" to="/contacts-requisites">{{ $t('footer.contactsAndRequisites') }}</router-link>
+            </li>
+            <li class="nav-item mb-2 mb-md-0">
+              <router-link class="nav-link text-white-50" to="/privacy-policy">{{ $t('footer.privacyPolicy') }}</router-link>
+            </li>
+            <li class="nav-item mb-2 mb-md-0">
+              <router-link class="nav-link text-white-50" to="/terms-of-service">{{ $t('footer.termsOfService') }}</router-link>
+            </li>
+            <li class="nav-item mb-2 mb-md-0">
+              <router-link class="nav-link text-white-50" to="/tariffs">{{ $t('footer.pricing') }}</router-link>
+            </li>
+            <li class="nav-item mb-2 mb-md-0">
+              <router-link class="nav-link text-white-50" to="/about-us">{{ $t('footer.about') }}</router-link>
+            </li>
+          </ul>
+        </div>
+        <div class="col-md-4 text-md-end">
+          <a
+            href="https://t.me/graintradeinfo"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-primary d-inline-flex align-items-center"
+          >
+            <i class="bi bi-telegram me-2"></i>{{ $t('footer.telegram') }}
+          </a>
+        </div>
+      </div>
+      <div class="row py-3 border-top border-secondary">
+        <div class="col-12 text-center">
+          <p class="mb-0 text-white-50">&copy; 2025 Graintrade.Info</p>
+        </div>
+      </div>
+    </div>
+  </footer>
 </template>
 
 <script>
@@ -61,14 +64,9 @@ export default {
 </script>
 
 <style scoped>
-footer {
-	background-color: #f8f9fa;
-	color: #6c757d;
-}
-.nav-link {
-	color: #6c757d;
-}
+/* Footer styles are handled by graintrade-theme.css */
 .nav-link:hover {
-	color: #495057;
+  color: white !important;
+  transition: var(--graintrade-transition);
 }
 </style>

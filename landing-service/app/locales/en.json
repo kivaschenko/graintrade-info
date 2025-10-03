@@ -1,0 +1,90 @@
+{
+  "site_title": "GrainTrade - Platform for Grain Search and Negotiations",
+  "site_description": "GrainTrade is an online platform for farmers and traders. Search for grain offers and agricultural products, negotiate with potential partners. Offer map, chats, notifications.",
+  "nav": {
+    "home": "Home",
+    "how_to": "How to Use",
+    "faq": "FAQ",
+    "platform": "Go to Platform"
+  },
+  "hero": {
+    "title": "GrainTrade.info",
+    "subtitle": "Platform for finding grain offers and negotiating with potential partners",
+    "cta": "Start Searching"
+  },
+  "what_is": {
+    "title": "What is GrainTrade?",
+    "description": "<strong>GrainTrade.info</strong> is a platform for search and negotiations in grain trading. Here you can <strong>find grain offers</strong>, <strong>post your requirements</strong>, find potential partners and conduct negotiations directly. The platform does not process payments - all financial matters are resolved between parties independently."
+  },
+  "advantages": {
+    "title": "Platform Advantages",
+    "items": [
+      "Search offers by map with clustering",
+      "Convenient <strong>chat for negotiations</strong> under each offer",
+      "Email notifications about new offers and messages",
+      "Two interface languages: Ukrainian and English",
+      "Secure communication between market participants",
+      "Fast performance thanks to modern architecture (Python, FastAPI, PostgreSQL, Redis)"
+    ]
+  },
+  "for_whom": {
+    "title": "Who is GrainTrade for?",
+    "farmers": "🌾 Farmers – to find buyers for grain",
+    "traders": "🚛 Traders – to find grain suppliers",
+    "agribusiness": "🌍 Agribusiness – to find reliable partners"
+  },
+  "how_to_use": {
+    "title": "How to Use GrainTrade",
+    "steps": [
+      {
+        "title": "Register",
+        "description": "Create your account on the platform. It's free and takes just a few minutes."
+      },
+      {
+        "title": "Post Offer",
+        "description": "Post your grain for sale or create a purchase request with all necessary details."
+      },
+      {
+        "title": "Find Partners",
+        "description": "Use the map search to find the best offers near you or browse all listings."
+      },
+      {
+        "title": "Negotiate",
+        "description": "Chat directly with buyers or sellers to discuss terms and conditions of the deal."
+      },
+      {
+        "title": "Arrange Independently",
+        "description": "Agree on price, payment method, logistics and other deal terms between yourselves."
+      }
+    ]
+  },
+  "footer": {
+    "copyright": "© 2025 GrainTrade.info – Platform for finding partners and negotiations. All rights reserved.",
+    "contact": "Contact us: info@graintrade.info"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "items": [
+      {
+        "question": "How to register on GrainTrade?",
+        "answer": "Registration is simple and free. Click 'Register' button, fill in your details, and verify your email address."
+      },
+      {
+        "question": "Is it safe to use the platform?",
+        "answer": "Yes, we ensure secure communication between users and verify all participants. However, financial transactions are conducted at your own discretion."
+      },
+      {
+        "question": "What grain types can I trade?",
+        "answer": "You can post offers for all major grain types: wheat, corn, barley, sunflower seeds, soybeans, and other agricultural products."
+      },
+      {
+        "question": "Are there any fees?",
+        "answer": "Basic platform usage is free. We do not process payments or charge commissions on deals - you handle all of this independently."
+      },
+      {
+        "question": "How does the map search work?",
+        "answer": "Our map search shows all available offers in your area. You can filter by grain type, quantity, and distance."
+      }
+    ]
+  }
+}

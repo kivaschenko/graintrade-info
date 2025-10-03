@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ t.site_title }}{% endblock %}</title>
+    <meta name="description" content="{{ t.site_description }}">
+    <meta name="keywords" content="grain trade, agriculture, farming, trading, зерно, торгівля">
+    <link rel="canonical" href="https://home.graintrade.info/">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="{{ t.site_title }}">
+    <meta property="og:description" content="{{ t.site_description }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://home.graintrade.info/">
+    <meta property="og:image" content="{{ url_for('static', filename='images/og-image.jpg') }}">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ t.site_title }}">
+    <meta name="twitter:description" content="{{ t.site_description }}">
+    <meta name="twitter:image" content="{{ url_for('static', filename='images/og-image.jpg') }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav container">
+            <div class="nav-brand">
+                <a href="?lang={{ lang }}" class="brand-link">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="GrainTrade" class="brand-logo">
+                    <span class="brand-text">GrainTrade</span>
+                </a>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                <a href="/?lang={{ lang }}" class="nav-link">{{ t.nav.home }}</a>
+                <a href="/how-to?lang={{ lang }}" class="nav-link">{{ t.nav.how_to }}</a>
+                <a href="/faq?lang={{ lang }}" class="nav-link">{{ t.nav.faq }}</a>
+                <a href="https://graintrade.info" class="nav-link nav-cta" target="_blank">{{ t.nav.platform }}</a>
+            </div>
+            
+            <div class="nav-controls">
+                <!-- Language Switcher -->
+                <div class="lang-switcher">
+                    <a href="?lang=en" class="lang-link {% if lang == 'en' %}active{% endif %}">EN</a>
+                    <span class="lang-separator">|</span>
+                    <a href="?lang=uk" class="lang-link {% if lang == 'uk' %}active{% endif %}">УКР</a>
+                </div>
+                
+                <!-- Mobile Menu Toggle -->
+                <button class="nav-toggle" id="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>GrainTrade.info</h3>
+                    <p>{{ t.site_description }}</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>{{ t.nav.home }}</h4>
+                    <ul>
+                        <li><a href="?lang={{ lang }}">{{ t.nav.home }}</a></li>
+                        <li><a href="/how-to?lang={{ lang }}">{{ t.nav.how_to }}</a></li>
+                        <li><a href="/faq?lang={{ lang }}">{{ t.nav.faq }}</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>{{ t.footer.contact }}</h4>
+                    <p>
+                        <i class="fas fa-envelope"></i>
+                        <a href="mailto:info@graintrade.info">info@graintrade.info</a>
+                    </p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-viber"></i></a>
+                        <a href="https://t.me/graintradeinfo" class="social-link"><i class="fab fa-telegram"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>{{ t.footer.copyright }}</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

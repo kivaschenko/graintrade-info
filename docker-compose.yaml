@@ -33,7 +33,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-  
+
   notifications:
     build: ./notifications
     restart: always
@@ -58,12 +58,27 @@ services:
     env_file:
       - ./frontend/.env.production
     ports:
-      - "8080:80" 
+      - "8080:80"
     networks:
       - grain-network
     depends_on:
       - backend
       - chat-room
+
+  landing-service:
+    build: ./landing-service
+    restart: always
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./landing-service:/landing-service
+    networks:
+      - grain-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   grain-network:

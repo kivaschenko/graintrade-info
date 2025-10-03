@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t.nav.how_to }} - {{ t.site_title }}{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1 class="page-title">{{ t.how_to_use.title }}</h1>
+        <p class="page-subtitle">Complete guide to using GrainTrade platform</p>
+        <nav class="breadcrumb">
+            <a href="?lang={{ lang }}">{{ t.nav.home }}</a>
+            <span>/</span>
+            <span>{{ t.nav.how_to }}</span>
+        </nav>
+    </div>
+</section>
+
+<!-- How-to Steps Section -->
+<section class="section">
+    <div class="container">
+        <div class="how-to-content">
+            {% for step in t.how_to_use.steps %}
+            <div class="how-to-step">
+                <div class="step-header">
+                    <div class="step-number-large">{{ loop.index }}</div>
+                    <h2 class="step-title-large">{{ step.title }}</h2>
+                </div>
+                
+                <div class="step-content">
+                    <div class="step-text">
+                        <p>{{ step.description }}</p>
+                        
+                        <!-- Additional detailed instructions for each step -->
+                        {% if loop.index == 1 %}
+                        <div class="step-details">
+                            <h4>Registration Details:</h4>
+                            <ul>
+                                <li>Click the "Sign Up" button on the main page</li>
+                                <li>Fill in your email, password, and basic information</li>
+                                <li>Verify your email address</li>
+                                <li>Complete your profile with contact details</li>
+                            </ul>
+                        </div>
+                        {% elif loop.index == 2 %}
+                        <div class="step-details">
+                            <h4>{% if lang == 'uk' %}Розміщення пропозицій:{% else %}Posting Offers:{% endif %}</h4>
+                            <ul>
+                                <li>{% if lang == 'uk' %}Оберіть "Продати" або "Купити"{% else %}Choose "Sell" or "Buy" option{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Оберіть тип зерна та вкажіть кількість{% else %}Select grain type and specify quantity{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Встановіть орієнтовну ціну та місцезнаходження{% else %}Set indicative price and location{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Додайте фото та детальний опис{% else %}Add photos and detailed description{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Опублікуйте свою пропозицію{% else %}Publish your offer{% endif %}</li>
+                            </ul>
+                        </div>
+                        {% elif loop.index == 3 %}
+                        <div class="step-details">
+                            <h4>{% if lang == 'uk' %}Пошук партнерів:{% else %}Finding Partners:{% endif %}</h4>
+                            <ul>
+                                <li>{% if lang == 'uk' %}Використовуйте інтерактивну карту для перегляду пропозицій поблизу{% else %}Use the interactive map to see offers near you{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Фільтруйте за типом зерна, кількістю та відстанню{% else %}Filter by grain type, quantity, and distance{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Переглядайте категорії та збережені пошуки{% else %}Browse categories and saved searches{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Перевіряйте рейтинги та відгуки користувачів{% else %}Check user ratings and reviews{% endif %}</li>
+                            </ul>
+                        </div>
+                        {% elif loop.index == 4 %}
+                        <div class="step-details">
+                            <h4>{% if lang == 'uk' %}Процес переговорів:{% else %}Negotiation Process:{% endif %}</h4>
+                            <ul>
+                                <li>{% if lang == 'uk' %}Розпочніть розмову в чаті з потенційними партнерами{% else %}Start a chat conversation with potential partners{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Обговоріть ціну, кількість та умови поставки{% else %}Discuss price, quantity, and delivery terms{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Обміняйтеся необхідною документацією{% else %}Exchange necessary documentation{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Домовтеся про методи оплати та доставки{% else %}Agree on payment and delivery methods{% endif %}</li>
+                            </ul>
+                        </div>
+                        {% elif loop.index == 5 %}
+                        <div class="step-details">
+                            <h4>{% if lang == 'uk' %}Самостійні домовленості:{% else %}Independent Arrangements:{% endif %}</h4>
+                            <ul>
+                                <li>{% if lang == 'uk' %}Домовтеся про спосіб оплати між собою{% else %}Agree on payment method between yourselves{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Організуйте логістику та доставку{% else %}Arrange logistics and delivery{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Підтвердьте отримання та якість{% else %}Confirm receipt and quality{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Залиште відгук про вашого торговельного партнера{% else %}Leave feedback for your trading partner{% endif %}</li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="step-image">
+                        <img src="{{ url_for('static', filename='images/how-to/step-' + loop.index|string + '.jpg') }}" 
+                             alt="{{ step.title }}" 
+                             class="step-img"
+                             loading="lazy">
+                        <div class="image-caption">{{ step.title }} - Screenshot</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Tips Section -->
+<section class="section section-alt">
+    <div class="container">
+        <h2 class="section-title">Pro Tips for Success</h2>
+        <div class="tips-grid">
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3>Quality Photos</h3>
+                <p>Upload high-quality photos of your grain to attract more buyers and build trust.</p>
+            </div>
+            
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>{% if lang == 'uk' %}Швидко відповідайте{% else %}Respond Quickly{% endif %}</h3>
+                <p>{% if lang == 'uk' %}Швидкі відповіді в чаті призводять до більш успішних переговорів.{% else %}Fast response times in chat conversations lead to more successful negotiations.{% endif %}</p>
+            </div>
+            
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>{% if lang == 'uk' %}Конкурентні ціни{% else %}Fair Pricing{% endif %}</h3>
+                <p>{% if lang == 'uk' %}Досліджуйте ринкові ціни та пропонуйте справедливі ставки для успішних переговорів.{% else %}Research market prices and offer fair rates for successful negotiations.{% endif %}</p>
+            </div>
+            
+            <div class="tip-card">
+                <div class="tip-icon">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <h3>{% if lang == 'uk' %}Будуйте репутацію{% else %}Build Reputation{% endif %}</h3>
+                <p>{% if lang == 'uk' %}Ведіть переговори професійно, щоб створити позитивні відгуки та повторний бізнес.{% else %}Conduct negotiations professionally to build positive reviews and repeat business.{% endif %}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Video Tutorial Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Video Tutorial</h2>
+        <div class="video-container">
+            <div class="video-placeholder">
+                <i class="fas fa-play-circle"></i>
+                <p>Video tutorial coming soon</p>
+                <p class="video-description">Watch our comprehensive video guide to get started with GrainTrade quickly and efficiently.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content">
+            <h2>Ready to Start Trading?</h2>
+            <p>Join GrainTrade today and connect with grain traders worldwide</p>
+            <div class="cta-buttons">
+                <a href="https://graintrade.info" class="btn btn-primary btn-large" target="_blank">
+                    Start Now
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+                <a href="/faq?lang={{ lang }}" class="btn btn-secondary btn-large">
+                    View FAQ
+                    <i class="fas fa-question-circle"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
