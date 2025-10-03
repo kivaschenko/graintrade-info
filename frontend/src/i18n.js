@@ -307,7 +307,7 @@ const messages = {
       savePreferences: "Save Preferences",
       preferencesSaved: "Preferences saved successfully!",
       preferencesSaveError: "Error saving preferences. Please try again.",
-      helpText: "Select categories you are interested in for notifications with Ctrl/Cmd + Click",
+      helpText: "Select categories you are interested in for notifications",
       yes: 'Yes',
       no: 'No',
       selectCountry: 'Select Country',
@@ -315,6 +315,9 @@ const messages = {
       selectNotificationLanguage: 'Select language for notifications',
       showPreferencesForm: 'Show Preferences Form',
       hidePreferencesForm: 'Hide Preferences Form',
+      notificationSettings: 'Notification Settings',
+      country_placeholder: 'Type at least 3 characters to search countries...',
+      no_countries_found: 'No countries found',
     }
   },
   ua: {
@@ -624,7 +627,7 @@ const messages = {
       savePreferences: "Зберегти налаштування",
       preferencesSaved: "Налаштування успішно збережено!",
       preferencesSaveError: "Помилка збереження налаштувань. Будь ласка, спробуйте ще раз.",
-      helpText: "Виберіть категорії, які вас цікавлять для сповіщень, використовуючи Ctrl/Cmd + Клік",
+      helpText: "Виберіть категорії, які вас цікавлять для сповіщень",
       yes: 'Так',
       no: 'Ні',
       selectCountry: 'Виберіть країну',
@@ -632,6 +635,9 @@ const messages = {
       selectNotificationLanguage: 'Виберіть мову для сповіщень',
       showPreferencesForm: 'Показати форму налаштувань',
       hidePreferencesForm: 'Приховати форму налаштувань',
+      notificationSettings: 'Налаштування сповіщень',
+      country_placeholder: 'Введіть принаймні 3 символи для пошуку країн...',
+      no_countries_found: 'Країни не знайдено',
     }
   },
 };

@@ -57,8 +57,20 @@ export default {
   },
   mounted() {
     fetch(`${process.env.VUE_APP_CHAT_HTTP_URL}/chat/${this.itemId}/participants`)
-      .then(res => res.json())
-      .then(data => { this.participants = data.filter(u => u.username !== this.ownerId); });
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => { 
+        this.participants = data.filter(u => u.username !== this.ownerId); 
+      })
+      .catch(error => {
+        console.error('Error fetching chat participants:', error);
+        // Set participants to empty array if fetch fails
+        this.participants = [];
+      });
   }
 };
 </script>

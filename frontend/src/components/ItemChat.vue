@@ -101,8 +101,19 @@ export default {
     },
     fetchHistory() {
       fetch(`${process.env.VUE_APP_CHAT_HTTP_URL}/chat/${this.itemId}/${this.otherUserId}/history?current_user=${this.userId}`)
-        .then(res => res.json())
-        .then(data => { this.messages = data; });
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => { 
+          this.messages = data; 
+        })
+        .catch(error => {
+          console.error('Error fetching chat history:', error);
+          // Keep existing messages if fetch fails
+        });
     },
     startPeriodicRefresh() {
       if (this.refreshTimer) {
