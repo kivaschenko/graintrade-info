@@ -5,15 +5,16 @@
       <button
         :disabled="page === 1"
         @click="handlePageChange(page -1)"
-        class="btn btn-outline-secondary btn-sm"
+        class="btn btn-outline-primary btn-sm me-2 rounded-pill"
       >&lt; {{ $t('pagination.prev') }}</button>
       <span> {{ page }} / {{ Math.ceil(totalItems /pageSize) }}</span>
       <button
         :disabled="page * pageSize >= totalItems"
         @click="handlePageChange(page + 1)"
-        class="btn btn-outline-secondary btn-sm"
+        class="btn btn-outline-primary btn-sm ms-2 rounded-pill"
       >{{ $t('pagination.next') }} &gt;</button>
     </div>
+
     <div class="container mt-5">
       <div v-if="!hasMapAccess" class="alert alert-info">
         {{ $t('map.registerToView') }}
@@ -407,7 +408,7 @@ export default {
 </script>
 
 <style>
-/* Existing styles */
+/* Pagination controls */
 .pagination-controls {
   display: flex;
   justify-content: center;
@@ -417,28 +418,27 @@ export default {
 }
 
 .pagination-controls button {
-  min-width: 70px;
-  margin: 0 4px;
-  padding: 6px 16px;
-  border-radius: 20px;
-  border: 1px solid #ced4da;
-  color:#333;
-  transition: background 0.2s, color 0.2s, border 0.2s;
-  font-weight: 500;
-  cursor: pointer;
+  min-width: 80px;
+  padding: 8px 18px;
+  border-radius: var(--graintrade-border-radius-large);
+  font-weight: 600;
+  transition: var(--graintrade-transition);
 }
 
 .pagination-controls button:disabled {
-  background: #e9ecef;
-  color: #aaa;
-  border-color: #e9ecef;
+  background: var(--graintrade-bg-alt);
+  color: var(--graintrade-text-muted);
+  border-color: var(--graintrade-border);
   cursor: not-allowed;
 }
 
 .pagination-controls button:not(:disabled):hover {
-  background: #007bff;
-  color: #fff;
-  border-color: #007bff;
+  transform: translateY(-1px);
+}
+
+.pagination-controls span {
+  font-weight: 500;
+  color: var(--graintrade-text-light);
 }
 
 .map-container {

@@ -254,6 +254,8 @@ const messages = {
       deleteAccountSuccess: 'Account deleted successfully!',
       deleteAccountError: 'Error deleting account',
       loginToView: 'Please log in to view user profiles.',
+      noCategories: 'None selected',
+      noCountry: 'Not specified',
     },
     tariff: {
       basic: "Basic",
@@ -572,6 +574,8 @@ const messages = {
       deleteAccountSuccess: 'Обліковий запис успішно видалено!',
       deleteAccountError: 'Помилка видалення облікового запису',
       loginToView: 'Будь ласка, увійдіть, щоб переглянути профілі користувачів.',
+      noCategories: 'Не вибрано',
+      noCountry: 'Не вказано',
     },
     tariff: {
       basic: "Базовий",
