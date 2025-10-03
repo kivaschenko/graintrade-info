@@ -1,7 +1,10 @@
 <template>
   <nav class="navbar navbar-expand-lg navbar-light bg-white">
     <div class="container-fluid">
-      <router-link class="navbar-brand" to="/">Graintrade.Info</router-link>
+      <router-link class="navbar-brand d-flex align-items-center" to="/">
+        <img src="@/assets/logo.png" alt="GrainTrade Logo" class="navbar-logo me-2">
+        <span class="brand-text">Graintrade.Info</span>
+      </router-link>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -106,6 +109,55 @@ export default {
 </script>
 
 <style scoped>
+/* Navbar brand with logo styling */
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--graintrade-secondary) !important;
+  text-decoration: none;
+  transition: var(--graintrade-transition);
+}
+
+.navbar-brand:hover {
+  color: var(--graintrade-primary) !important;
+}
+
+.navbar-logo {
+  height: 40px;
+  width: auto;
+  transition: var(--graintrade-transition);
+}
+
+.navbar-logo:hover {
+  transform: scale(1.05);
+}
+
+.brand-text {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Responsive logo sizing */
+@media (max-width: 768px) {
+  .navbar-logo {
+    height: 32px;
+  }
+  
+  .brand-text {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-logo {
+    height: 28px;
+  }
+  
+  .brand-text {
+    font-size: 1.1rem;
+  }
+}
+
 /* Language switcher styling to match landing service */
 .lang-switcher {
   display: flex;
