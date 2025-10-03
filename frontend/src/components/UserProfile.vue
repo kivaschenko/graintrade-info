@@ -35,7 +35,7 @@
                     <div class="col">
                       <!-- Delete button -->
                       <div class="text-end mb-3">
-                        <button class="btn btn-sm btn-outline-secondary" @click="deleteUser">
+                        <button class="btn btn-sm btn-danger" @click="deleteUser">
                           <i class="bi bi-trash-fill me-2"></i>{{ $t('profile.deleteAccount') }}
                         </button>
                       </div>
@@ -43,7 +43,7 @@
                     <div class="col text-end">
                       <!-- Add edit button -->
                       <div class="text-end mb-3">
-                        <button class="btn btn-sm btn-outline-primary" @click="showEditModal = true">
+                        <button class="btn btn-sm btn-outline-secondary" @click="showEditModal = true">
                           <i class="bi bi-pencil-square me-2"></i>{{ $t('profile.editProfile') }}
                         </button> 
                       </div>
@@ -111,7 +111,7 @@
 							</div>
                 <div class="card-footer text-muted text-end">
                   <div class="text-center mt-4">
-										<button class="btn btn-outline-primary btn-sm hover-lift" @click="upgradePlan">
+										<button class="btn btn-primary btn-hover-lift" @click="upgradePlan">
 											<i class="bi bi-arrow-up-circle me-2"></i>{{ $t('profile.upgrade') }}
 										</button>
                   </div>
