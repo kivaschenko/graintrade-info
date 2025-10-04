@@ -55,6 +55,7 @@ def how_to():
 def faq():
     lang = get_current_language()
     translations = load_translations()
+    print(translations)
     return render_template(
         "faq.html",
         lang=lang,

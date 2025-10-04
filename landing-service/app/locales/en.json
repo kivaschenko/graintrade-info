@@ -75,7 +75,7 @@
       },
       {
         "question": "What grain types can I trade?",
-        "answer": "You can post offers for all major grain types: wheat, corn, barley, sunflower seeds, soybeans, and other agricultural products."
+        "answer": "You can post offers for all major grain types: wheat, corn, barley, sunflower seeds, soybeans, and other agricultural products. The list of available categories is constantly expanding."
       },
       {
         "question": "Are there any fees?",
@@ -85,6 +85,131 @@
         "question": "How does the map search work?",
         "answer": "Our map search shows all available offers in your area. You can filter by grain type, quantity, and distance."
       }
-    ]
+    ],
+    "categories": {
+      "title": "Categories",
+      "getting_started": "Getting Started",
+      "subscription_plans": "Subscription Plans",
+      "platform_services": "Platform Services",
+      "technical": "Technical"
+    },
+    "sections": {
+      "getting_started": {
+        "title": "Getting Started",
+        "what_is_graintrade": {
+          "question": "What is GrainTrade?",
+          "answer": "GrainTrade is a comprehensive platform for grain and agricultural product listings in Ukraine. We provide advanced map services, location-based search, and notification systems to help traders and farmers connect. We don't handle transactions directly - we provide the tools to find and connect with potential partners."
+        },
+        "how_does_it_work": {
+          "question": "How does GrainTrade work?",
+          "answer": "Users post their grain and agricultural product listings on our platform. Our advanced mapping and search features help you find products or buyers near you. You communicate directly with other users through our messaging system, and all business transactions happen between users - we simply provide the platform and tools."
+        },
+        "mobile_devices": {
+          "question": "Can I use GrainTrade on mobile devices?",
+          "answer": "Yes, GrainTrade is fully responsive and works great on all mobile devices and tablets. We also have mobile apps in development."
+        }
+      },
+      "subscription_plans": {
+        "title": "Subscription Plans",
+        "what_plans": {
+          "question": "What subscription plans do you offer?",
+          "answer": {
+            "intro": "We offer three subscription plans:",
+            "free_plan": "Free Plan (30 days): Add up to new 5 items, 10 map views, 10 geo-searches, 10 navigation uses",
+            "basic_plan": "Basic Plan ($10/month): Add up to new 100 items, 100 map views, 100 geo-searches, 100 navigation uses, email notifications",
+            "premium_plan": "Premium Plan ($30/month): Add up to new 400 items, 400 map views, 400 geo-searches, 400 navigation uses, email notifications"
+          }
+        },
+        "map_services": {
+          "question": "What do the map services include?",
+          "answer": "Our map services include high-quality, fast-loading maps for visualizing grain listings by location, advanced geo-search capabilities to find products within specific distances, and navigation features to help you reach sellers or buyers efficiently. These services require significant infrastructure investment, which is covered by subscription fees."
+        },
+        "email_notifications": {
+          "question": "What are email notifications for?",
+          "answer": "Email notifications keep you informed about new messages in chat and new items posted in categories you're interested in. You can customize your notification preferences to receive updates only for specific grain categories and regions that matter to your business."
+        },
+        "crypto_payments": {
+          "question": "Will you offer crypto payments?",
+          "answer": "Yes! We plan to add cryptocurrency payment options for Premium plans and potentially new enhanced plans with more extensive functionality as soon as possible. This will provide more payment flexibility for our users."
+        }
+      },
+      "platform_services": {
+        "title": "Platform Services & Business Model",
+        "handle_transactions": {
+          "question": "Does GrainTrade handle grain transactions?",
+          "answer": {
+            "emphasis": "No, we do not handle any grain transactions or deal with grain trading directly.",
+            "description": "GrainTrade is a platform service that provides tools for connecting grain traders and farmers. All business deals, negotiations, and transactions happen directly between users. We charge only for our platform services like map usage, search functionality, and notifications."
+          }
+        },
+        "payment_methods": {
+          "question": "What payment methods do you accept for subscriptions?",
+          "answer": "Currently, we accept bank transfers and LiqPay (PrivatBank) for subscription payments. We're working on adding cryptocurrency payment options for Premium and enhanced plans. All payments are for platform services only - never for grain transactions."
+        },
+        "trustworthy_trader": {
+          "question": "How do I know if a trader is trustworthy?",
+          "answer": "We provide user rating systems and verification badges. You can see transaction history and read reviews from other users. However, since we don't handle transactions ourselves, we recommend doing your own due diligence and using standard business practices when dealing with other traders."
+        },
+        "international_trading": {
+          "question": "Can I trade internationally?",
+          "answer": "Currently, GrainTrade focuses on the Ukrainian market. However, the site supports bilingualism. Most countries of grain buyers and sellers and ports have been included in the filtering. International trading features are planned for future releases, but all business transactions will continue to be handled directly between users."
+        },
+        "usage_limits": {
+          "question": "What happens when I reach my usage limits?",
+          "answer": "When you reach your plan's limits for map views, geo-searches, or navigation uses, you'll need to wait for your next billing cycle - then the Free plan will be automatically enabled - or upgrade to a higher plan. The item posting limit restricts how many active listings you can have on the platform. It's important to monitor your usage to avoid interruptions in access to features. We recommend regularly checking your limits in profile settings to avoid surprises. We do not have automatic subscription renewals, so you'll need to manually renew or change your plan in profile settings."
+        },
+        "messengers": {
+          "question": "Do you plan to integrate with messengers?",
+          "answer": "Yes, we are considering integration with popular messengers like Telegram and Viber. This will allow receiving notifications and conducting negotiations through familiar platforms. We will notify users when this feature becomes available. In the first release, automatic posting of all new listings in the Telegram channel is supported. Also, automatic deletion of all closed listings."
+        },
+        "api_access": {
+          "question": "Do you provide API access?",
+          "answer": "Currently, we do not offer public API access. However, we are considering it for future development to allow advanced users and businesses to integrate with our platform. Stay tuned for updates!"
+        },
+        "analytics_reports": {
+          "question": "Do you provide analytics or reports?",
+          "answer": "At this time, we do not offer built-in analytics or reporting features. However, we are exploring options to provide users with insights into their listings, market trends, and user engagement in future updates."
+        }
+      },
+      "technical": {
+        "title": "Technical Support",
+        "uploading_photos": {
+          "question": "I'm having trouble uploading photos. What should I do?",
+          "answer": "Make sure your photos are under 5MB and in JPG or PNG format. Clear your browser cache or try a different browser. Contact support if issues persist."
+        },
+        "account_settings": {
+          "question": "How do I change my account settings?",
+          "answer": "Go to your profile page and click \"Edit Profile.\" You can update your contact information, notification preferences, and account details there."
+        },
+        "notification_preferences": {
+          "question": "How do I manage my notification preferences?",
+          "answer": "In your profile settings, you can customize which categories you want to receive notifications for, select specific regions of interest, and choose whether to receive notifications for new messages and new items. This helps you stay informed about relevant opportunities without spam."
+        },
+        "map_services_limited": {
+          "question": "Why are the map services limited?",
+          "answer": "Our fast and convenient map services require significant infrastructure and third-party API costs. The subscription fees help us maintain high-quality, reliable mapping, geo-search, and navigation features that provide real value to grain traders and farmers."
+        }
+      }
+    },
+    "contact_support": {
+      "title": "Still Need Help?",
+      "subtitle": "Our support team is here to help you with any questions",
+      "email": {
+        "title": "Email Support",
+        "description": "Send us an email and we'll respond within 24 hours",
+        "button": "Contact Support"
+      },
+      "phone": {
+        "title": "Phone Support",
+        "description": "Call us during business hours for immediate assistance",
+        "button": "Call Now"
+      },
+      "live_chat": {
+        "title": "Live Chat",
+        "description": "Chat with our support team in real-time",
+        "button": "Start Chat",
+        "coming_soon": "Live chat feature coming soon! Please use email support for questions about our platform services and subscriptions."
+      }
+    }
   }
 }
