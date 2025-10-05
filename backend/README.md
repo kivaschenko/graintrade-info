@@ -1,93 +1,226 @@
-Old version of README file for `backend` microservice...
-# About project
-This is a favorite project for learning more about asynchronous API with the FastAPI package. The main concept of the business is to help cope with a large number of offers from small and large participants of the agricultural market, tied to geographical points. You also need different filters to search for information.
-It should be completely anonymous and transparent, storing sensitive data as cryptographically hashed.
+# Backend Service - GrainTrade API
 
-# Development
+## Overview
+This is the main backend service for the GrainTrade platform - an asynchronous FastAPI application that provides the core business logic for agricultural market participants. The service handles offers, user management, geographical data, and provides a comprehensive API for the frontend application.
 
-## Environment
-To install all dependencies use `poetry`. Move to `graintrade-info/needeing-service-dir/` and run:
+## Features
+- 🌾 **Agricultural Market Management**: Handle offers from agricultural market participants
+- 🌍 **Geographical Integration**: Location-based filtering and mapping with PostGIS
+- 🔐 **Authentication & Authorization**: JWT-based authentication with secure user management
+- 📊 **Subscription Management**: User subscription and usage tracking
+- 💰 **Payment Integration**: Payment processing capabilities
+- 🐰 **RabbitMQ Integration**: Asynchronous message processing
+- 📧 **Email Notifications**: Automated email sending capabilities
+- 🔄 **Redis Caching**: Performance optimization with Redis
+
+## Technology Stack
+- **Framework**: FastAPI 0.115.4
+- **Python**: 3.12+
+- **Database**: PostgreSQL with PostGIS extension
+- **ORM**: SQLAlchemy (async)
+- **Caching**: Redis
+- **Message Broker**: RabbitMQ (aio-pika)
+- **Authentication**: JWT (PyJWT)
+- **Password Hashing**: bcrypt
+- **Email**: FastAPI-Mail
+- **Testing**: pytest with asyncio support
+- **HTTP Client**: httpx
+- **ASGI Server**: Uvicorn/Gunicorn
+
+## Project Structure
 ```
+backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI application entry point
+│   ├── database.py          # Database connection and configuration
+│   ├── schemas.py           # Pydantic models for request/response
+│   ├── logger.py            # Logging configuration
+│   ├── rabbit_mq.py         # RabbitMQ configuration
+│   ├── models/              # SQLAlchemy database models
+│   ├── routers/             # API route handlers
+│   ├── service_layer/       # Business logic layer
+│   ├── payments/            # Payment processing logic
+│   └── utils/               # Utility functions
+├── tests/                   # Test files and configurations
+├── Dockerfile              # Docker container configuration
+├── pyproject.toml          # Poetry dependencies
+├── gunicorn.conf.py        # Gunicorn configuration
+└── sample_env              # Environment variables template
+```
+
+## Quick Start
+
+### Prerequisites
+- Python 3.12+
+- PostgreSQL with PostGIS extension
+- Redis server
+- RabbitMQ server
+- Poetry (for dependency management)
+
+### 1. Environment Setup
+Copy the sample environment file and configure it:
+```bash
+cp sample_env .env
+```
+
+Edit `.env` file with your configuration:
+```env
+# Database
+DATABASE_URL=postgresql+asyncpg://user:password@localhost/graintrade
+POSTGRES_DB=graintrade
+POSTGRES_USER=your_user
+POSTGRES_PASSWORD=your_password
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# RabbitMQ
+RABBITMQ_URL=amqp://guest:guest@localhost:5672/
+
+# JWT
+SECRET_KEY=your-secret-key-here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Email
+MAIL_USERNAME=your-email@example.com
+MAIL_PASSWORD=your-email-password
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+```
+
+### 2. Install Dependencies
+```bash
+cd backend
 poetry install
 ```
-Make sure you have completed at least one `env` file.
 
-To run locally you can use 2 ways:
+### 3. Development Setup
 
-1. Casually running of FastAPI and previously checked database params in `.env` file and have a workinf PostgreSQL database:
-```
-fastapi dev
-```
-Note, check what `env` file is using in `config.py` `Settings` previuosly as well.
-
-2. Or using docker compose. To run this use command:
-```
-docker compose up --build
-```
-
-3. Create tables
-```
-cd shared-libs/
+#### Option A: Local Development
+```bash
+# Activate virtual environment
 poetry shell
-python create_tables.py
+
+# Run the development server
+fastapi dev app/main.py
 ```
 
-
-# Production
-
-## Deployment on MS Azure
-To deploy in Azure container app service:
-```
-az login && az acr login --name {azure_container_registry_name} && docker tag {local_image_name}:{tag} {azure_container_registry_name}.azurecr.io/{remote_image_name}:{tag} && docker push {azure_container_registry_name}.azurecr.io/{remote_image_name}:{tag} && az webapp create --resource-group {resource_group_name} --plan {app_service_plan} --name {webapp_name} --deployment-container-image-name {azure_container_registry_name}.azurecr.io/{remote_image_name}:{tag}
+#### Option B: Docker Development
+```bash
+# From the project root
+docker-compose up backend --build
 ```
 
-## Postgres
-### Create a new DB:
+### 4. Database Setup
+```bash
+# Make sure PostgreSQL is running with PostGIS extension
+# Create tables (if using alembic migrations)
+poetry run alembic upgrade head
 ```
+
+## API Documentation
+Once the server is running, you can access:
+- **Interactive API Documentation**: http://localhost:8000/docs
+- **ReDoc Documentation**: http://localhost:8000/redoc
+- **OpenAPI Schema**: http://localhost:8000/openapi.json
+
+## Key API Endpoints
+- `GET /health` - Health check endpoint
+- `POST /auth/login` - User authentication
+- `POST /auth/register` - User registration
+- `GET /items/` - List agricultural items
+- `POST /items/` - Create new item
+- `GET /categories/` - List categories
+- `GET /users/me` - Get current user profile
+- `POST /subscriptions/` - Manage subscriptions
+
+## Testing
+```bash
+# Run all tests
+poetry run pytest
+
+# Run tests with coverage
+poetry run pytest --cov=app
+
+# Run specific test file
+poetry run pytest tests/test_items.py
+```
+
+## Deployment
+
+### Docker Production Build
+```bash
+# Build the image
+docker build -t graintrade-backend:latest .
+
+# Run the container
+docker run -p 8000:8000 --env-file .env graintrade-backend:latest
+```
+
+### Using Docker Compose
+```bash
+# Production deployment
+docker-compose -f docker-compose.yaml up backend -d
+```
+
+### Environment Variables for Production
+Ensure these environment variables are set in production:
+- `DATABASE_URL`: PostgreSQL connection string
+- `REDIS_URL`: Redis connection string
+- `RABBITMQ_URL`: RabbitMQ connection string
+- `SECRET_KEY`: Strong secret key for JWT
+- `MAIL_*`: Email configuration for notifications
+
+## SQL Functions & Usage
+The backend includes custom SQL functions for subscription management:
+
+```sql
+-- Increment item count for a user
+SELECT increment_items_count(user_id);
+
+-- Increment map views for a user
+SELECT increment_map_views(user_id);
+
+-- Check subscription usage
+SELECT * FROM get_subscription_usage(user_id);
+```
+
+## Performance Considerations
+- **Database Indexing**: Ensure proper indexes on frequently queried fields
+- **Redis Caching**: Cache frequently accessed data
+- **Connection Pooling**: Configure appropriate database connection pools
+- **Query Optimization**: Use async queries and optimize database operations
+
+## Azure Deployment
+
+### Create PostgreSQL Database
+```bash
 # Variables
-RESOURCE_GROUP="<your-resource-group>"
-SERVER_NAME="<your-server-name>"
-LOCATION="<your-location>"
-ADMIN_USER="<your-admin-username>"
-ADMIN_PASSWORD="<your-admin-password>"
-DATABASE_NAME="<your-database-name>"
-IP_ADDRESS="<your-ip-address>"
+RESOURCE_GROUP="graintrade-rg"
+SERVER_NAME="graintrade-postgres"
+LOCATION="westeurope"
+ADMIN_USER="grain_admin"
+ADMIN_PASSWORD="your_secure_password"
+DATABASE_NAME="graintrade"
 
-# Create PostgreSQL server
-az postgres server create \
+# Create PostgreSQL flexible server
+az postgres flexible-server create \
     --resource-group $RESOURCE_GROUP \
     --name $SERVER_NAME \
     --location $LOCATION \
     --admin-user $ADMIN_USER \
     --admin-password $ADMIN_PASSWORD \
-    --sku-name B_Gen5_1
+    --sku-name Standard_B1ms \
+    --storage-size 32 \
+    --version 15
 
-# Create PostgreSQL database
-az postgres db create \
+# Create database
+az postgres flexible-server db create \
     --resource-group $RESOURCE_GROUP \
     --server-name $SERVER_NAME \
-    --name $DATABASE_NAME
-
-# Configure firewall rules
-az postgres server firewall-rule create \
-    --resource-group $RESOURCE_GROUP \
-    --server-name $SERVER_NAME \
-    --name AllowMyIP \
-    --start-ip-address $IP_ADDRESS \
-    --end-ip-address $IP_ADDRESS
-
-# Connect to the PostgreSQL database and enable PostGIS extension
-psql "host=$SERVER_NAME.postgres.database.azure.com port=5432 dbname=$DATABASE_NAME user=$ADMIN_USER@$SERVER_NAME password=$ADMIN_PASSWORD sslmode=require" <<EOF
-CREATE EXTENSION postgis;
-CREATE EXTENSION postgis_topology;
-EOF
-```
-
-Set POSTGIS extensions
-```
-# Variables
-RESOURCE_GROUP="<your-resource-group>"
-SERVER_NAME="<your-server-name>"
+    --database-name $DATABASE_NAME
 
 # Enable PostGIS extension
 az postgres flexible-server parameter set \
@@ -95,144 +228,65 @@ az postgres flexible-server parameter set \
     --server-name $SERVER_NAME \
     --name azure.extensions \
     --value postgis
-
-# Connect to the PostgreSQL database and enable PostGIS extension
-psql -h graintrade-info-postgres-db.postgres.database.azure.com -p 5432 -U grain_admin_db postgres <<EOF
-CREATE EXTENSION postgis;
-CREATE EXTENSION postgis_topology;
-EOF
 ```
-## Deploy to Azure
 
-### Create resource group and registry
+### Deploy to Azure Container Apps
+```bash
+# Create resource group
+az group create --location westeurope --resource-group graintrade-rg
 
-#### Step 1. Create a resource group with the `az group create` command.
-```
-az group create --location westeurope --resource-group ecomm-rg
-```
-<location> is one of the Azure location Name values from the output of the command `az account list-locations -o table`.
-
-#### Step 2. Create a container registry with the `az acr create` command.
-```
+# Create container registry
 az acr create \
-> --resource-group ecomm-rg \
-> --name ecommregistry \
-> --sku Basic \
-> --admin-enabled
-```
-`<registry-name>` must be unique within Azure, and contain 5-50 alphanumeric characters.
+  --resource-group graintrade-rg \
+  --name graintraderegistry \
+  --sku Basic \
+  --admin-enabled
 
-* You can view the credentials created for admin with:
-```
-az acr credential show \
---name <registry-name> \
---resource-group pythoncontainer-rg
-```
-
-#### Step 3. Sign in to the registry using the `az acr login` command.
-```
-az acr login --name ecommregistry
-```
-
-The command adds "azurecr.io" to the name to create the fully qualified registry name. If successful, you'll see the message "Login Succeeded". If you're accessing the registry from a subscription different from the one in which the registry was created, use the `--suffix` switch.
-
-#### Step 4. Build the image with the `az acr build` command.
-```
+# Build and push image
 az acr build \
---registry ecommregistry \
---resource-group ecomm-rg \
---image ecomm-api:latest .
-```
-<b> Note that:</b>
+  --registry graintraderegistry \
+  --resource-group graintrade-rg \
+  --image graintrade-backend:latest .
 
-* The dot (".") at the end of the command indicates the location of the source code to build. If you aren't running this command in the sample app root directory, specify the path to the code.
-
-* If you are running the command in Azure Cloud Shell, use git clone to first pull the repo into the Cloud Shell environment first and change directory into the root of the project so that dot (".") is interpreted correctly.
-
-* If you leave out the `-t` (same as `--image`) option, the command queues a local context build without pushing it to the registry. Building without pushing can be useful to check that the image builds.
-
-#### Step 5. Confirm the container image was created with the `az acr repository list` command.
-```
-az acr repository list --name <registry-name>
-```
-### Create a database on the server
-#### Step 6. Step 1 Use the `az postgres flexible-server db create` command to create a database. 
-```
-az postgres flexible-server db create --resource-group pythoncontainer-rg --server-name <postgres-server-name> --database-name restaurants_reviews
-```
-Where:
-
-"pythoncontainer-rg" → The resource group name used in this tutorial. If you used a different name, change this value.
-`<postgres-server-name>` → The name of the PostgreSQL server.
-
-You could also use the az postgres flexible-server connect command to connect to the database and then work with psql commands. When working with psql, it's often easier to use the Azure Cloud Shell because all the dependencies are included for you in the shell.
-
-### Deploy the web app to Container Apps
-
-#### Step 1. Sign in to Azure and authenticate, if needed.
-```
-az login
-```
-#### Step 2. Install or upgrade the extension for Azure Container Apps withe `az extension add` command.
-```
-az extension add --name containerapp --upgrade
-```
-
-#### Step 3. Create a Container Apps environment with the `az containerapp env create` command.
-```
+# Create Container Apps environment
 az containerapp env create \
---name ecomm-api-container-env \
---resource-group ecomm-rg \
---location westeurope
-```
-`<location>` is one of the Azure location Name values from the output of the command `az account list-locations -o table`.
+  --name graintrade-env \
+  --resource-group graintrade-rg \
+  --location westeurope
 
-#### Step 4. Get the sign-in credentials for the Azure Container Registry.
-```
-az acr credential show -n ecommregistry
-```
-Use the username and one of the passwords returned from the output of the command.
-
-#### Step 5. Create a container app in the environment with the `az containerapp create` command.
-```
+# Deploy the application
 az containerapp create \
---name python-container-app \
---resource-group pythoncontainer-rg \
---image <registry-name>.azurecr.io/pythoncontainer:latest \
---environment python-container-env \
---ingress external \
---target-port 8000 \
---registry-server <registry-name>.azurecr.io \
---registry-username <registry-username> \
---registry-password <registry-password> \
---env-vars <env-variable-string>
---query properties.configuration.ingress.fqdn
+  --name graintrade-backend \
+  --resource-group graintrade-rg \
+  --image graintraderegistry.azurecr.io/graintrade-backend:latest \
+  --environment graintrade-env \
+  --ingress external \
+  --target-port 8000 \
+  --registry-server graintraderegistry.azurecr.io \
+  --env-vars DATABASE_URL="postgresql+asyncpg://grain_admin@graintrade-postgres:password@graintrade-postgres.postgres.database.azure.com/graintrade"
 ```
-`<env-variable-string>` is a string composed of space-separated values in the key="value" format with the following values.
 
-    AZURE_POSTGRESQL_HOST=<postgres-server-name>.postgres.database.azure.com
-    AZURE_POSTGRESQL_DATABASE=restaurants_reviews
-    AZURE_POSTGRESQL_USERNAME=demoadmin
-    AZURE_POSTGRESQL_PASSWORD=<db-password>
-    RUNNING_IN_PRODUCTION=1
-    AZURE_SECRET_KEY=<YOUR-SECRET-KEY>
+## Monitoring & Logging
+- Application logs are configured in `logger.py`
+- Health check endpoint available at `/health`
+- Consider integrating with monitoring solutions (Prometheus, Grafana)
 
-Generate AZURE_SECRET_KEY value using output of `python -c 'import secrets; print(secrets.token_hex())'`.
+## Security
+- JWT tokens for authentication
+- Password hashing with bcrypt
+- CORS configuration for frontend integration
+- Environment variable protection for sensitive data
 
-Here's an example: 
-```
---env-vars AZURE_POSTGRESQL_HOST="my-postgres-server.postgres.database.azure.com" AZURE_POSTGRESQL_DATABASE="restaurants_reviews" AZURE_POSTGRESQL_USERNAME="demoadmin" AZURE_POSTGRESQL_PASSWORD="somepassword" RUNNING_IN_PRODUCTION="1" AZURE_SECRET_KEY=asdfasdfasdf
-```
-# Additions
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
 
-SQL Functions
-```
--- Increment item count
-SELECT increment_items_count(user_id);
+## License
+Apache-2.0 License
 
--- Increment map views
-SELECT increment_map_views(user_id);
-
--- Check usage
-SELECT * FROM get_subscription_usage(user_id);
-```
+## Support
+For support and questions, contact: kivaschenko@protonmail.com

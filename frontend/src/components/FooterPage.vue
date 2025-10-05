@@ -2,7 +2,7 @@
   <footer class="footer bg-graintrade-secondary text-white mt-auto">
     <div class="container">
       <div class="row py-4">
-        <div class="col-md-8">
+        <div class="col-md-9 mb-3 mb-md-0">
           <ul class="nav flex-column flex-md-row">
             <li class="nav-item mb-2 mb-md-0">
               <router-link class="nav-link text-white-50" to="/contacts-requisites">{{ $t('footer.contactsAndRequisites') }}</router-link>
@@ -19,9 +19,15 @@
             <li class="nav-item mb-2 mb-md-0">
               <router-link class="nav-link text-white-50" to="/about-us">{{ $t('footer.about') }}</router-link>
             </li>
+            <li class="nav-item mb-2 mb-md-0">
+              <a class="nav-link text-white-50" href="https://home.graintrade.info/how-to">{{ $t('footer.howTo') }}</a>
+            </li>
+            <li class="nav-item mb-2 mb-md-0">
+              <a class="nav-link text-white-50" href="https://home.graintrade.info/faq">{{ $t('footer.faq') }}</a>
+            </li>
           </ul>
         </div>
-        <div class="col-md-4 text-md-end">
+        <div class="col-md-3 text-md-end">
           <a
             href="https://t.me/graintradeinfo"
             target="_blank"

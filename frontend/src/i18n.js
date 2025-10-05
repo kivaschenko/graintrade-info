@@ -11,6 +11,7 @@ const messages = {
       passwordPlaceholder: 'Enter password',
       loginButton: 'Login',
       noAccount: "Don't have an account? Register here.",
+      hasAccount: 'Already have an account? Login here.',
     },
     navbar: {
       home: 'Home',
@@ -34,8 +35,9 @@ const messages = {
       pricing: 'Pricing',
       privacyPolicy: 'Privacy Policy',
       termsOfService: 'Terms of Service',
-      faqs: 'FAQs',   
+      faq: 'FAQ',   
       telegram: 'Join us in Telegram',
+      howTo: 'How to use',
     },
     pagination: {
       prev: 'Prev',
@@ -332,6 +334,7 @@ const messages = {
       passwordPlaceholder: 'Введіть пароль',
       loginButton: 'Увійти',
       noAccount: 'Немає облікового запису? Зареєструйтесь тут.',
+      hasAccount: 'Вже маєте обліковий запис? Увійдіть тут.',
     },
     navbar: {
       home: 'Головна',
@@ -355,8 +358,9 @@ const messages = {
       pricing: 'Ціни',
       privacyPolicy: 'Політика конфіденційності',
       termsOfService: 'Умови використання',
-      faqs: 'Питання та відповіді',   
+      faq: 'Питання та відповіді',   
       telegram: 'Приєднатися в Telegram',
+      howTo: 'Як користуватися',
     },
     pagination: {
       prev: 'Попередня',

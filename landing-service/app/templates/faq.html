@@ -7,7 +7,7 @@
 <section class="page-header">
     <div class="container">
         <h1 class="page-title">{{ t.faq.title }}</h1>
-        <p class="page-subtitle">Find answers to commonly asked questions about GrainTrade</p>
+        <p class="page-subtitle">{{ t.faq.subtitle }}</p>
         <nav class="breadcrumb">
             <a href="?lang={{ lang }}">{{ t.nav.home }}</a>
             <span>/</span>
@@ -21,18 +21,18 @@
     <div class="container">
         <div class="faq-container">
             <div class="faq-sidebar">
-                <h3>Categories</h3>
+                <h3>{{ t['faq']['categories']['title'] }}</h3>
                 <ul class="faq-categories">
-                    <li><a href="#getting-started" class="faq-category-link active">Getting Started</a></li>
-                    <li><a href="#trading" class="faq-category-link">Trading</a></li>
-                    <li><a href="#payments" class="faq-category-link">Payments</a></li>
-                    <li><a href="#technical" class="faq-category-link">Technical</a></li>
+                    <li><a href="#getting-started" class="faq-category-link active">{{ t['faq']['categories']['getting_started'] }}</a></li>
+                    <li><a href="#subscription-plans" class="faq-category-link">{{ t['faq']['categories']['subscription_plans'] }}</a></li>
+                    <li><a href="#platform-services" class="faq-category-link">{{ t['faq']['categories']['platform_services'] }}</a></li>
+                    <li><a href="#technical" class="faq-category-link">{{ t['faq']['categories']['technical'] }}</a></li>
                 </ul>
             </div>
             
             <div class="faq-content">
                 <div class="faq-section" id="getting-started">
-                    <h2 class="faq-section-title">Getting Started</h2>
+                    <h2 class="faq-section-title">{{ t['faq']['sections']['getting_started']['title'] }}</h2>
                     {% for item in t['faq']['items'] %}
                     <div class="faq-item">
                         <div class="faq-question">
@@ -47,111 +47,247 @@
                     </div>
                     {% endfor %}
                     
-                    <!-- Additional FAQ items for English version -->
-                    {% if lang == 'en' %}
                     <div class="faq-item">
                         <div class="faq-question">
-                            <h3>Can I use GrainTrade on mobile devices?</h3>
+                            <h3>{{ t.faq.sections.getting_started.what_is_graintrade.question }}</h3>
                             <span class="faq-toggle">
                                 <i class="fas fa-plus"></i>
                             </span>
                         </div>
                         <div class="faq-answer">
-                            <p>Yes, GrainTrade is fully responsive and works great on all mobile devices and tablets. We also have mobile apps in development.</p>
+                            <p>{{ t.faq.sections.getting_started.what_is_graintrade.answer }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.getting_started.how_does_it_work.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.getting_started.how_does_it_work.answer }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional FAQ items for English version -->
+                    {% if lang == 'en' %}
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.getting_started.mobile_devices.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.getting_started.mobile_devices.answer }}</p>
                         </div>
                     </div>
                     {% endif %}
                 </div>
                 
-                <div class="faq-section" id="trading">
-                    <h2 class="faq-section-title">Trading Process</h2>
+                <div class="faq-section" id="subscription-plans">
+                    <h2 class="faq-section-title">{{ t.faq.sections.subscription_plans.title }}</h2>
                     <div class="faq-item">
                         <div class="faq-question">
-                            <h3>How do I know if a seller is trustworthy?</h3>
+                            <h3>{{ t.faq.sections.subscription_plans.what_plans.question }}</h3>
                             <span class="faq-toggle">
                                 <i class="fas fa-plus"></i>
                             </span>
                         </div>
                         <div class="faq-answer">
-                            <p>We have a comprehensive rating system where users rate each other after transactions. You can also see verification badges, transaction history, and read reviews from other traders.</p>
+                            <p>{{ t.faq.sections.subscription_plans.what_plans.answer.intro }}</p>
+                            <ul>
+                                <li><strong>{{ t.faq.sections.subscription_plans.what_plans.answer.free_plan }}</strong></li>
+                                <li><strong>{{ t.faq.sections.subscription_plans.what_plans.answer.basic_plan }}</strong></li>
+                                <li><strong>{{ t.faq.sections.subscription_plans.what_plans.answer.premium_plan }}</strong></li>
+                            </ul>
                         </div>
                     </div>
                     
                     <div class="faq-item">
                         <div class="faq-question">
-                            <h3>What happens if there's a dispute?</h3>
+                            <h3>{{ t.faq.sections.subscription_plans.map_services.question }}</h3>
                             <span class="faq-toggle">
                                 <i class="fas fa-plus"></i>
                             </span>
                         </div>
                         <div class="faq-answer">
-                            <p>GrainTrade offers mediation services for disputes. Our support team reviews chat logs, transaction details, and helps resolve conflicts fairly. We also have escrow services for larger transactions.</p>
+                            <p>{{ t.faq.sections.subscription_plans.map_services.answer }}</p>
                         </div>
                     </div>
                     
                     <div class="faq-item">
                         <div class="faq-question">
-                            <h3>Can I trade internationally?</h3>
+                            <h3>{{ t.faq.sections.subscription_plans.email_notifications.question }}</h3>
                             <span class="faq-toggle">
                                 <i class="fas fa-plus"></i>
                             </span>
                         </div>
                         <div class="faq-answer">
-                            <p>Currently, GrainTrade focuses on domestic trading within Ukraine. International trading features are planned for future releases.</p>
+                            <p>{{ t.faq.sections.subscription_plans.email_notifications.answer }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.subscription_plans.crypto_payments.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.subscription_plans.crypto_payments.answer }}</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="faq-section" id="payments">
-                    <h2 class="faq-section-title">Payments & Security</h2>
+                <div class="faq-section" id="platform-services">
+                    <h2 class="faq-section-title">{{ t.faq.sections.platform_services.title }}</h2>
                     <div class="faq-item">
                         <div class="faq-question">
-                            <h3>What payment methods are accepted?</h3>
+                            <h3>{{ t.faq.sections.platform_services.handle_transactions.question }}</h3>
                             <span class="faq-toggle">
                                 <i class="fas fa-plus"></i>
                             </span>
                         </div>
                         <div class="faq-answer">
-                            <p>We support bank transfers, LiqPay (PrivatBank), and cash payments. For large transactions, we recommend using our escrow service for added security.</p>
+                            <p><strong>{{ t.faq.sections.platform_services.handle_transactions.answer.emphasis }}</strong> {{ t.faq.sections.platform_services.handle_transactions.answer.description }}</p>
                         </div>
                     </div>
                     
                     <div class="faq-item">
                         <div class="faq-question">
-                            <h3>How secure are transactions on GrainTrade?</h3>
+                            <h3>{{ t.faq.sections.platform_services.payment_methods.question }}</h3>
                             <span class="faq-toggle">
                                 <i class="fas fa-plus"></i>
                             </span>
                         </div>
                         <div class="faq-answer">
-                            <p>We use SSL encryption, secure payment processors, and offer escrow services. All user data is protected according to international security standards.</p>
+                            <p>{{ t.faq.sections.platform_services.payment_methods.answer }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.platform_services.trustworthy_trader.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.platform_services.trustworthy_trader.answer }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.platform_services.international_trading.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.platform_services.international_trading.answer }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.platform_services.usage_limits.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.platform_services.usage_limits.answer }}</p>
+                        </div>
+                    </div>
+                    <!-- New FAQ item about messengers -->
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.platform_services.messengers.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.platform_services.messengers.answer }}</p>
+                        </div>
+                    </div>
+                    <!-- New FAQ item about API access -->
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.platform_services.api_access.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.platform_services.api_access.answer }}</p>
+                        </div>
+                    </div>
+                    <!-- New FAQ item about analytics reports -->
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.platform_services.analytics_reports.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.platform_services.analytics_reports.answer }}</p>
                         </div>
                     </div>
                 </div>
-                
                 <div class="faq-section" id="technical">
-                    <h2 class="faq-section-title">Technical Support</h2>
+                    <h2 class="faq-section-title">{{ t.faq.sections.technical.title }}</h2>
                     <div class="faq-item">
                         <div class="faq-question">
-                            <h3>I'm having trouble uploading photos. What should I do?</h3>
+                            <h3>{{ t.faq.sections.technical.uploading_photos.question }}</h3>
                             <span class="faq-toggle">
                                 <i class="fas fa-plus"></i>
                             </span>
                         </div>
                         <div class="faq-answer">
-                            <p>Make sure your photos are under 5MB and in JPG or PNG format. Clear your browser cache or try a different browser. Contact support if issues persist.</p>
+                            <p>{{ t.faq.sections.technical.uploading_photos.answer }}</p>
                         </div>
                     </div>
                     
                     <div class="faq-item">
                         <div class="faq-question">
-                            <h3>How do I change my account settings?</h3>
+                            <h3>{{ t.faq.sections.technical.account_settings.question }}</h3>
                             <span class="faq-toggle">
                                 <i class="fas fa-plus"></i>
                             </span>
                         </div>
                         <div class="faq-answer">
-                            <p>Go to your profile page and click "Edit Profile." You can update your contact information, notification preferences, and account details there.</p>
+                            <p>{{ t.faq.sections.technical.account_settings.answer }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.technical.notification_preferences.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.technical.notification_preferences.answer }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>{{ t.faq.sections.technical.map_services_limited.question }}</h3>
+                            <span class="faq-toggle">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>{{ t.faq.sections.technical.map_services_limited.answer }}</p>
                         </div>
                     </div>
                 </div>
@@ -164,18 +300,18 @@
 <section class="section section-alt">
     <div class="container">
         <div class="support-section">
-            <h2 class="section-title">Still Need Help?</h2>
-            <p class="section-subtitle">Our support team is here to help you with any questions</p>
+            <h2 class="section-title">{{ t.faq.contact_support.title }}</h2>
+            <p class="section-subtitle">{{ t.faq.contact_support.subtitle }}</p>
             
             <div class="support-options">
                 <div class="support-option">
                     <div class="support-icon">
                         <i class="fas fa-envelope"></i>
                     </div>
-                    <h3>Email Support</h3>
-                    <p>Send us an email and we'll respond within 24 hours</p>
+                    <h3>{{ t.faq.contact_support.email.title }}</h3>
+                    <p>{{ t.faq.contact_support.email.description }}</p>
                     <a href="mailto:support@graintrade.info" class="btn btn-secondary">
-                        Contact Support
+                        {{ t.faq.contact_support.email.button }}
                     </a>
                 </div>
                 
@@ -183,10 +319,10 @@
                     <div class="support-icon">
                         <i class="fas fa-phone"></i>
                     </div>
-                    <h3>Phone Support</h3>
-                    <p>Call us during business hours for immediate assistance</p>
-                    <a href="tel:+380123456789" class="btn btn-secondary">
-                        Call Now
+                    <h3>{{ t.faq.contact_support.phone.title }}</h3>
+                    <p>{{ t.faq.contact_support.phone.description }}</p>
+                    <a href="tel:+380662760451" class="btn btn-secondary">
+                        {{ t.faq.contact_support.phone.button }}
                     </a>
                 </div>
                 
@@ -194,10 +330,10 @@
                     <div class="support-icon">
                         <i class="fas fa-comments"></i>
                     </div>
-                    <h3>Live Chat</h3>
-                    <p>Chat with our support team in real-time</p>
+                    <h3>{{ t.faq.contact_support.live_chat.title }}</h3>
+                    <p>{{ t.faq.contact_support.live_chat.description }}</p>
                     <button class="btn btn-secondary" onclick="openLiveChat()">
-                        Start Chat
+                        {{ t.faq.contact_support.live_chat.button }}
                     </button>
                 </div>
             </div>
@@ -261,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function openLiveChat() {
     // Placeholder for live chat functionality
-    alert('Live chat feature coming soon! Please use email support for now.');
+    alert('{{ t.faq.contact_support.live_chat.coming_soon }}');
 }
 </script>
 {% endblock %}
