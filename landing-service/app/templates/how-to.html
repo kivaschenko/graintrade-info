@@ -7,7 +7,7 @@
 <section class="page-header">
     <div class="container">
         <h1 class="page-title">{{ t.how_to_use.title }}</h1>
-        <p class="page-subtitle">Complete guide to using GrainTrade platform</p>
+        <p class="page-subtitle">{{ t.how_to_use.subtitle }}</p>
         <nav class="breadcrumb">
             <a href="?lang={{ lang }}">{{ t.nav.home }}</a>
             <span>/</span>
@@ -34,12 +34,12 @@
                         <!-- Additional detailed instructions for each step -->
                         {% if loop.index == 1 %}
                         <div class="step-details">
-                            <h4>Registration Details:</h4>
+                            <h4>{% if lang == 'uk' %}Деталі реєстрації:{% else %}Registration Details:{% endif %}</h4>
                             <ul>
-                                <li>Click the "Sign Up" button on the main page</li>
-                                <li>Fill in your email, password, and basic information</li>
-                                <li>Verify your email address</li>
-                                <li>Complete your profile with contact details</li>
+                                <li>{% if lang == 'uk' %}Натисніть кнопку "Реєстрація" на головній сторінці{% else %}Click the "Sign Up" button on the main page{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Заповніть свою електронну пошту, пароль та основну інформацію{% else %}Fill in your email, password, and basic information{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Підтвердіть свою електронну адресу{% else %}Verify your email address{% endif %}</li>
+                                <li>{% if lang == 'uk' %}Завершіть свій профіль контактними даними{% else %}Complete your profile with contact details{% endif %}</li>
                             </ul>
                         </div>
                         {% elif loop.index == 2 %}
@@ -103,14 +103,14 @@
 <!-- Tips Section -->
 <section class="section section-alt">
     <div class="container">
-        <h2 class="section-title">Pro Tips for Success</h2>
+        <h2 class="section-title">{% if lang == 'uk' %}Професійні поради для успіху{% else %}Pro Tips for Success{% endif %}</h2>
         <div class="tips-grid">
             <div class="tip-card">
                 <div class="tip-icon">
-                    <i class="fas fa-star"></i>
+                    <i class="fas fa-balance-scale"></i>
                 </div>
-                <h3>Quality Photos</h3>
-                <p>Upload high-quality photos of your grain to attract more buyers and build trust.</p>
+                <h3>{% if lang == 'uk' %}Визначте реальні обсяги{% else %}Define real amounts{% endif %}</h3>
+                <p>{% if lang == 'uk' %}Чітко вкажіть кількість та якість зерна, яке ви пропонуєте або шукаєте.{% else %}Clearly specify the quantity and quality of grain you are offering or seeking.{% endif %}</p>
             </div>
             
             <div class="tip-card">

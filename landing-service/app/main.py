@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request
 import json
 import os
 
@@ -55,7 +55,6 @@ def how_to():
 def faq():
     lang = get_current_language()
     translations = load_translations()
-    print(translations)
     return render_template(
         "faq.html",
         lang=lang,

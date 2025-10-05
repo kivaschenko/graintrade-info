@@ -35,6 +35,7 @@
   },
   "how_to_use": {
     "title": "How to Use GrainTrade",
+    "subtitle": "Just 5 simple steps to start trading grain",
     "steps": [
       {
         "title": "Register",
@@ -64,6 +65,7 @@
   },
   "faq": {
     "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about using GrainTrade",
     "items": [
       {
         "question": "How to register on GrainTrade?",
