@@ -5,7 +5,7 @@
         <div class="brand fw-bold fs-3">{{ t('brand') }}</div>
         <div class="stamp text-muted">
           <span>{{ t('updated') }}</span>:
-          <span id="updated-date">2025-08-19</span>
+          <span id="updated-date">2025-10-05</span>
         </div>
       </div>
       <div class="col-auto">
@@ -32,9 +32,8 @@
       </ul>
       <h2 class="fs-5 mt-3">{{ t('contact_details_title') }}</h2>
       <ul>
-        <li><strong>Email:</strong> <a id="contact-email" href="mailto:support@graintrade.info">support@graintrade.info</a></li>
+        <li><strong>Email:</strong> <a id="contact-email" href="mailto:info@graintrade.info">support@graintrade.info</a></li>
         <li><strong>{{ t('phone') }}:</strong> +380 66 2760451</li>
-        <li><strong> LinkedIn:</strong><a href="https://www.linkedin.com/in/kostiantyn-ivashchenko-458756321/" target="_blank"> Kostiantyn Ivashchenko</a></li>
       </ul>
     </section>
   </div>
