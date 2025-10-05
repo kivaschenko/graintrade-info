@@ -86,6 +86,22 @@
       {
         "question": "How does the map search work?",
         "answer": "Our map search shows all available offers in your area. You can filter by grain type, quantity, and distance."
+      },
+      {
+        "question": "Can I use GrainTrade on mobile devices?",
+        "answer": "Yes, our platform is responsive and works on any device - computers, tablets, and smartphones."
+      },
+      {
+        "question": "How to contact support?",
+        "answer": "If you have any questions or issues, you can contact our support team via email: support@graintrade.info"
+      },
+      {
+        "question": "Can I edit or delete my offers?",
+        "answer": "Yes, you can manage your listings in your profile. Only delete offers as needed, but not edit them. Because of the integration with Telegram channel."
+      },
+      {
+        "question": "How long an offer stays active?",
+        "answer": "Offers remain active for 30 days. You can delete them at any time."
       }
     ],
     "categories": {
@@ -150,7 +166,7 @@
         },
         "trustworthy_trader": {
           "question": "How do I know if a trader is trustworthy?",
-          "answer": "We provide user rating systems and verification badges. You can see transaction history and read reviews from other users. However, since we don't handle transactions ourselves, we recommend doing your own due diligence and using standard business practices when dealing with other traders."
+          "answer": "Currently, we do not use a formal verification process for traders. We will provide user rating systems and verification badges in the future. You can see transaction history and read reviews from other users. However, since we don't handle transactions ourselves, we recommend doing your own due diligence and using standard business practices when dealing with other traders."
         },
         "international_trading": {
           "question": "Can I trade internationally?",
