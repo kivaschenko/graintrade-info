@@ -352,6 +352,14 @@ BEGIN
             'Преміум',
             'Преміум план на graintrade.info на 30 днів: до 400 товарів, 400 переглядів карти, 400 геопошуків, 400 навігацій, email сповіщення.',
             '30 днів', 1350.00, 'UAH'
+        ),
+        (
+            'Business',
+            'Business plan on graintrade.info for 180 days: add new 10000 items, 10000 map views, 10000 geo-search, 10000 navigation, email notifications.',
+            500.00, 'USD', 'business', '180 days', 10000, 10000, 10000, 10000,
+            'Бізнес',
+            'Бізнес план на graintrade.info на 180 днів: до нових 10000 товарів, 10000 переглядів карти, 10000 геопошуків, 10000 навігацій, email сповіщення.',
+            '180 днів', 22500.00, 'UAH'
         );
     END IF;
 END $$;
@@ -657,3 +665,7 @@ CREATE TABLE IF NOT EXISTS item_telegram_messages (
     created_at TIMESTAMP DEFAULT NOW(),
     CONSTRAINT unique_item_telegram_message UNIQUE (item_id, telegram_message_id)
 );
+
+-- INSERT INTO public.tarifs(
+--     id, name, description, price, currency, scope, terms, items_limit, map_views_limit, geo_search_limit, navigation_limit, notify_new_messages, notify_new_items, created_at, ua_name, ua_description, ua_terms, ua_price, ua_currency, allow_import_export)
+    -- VALUES (4, 'Business', 'Business plan on graintrade.info for 180 days: add new 10000 items, 10000 map views, 10000 geo-search, 10000 navigation, email notifications.', 500.00, 'USD', 'business', '180 days', 10000, 10000, 10000, 10000, true, true, NOW(), 'Бізнес', 'Бізнес план на graintrade.info на 180 днів: до нових 10000 товарів, 10000 переглядів карти, 10000 геопошуків, 10000 навігацій, email сповіщення.', '180 днів', 22500.00, 'UAH', true);

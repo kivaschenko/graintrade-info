@@ -139,6 +139,242 @@
         />
       </form>
     </div>
+
+    <!-- Cost Analysis Section -->
+    <div class="cost-analysis-section mt-5">
+      <div class="section-header mb-4">
+        <h2 class="display-6 fw-bold text-center text-primary">{{ $t('tariffs.costAnalysisTitle') }}</h2>
+      </div>
+
+      <!-- Tariff Overview Table -->
+      <div class="mb-5">
+        <h3 class="h4 mb-3">{{ $t('tariffs.tariffOverviewTitle') }}</h3>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-primary">
+              <tr>
+                <th>{{ $t('tariffs.plan') }}</th>
+                <th>{{ $t('tariffs.duration') }}</th>
+                <th>{{ $t('common_text.price') }} (USD)</th>
+                <th>{{ $t('common_text.price') }} (UAH)</th>
+                <th>{{ $t('tariffs.items') }}</th>
+                <th>{{ $t('tariffs.mapViews') }}</th>
+                <th>{{ $t('tariffs.geoSearch') }}</th>
+                <th>{{ $t('tariffs.navigation') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tariff in sortedTariffs" :key="tariff.id" :class="{ 'table-success': tariff.scope === currentTariff }">
+                <td class="fw-bold">{{ getTariffName(tariff) }}</td>
+                <td>{{ getTariffDuration(tariff) }}</td>
+                <td>${{ tariff.price.toFixed(2) }}</td>
+                <td>₴{{ getTariffPrice(tariff) }}</td>
+                <td>{{ formatLimit(tariff.items_limit) }}</td>
+                <td>{{ formatLimit(tariff.map_views_limit) }}</td>
+                <td>{{ formatLimit(tariff.geo_search_limit) }}</td>
+                <td>{{ formatLimit(tariff.navigation_limit) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Cost Per Service Analysis -->
+      <div class="mb-5">
+        <h3 class="h4 mb-3">{{ $t('tariffs.costPerServiceTitle') }}</h3>
+        
+        <!-- Cost Per Item -->
+        <div class="mb-4">
+          <h4 class="h5">{{ $t('tariffs.costPerItemTitle') }}</h4>
+          <ul class="list-group">
+            <li v-for="tariff in sortedTariffs" :key="'item-' + tariff.id" 
+                class="list-group-item d-flex justify-content-between align-items-center"
+                :class="{ 'list-group-item-success': tariff.scope === currentTariff }">
+              <strong>{{ getTariffName(tariff) }}:</strong>
+              <span class="badge bg-primary rounded-pill">
+                ${{ getCostPerService(tariff, 'items_limit') }} {{ $t('tariffs.perItem') }}
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Cost Per Map View -->
+        <div class="mb-4">
+          <h4 class="h5">{{ $t('tariffs.costPerMapViewTitle') }}</h4>
+          <ul class="list-group">
+            <li v-for="tariff in sortedTariffs" :key="'map-' + tariff.id" 
+                class="list-group-item d-flex justify-content-between align-items-center"
+                :class="{ 'list-group-item-success': tariff.scope === currentTariff }">
+              <strong>{{ getTariffName(tariff) }}:</strong>
+              <span class="badge bg-primary rounded-pill">
+                ${{ getCostPerService(tariff, 'map_views_limit') }} {{ $t('tariffs.perView') }}
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Cost Per Geo-Search -->
+        <div class="mb-4">
+          <h4 class="h5">{{ $t('tariffs.costPerGeoSearchTitle') }}</h4>
+          <ul class="list-group">
+            <li v-for="tariff in sortedTariffs" :key="'geo-' + tariff.id" 
+                class="list-group-item d-flex justify-content-between align-items-center"
+                :class="{ 'list-group-item-success': tariff.scope === currentTariff }">
+              <strong>{{ getTariffName(tariff) }}:</strong>
+              <span class="badge bg-primary rounded-pill">
+                ${{ getCostPerService(tariff, 'geo_search_limit') }} {{ $t('tariffs.perSearch') }}
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Cost Per Navigation -->
+        <div class="mb-4">
+          <h4 class="h5">{{ $t('tariffs.costPerNavigationTitle') }}</h4>
+          <ul class="list-group">
+            <li v-for="tariff in sortedTariffs" :key="'nav-' + tariff.id" 
+                class="list-group-item d-flex justify-content-between align-items-center"
+                :class="{ 'list-group-item-success': tariff.scope === currentTariff }">
+              <strong>{{ getTariffName(tariff) }}:</strong>
+              <span class="badge bg-primary rounded-pill">
+                ${{ getCostPerService(tariff, 'navigation_limit') }} {{ $t('tariffs.perNavigation') }}
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Monthly Cost Comparison -->
+      <div class="mb-5">
+        <h3 class="h4 mb-3">{{ $t('tariffs.monthlyCostTitle') }}</h3>
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead class="table-info">
+              <tr>
+                <th>{{ $t('tariffs.plan') }}</th>
+                <th>{{ $t('tariffs.monthlyEquivalent') }} (USD)</th>
+                <th>{{ $t('tariffs.monthlyEquivalent') }} (UAH)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tariff in sortedTariffs" :key="'monthly-' + tariff.id" 
+                  :class="{ 'table-success': tariff.scope === currentTariff }">
+                <td class="fw-bold">{{ getTariffName(tariff) }}</td>
+                <td>${{ getMonthlyCost(tariff) }}</td>
+                <td>₴{{ (getMonthlyCost(tariff) * 45).toFixed(2) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <small class="text-muted">
+          <em>{{ $t('tariffs.businessMonthlyCalc') }}</em>
+        </small>
+      </div>
+
+      <!-- Value Analysis -->
+      <div class="mb-5">
+        <h3 class="h4 mb-3">{{ $t('tariffs.valueAnalysisTitle') }}</h3>
+        
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <h4 class="h5">{{ $t('tariffs.bestValueTitle') }}</h4>
+            <div class="card">
+              <div class="card-body">
+                <ul class="list-unstyled">
+                  <li class="mb-2">
+                    <strong>{{ $t('tariffs.casualUsers') }}:</strong> 
+                    <span class="badge bg-success ms-2">{{ $t('tariff.free') }}</span><br>
+                    <small class="text-muted">{{ $t('tariffs.casualUsersDesc') }}</small>
+                  </li>
+                  <li class="mb-2">
+                    <strong>{{ $t('tariffs.smallBusinesses') }}:</strong> 
+                    <span class="badge bg-primary ms-2">{{ $t('tariff.basic') }}</span><br>
+                    <small class="text-muted">{{ $t('tariffs.smallBusinessesDesc') }}</small>
+                  </li>
+                  <li class="mb-2">
+                    <strong>{{ $t('tariffs.mediumBusinesses') }}:</strong> 
+                    <span class="badge bg-warning ms-2">{{ $t('tariff.premium') }}</span><br>
+                    <small class="text-muted">{{ $t('tariffs.mediumBusinessesDesc') }}</small>
+                  </li>
+                  <li class="mb-2">
+                    <strong>{{ $t('tariffs.largeEnterprises') }}:</strong> 
+                    <span class="badge bg-dark ms-2">Business</span><br>
+                    <small class="text-muted">{{ $t('tariffs.largeEnterprisesDesc') }}</small>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-4">
+            <h4 class="h5">{{ $t('tariffs.costEfficiencyTitle') }}</h4>
+            <div class="card">
+              <div class="card-body">
+                <ol class="list-group list-group-numbered list-group-flush">
+                  <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="ms-2 me-auto">
+                      <div class="fw-bold">Business Plan</div>
+                      $0.05 {{ $t('tariffs.perSearch') }}
+                    </div>
+                    <span class="badge bg-success rounded-pill">{{ $t('tariffs.bestValue') }}</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="ms-2 me-auto">
+                      <div class="fw-bold">Premium Plan</div>
+                      $0.075 {{ $t('tariffs.perSearch') }}
+                    </div>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="ms-2 me-auto">
+                      <div class="fw-bold">Basic Plan</div>
+                      $0.10 {{ $t('tariffs.perSearch') }}
+                    </div>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="ms-2 me-auto">
+                      <div class="fw-bold">Free Plan</div>
+                      $0.00 {{ $t('tariffs.perSearch') }}
+                    </div>
+                    <span class="badge bg-info rounded-pill">Limited</span>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Insights -->
+      <div class="mb-5">
+        <h3 class="h4 mb-3">{{ $t('tariffs.keyInsightsTitle') }}</h3>
+        <div class="card">
+          <div class="card-body">
+            <ul class="list-unstyled">
+              <li class="mb-3">
+                <i class="bi bi-graph-up text-primary me-2"></i>
+                <strong>{{ $t('tariffs.volumeDiscounts') }}</strong>
+              </li>
+              <li class="mb-3">
+                <i class="bi bi-currency-dollar text-success me-2"></i>
+                <strong>{{ $t('tariffs.uniformPricing') }}</strong>
+              </li>
+              <li class="mb-3">
+                <i class="bi bi-currency-exchange text-info me-2"></i>
+                <strong>{{ $t('tariffs.currencyExchange') }}</strong>
+              </li>
+              <li class="mb-3">
+                <i class="bi bi-calendar-check text-warning me-2"></i>
+                <strong>{{ $t('tariffs.longTermCommitment') }}</strong>
+              </li>
+              <li class="mb-3">
+                <i class="bi bi-arrow-up-circle text-secondary me-2"></i>
+                <strong>{{ $t('tariffs.featureProgression') }}</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -161,6 +397,13 @@ export default {
   },
   computed: {
     ...mapState(['user']),
+    sortedTariffs() {
+      // Sort tariffs by price to show them in logical order
+      const order = ['free', 'basic', 'premium', 'business'];
+      return [...this.tariffs].sort((a, b) => {
+        return order.indexOf(a.scope) - order.indexOf(b.scope);
+      });
+    },
   },
   watch: {
     liqpayForm(newVal) {
@@ -267,6 +510,30 @@ export default {
       };
       return currencyMap[currency] || currency;
     },
+    getCostPerService(tariff, serviceType) {
+      if (tariff.price === 0) {
+        return '0.00';
+      }
+      const limit = tariff[serviceType];
+      if (limit === 0) {
+        return '0.00';
+      }
+      return (tariff.price / limit).toFixed(3);
+    },
+    getMonthlyCost(tariff) {
+      if (tariff.scope === 'business') {
+        // Business plan is for 180 days, so divide by 6 to get monthly cost
+        return (tariff.price / 6).toFixed(2);
+      }
+      // All other plans are for 30 days (monthly)
+      return tariff.price.toFixed(2);
+    },
+    getTariffDuration(tariff) {
+      if (this.$i18n.locale === 'ua' && tariff.ua_terms) {
+        return tariff.ua_terms;
+      }
+      return tariff.terms;
+    },
   },
   async created() {
     this.isLoading = true;
@@ -322,5 +589,104 @@ export default {
 
 .liqpay-form {
   text-align: center;
+}
+
+/* Cost Analysis Section Styles */
+.cost-analysis-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 15px;
+  padding: 2rem;
+  margin-top: 3rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+}
+
+.cost-analysis-section .section-header {
+  border-bottom: 3px solid var(--graintrade-primary, #007bff);
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+
+.cost-analysis-section .table {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.cost-analysis-section .table thead th {
+  border: none;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+}
+
+.cost-analysis-section .table tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.cost-analysis-section .list-group-item {
+  border: none;
+  border-radius: 8px !important;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.cost-analysis-section .list-group-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cost-analysis-section .card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  transition: all 0.3s ease;
+}
+
+.cost-analysis-section .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.cost-analysis-section .badge {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+}
+
+.cost-analysis-section h3, .cost-analysis-section h4, .cost-analysis-section h5 {
+  color: var(--graintrade-secondary, #6c757d);
+  margin-bottom: 1rem;
+}
+
+.cost-analysis-section .text-primary {
+  color: var(--graintrade-primary, #007bff) !important;
+}
+
+.cost-analysis-section .list-group-numbered .list-group-item::before {
+  font-weight: bold;
+  color: var(--graintrade-primary, #007bff);
+}
+
+.cost-analysis-section .table-success {
+  background-color: rgba(25, 135, 84, 0.1);
+  border-left: 4px solid #198754;
+}
+
+.cost-analysis-section .list-group-item-success {
+  background-color: rgba(25, 135, 84, 0.1);
+  border-left: 4px solid #198754;
+}
+
+@media (max-width: 768px) {
+  .cost-analysis-section {
+    padding: 1rem;
+    margin-top: 2rem;
+  }
+  
+  .cost-analysis-section .table-responsive {
+    font-size: 0.875rem;
+  }
 }
 </style>
