@@ -45,6 +45,7 @@ oauth2_scheme = OAuth2PasswordBearer(
         "delete:item": "Allowed to delete item.",
         "add:category": "Allowed to add a new Category",
         "view:map": "Allowed to view map.",
+        "import:export": "Allowed to import/export data via Excel/CSV.",
     },
 )
 
@@ -72,6 +73,14 @@ SCOPES = {
         "read:item",
         "delete:item",
         "view:map",
+    ],
+    "business": [
+        "me",
+        "create:item",
+        "read:item",
+        "delete:item",
+        "view:map",
+        "import:export",  # Business plan allows import/export functionality
     ],
 }
 
