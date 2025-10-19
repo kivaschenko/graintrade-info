@@ -5,7 +5,7 @@ Test script to verify commodity price parser output and RabbitMQ message format
 
 import asyncio
 import json
-from yfinance_draft import (
+from parsers.yfinance_parser import (
     get_commodity_prices,
     get_usd_to_uah_rate,
     format_telegram_message,

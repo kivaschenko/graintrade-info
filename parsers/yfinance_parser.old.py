@@ -1,5 +1,4 @@
 import yfinance as yf
-from transformers import pipeline
 from datetime import datetime
 import pandas as pd
 import requests
@@ -10,6 +9,7 @@ import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
+from typing import Dict, List, Optional, Tuple
 
 # Initialize logging
 logging.basicConfig(
@@ -27,156 +27,171 @@ RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 RABBITMQ_VHOST = os.getenv("RABBITMQ_VHOST", "/")
+RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "message.events")
 
-COURSE_UAH_USD_FALLBACK = 41.7537  # fallback value
+COURSE_UAH_USD_FALLBACK = 41.0  # fallback value
 
-# Extended commodities with more grain trading related tickers
-# Using ETFs and spot prices when futures are not available
+# --- COMPREHENSIVE COMMODITIES CONFIG ---
+# Includes futures contracts (quoted in cents), ETFs, and company stocks
 COMMODITIES = {
+    # === FUTURES CONTRACTS (CBOT) - quoted in cents ===
+    "Wheat Futures": {
+        "ticker": "ZW=F",
+        "unit": "bushel",
+        "kg_per_unit": 27.2155,
+        "cents_per_dollar": 100,
+        "category": "futures",
+        "description": "Пшениця (ф'ючерс CBOT)",
+    },
+    "Corn Futures": {
+        "ticker": "ZC=F",
+        "unit": "bushel",
+        "kg_per_unit": 25.4012,
+        "cents_per_dollar": 100,
+        "category": "futures",
+        "description": "Кукурудза (ф'ючерс CBOT)",
+    },
+    "Soybeans Futures": {
+        "ticker": "ZS=F",
+        "unit": "bushel",
+        "kg_per_unit": 27.2155,
+        "cents_per_dollar": 100,
+        "category": "futures",
+        "description": "Соя (ф'ючерс CBOT)",
+    },
+    "Oats Futures": {
+        "ticker": "ZO=F",
+        "unit": "bushel",
+        "kg_per_unit": 14.5150,
+        "cents_per_dollar": 100,
+        "category": "futures",
+        "description": "Овес (ф'ючерс CBOT)",
+    },
+    "Rough Rice Futures": {
+        "ticker": "ZR=F",
+        "unit": "cwt",
+        "kg_per_unit": 45.359237,
+        "cents_per_dollar": 100,
+        "category": "futures",
+        "description": "Рис (ф'ючерс CBOT)",
+    },
+    # === ETFs (Exchange Traded Funds) - quoted in dollars ===
     "Wheat ETF": {
-        "ticker": "WEAT",  # Teucrium Wheat Fund ETF
+        "ticker": "WEAT",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "etf",
         "description": "Пшениця (ETF)",
     },
     "Corn ETF": {
         "ticker": "CORN",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "etf",
         "description": "Кукурудза (ETF)",
     },
     "Soybeans ETF": {
         "ticker": "SOYB",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "etf",
         "description": "Соя (ETF)",
     },
     "Agricultural Basket": {
         "ticker": "DBA",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "etf",
         "description": "Аграрний кошик (ETF)",
     },
     "Sugar ETF": {
         "ticker": "CANE",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "etf",
         "description": "Цукор (ETF)",
     },
     "Coffee ETF": {
         "ticker": "JO",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "etf",
         "description": "Кава (ETF)",
     },
-    # Add some major agricultural companies
+    # === COMPANIES ===
     "ADM": {
         "ticker": "ADM",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "company",
         "description": "Archer-Daniels-Midland (аграрна компанія)",
     },
     "Bunge": {
         "ticker": "BG",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "company",
         "description": "Bunge Limited (аграрна компанія)",
     },
     "Tyson Foods": {
         "ticker": "TSN",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "company",
         "description": "Tyson Foods (м'ясна компанія)",
     },
-    # Alternative tickers
     "Mosaic (Fertilizer)": {
         "ticker": "MOS",
         "unit": "share",
-        "factor": 1.0,
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "company",
         "description": "Mosaic Company (добрива)",
     },
 }
 
-# HuggingFace summarizer
-try:
-    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
-except Exception as e:
-    logger.warning(f"Failed to load summarizer model: {e}")
-    summarizer = None
+# Optional: local CSV path with Ukrainian prices
+UKR_PRICES_CSV = Path("ukraine_prices.csv")
 
 
-def get_price(symbol, name):
-    """Get current price for a commodity ticker"""
-    try:
-        ticker = yf.Ticker(symbol)
-        data = ticker.history(period="1d")
-        if data.empty:
-            logger.warning(f"No data available for {symbol}")
-            return f"{name}: Дані недоступні"
-        last_price = data["Close"].iloc[-1]
-        return f"{name}: {last_price:.2f} USD"
-    except Exception as e:
-        logger.error(f"Error getting price for {symbol}: {e}")
-        return f"{name}: Помилка отримання ціни"
+# --- HELPER FUNCTIONS ---
 
 
-def make_summary(prices_text):
-    """Create summary using AI model if available"""
-    if summarizer is None:
-        return "Автоматичне резюме недоступне"
+def fetch_usd_to_uah() -> float:
+    """Get current USD/UAH exchange rate from multiple sources"""
 
-    try:
-        # Ensure the text is not too long for the model
-        if len(prices_text) > 1000:
-            prices_text = prices_text[:1000]
-
-        summary = summarizer(prices_text, max_length=60, min_length=20, do_sample=False)
-        return summary[0]["summary_text"]
-    except Exception as e:
-        logger.error(f"Error creating summary: {e}")
-        return "Помилка створення резюме"
-
-
-def get_usd_to_uah_rate():
-    """Get current USD/UAH exchange rate from free API sources"""
-    # Try multiple free sources
-
-    # Source 1: Free exchangerate API (no key required)
+    # Source 1: exchangerate-api.com
     try:
         url = "https://api.exchangerate-api.com/v4/latest/USD"
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             data = response.json()
             if "rates" in data and "UAH" in data["rates"]:
-                rate = data["rates"]["UAH"]
+                rate = float(data["rates"]["UAH"])
                 logger.info(f"USD/UAH rate from exchangerate-api.com: {rate}")
-                return float(rate)
+                return rate
     except Exception as e:
         logger.warning(f"Failed to get rate from exchangerate-api.com: {e}")
 
-    # Source 2: Free fixer.io (free tier, no key for USD base)
-    try:
-        url = "https://api.fixer.io/latest?base=USD&symbols=UAH"
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if "rates" in data and "UAH" in data["rates"]:
-                rate = data["rates"]["UAH"]
-                logger.info(f"USD/UAH rate from fixer.io: {rate}")
-                return float(rate)
-    except Exception as e:
-        logger.warning(f"Failed to get rate from fixer.io: {e}")
-
-    # Source 3: NBU (National Bank of Ukraine) - official rate
+    # Source 2: NBU (National Bank of Ukraine) - official rate
     try:
         url = "https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&json"
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             data = response.json()
             if data and len(data) > 0:
-                rate = data[0]["rate"]
+                rate = float(data[0]["rate"])
                 logger.info(f"USD/UAH rate from NBU: {rate}")
-                return float(rate)
+                return rate
     except Exception as e:
         logger.warning(f"Failed to get rate from NBU: {e}")
 
@@ -185,6 +200,58 @@ def get_usd_to_uah_rate():
         f"All exchange rate sources failed, using fallback: {COURSE_UAH_USD_FALLBACK}"
     )
     return COURSE_UAH_USD_FALLBACK
+
+
+def fetch_price_yf(ticker: str):
+    """
+    Fetch last close price from Yahoo Finance.
+    Handles anomalies in rice futures and other data inconsistencies.
+    """
+    try:
+        t = yf.Ticker(ticker)
+        hist = t.history(period="5d")  # Get more days to detect anomalies
+        if hist.empty:
+            logger.warning(f"No data available for {ticker}")
+            return None
+
+        # Special handling for rough rice futures (ZR=F) due to pricing anomalies
+        if ticker == "ZR=F" and len(hist) > 1:
+            recent_prices = hist["Close"].tail(5)
+            latest_price = recent_prices.iloc[-1]
+            # If latest price is dramatically different from recent average, use previous value
+            if len(recent_prices) > 1:
+                avg_previous = recent_prices.iloc[:-1].mean()
+                if (
+                    abs(latest_price - avg_previous) / avg_previous > 0.5
+                ):  # 50% difference threshold
+                    logger.warning(
+                        f"{ticker} latest price {latest_price:.2f} differs significantly "
+                        f"from recent average {avg_previous:.2f}, using previous price"
+                    )
+                    return float(recent_prices.iloc[-2])
+
+        return float(hist["Close"].iloc[-1])
+    except Exception as e:
+        logger.error(f"Error fetching {ticker}: {e}")
+        return None
+
+
+def convert_to_usd_per_ton(price: float, kg_per_unit: float):
+    """
+    Convert price quoted per unit (e.g., per bushel or per cwt) into USD/tonne.
+
+    Args:
+        price: Price in USD per unit
+        kg_per_unit: How many kg in 1 quoted unit
+
+    Returns:
+        Price in USD per metric ton (1000 kg), or None if conversion not possible
+    """
+    if price is None or kg_per_unit is None:
+        return None
+    # 1 tonne = 1000 kg, factor = 1000 / kg_per_unit
+    factor = 1000.0 / kg_per_unit
+    return price * factor
 
 
 def get_commodity_prices():
