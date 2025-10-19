@@ -1,0 +1,92 @@
+{
+  "type": "commodity_prices",
+  "timestamp": "2025-10-19T12:20:15.972750",
+  "data": {
+    "telegram_message": "📊 **Аграрний ринок** (19.10.2025)\n💱 Курс USD/UAH: 41.72\n\n🌾 **Товарні ETF:**\n📈 Аграрний кошик (ETF): $26.54 (1107 ₴)\n📈 Кукурудза (ETF): $17.54 (732 ₴)\n📈 Соя (ETF): $21.82 (910 ₴)\n📈 Цукор (ETF): $9.89 (413 ₴)\n📈 Пшениця (ETF): $4.05 (169 ₴)\n\n🏭 **Аграрні компанії:**\n📈 Archer-Daniels-Midland (аграрна компанія): $63.33 (2642 ₴)\n📈 Bunge Limited (аграрна компанія): $97.50 (4068 ₴)\n📈 Mosaic Company (добрива): $29.32 (1223 ₴)\n📈 Tyson Foods (м'ясна компанія): $52.48 (2189 ₴)\n\n📝 *Дані отримані з фондових бірж у реальному часі*\n🕐 Оновлено: 12:20",
+    "usd_uah_rate": 41.72,
+    "commodities": [
+      {
+        "Commodity": "ADM",
+        "Ticker": "ADM",
+        "Raw Price": 63.33,
+        "Unit": "share",
+        "USD/share": 63.33,
+        "UAH/share": 2642.13,
+        "Description": "Archer-Daniels-Midland (аграрна компанія)"
+      },
+      {
+        "Commodity": "Agricultural Basket",
+        "Ticker": "DBA",
+        "Raw Price": 26.54,
+        "Unit": "share",
+        "USD/share": 26.54,
+        "UAH/share": 1107.25,
+        "Description": "Аграрний кошик (ETF)"
+      },
+      {
+        "Commodity": "Bunge",
+        "Ticker": "BG",
+        "Raw Price": 97.5,
+        "Unit": "share",
+        "USD/share": 97.5,
+        "UAH/share": 4067.7,
+        "Description": "Bunge Limited (аграрна компанія)"
+      },
+      {
+        "Commodity": "Corn ETF",
+        "Ticker": "CORN",
+        "Raw Price": 17.54,
+        "Unit": "share",
+        "USD/share": 17.54,
+        "UAH/share": 731.77,
+        "Description": "Кукурудза (ETF)"
+      },
+      {
+        "Commodity": "Mosaic (Fertilizer)",
+        "Ticker": "MOS",
+        "Raw Price": 29.32,
+        "Unit": "share",
+        "USD/share": 29.32,
+        "UAH/share": 1223.23,
+        "Description": "Mosaic Company (добрива)"
+      },
+      {
+        "Commodity": "Soybeans ETF",
+        "Ticker": "SOYB",
+        "Raw Price": 21.82,
+        "Unit": "share",
+        "USD/share": 21.82,
+        "UAH/share": 910.33,
+        "Description": "Соя (ETF)"
+      },
+      {
+        "Commodity": "Sugar ETF",
+        "Ticker": "CANE",
+        "Raw Price": 9.89,
+        "Unit": "share",
+        "USD/share": 9.89,
+        "UAH/share": 412.61,
+        "Description": "Цукор (ETF)"
+      },
+      {
+        "Commodity": "Tyson Foods",
+        "Ticker": "TSN",
+        "Raw Price": 52.48,
+        "Unit": "share",
+        "USD/share": 52.48,
+        "UAH/share": 2189.47,
+        "Description": "Tyson Foods (м'ясна компанія)"
+      },
+      {
+        "Commodity": "Wheat ETF",
+        "Ticker": "WEAT",
+        "Raw Price": 4.05,
+        "Unit": "share",
+        "USD/share": 4.05,
+        "UAH/share": 168.97,
+        "Description": "Пшениця (ETF)"
+      }
+    ]
+  },
+  "destination": "telegram_channel"
+}
