@@ -379,7 +379,7 @@ def format_telegram_daily_report(df: pd.DataFrame, usd_to_uah: float) -> str:
     current_time = now.strftime("%H:%M")
 
     # Header
-    message = f"📊 *Щоденний огляд аграрного ринку* — {current_date}\n"
+    message = f"📊 <b>Щоденний огляд аграрного ринку</b> — {current_date}\n"
     message += f"💱 Курс USD→UAH: {usd_to_uah:.2f}\n\n"
 
     # Group by categories
@@ -389,7 +389,7 @@ def format_telegram_daily_report(df: pd.DataFrame, usd_to_uah: float) -> str:
 
     # Futures section
     if not futures_df.empty:
-        message += "🌾 *Ф'ючерсні контракти (CBOT):*\n"
+        message += "🌾 <b>Ф'ючерсні контракти (CBOT):</b>\n"
         for _, row in futures_df.iterrows():
             if pd.notna(row["price_in_dollars"]) and pd.notna(row["usd_per_ton"]):
                 message += (
@@ -404,7 +404,7 @@ def format_telegram_daily_report(df: pd.DataFrame, usd_to_uah: float) -> str:
 
     # ETFs section
     if not etf_df.empty:
-        message += "📈 *Товарні ETF:*\n"
+        message += "📈 <b>Товарні ETF:</b>\n"
         for _, row in etf_df.iterrows():
             if pd.notna(row["usd_per_share"]):
                 message += (
@@ -418,7 +418,7 @@ def format_telegram_daily_report(df: pd.DataFrame, usd_to_uah: float) -> str:
 
     # Companies section
     if not company_df.empty:
-        message += "🏭 *Аграрні компанії:*\n"
+        message += "🏭 <b>Аграрні компанії:</b>\n"
         for _, row in company_df.iterrows():
             if pd.notna(row["usd_per_share"]):
                 message += (
@@ -431,7 +431,7 @@ def format_telegram_daily_report(df: pd.DataFrame, usd_to_uah: float) -> str:
         message += "\n"
 
     # Footer
-    message += "📝 *Дані отримані з фондових бірж у реальному часі*\n"
+    message += "📝 <b>Дані отримані з фондових бірж у реальному часі</b>\n"
     message += f"🕐 Оновлено: {current_time} {current_date}\n"
     message += "🔎 Джерела: Yahoo Finance (CBOT, NYSE, NASDAQ)"
 
@@ -450,18 +450,18 @@ def format_telegram_weekly_digest(
     current_time = now.strftime("%H:%M")
 
     # Header
-    message = f"📆 *Тижневий дайджест зернового ринку* — {current_date}\n"
+    message = f"📆 <b>Тижневий дайджест зернового ринку</b> — {current_date}\n"
     message += f"💱 USD→UAH: {usd_to_uah:.2f}\n\n"
 
     # Futures section (most important for grain trading)
     futures_df = df[df["category"] == "futures"]
     if not futures_df.empty:
-        message += "🌍 *Світові біржові котирування (ф'ючерси CBOT):*\n\n"
+        message += "🌍 <b>Світові біржові котирування (ф'ючерси CBOT):</b>\n\n"
         for _, row in futures_df.iterrows():
             if pd.notna(row["price_in_dollars"]) and pd.notna(row["usd_per_ton"]):
                 desc = row["description"].replace(" (ф'ючерс CBOT)", "")
                 message += (
-                    f"• *{desc}*\n"
+                    f"• {desc}\n"
                     f"  {row['price_in_dollars']:.2f} USD/{row['unit']} | "
                     f"{row['usd_per_ton']:.2f} USD/т | "
                     f"{row['uah_per_ton']:.0f} ₴/т\n"
@@ -473,7 +473,7 @@ def format_telegram_weekly_digest(
     # ETFs section
     etf_df = df[df["category"] == "etf"]
     if not etf_df.empty:
-        message += "📊 *ETF (біржові фонди):*\n"
+        message += "📊 <b>ETF (біржові фонди):</b>\n"
         for _, row in etf_df.iterrows():
             if pd.notna(row["usd_per_share"]):
                 message += f"• {row['description']}: ${row['usd_per_share']:.2f} ({row['uah_per_share']:.0f} ₴)\n"
@@ -482,7 +482,7 @@ def format_telegram_weekly_digest(
     # Companies section
     company_df = df[df["category"] == "company"]
     if not company_df.empty:
-        message += "🏢 *Акції аграрних компаній:*\n"
+        message += "🏢 <b>Акції аграрних компаній:</b>\n"
         for _, row in company_df.iterrows():
             if pd.notna(row["usd_per_share"]):
                 message += f"• {row['description']}: ${row['usd_per_share']:.2f} ({row['uah_per_share']:.0f} ₴)\n"
@@ -490,7 +490,7 @@ def format_telegram_weekly_digest(
 
     # Ukrainian prices comparison (if available)
     if df_ukr is not None and not df_ukr.empty:
-        message += "🇺🇦 *Українські ціни (локально):*\n"
+        message += "🇺🇦 <b>Українські ціни (локально):</b>\n"
         for _, u in df_ukr.iterrows():
             try:
                 name = u.get("commodity")
@@ -527,7 +527,7 @@ def format_telegram_weekly_digest(
         message += "\n"
 
     # Explanations for traders
-    message += "ℹ️ *Пояснення для трейдерів:*\n"
+    message += "ℹ️ <b>Пояснення для трейдерів:</b>\n"
     message += "• Ф'ючерси CBOT котируються в центах за бушель або cwt (100 фунтів)\n"
     message += "• Конверсія: бушель→тонна залежить від культури (різна вага)\n"
     message += "• Базис між світовою та українською ціною враховує логістику\n"
