@@ -263,7 +263,7 @@ class APKInformParser:
         fallback_data = [
             {
                 "commodity": "wheat",
-                "price_uah_per_ton": 8500,
+                "price_uah_per_ton": 9600,
                 "basis": "EXW",
                 "source": "APK-Inform (оціночні дані)",
                 "date": current_date,
