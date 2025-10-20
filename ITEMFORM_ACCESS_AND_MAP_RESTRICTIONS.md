@@ -10,12 +10,13 @@ This document describes the implementation of access control for the ItemForm co
 **File:** `frontend/src/router/index.js`
 
 - Added `requiresAuth: true` meta property to the ItemForm route
+- **Note:** Tariff plans page (`/tariffs`) is publicly accessible to allow users to view pricing before registering
 - Implemented a global navigation guard (`router.beforeEach`) that:
   - Checks if the route requires authentication
   - Redirects unauthenticated users to the login page with a redirect query parameter
   - Preserves the intended destination for post-login redirect
 
-**Impact:** Users must be logged in to access `/items/new` (ItemForm). Unauthenticated users are redirected to `/login?redirect=/items/new`.
+**Impact:** Users must be logged in to access `/items/new` (ItemForm). Unauthenticated users are redirected to `/login?redirect=/items/new`. Tariff plans are publicly accessible.
 
 ### 2. Post-Login Redirect
 
