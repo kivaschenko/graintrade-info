@@ -58,9 +58,6 @@ const routes = [
     { path: '/tariffs',
       name: 'TariffPlans',
       component: TariffPlans,
-      meta: {
-        requiresAuth: true,
-      },
     },
     { path: '/reset-password',
       name: 'PasswordRecovery',
