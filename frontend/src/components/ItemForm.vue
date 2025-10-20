@@ -3,8 +3,8 @@
     <h1 class="text-center mb-4 graintrade-title">{{ $t('create_form.form_title') }}</h1>
 
     <div class="row">
-      <!-- Preview Map (Static/Read-only) -->
-      <div class="col-lg-5 mb-4">
+      <!-- Preview Map (Static/Read-only) - Only for Paid Plans -->
+      <div class="col-lg-5 mb-4" v-if="hasMapAccess && !isLoadingSubscription">
         <div class="card h-100 graintrade-card">
           <div class="card-header text-center">
             <h2 class="mb-0">{{ $t('create_form.map_preview') || 'Location Preview' }}</h2>
@@ -18,9 +18,36 @@
           </div>
         </div>
       </div>
+      
+      <!-- Info Card for Free Plan Users -->
+      <div class="col-lg-5 mb-4" v-if="!hasMapAccess && !isLoadingSubscription">
+        <div class="card h-100 graintrade-card">
+          <div class="card-header text-center bg-graintrade-primary text-white">
+            <h2 class="mb-0 text-white">
+              <i class="fas fa-map-marked-alt me-2"></i>
+              {{ $t('create_form.upgrade_for_map') || 'Map Preview' }}
+            </h2>
+          </div>
+          <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+            <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+            <h5 class="mb-3">{{ $t('create_form.map_preview_locked') || 'Map Preview Unavailable' }}</h5>
+            <p class="text-muted mb-3">
+              {{ $t('create_form.map_preview_locked_description') || 'Upgrade to a paid plan to view location previews on an interactive map.' }}
+            </p>
+            <p class="text-muted small mb-3">
+              <i class="fas fa-check-circle text-success me-1"></i>
+              {{ $t('create_form.geocoding_still_works') || 'Location geocoding still works - your address will be converted to coordinates automatically.' }}
+            </p>
+            <router-link to="/tariffs" class="btn btn-primary">
+              <i class="fas fa-crown me-2"></i>
+              {{ $t('create_form.view_plans') || 'View Tariff Plans' }}
+            </router-link>
+          </div>
+        </div>
+      </div>
 
       <!-- Form -->
-      <div class="col-lg-7 mb-4">
+      <div :class="['mb-4', hasMapAccess || isLoadingSubscription ? 'col-lg-7' : 'col-lg-12']">
         <div class="card h-100 graintrade-card">
           <div class="card-header text-center">
             <h2 class="mb-0">{{ $t('create_form.form_title') }}</h2>
@@ -263,6 +290,9 @@ export default {
       isSubmitting: false,
       addressInputTimeout: null,  // For debouncing address input
       isGeocodingAddress: false,  // Loading state for address geocoding
+      userSubscription: null,  // Store user's subscription info
+      hasMapAccess: false,  // Whether user has access to Mapbox map
+      isLoadingSubscription: true,  // Loading state for subscription check
     };
   },
   computed: {
@@ -303,15 +333,30 @@ export default {
     },
   },
   async mounted() {
-    // Initialize static map for preview
-    mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
-    this.map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [31.946946, 49.305825], // Ukraine center
-      zoom: 5,
-      interactive: false, // Static map - no interaction
-    });
+    // Check authentication (should be guaranteed by route guard, but double-check)
+    if (!this.$store.state.isAuthenticated || !this.user) {
+      this.$router.push('/login');
+      return;
+    }
+
+    // Fetch user's subscription to determine map access
+    await this.fetchUserSubscription();
+
+    // Initialize map only for paid plans
+    if (this.hasMapAccess) {
+      mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
+      this.map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [31.946946, 49.305825], // Ukraine center
+        zoom: 5,
+        interactive: false, // Static map - no interaction
+      });
+
+      window.addEventListener('resize', () => {
+        this.map.resize();
+      });
+    }
 
     // Fetch categories from the backend
     try {
@@ -320,12 +365,48 @@ export default {
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-
-    window.addEventListener('resize', () => {
-      this.map.resize();
-    });
   },
   methods: {
+    async fetchUserSubscription() {
+      try {
+        this.isLoadingSubscription = true;
+        const response = await axios.get(
+          `${process.env.VUE_APP_BACKEND_URL}/subscriptions/user/${this.user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            },
+          }
+        );
+        this.userSubscription = response.data;
+        
+        // Check if user has map access (paid plan)
+        // Free plan typically has tarif_id = 1, paid plans have tarif_id > 1
+        // Or check by tariff scope/name
+        if (this.userSubscription && this.userSubscription.tarif) {
+          const tariffScope = this.userSubscription.tarif.scope || '';
+          // Only free plan users don't have map access
+          // basic, premium, business, etc. all have map access
+          this.hasMapAccess = tariffScope !== 'free';
+          
+          console.log('📊 User subscription:', {
+            tariff: this.userSubscription.tarif.name,
+            scope: tariffScope,
+            hasMapAccess: this.hasMapAccess
+          });
+        } else {
+          // No subscription = free user
+          this.hasMapAccess = false;
+        }
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+        // Default to no map access on error
+        this.hasMapAccess = false;
+      } finally {
+        this.isLoadingSubscription = false;
+      }
+    },
+
     // Category Autocomplete Methods
     handleCategorySearch() {
       if (this.categorySearch.length >= 3) {
@@ -417,8 +498,8 @@ export default {
     },
 
     async updateMapPreview() {
-      // Optional: Use free Nominatim to show preview on map
-      // This doesn't consume Mapbox geocoding credits
+      // Use free Nominatim for geocoding (for all users)
+      // Map display is only for paid users
       this.isGeocodingAddress = true;
       
       try {
@@ -463,16 +544,18 @@ export default {
             });
           }
           
-          // Update map preview
-          if (this.marker) {
-            this.marker.setLngLat([lon, lat]);
-          } else {
-            this.marker = new mapboxgl.Marker()
-              .setLngLat([lon, lat])
-              .addTo(this.map);
+          // Update map preview ONLY for paid users with map access
+          if (this.hasMapAccess && this.map) {
+            if (this.marker) {
+              this.marker.setLngLat([lon, lat]);
+            } else {
+              this.marker = new mapboxgl.Marker()
+                .setLngLat([lon, lat])
+                .addTo(this.map);
+            }
+            
+            this.map.flyTo({ center: [lon, lat], zoom: 7 });
           }
-          
-          this.map.flyTo({ center: [lon, lat], zoom: 7 });
         }
       } catch (error) {
         console.log('Preview geocoding failed (not critical):', error);

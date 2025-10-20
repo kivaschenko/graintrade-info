@@ -35,6 +35,9 @@ const routes = [
       path: '/items/new',
       name: 'ItemForm',
       component: ItemForm,
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
       path: '/categories/:id/items',
@@ -124,5 +127,24 @@ const router = createRouter({
     history: createWebHistory(),
     routes,
     });
+
+// Navigation guard to check authentication
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem('access_token');
+  
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!isAuthenticated) {
+      // Redirect to login page with the intended destination
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      });
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
+});
 
 export default router;
