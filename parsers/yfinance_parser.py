@@ -1,7 +1,6 @@
 """
-YFinance Parser - Comprehensive commodity price fetcher for grain trading
-Combines futures contracts, ETFs, and company stocks with RabbitMQ integration
-Supports daily and weekly reports with Ukrainian translations
+YFinance Parser - Simple commodity price fetcher for grain trading
+Fetches futures contracts and ETFs from Yahoo Finance with RabbitMQ integration
 """
 
 import yfinance as yf
@@ -15,7 +14,6 @@ import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
-from apk_inform_parser import fetch_ukrainian_prices
 
 # Initialize logging
 logging.basicConfig(
@@ -37,8 +35,8 @@ RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "message.events")
 
 COURSE_UAH_USD_FALLBACK = 41.0  # fallback value
 
-# --- COMPREHENSIVE COMMODITIES CONFIG ---
-# Includes futures contracts (quoted in cents), ETFs, and company stocks
+# --- COMMODITIES CONFIG ---
+# Futures contracts and ETFs only
 COMMODITIES = {
     # === FUTURES CONTRACTS (CBOT) - quoted in cents ===
     "Wheat Futures": {
@@ -130,43 +128,7 @@ COMMODITIES = {
         "category": "etf",
         "description": "Кава (ETF)",
     },
-    # === COMPANIES ===
-    "ADM": {
-        "ticker": "ADM",
-        "unit": "share",
-        "kg_per_unit": None,
-        "cents_per_dollar": 1,
-        "category": "company",
-        "description": "Archer-Daniels-Midland (аграрна компанія)",
-    },
-    "Bunge": {
-        "ticker": "BG",
-        "unit": "share",
-        "kg_per_unit": None,
-        "cents_per_dollar": 1,
-        "category": "company",
-        "description": "Bunge Limited (аграрна компанія)",
-    },
-    "Tyson Foods": {
-        "ticker": "TSN",
-        "unit": "share",
-        "kg_per_unit": None,
-        "cents_per_dollar": 1,
-        "category": "company",
-        "description": "Tyson Foods (м'ясна компанія)",
-    },
-    "Mosaic (Fertilizer)": {
-        "ticker": "MOS",
-        "unit": "share",
-        "kg_per_unit": None,
-        "cents_per_dollar": 1,
-        "category": "company",
-        "description": "Mosaic Company (добрива)",
-    },
 }
-
-# Optional: local CSV path with Ukrainian prices
-UKR_PRICES_CSV = Path("ukraine_prices.csv")
 
 
 # --- HELPER FUNCTIONS ---
@@ -355,43 +317,10 @@ def get_commodity_prices(usd_to_uah: float) -> pd.DataFrame:
     return df
 
 
-def load_ukrainian_prices() -> pd.DataFrame | None:
-    """
-    Load Ukrainian local prices from multiple sources:
-    1. APK-Inform website (live scraping)
-    2. CSV file (fallback)
-    """
-    # Try fetching from APK-Inform first
-    try:
-        logger.info("Attempting to fetch Ukrainian prices from APK-Inform...")
-        df_ukr = fetch_ukrainian_prices()
-        if df_ukr is not None and not df_ukr.empty:
-            logger.info(f"Successfully fetched {len(df_ukr)} prices from APK-Inform")
-            return df_ukr
-    except Exception as e:
-        logger.warning(f"Failed to fetch from APK-Inform: {e}")
-
-    # Fallback to CSV file
-    if not UKR_PRICES_CSV.exists():
-        logger.warning("No Ukrainian prices CSV file found")
-        return None
-
-    try:
-        df_ukr = pd.read_csv(UKR_PRICES_CSV)
-        # Expect columns: commodity, price_uah_per_ton, basis, source
-        logger.info(f"Loaded Ukrainian prices from {UKR_PRICES_CSV}")
-        return df_ukr
-    except Exception as e:
-        logger.warning(f"Failed to read {UKR_PRICES_CSV}: {e}")
-        return None
-
-
-def format_telegram_daily_report(
-    df: pd.DataFrame, usd_to_uah: float, df_ukr: pd.DataFrame | None = None
-) -> str:
+def format_telegram_daily_report(df: pd.DataFrame, usd_to_uah: float) -> str:
     """
     Format daily commodity report for Telegram.
-    Includes futures, ETFs, company stocks, and Ukrainian prices.
+    Includes futures and ETFs only.
     """
     now = datetime.now()
     current_date = now.strftime("%d.%m.%Y")
@@ -404,7 +333,6 @@ def format_telegram_daily_report(
     # Group by categories
     futures_df = df[df["category"] == "futures"]
     etf_df = df[df["category"] == "etf"]
-    company_df = df[df["category"] == "company"]
 
     # Futures section
     if not futures_df.empty:
@@ -421,33 +349,6 @@ def format_telegram_daily_report(
                 message += f"• {row['description']}: {row['note']}\n"
         message += "\n"
 
-    # Ukrainian prices section (NEW)
-    if df_ukr is not None and not df_ukr.empty:
-        message += "🇺🇦 <b>Українські ціни:</b>\n"
-        for _, u in df_ukr.iterrows():
-            try:
-                commodity = u.get("commodity", "")
-                price_uah = u.get("price_uah_per_ton", 0)
-                basis = u.get("basis", "EXW")
-                source = u.get("source", "APK-Inform")
-
-                # Get commodity display name
-                commodity_names = {
-                    "wheat": "Пшениця",
-                    "corn": "Кукурудза",
-                    "soybeans": "Соя",
-                    "sunflower": "Соняшник",
-                    "barley": "Ячмінь",
-                    "oats": "Овес",
-                    "rapeseed": "Ріпак",
-                }
-                display_name = commodity_names.get(commodity, commodity.title())
-
-                message += f"• {display_name}: {price_uah:.0f} ₴/т ({basis})\n"
-            except Exception as e:
-                logger.warning(f"Error formatting Ukrainian price: {e}")
-        message += f"<i>Джерело: {source}</i>\n\n"
-
     # ETFs section
     if not etf_df.empty:
         message += "📈 <b>Товарні ETF:</b>\n"
@@ -462,34 +363,18 @@ def format_telegram_daily_report(
                 message += f"• {row['description']}: {row['note']}\n"
         message += "\n"
 
-    # Companies section
-    if not company_df.empty:
-        message += "🏭 <b>Аграрні компанії:</b>\n"
-        for _, row in company_df.iterrows():
-            if pd.notna(row["usd_per_share"]):
-                message += (
-                    f"• {row['description']}: "
-                    f"${row['usd_per_share']:.2f} "
-                    f"({row['uah_per_share']:.0f} ₴)\n"
-                )
-            else:
-                message += f"• {row['description']}: {row['note']}\n"
-        message += "\n"
-
     # Footer
     message += "📝 <b>Дані отримані з фондових бірж у реальному часі</b>\n"
     message += f"🕐 Оновлено: {current_time} {current_date}\n"
-    message += "🔎 Джерела: Yahoo Finance (CBOT, NYSE, NASDAQ), APK-Inform"
+    message += "🔎 Джерела: Yahoo Finance (CBOT, NYSE, NASDAQ)"
 
     return message
 
 
-def format_telegram_weekly_digest(
-    df: pd.DataFrame, usd_to_uah: float, df_ukr: pd.DataFrame | None = None
-) -> str:
+def format_telegram_weekly_digest(df: pd.DataFrame, usd_to_uah: float) -> str:
     """
     Format weekly comprehensive digest for Telegram.
-    Includes detailed explanations for traders and optional Ukrainian price comparisons.
+    Includes futures and ETFs with detailed explanations for traders.
     """
     now = datetime.now()
     current_date = now.strftime("%d.%m.%Y")
@@ -525,94 +410,15 @@ def format_telegram_weekly_digest(
                 message += f"• {row['description']}: ${row['usd_per_share']:.2f} ({row['uah_per_share']:.0f} ₴)\n"
         message += "\n"
 
-    # Companies section
-    company_df = df[df["category"] == "company"]
-    if not company_df.empty:
-        message += "🏢 <b>Акції аграрних компаній:</b>\n"
-        for _, row in company_df.iterrows():
-            if pd.notna(row["usd_per_share"]):
-                message += f"• {row['description']}: ${row['usd_per_share']:.2f} ({row['uah_per_share']:.0f} ₴)\n"
-        message += "\n"
-
-    # Ukrainian prices comparison (if available)
-    if df_ukr is not None and not df_ukr.empty:
-        message += "🇺🇦 <b>Українські ціни (порівняння зі світовими):</b>\n"
-
-        # Commodity name mapping for matching
-        commodity_names = {
-            "wheat": "Пшениця",
-            "corn": "Кукурудза",
-            "soybeans": "Соя",
-            "sunflower": "Соняшник",
-            "barley": "Ячмінь",
-            "oats": "Овес",
-            "rapeseed": "Ріпак",
-        }
-
-        for _, u in df_ukr.iterrows():
-            try:
-                commodity = u.get("commodity")
-                if not commodity:
-                    continue
-
-                price_uah = float(u.get("price_uah_per_ton", 0))
-                basis = u.get("basis", "EXW")
-                source = u.get("source", "APK-Inform")
-
-                display_name = commodity_names.get(commodity, commodity.title())
-
-                # Find corresponding futures row for comparison
-                futures_row = None
-                search_terms = {
-                    "wheat": "Пшениця",
-                    "corn": "Кукурудза",
-                    "soybeans": "Соя",
-                }
-
-                if commodity in search_terms:
-                    futures_row = df[
-                        (df["category"] == "futures")
-                        & (
-                            df["description"].str.contains(
-                                search_terms[commodity], case=False, na=False
-                            )
-                        )
-                    ]
-
-                # Calculate difference from world price
-                diff_txt = ""
-                if (
-                    futures_row is not None
-                    and not futures_row.empty
-                    and pd.notna(futures_row.iloc[0]["uah_per_ton"])
-                ):
-                    world_uah = futures_row.iloc[0]["uah_per_ton"]
-                    if world_uah and world_uah > 0:
-                        diff_pct = ((price_uah - world_uah) / world_uah) * 100
-                        if diff_pct > 0:
-                            diff_txt = f" <b>(+{diff_pct:.0f}% від світової)</b>"
-                        else:
-                            diff_txt = f" <b>({diff_pct:.0f}% від світової)</b>"
-
-                message += (
-                    f"• {display_name}: {price_uah:.0f} ₴/т ({basis}){diff_txt}\n"
-                )
-            except Exception as e:
-                logger.warning(f"Error processing Ukrainian price: {e}")
-
-        message += f"<i>Джерело: {source}</i>\n\n"
-
     # Explanations for traders
     message += "ℹ️ <b>Пояснення для трейдерів:</b>\n"
     message += "• Ф'ючерси CBOT котируються в центах за бушель або cwt (100 фунтів)\n"
     message += "• Конверсія: бушель→тонна залежить від культури (різна вага)\n"
-    message += "• Базис між світовою та українською ціною враховує логістику\n"
-    message += "• ETF — фінансовий інструмент, не пряма ціна фізичного товару\n"
-    message += "• EXW = франко-завод, FOB = франко-борт, CPT = перевезення оплачено\n\n"
+    message += "• ETF — фінансовий інструмент, не пряма ціна фізичного товару\n\n"
 
     # Footer
     message += f"🕐 Оновлено: {current_time} {current_date}\n"
-    message += "🔎 Джерела: Yahoo Finance (ф'ючерси CBOT, ETF, акції компаній)"
+    message += "🔎 Джерела: Yahoo Finance (ф'ючерси CBOT, ETF)"
 
     return message
 
@@ -667,11 +473,8 @@ async def generate_daily_report():
             logger.warning("No commodity data available")
             return
 
-        # Get Ukrainian prices
-        df_ukr = load_ukrainian_prices()
-
         # Format Telegram message
-        telegram_message = format_telegram_daily_report(df, usd_to_uah, df_ukr)
+        telegram_message = format_telegram_daily_report(df, usd_to_uah)
 
         # Prepare message for RabbitMQ
         message_data = {
@@ -681,9 +484,6 @@ async def generate_daily_report():
                 "telegram_message": telegram_message,
                 "usd_uah_rate": usd_to_uah,
                 "commodities": df.to_dict("records"),
-                "ukrainian_prices": df_ukr.to_dict("records")
-                if df_ukr is not None
-                else None,
             },
             "destination": "telegram_channel",
         }
@@ -714,11 +514,8 @@ async def generate_weekly_digest():
             logger.warning("No commodity data available")
             return
 
-        # Load optional Ukrainian prices
-        df_ukr = load_ukrainian_prices()
-
         # Format Telegram message
-        telegram_message = format_telegram_weekly_digest(df, usd_to_uah, df_ukr)
+        telegram_message = format_telegram_weekly_digest(df, usd_to_uah)
 
         # Save to markdown file
         try:
@@ -736,9 +533,6 @@ async def generate_weekly_digest():
                 "telegram_message": telegram_message,
                 "usd_uah_rate": usd_to_uah,
                 "commodities": df.to_dict("records"),
-                "ukrainian_prices": df_ukr.to_dict("records")
-                if df_ukr is not None
-                else None,
             },
             "destination": "telegram_channel",
         }
