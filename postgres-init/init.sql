@@ -55,10 +55,11 @@ CREATE TABLE IF NOT EXISTS items (
     amount INTEGER NOT NULL,
     measure VARCHAR(10) NOT NULL,
     terms_delivery VARCHAR(50) NOT NULL,
+    address VARCHAR(300),  -- Full text address for geocoding
     country VARCHAR(150) NOT NULL,
     region VARCHAR(150),
-    latitude DECIMAL(9, 6) NOT NULL,
-    longitude DECIMAL(9, 6) NOT NULL,
+    latitude DECIMAL(9, 6),
+    longitude DECIMAL(9, 6),
     geom GEOMETRY(POINT, 4326),
     created_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
@@ -189,7 +190,10 @@ CREATE OR REPLACE FUNCTION update_geometry_from_lat_lon()
 RETURNS trigger AS
 $$
 BEGIN
-    NEW.geom := ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326);
+    -- Only update geometry if latitude and longitude are provided
+    IF NEW.latitude IS NOT NULL AND NEW.longitude IS NOT NULL THEN
+        NEW.geom := ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326);
+    END IF;
     RETURN NEW;
 END;
 $$

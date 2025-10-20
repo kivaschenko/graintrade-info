@@ -26,6 +26,7 @@ from ..schemas import (
 )
 from ..models import items_model, subscription_model, tarif_model, category_model
 from ..service_layer import item_services
+from ..service_layer.geocoding_service import geocode_with_fallback
 from . import JWT_SECRET
 
 router = APIRouter(tags=["Items"])
@@ -99,6 +100,40 @@ async def create_item(
         raise HTTPException(
             status_code=403, detail="Not enough permissions, service limit reached"
         )
+
+    # Automatic geocoding if coordinates not provided but address is available
+    if (item.latitude is None or item.longitude is None) and item.address:
+        logging.info(f"Geocoding address: {item.address}")
+        lat, lon, country, region = await geocode_with_fallback(
+            address=item.address, country=item.country, region=item.region
+        )
+        item.latitude = lat
+        item.longitude = lon
+        if country:
+            item.country = country
+        if region:
+            item.region = region
+        logging.info(f"Geocoded coordinates: {lat}, {lon}")
+
+    # If coordinates provided but country/region missing, reverse geocode to fill them
+    if (item.latitude is not None and item.longitude is not None) and (
+        not item.country or not item.region
+    ):
+        logging.info(
+            f"Reverse geocoding coordinates: {item.latitude}, {item.longitude}"
+        )
+        lat, lon, country, region = await geocode_with_fallback(
+            latitude=item.latitude,
+            longitude=item.longitude,
+            country=item.country,
+            region=item.region,
+        )
+        if country:
+            item.country = country
+        if region:
+            item.region = region
+        logging.info(f"Reverse geocoded country/region: {country}, {region}")
+
     new_item = await items_model.create(item=item, user_id=int(user_id))
     if new_item is None:
         logging.error("Item not created")
