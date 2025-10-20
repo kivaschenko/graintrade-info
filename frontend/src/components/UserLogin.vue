@@ -71,7 +71,9 @@ export default {
         async handleLogin() {
             await this.login({ username: this.username, password: this.password });
             if (this.$store.state.isAuthenticated) {
-                this.$router.push('/');
+                // Redirect to the intended page or home
+                const redirect = this.$route.query.redirect || '/';
+                this.$router.push(redirect);
             } else {
                 alert('Invalid username or password');
             }

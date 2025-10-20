@@ -496,7 +496,7 @@ export default {
       return this.$i18n.locale === 'ua' && tariff.ua_terms ? tariff.ua_terms : tariff.terms;
     },
     getTariffPrice(tariff) {
-      return this.$i18n.locale === 'ua' && tariff.ua_price ? tariff.ua_price : tariff.price;
+      return this.$i18n.locale === 'ua' && tariff.ua_price ? tariff.ua_price : tariff.ua_price;
     },
     getTariffCurrency(tariff) {
       return this.$i18n.locale === 'ua' && tariff.ua_currency ? tariff.ua_currency : tariff.currency;

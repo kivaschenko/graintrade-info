@@ -44,10 +44,11 @@ class ItemInDB(BaseModel):
     amount: int
     measure: str
     terms_delivery: str
+    address: str | None = None  # Full text address for geocoding
     country: str
     region: str | None
-    latitude: float
-    longitude: float
+    latitude: float | None = None  # Now optional - will be geocoded if not provided
+    longitude: float | None = None  # Now optional - will be geocoded if not provided
 
 
 class ItemInResponse(BaseModel):
@@ -62,10 +63,11 @@ class ItemInResponse(BaseModel):
     amount: int
     measure: str
     terms_delivery: str
+    address: str | None = None  # Full text address
     country: str
     region: str | None
-    latitude: float
-    longitude: float
+    latitude: float | None = None  # Optional coordinates
+    longitude: float | None = None  # Optional coordinates
     created_at: datetime = Field(alias="created_at")
     owner_id: Optional[str] = None  # literally 'username' to show in ItemDetails.vue
     category: Optional[CategoryInResponse] = None

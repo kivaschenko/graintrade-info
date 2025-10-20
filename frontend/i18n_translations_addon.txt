@@ -1,0 +1,46 @@
+// Additional translations for new address-based item creation
+// Add these to your existing i18n translation files
+
+// English (en.json)
+{
+  "create_form": {
+    // ... existing translations ...
+    
+    // New address-based translations
+    "address": "Address",
+    "address_placeholder": "e.g., Kyiv, Ukraine or Street Name, City",
+    "address_hint": "Enter city, region, or full address. Coordinates will be determined automatically.",
+    "region_placeholder": "Optional region",
+    "coordinates_found": "Coordinates found",
+    "map_preview": "Location Preview",
+    "map_preview_hint": "Location will be shown here after entering address",
+    "submitting": "Creating...",
+    "success_message": "Offer created successfully!",
+    
+    // Error messages
+    "error_geocoding_failed": "Could not determine location from address. Please try a different address.",
+    "error_invalid_address": "Please enter a valid address"
+  }
+}
+
+// Ukrainian (ua.json)
+{
+  "create_form": {
+    // ... існуючі переклади ...
+    
+    // Нові переклади для адрес
+    "address": "Адреса",
+    "address_placeholder": "наприклад, Київ, Україна або назва вулиці, місто",
+    "address_hint": "Введіть місто, регіон або повну адресу. Координати будуть визначені автоматично.",
+    "region_placeholder": "Регіон (необов'язково)",
+    "coordinates_found": "Координати знайдено",
+    "map_preview": "Попередній перегляд розташування",
+    "map_preview_hint": "Місцезнаходження буде показано тут після введення адреси",
+    "submitting": "Створення...",
+    "success_message": "Оголошення успішно створено!",
+    
+    // Повідомлення про помилки
+    "error_geocoding_failed": "Не вдалося визначити місцезнаходження за адресою. Спробуйте іншу адресу.",
+    "error_invalid_address": "Будь ласка, введіть коректну адресу"
+  }
+}

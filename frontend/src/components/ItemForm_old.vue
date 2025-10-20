@@ -3,51 +3,18 @@
     <h1 class="text-center mb-4 graintrade-title">{{ $t('create_form.form_title') }}</h1>
 
     <div class="row">
-      <!-- Preview Map (Static/Read-only) - Only for Paid Plans -->
-      <div class="col-lg-5 mb-4" v-if="hasMapAccess && !isLoadingSubscription">
+      <div class="col-lg-6 mb-4">
         <div class="card h-100 graintrade-card">
           <div class="card-header text-center">
-            <h2 class="mb-0">{{ $t('create_form.map_preview') || 'Location Preview' }}</h2>
+            <h2 class="mb-0">{{ $t('create_form.map_title') }}</h2>
           </div>
           <div class="card-body">
             <div id="map" class="map mb-3"></div>
-            <p class="text-muted small text-center">
-              <i class="fas fa-info-circle me-1"></i>
-              {{ $t('create_form.map_preview_hint') || 'Location will be shown after entering address' }}
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Info Card for Free Plan Users -->
-      <div class="col-lg-5 mb-4" v-if="!hasMapAccess && !isLoadingSubscription">
-        <div class="card h-100 graintrade-card">
-          <div class="card-header text-center bg-graintrade-primary text-white">
-            <h2 class="mb-0 text-white">
-              <i class="fas fa-map-marked-alt me-2"></i>
-              {{ $t('create_form.upgrade_for_map') || 'Map Preview' }}
-            </h2>
-          </div>
-          <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-            <i class="fas fa-lock fa-3x text-muted mb-3"></i>
-            <h5 class="mb-3">{{ $t('create_form.map_preview_locked') || 'Map Preview Unavailable' }}</h5>
-            <p class="text-muted mb-3">
-              {{ $t('create_form.map_preview_locked_description') || 'Upgrade to a paid plan to view location previews on an interactive map.' }}
-            </p>
-            <p class="text-muted small mb-3">
-              <i class="fas fa-check-circle text-success me-1"></i>
-              {{ $t('create_form.geocoding_still_works') || 'Location geocoding still works - your address will be converted to coordinates automatically.' }}
-            </p>
-            <router-link to="/tariffs" class="btn btn-primary">
-              <i class="fas fa-crown me-2"></i>
-              {{ $t('create_form.view_plans') || 'View Tariff Plans' }}
-            </router-link>
           </div>
         </div>
       </div>
 
-      <!-- Form -->
-      <div :class="['mb-4', hasMapAccess || isLoadingSubscription ? 'col-lg-7' : 'col-lg-12']">
+      <div class="col-lg-6 mb-4">
         <div class="card h-100 graintrade-card">
           <div class="card-header text-center">
             <h2 class="mb-0">{{ $t('create_form.form_title') }}</h2>
@@ -159,83 +126,45 @@
                 </select>
               </div>
 
-              <!-- NEW: Address Input (replaces interactive map) -->
-              <div class="mb-3">
-                <label for="address" class="form-label">
-                  <i class="fas fa-map-marker-alt me-1"></i>
-                  {{ $t('create_form.address') || 'Address' }}
-                  <span v-if="isGeocodingAddress" class="ms-2">
-                    <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
-                    <small class="text-muted ms-1">{{ $t('create_form.geocoding') || 'Finding location...' }}</small>
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="address"
-                  v-model="address"
-                  @input="handleAddressInput"
-                  :placeholder="$t('create_form.address_placeholder') || 'e.g., Kyiv, Ukraine or вулиця Хрещатик, Київ'"
-                  required
-                  :disabled="isGeocodingAddress"
-                />
-                <small class="form-text text-muted">
-                  {{ $t('create_form.address_hint') || 'Enter city, region, or full address. Coordinates will be determined automatically.' }}
-                </small>
-              </div>
-
               <div class="row mb-3">
                 <div class="col-md-6">
-                  <label for="country" class="form-label">
-                    {{ $t('create_form.country') }}
-                    <small v-if="country" class="text-success ms-1">✓</small>
-                  </label>
+                  <label for="country" class="form-label">{{ $t('create_form.country') }}</label>
                   <input
                     type="text"
                     class="form-control"
                     id="country"
                     v-model="country"
+                    readonly
                     :placeholder="$t('create_form.country_placeholder')"
-                    required
                   />
-                  <small v-if="country" class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    {{ $t('create_form.auto_filled') || 'Auto-filled from address' }}
-                  </small>
                 </div>
                 <div class="col-md-6">
-                  <label for="region" class="form-label">
-                    {{ $t('create_form.region') }}
-                    <small v-if="region" class="text-success ms-1">✓</small>
-                  </label>
+                  <label for="region" class="form-label">{{ $t('create_form.region') }}</label>
                   <input
                     type="text"
                     class="form-control"
                     id="region"
                     v-model="region"
-                    :placeholder="$t('create_form.region_placeholder') || 'Optional region'"
+                    readonly
+                    :placeholder="$t('create_form.country_placeholder')"
                   />
-                  <small v-if="region" class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    {{ $t('create_form.auto_filled') || 'Auto-filled from address' }}
-                  </small>
                 </div>
               </div>
 
-              <!-- Coordinates (hidden/readonly - will be filled by backend) -->
-              <div class="row mb-4" v-if="latitude && longitude">
-                <div class="col-12">
-                  <small class="text-muted">
-                    <i class="fas fa-check-circle text-success me-1"></i>
-                    {{ $t('create_form.coordinates_found') || 'Coordinates' }}: {{ latitude }}, {{ longitude }}
-                  </small>
+              <div class="row mb-4">
+                <div class="col-md-6">
+                  <label for="latitude" class="form-label">{{ $t('create_form.latitude') }}</label>
+                  <input type="text" class="form-control" id="latitude" v-model="latitude" readonly :placeholder="$t('create_form.latitude_placeholder')" />
+                </div>
+                <div class="col-md-6">
+                  <label for="longitude" class="form-label">{{ $t('create_form.longitude') }}</label>
+                  <input type="text" class="form-control" id="longitude" v-model="longitude" readonly :placeholder="$t('create_form.latitude_placeholder')" />
                 </div>
               </div>
 
               <div class="d-grid gap-2 mb-4">
-                <button type="submit" class="btn btn-primary btn-lg graintrade-btn-primary" :disabled="isSubmitting">
-                  <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  {{ isSubmitting ? ($t('create_form.submitting') || 'Creating...') : $t('create_form.submit') }}
+                <button type="submit" class="btn btn-primary btn-lg graintrade-btn-primary">
+                  {{ $t('create_form.submit') }}
                 </button>
               </div>
 
@@ -255,8 +184,11 @@
 </template>
 
 <script>
+// ... (your existing script content, just ensure the 'measure' list includes kg and liter)
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
+import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import axios from 'axios';
 import { mapState } from 'vuex';
 
@@ -269,7 +201,7 @@ export default {
       filteredCategories: [],
       showCategorySuggestions: false,
       selectedSuggestionIndex: -1,
-      title: '',
+      title: '', // Initialize as empty, it will be computed
       description: '',
       price: 0,
       currency: 'UAH',
@@ -277,26 +209,19 @@ export default {
       measure: 'metric ton',
       terms_delivery: 'EXW',
       offer_type: 'sell',
-      address: '',  // NEW: User enters address here
       country: '',
       region: '',
-      latitude: null,  // Will be set by backend geocoding
-      longitude: null,  // Will be set by backend geocoding
+      latitude: null,
+      longitude: null,
       map: null,
       marker: null,
       successMessage: '',
       errorMessage: '',
       descriptionError: '',
-      isSubmitting: false,
-      addressInputTimeout: null,  // For debouncing address input
-      isGeocodingAddress: false,  // Loading state for address geocoding
-      userSubscription: null,  // Store user's subscription info
-      hasMapAccess: false,  // Whether user has access to Mapbox map
-      isLoadingSubscription: true,  // Loading state for subscription check
     };
   },
   computed: {
-    ...mapState(['user', 'currentLocale']),
+    ...mapState(['user', 'currentLocale']), // Ensure currentLocale is mapped
     computedTitle() {
       const category = this.categories.find(c => c.id === this.category_id);
       const offerType = this.offer_type === 'sell' ? this.$t('create_form.sell') : this.$t('create_form.buy');
@@ -328,87 +253,93 @@ export default {
     category_id() {
       this.title = this.computedTitle;
     },
-    currentLocale() {
+    currentLocale() { // Watch for locale changes to update title
       this.title = this.computedTitle;
     },
   },
   async mounted() {
-    // Check authentication (should be guaranteed by route guard, but double-check)
-    if (!this.$store.state.isAuthenticated || !this.user) {
-      this.$router.push('/login');
-      return;
-    }
+    mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
+    this.map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [31.946946, 49.305825],
+      zoom: 5,
+      maxZoom: 10,
+      minZoom: 2,
+    });
+    this.map.addControl(new mapboxgl.NavigationControl());
+    this.map.addControl(new mapboxgl.FullscreenControl());
 
-    // Fetch user's subscription to determine map access
-    await this.fetchUserSubscription();
+    const geocoder = new MapboxGeocoder({
+      accessToken: mapboxgl.accessToken,
+      mapboxgl: mapboxgl,
+    });
 
-    // Initialize map only for paid plans
-    if (this.hasMapAccess) {
-      mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_TOKEN;
-      this.map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [31.946946, 49.305825], // Ukraine center
-        zoom: 5,
-        interactive: false, // Static map - no interaction
-      });
+    // Add the geocoder control to the map.
+    this.map.addControl(geocoder);
 
-      window.addEventListener('resize', () => {
-        if (this.map) {
-          this.map.resize();
-        }
-      });
-    }
+    geocoder.on('result', (e) => {
+      const { center, context } = e.result;
+      this.latitude = center[1];
+      this.longitude = center[0];
 
-    // Fetch categories from the backend
+      const countryContext = context.find(c => c.id.startsWith('country'));
+      const regionContext = context.find(c => c.id.startsWith('region'));
+
+      this.country = countryContext ? countryContext.text : '';
+      this.region = regionContext ? regionContext.text : '';
+
+      if (this.marker) {
+        this.marker.setLngLat(center);
+      } else {
+        this.marker = new mapboxgl.Marker().setLngLat(center).addTo(this.map);
+      }
+
+      // Center the map on the selected location.
+      this.map.flyTo({ center, zoom: 10 });
+    });
+
+    this.map.on('click', async (e) => {
+      const { lng, lat } = e.lngLat;
+      this.latitude = lat;
+      this.longitude = lng;
+
+      if (this.marker) {
+        this.marker.setLngLat([lng, lat]);
+      } else {
+        this.marker = new mapboxgl.Marker().setLngLat([lng, lat]).addTo(this.map);
+      }
+
+      // Center the map on the clicked location.
+      this.map.flyTo({ center: [lng, lat], zoom: 10 });
+
+      // Reverse geocode to get the country and region
+      try {
+        const response = await axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${this.longitude},${this.latitude}.json?access_token=${process.env.VUE_APP_MAPBOX_TOKEN}`);
+        const context = response.data.features[0].context;
+        const countryContext = context.find(c => c.id.startsWith('country'));
+        const regionContext = context.find(c => c.id.startsWith('region'));
+
+        this.country = countryContext ? countryContext.text : '';
+        this.region = regionContext ? regionContext.text : '';
+      } catch (error) {
+        console.error('Error reverse geocoding:', error);
+      }
+    });
+
+      // Fetch categories from the backend.
     try {
       const response = await axios.get(`${process.env.VUE_APP_BACKEND_URL}/categories`);
       this.categories = response.data;
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
+
+    window.addEventListener('resize', () => {
+      this.map.resize();
+    });
   },
   methods: {
-    async fetchUserSubscription() {
-      try {
-        this.isLoadingSubscription = true;
-        const response = await axios.get(
-          `${process.env.VUE_APP_BACKEND_URL}/subscriptions/user/${this.user.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-            },
-          }
-        );
-        this.userSubscription = response.data;
-        
-        // Check if user has map access (paid plan)
-        // Free plan typically has tarif_id = 1, paid plans have tarif_id > 1
-        // Or check by tariff scope/name
-        if (this.userSubscription && this.userSubscription.tarif) {
-          const tariffScope = this.userSubscription.tarif.scope || '';
-          // Only free plan users don't have map access
-          // basic, premium, business, etc. all have map access
-          this.hasMapAccess = tariffScope !== 'free';
-          
-          console.log('📊 User subscription:', {
-            tariff: this.userSubscription.tarif.name,
-            scope: tariffScope,
-            hasMapAccess: this.hasMapAccess
-          });
-        } else {
-          // No subscription = free user
-          this.hasMapAccess = false;
-        }
-      } catch (error) {
-        console.error('Error fetching subscription:', error);
-        // Default to no map access on error
-        this.hasMapAccess = false;
-      } finally {
-        this.isLoadingSubscription = false;
-      }
-    },
-
     // Category Autocomplete Methods
     handleCategorySearch() {
       if (this.categorySearch.length >= 3) {
@@ -427,7 +358,7 @@ export default {
       this.filteredCategories = this.categories.filter(category => {
         const categoryName = this.getCategoryName(category).toLowerCase();
         return categoryName.includes(searchTerm);
-      }).slice(0, 10);
+      }).slice(0, 10); // Limit to 10 suggestions
     },
     
     selectCategory(category) {
@@ -438,6 +369,7 @@ export default {
     },
     
     handleCategoryBlur() {
+      // Delay hiding suggestions to allow for click events
       setTimeout(() => {
         this.showCategorySuggestions = false;
       }, 200);
@@ -471,138 +403,29 @@ export default {
       }
     },
     
-    handleAddressInput() {
-      // Debounce address input to avoid too many API calls
-      clearTimeout(this.addressInputTimeout);
-      
-      // Optional: Show location on map as preview (using free Nominatim)
-      // This is optional and only for preview - real geocoding happens on backend
-      if (this.address.length > 5) {
-        this.addressInputTimeout = setTimeout(() => {
-          this.updateMapPreview();
-        }, 1000); // Wait 1 second after user stops typing
-      } else {
-        // Clear fields if address is too short
-        this.country = '';
-        this.region = '';
-        this.latitude = null;
-        this.longitude = null;
-        
-        // Remove marker from map (only if map exists)
-        if (this.marker) {
-          this.marker.remove();
-          this.marker = null;
-        }
-        
-        // Reset map to default view (only if map exists - paid users only)
-        if (this.map && this.hasMapAccess) {
-          this.map.flyTo({ center: [31.946946, 49.305825], zoom: 5 });
-        }
-      }
-    },
-
-    async updateMapPreview() {
-      // Use free Nominatim for geocoding (for all users)
-      // Map display is only for paid users
-      this.isGeocodingAddress = true;
-      
-      try {
-        const response = await axios.get(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(this.address)}&format=json&addressdetails=1&limit=1`,
-          {
-            headers: {
-              'User-Agent': 'GrainTrade.info'
-            }
-          }
-        );
-        
-        if (response.data && response.data.length > 0) {
-          const result = response.data[0];
-          const { lat, lon, address } = result;
-          
-          // Update coordinates
-          this.latitude = parseFloat(lat);
-          this.longitude = parseFloat(lon);
-          
-          // Extract country and region from address details
-          if (address) {
-            // Country - always available
-            this.country = address.country || '';
-            
-            // Region - try multiple fields (Nominatim provides different fields for different places)
-            this.region = address.state || 
-                         address.region || 
-                         address.province || 
-                         address.county ||
-                         address.city ||
-                         address.town ||
-                         address.village ||
-                         '';
-            
-            console.log('📍 Location found:', {
-              country: this.country,
-              region: this.region,
-              lat: this.latitude,
-              lon: this.longitude,
-              display_name: result.display_name
-            });
-          }
-          
-          // Update map preview ONLY for paid users with map access
-          if (this.hasMapAccess && this.map) {
-            if (this.marker) {
-              this.marker.setLngLat([lon, lat]);
-            } else {
-              this.marker = new mapboxgl.Marker()
-                .setLngLat([lon, lat])
-                .addTo(this.map);
-            }
-            
-            this.map.flyTo({ center: [lon, lat], zoom: 7 });
-          }
-        }
-      } catch (error) {
-        console.log('Preview geocoding failed (not critical):', error);
-        // Clear fields on error
-        this.country = '';
-        this.region = '';
-        this.latitude = null;
-        this.longitude = null;
-      } finally {
-        this.isGeocodingAddress = false;
-      }
-    },
-    
     validateDescription() {
+      // Simple frontend check for common script patterns
       const scriptPattern = /<script\b[^>]*>(.*?)<\/script>|<img\b[^>]*onerror\b[^>]*>/i;
-      if (scriptPattern.test(this.description)) {
-        this.descriptionError = this.$t('create_form.validation_xss_description');
-      } else { 
-        this.descriptionError = '';
-      }
+        if (scriptPattern.test(this.description)) {
+          this.descriptionError = this.$t('create_form.validation_xss_description');
+        } else { this.descriptionError = '';}
     },
-
     getCategoryName(category) {
       return this.$store.state.currentLocale === 'ua' ? category.ua_name : category.name;
     },
-
     async createItem() {
       this.successMessage = '';
       this.errorMessage = '';
-      this.isSubmitting = true;
-
+      // Prevent submission if there's a frontend validation error
       if (this.descriptionError) {
         this.errorMessage = this.$t('create_form.error_validation_failed');
-        this.isSubmitting = false;
         return;
       }
-
+      // Check the user is authenticated
       if (!this.$store.state.isAuthenticated) {
         this.errorMessage = this.$t('create_form.error_not_authenticated');
-        this.isSubmitting = false;
         return;
       }
-
       try {
         const response = await axios.post(`${process.env.VUE_APP_BACKEND_URL}/items`, {
           user_id: this.user.id,
@@ -615,27 +438,19 @@ export default {
           amount: this.amount,
           measure: this.measure,
           terms_delivery: this.terms_delivery,
-          address: this.address,  // Send address - backend will geocode
           country: this.country,
           region: this.region,
-          latitude: this.latitude,  // Optional - backend will fill if null
-          longitude: this.longitude,  // Optional - backend will fill if null
+          latitude: this.latitude,
+          longitude: this.longitude,
         }, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
-
         console.log('Item created:', response.status);
-        this.successMessage = this.$t('create_form.success_message') || 'Offer created successfully!';
-        
-        // Reset form
-        setTimeout(() => {
-          this.$router.push('/');
-        }, 2000);
-
+        this.successMessage = 'Offer created successfully!';
       } catch (error) {
-        console.error(error.response?.status, "<- response.status");
+        console.error(error.response.status, "<- response.status")
         if (error.response) {
           if (error.response.status === 401) {
             this.errorMessage = this.$t('create_form.error_401');
@@ -648,8 +463,6 @@ export default {
           }
         }
         console.error('Error creating offer:', error);
-      } finally {
-        this.isSubmitting = false;
       }
     }
   },
@@ -657,20 +470,21 @@ export default {
 </script>
 
 <style scoped>
-/* Existing styles remain the same */
+/* GrainTrade ItemForm Styles */
 .container {
   max-width: 1200px;
 }
 
+/* Map Styling */
 .map {
   width: 100%;
   height: 400px;
   border-radius: var(--graintrade-border-radius);
   border: 1px solid var(--graintrade-border);
   overflow: hidden;
-  opacity: 0.8; /* Slightly faded to indicate it's preview only */
 }
 
+/* Title Styling */
 .graintrade-title {
   color: var(--graintrade-secondary);
   font-weight: 700;
@@ -678,6 +492,7 @@ export default {
   margin-bottom: 2rem;
 }
 
+/* Card Enhancements */
 .graintrade-card {
   border-radius: var(--graintrade-border-radius-large);
   border: none;
@@ -704,6 +519,7 @@ export default {
   padding: 2rem;
 }
 
+/* Form Elements */
 .form-label {
   font-weight: 600;
   color: var(--graintrade-secondary);
@@ -781,10 +597,12 @@ export default {
   border-radius: 0 0 var(--graintrade-border-radius) var(--graintrade-border-radius);
 }
 
+/* Enhanced focus state for autocomplete input */
 .autocomplete-container .form-control:focus {
   border-radius: var(--graintrade-border-radius) var(--graintrade-border-radius) 0 0;
 }
 
+/* Button Styling */
 .graintrade-btn-primary {
   background: var(--graintrade-primary) !important;
   border-color: var(--graintrade-primary) !important;
@@ -797,9 +615,9 @@ export default {
   box-shadow: 0 4px 8px rgba(39, 174, 96, 0.2);
 }
 
-.graintrade-btn-primary:hover:not(:disabled),
-.graintrade-btn-primary:focus:not(:disabled),
-.graintrade-btn-primary:active:not(:disabled) {
+.graintrade-btn-primary:hover,
+.graintrade-btn-primary:focus,
+.graintrade-btn-primary:active {
   background: var(--graintrade-primary-dark) !important;
   border-color: var(--graintrade-primary-dark) !important;
   color: white !important;
@@ -807,11 +625,7 @@ export default {
   box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
 }
 
-.graintrade-btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
+/* Alert Styling */
 .graintrade-alert-success {
   border: none;
   background: linear-gradient(135deg, rgba(39, 174, 96, 0.1), rgba(39, 174, 96, 0.05));
@@ -830,12 +644,14 @@ export default {
   font-weight: 500;
 }
 
+/* Validation Error Text */
 .text-danger {
   color: var(--graintrade-accent) !important;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .graintrade-title {
     font-size: 2rem;

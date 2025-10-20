@@ -53,6 +53,38 @@ async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage)
             )
             await send_email(user.email, subject, html_body)
             logging.info(f"Email sent to {user.email} with subject: {subject}")
+        elif (
+            data["type"] == "commodity_prices_daily"
+            or data["type"] == "commodity_prices_weekly"
+        ):
+            # Currently no action needed for commodity price notifications
+            logging.info(
+                f"Received commodity price notification of type: {data['type']}"
+            )
+
+            # check destination channels if needed
+            if (
+                data.get("destination") == "telegram_channel"
+                and ENABLE_TELEGRAM
+                and TELEGRAM_CHANNEL_ID
+            ):
+                # Extract telegram_message from nested data structure
+                message_data = data.get("data", {})
+                tg_text = message_data.get("telegram_message", "")
+                if tg_text:
+                    message = await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
+                    if message:
+                        logging.info(
+                            f"Commodity prices message sent to Telegram channel {TELEGRAM_CHANNEL_ID}"
+                        )
+                    else:
+                        logging.error(
+                            "Failed to send commodity prices message to Telegram."
+                        )
+                else:
+                    logging.warning(
+                        "No telegram_message content found in the notification data."
+                    )
         else:
             return
 
