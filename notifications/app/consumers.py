@@ -302,3 +302,59 @@ async def handle_deleted_item_notification(
                 logging.info(
                     f"Telegram message {telegram_message_id} in chat {chat_id} deleted successfully"
                 )
+
+
+async def handle_user_registration_notification(
+    msg: aio_pika.abc.AbstractIncomingMessage,
+):
+    """
+    Handle new user registration notifications.
+    Sends a welcome email to the new user in both English and Ukrainian.
+
+    Expected data format:
+    {
+        "username": "maximus",
+        "email": "max@example.com",
+        "full_name": "Max Cat",
+        "phone": "",
+        "disabled": "False",
+        "hashed_password": "$2b$12$...",
+        "id": "9"
+    }
+    """
+    async with msg.process():
+        data = json.loads(msg.body.decode())
+
+        if not ENABLE_EMAIL:
+            logging.info("Email notifications are disabled, skipping welcome email")
+            return
+
+        try:
+            email = data.get("email")
+            username = data.get("username")
+            full_name = data.get("full_name") or username
+
+            if not email:
+                logging.warning(
+                    f"No email provided for user {username}, skipping welcome email"
+                )
+                return
+
+            # Send English version
+            subject_en = "Welcome to GrainTrade Info! 🌾"
+            html_body_en = env.get_template("welcome_email_en.html").render(
+                user_name=full_name
+            )
+            await send_email(email, subject_en, html_body_en)
+            logging.info(f"Welcome email (EN) sent to {email}")
+
+            # Send Ukrainian version
+            subject_ua = "Ласкаво просимо до GrainTrade Info! 🌾"
+            html_body_ua = env.get_template("welcome_email_ua.html").render(
+                user_name=full_name
+            )
+            await send_email(email, subject_ua, html_body_ua)
+            logging.info(f"Welcome email (UA) sent to {email}")
+
+        except Exception as e:
+            logging.error(f"Error processing user registration notification: {e}")
