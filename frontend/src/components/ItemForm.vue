@@ -354,7 +354,9 @@ export default {
       });
 
       window.addEventListener('resize', () => {
-        this.map.resize();
+        if (this.map) {
+          this.map.resize();
+        }
       });
     }
 
@@ -486,14 +488,16 @@ export default {
         this.latitude = null;
         this.longitude = null;
         
-        // Remove marker from map
+        // Remove marker from map (only if map exists)
         if (this.marker) {
           this.marker.remove();
           this.marker = null;
         }
         
-        // Reset map to default view
-        this.map.flyTo({ center: [31.946946, 49.305825], zoom: 5 });
+        // Reset map to default view (only if map exists - paid users only)
+        if (this.map && this.hasMapAccess) {
+          this.map.flyTo({ center: [31.946946, 49.305825], zoom: 5 });
+        }
       }
     },
 
