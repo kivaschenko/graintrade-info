@@ -1,0 +1,25 @@
+category_id,offer_type,title,description,price,currency,amount,measure,terms_delivery,address,country,region
+1,sell,Sell Wheat Grade 1,High quality wheat for export,250.00,USD,1000,metric ton,FOB,Kyiv,Ukraine,Kyiv Oblast
+2,sell,Sell Corn,Fresh corn harvest 2024,180.00,USD,500,metric ton,DAP,Odesa,Ukraine,Odesa Oblast
+3,buy,Buy Sunflower Seeds,Looking for high oleic sunflower,300.00,EUR,200,metric ton,EXW,Lviv,Ukraine,Lviv Oblast
+4,sell,Sell Barley,Malting barley premium quality,220.00,USD,800,metric ton,FOB,Dnipro,Ukraine,Dnipropetrovsk Oblast
+5,sell,Sell Soybeans,Non-GMO soybeans,350.00,USD,1500,metric ton,CIF,Mykolaiv,Ukraine,Mykolaiv Oblast
+6,buy,Buy Rapeseed,High grade rapeseed needed,400.00,EUR,300,metric ton,FCA,Poltava,Ukraine,Poltava Oblast
+1,sell,Sell Wheat Grade 2,Good quality wheat,230.00,USD,2000,metric ton,CFR,Kharkiv,Ukraine,Kharkiv Oblast
+7,sell,Sell Rye,Organic rye for export,200.00,USD,600,metric ton,FOB,Cherkasy,Ukraine,Cherkasy Oblast
+8,sell,Sell Oats,Premium oats,180.00,USD,400,metric ton,DAP,Vinnytsia,Ukraine,Vinnytsia Oblast
+9,buy,Buy Millet,Looking for quality millet,250.00,USD,150,metric ton,EXW,Zhytomyr,Ukraine,Zhytomyr Oblast
+1,sell,Продам пшеницю 1 класу,Високоякісна пшениця врожаю 2024 року. Протеїн 14%. Клейковина 28%.,11000.00,UAH,1000,metric ton,FOB,Київ,Ukraine,Kyiv City
+2,sell,Продам кукурудзю,Свіжа кукурудза врожаю 2024. Вологість 14%. Доставка по Україні.,7500.00,UAH,500,metric ton,DAP,Одеса,Ukraine,Odesa Oblast
+3,buy,Куплю соняшник,Потрібен високоолеїновий соняшник. Олійність від 48%. Самовивіз.,16000.00,UAH,200,metric ton,EXW,Львів,Ukraine,Lviv Oblast
+31,sell,Продам соняшникову олію,Рафінована соняшникова олія першого сорту. Сертифікована.,45000.00,UAH,50,metric ton,FCA,Дніпро,Ukraine,Dnipropetrovsk Oblast
+5,sell,Продам сою без ГМО,Соя без ГМО. Протеїн 38%. Органічний сертифікат.,15000.00,UAH,300,metric ton,CIF,Миколаїв,Ukraine,Mykolaiv Oblast
+6,buy,Куплю ріпак 1 класу,Шукаю ріпак вищого сорту менше 25мкм. Термінова потреба.,18000.00,UAH,150,metric ton,FCA,Полтава,Ukraine,Poltava Oblast
+4,sell,Продам ячмінь пивоварний,Пивоварний ячмінь преміум якості. Відповідає ДСТУ.,9500.00,UAH,800,metric ton,FOB,Харків,Ukraine,Kharkiv Oblast
+33,sell,Продам соняшниковий шрот,Соняшниковий шрот. Протеїн 38-40%. Для годівлі тварин.,6000.00,UAH,2000,metric ton,DAP,Черкаси,Ukraine,Cherkasy Oblast
+7,sell,Продам жито 2 класу,Органічне жито для експорту. Без пестицидів.,8000.00,UAH,600,metric ton,CFR,Вінниця,Ukraine,Vinnytsia Oblast
+9,buy,Куплю просо,Потрібне просо для експорту. Якість відмінна. Великі обсяги.,10000.00,UAH,250,metric ton,EXW,Житомир,Ukraine,Zhytomyr Oblast
+12,sell,Продам гречку,Гречка-ядриця першого сорту. Фасування по 25 кг.,35000.00,UAH,50,metric ton,FCA,Суми,Ukraine,Sumy Oblast
+27,buy,Куплю горох,Шукаю зелений горох для консервування. Свіжий урожай.,12000.00,UAH,100,metric ton,DAP,Кропивницький,Ukraine,Kirovohrad Oblast
+31,sell,Продам соняшникову олію нерафіновану,Олія першого холодного віджиму. Органічна. Бочки 200л.,50000.00,UAH,20,metric ton,EXW,Запоріжжя,Ukraine,Zaporizhzhia Oblast
+1,sell,Продам пшеницю 3 класу,Пшениця фуражна. Підходить для годівлі. Великі партії.,9500.00,UAH,3000,metric ton,FOB,Херсон,Ukraine,Kherson Oblast

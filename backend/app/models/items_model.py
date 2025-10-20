@@ -14,7 +14,7 @@ async def get_all(offset: int = 0, limit: int = 10) -> Tuple[List[ItemInResponse
     query = """
         SELECT 
             items.id, items.uuid, items.category_id, items.offer_type, items.title, items.description, items.price, items.currency, 
-            items.amount, items.measure, items.terms_delivery, items.country, items.region, items.latitude, items.longitude, items.created_at,
+            items.amount, items.measure, items.terms_delivery, items.address, items.country, items.region, items.latitude, items.longitude, items.created_at,
             categories.name AS category_name, categories.ua_name AS category_ua_name
         FROM items
         LEFT JOIN categories ON items.category_id = categories.id
@@ -40,10 +40,13 @@ async def get_all(offset: int = 0, limit: int = 10) -> Tuple[List[ItemInResponse
 
 async def create(item: ItemInDB, user_id: int) -> ItemInResponse:
     query = """
-        INSERT INTO items (category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, geom)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::numeric, $13::numeric, ST_SetSRID(ST_MakePoint($13::numeric, $12::numeric), 4326))
+        INSERT INTO items (category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, address, country, region, latitude, longitude, geom)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::numeric, $14::numeric, 
+                CASE WHEN $13::numeric IS NOT NULL AND $14::numeric IS NOT NULL 
+                THEN ST_SetSRID(ST_MakePoint($14::numeric, $13::numeric), 4326) 
+                ELSE NULL END)
         RETURNING id, uuid, category_id, offer_type, title, description, price, currency, 
-                amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+                amount, measure, terms_delivery, address, country, region, latitude, longitude, created_at
     """
     query2 = """INSERT INTO items_users (item_id, user_id) VALUES ($1, $2)"""
     query3 = "SELECT increment_items_count($1)"
@@ -61,6 +64,7 @@ async def create(item: ItemInDB, user_id: int) -> ItemInResponse:
                 item.amount,
                 item.measure,
                 item.terms_delivery,
+                item.address,
                 item.country,
                 item.region,
                 item.latitude,
@@ -80,10 +84,13 @@ async def create_batch(items: List[ItemInDB], user_id: int) -> List[ItemInRespon
         async with conn.transaction():
             for item in items:
                 query = """
-                    INSERT INTO items (category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, geom)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::numeric, $13::numeric, ST_SetSRID(ST_MakePoint($13::numeric, $12::numeric), 4326))
+                    INSERT INTO items (category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, address, country, region, latitude, longitude, geom)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::numeric, $14::numeric,
+                            CASE WHEN $13::numeric IS NOT NULL AND $14::numeric IS NOT NULL 
+                            THEN ST_SetSRID(ST_MakePoint($14::numeric, $13::numeric), 4326) 
+                            ELSE NULL END)
                     RETURNING id, uuid, category_id, offer_type, title, description, price, currency, 
-                            amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+                            amount, measure, terms_delivery, address, country, region, latitude, longitude, created_at
                 """
                 query2 = (
                     """INSERT INTO items_users (item_id, user_id) VALUES ($1, $2)"""
@@ -100,6 +107,7 @@ async def create_batch(items: List[ItemInDB], user_id: int) -> List[ItemInRespon
                     item.amount,
                     item.measure,
                     item.terms_delivery,
+                    item.address,
                     item.country,
                     item.region,
                     item.latitude,
@@ -143,6 +151,7 @@ async def get_items_by_user_id(
             i.amount, 
             i.measure, 
             i.terms_delivery, 
+            i.address,
             i.country, 
             i.region, 
             i.latitude, 
@@ -183,7 +192,7 @@ async def find_in_distance(
     longitude: float, latitude: float, distance: int
 ) -> List[ItemInResponse]:
     query = """
-        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, country, region, latitude, longitude, created_at
+        SELECT id, uuid, category_id, offer_type, title, description, price, currency, amount, measure, terms_delivery, address, country, region, latitude, longitude, created_at
         FROM items
         WHERE ST_DWithin(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3)
     """
@@ -243,7 +252,7 @@ async def items_count(user_id: int) -> int:
 async def get_by_id(item_id: int) -> ItemInResponse:
     query = """
         SELECT i.id, i.uuid, i.category_id, i.offer_type, i.title, i.description, i.price, i.currency, 
-            i.amount, i.measure, i.terms_delivery, i.country, i.region, i.latitude, i.longitude, i.created_at,
+            i.amount, i.measure, i.terms_delivery, i.address, i.country, i.region, i.latitude, i.longitude, i.created_at,
             u.username AS owner_id, u.id AS user_id,
             categories.name AS category_name, categories.ua_name AS category_ua_name
         FROM items i
@@ -269,7 +278,7 @@ async def get_geo_items_by_category(category_id: int) -> dict:
     query = """
         SELECT 
             id, uuid, category_id, offer_type, title, description, price, 
-            currency, amount, measure, terms_delivery, country, region, 
+            currency, amount, measure, terms_delivery, address, country, region, 
             latitude, longitude, created_at,
         ST_AsGeoJSON(geom) AS geometry
         FROM items
@@ -294,7 +303,7 @@ async def get_all_geo_items() -> dict:
     query = """
         SELECT 
             id, uuid, category_id, offer_type, title, description, price, 
-            currency, amount, measure, terms_delivery, country, region, 
+            currency, amount, measure, terms_delivery, address, country, region, 
             latitude, longitude, created_at,
         ST_AsGeoJSON(geom) AS geometry
         FROM items
@@ -376,7 +385,7 @@ async def get_filtered_items_geo_json(
     query = f"""
         SELECT 
             id, uuid, category_id, offer_type, title, description, price, 
-            currency, amount, measure, terms_delivery, country, 
+            currency, amount, measure, terms_delivery, address, country, 
             region, latitude, longitude, created_at,
         ST_AsGeoJSON(geom) AS geometry
         FROM items

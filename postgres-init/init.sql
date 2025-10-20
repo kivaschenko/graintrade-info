@@ -55,10 +55,11 @@ CREATE TABLE IF NOT EXISTS items (
     amount INTEGER NOT NULL,
     measure VARCHAR(10) NOT NULL,
     terms_delivery VARCHAR(50) NOT NULL,
+    address VARCHAR(300),  -- Full text address for geocoding
     country VARCHAR(150) NOT NULL,
     region VARCHAR(150),
-    latitude DECIMAL(9, 6) NOT NULL,
-    longitude DECIMAL(9, 6) NOT NULL,
+    latitude DECIMAL(9, 6),
+    longitude DECIMAL(9, 6),
     geom GEOMETRY(POINT, 4326),
     created_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
@@ -189,7 +190,10 @@ CREATE OR REPLACE FUNCTION update_geometry_from_lat_lon()
 RETURNS trigger AS
 $$
 BEGIN
-    NEW.geom := ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326);
+    -- Only update geometry if latitude and longitude are provided
+    IF NEW.latitude IS NOT NULL AND NEW.longitude IS NOT NULL THEN
+        NEW.geom := ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326);
+    END IF;
     RETURN NEW;
 END;
 $$
@@ -331,34 +335,34 @@ BEGIN
         VALUES
         (
             'Free',
-            'Free plan on graintrade.info for 30 days: add 5 items, 10 map views, 10 geo-search, 10 navigation.',
-            0.00, 'USD', 'free', '30 days', 5, 10, 10, 10,
+            'Free plan on graintrade.info for 30 days: add 50 items, 10 map views, 10 geo-search, 10 navigation.',
+            0.00, 'USD', 'free', '30 days', 50, 10, 10, 10,
             'Безкоштовний',
-            'Безкоштовний план на graintrade.info на 30 днів: до 5 товарів, 10 переглядів карти, 10 геопошуків, 10 навігацій.',
+            'Безкоштовний план на graintrade.info на 30 днів: до 50 товарів, 10 переглядів карти, 10 геопошуків, 10 навігацій.',
             '30 днів', 0.00, 'UAH'
         ),
         (
             'Basic',
-            'Basic plan on graintrade.info for 30 days: add 10 items, 100 map views, 100 geo-search, 100 navigation, email notifications.',
-            10.00, 'USD', 'basic', '30 days', 100, 100, 100, 100,
+            'Basic plan on graintrade.info for 30 days: add 250 items, 100 map views, 100 geo-search, 100 navigation, email notifications.',
+            10.00, 'USD', 'basic', '30 days', 250, 100, 100, 100,
             'Базовий',
-            'Базовий план на graintrade.info на 30 днів: до 10 товарів, 100 переглядів карти, 100 геопошуків, 100 навігацій, email сповіщення.',
+            'Базовий план на graintrade.info на 30 днів: до 250 товарів, 100 переглядів карти, 100 геопошуків, 100 навігацій, email сповіщення.',
             '30 днів', 450.00, 'UAH'
         ),
         (
             'Premium',
-            'Premium plan on graintrade.info for 30 days: add 400 items, 400 map views, 400 geo-search, 400 navigation, email notifications.',
-            30.00, 'USD', 'premium', '30 days', 400, 400, 400, 400,
+            'Premium plan on graintrade.info for 30 days: add 1000 items, 400 map views, 400 geo-search, 400 navigation, email notifications.',
+            30.00, 'USD', 'premium', '30 days', 1000, 400, 400, 400,
             'Преміум',
-            'Преміум план на graintrade.info на 30 днів: до 400 товарів, 400 переглядів карти, 400 геопошуків, 400 навігацій, email сповіщення.',
+            'Преміум план на graintrade.info на 30 днів: до 1000 товарів, 400 переглядів карти, 400 геопошуків, 400 навігацій, email сповіщення.',
             '30 днів', 1350.00, 'UAH'
         ),
         (
             'Business',
-            'Business plan on graintrade.info for 180 days: add new 10000 items, 10000 map views, 10000 geo-search, 10000 navigation, email notifications.',
-            500.00, 'USD', 'business', '180 days', 10000, 10000, 10000, 10000,
+            'Business plan on graintrade.info for 180 days: add new 20000 items, 10000 map views, 10000 geo-search, 10000 navigation, email notifications.',
+            500.00, 'USD', 'business', '180 days', 20000, 10000, 10000, 10000,
             'Бізнес',
-            'Бізнес план на graintrade.info на 180 днів: до нових 10000 товарів, 10000 переглядів карти, 10000 геопошуків, 10000 навігацій, email сповіщення.',
+            'Бізнес план на graintrade.info на 180 днів: до нових 20000 товарів, 10000 переглядів карти, 10000 геопошуків, 10000 навігацій, email сповіщення.',
             '180 днів', 22500.00, 'UAH'
         );
     END IF;
