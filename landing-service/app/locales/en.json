@@ -132,10 +132,11 @@
         "what_plans": {
           "question": "What subscription plans do you offer?",
           "answer": {
-            "intro": "We offer three subscription plans:",
-            "free_plan": "Free Plan (30 days): Add up to new 5 items, 10 map views, 10 geo-searches, 10 navigation uses",
-            "basic_plan": "Basic Plan ($10/month): Add up to new 100 items, 100 map views, 100 geo-searches, 100 navigation uses, email notifications",
-            "premium_plan": "Premium Plan ($30/month): Add up to new 400 items, 400 map views, 400 geo-searches, 400 navigation uses, email notifications"
+            "intro": "We offer four subscription plans:",
+            "free_plan": "Free Plan (30 days): Add up to 50 new items, 10 map views, 10 geo-searches, 10 navigation uses",
+            "basic_plan": "Basic Plan ($10/30 days or 450 UAH): Add up to 250 new items, 100 map views, 100 geo-searches, 100 navigation uses, email notifications",
+            "premium_plan": "Premium Plan ($30/30 days or 1350 UAH): Add up to 1000 new items, 400 map views, 400 geo-searches, 400 navigation uses, email notifications",
+            "business_plan": "Business Plan ($500/180 days or 22500 UAH): Add up to 20000 new items, 10000 map views, 10000 geo-searches, 10000 navigation uses, email notifications, import/export features"
           }
         },
         "map_services": {
