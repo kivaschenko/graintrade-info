@@ -1,4 +1,4 @@
-name: graintrade
+name: monitoring
 
 services:
   db:
@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: test_password
+      POSTGRES_PASSWORD: Lenovo$25
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d
@@ -24,11 +24,11 @@ services:
   pgadmin4:
     image: elestio/pgadmin:latest
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@email.com
-      PGADMIN_DEFAULT_PASSWORD: test_password
+      PGADMIN_DEFAULT_EMAIL: civaschenko@yahoo.com
+      PGADMIN_DEFAULT_PASSWORD: Teodorathome11
       PGADMIN_LISTEN_PORT: 8080
     ports:
-      - "8080:8080"
+      - "8811:8080"
     volumes:
       - postgis:/var/lib/pgadmin4/servers.json
     depends_on:
@@ -72,32 +72,32 @@ services:
     networks:
       - monitoring
 
-  mailhog:
-    image: mailhog/mailhog:latest
-    ports:
-      - "1025:1025" # SMTP
-      - "8025:8025" # Web UI
-    volumes:
-      - ./mailhog:/data
-    networks:
-      - monitoring
+  # mailhog:
+  #   image: mailhog/mailhog:latest
+  #   ports:
+  #     - "1025:1025" # SMTP
+  #     - "8025:8025" # Web UI
+  #   volumes:
+  #     - ./mailhog:/data
+  #   networks:
+  #     - monitoring
 
-  subscription-checker:
-    build:
-      context: ./cron_services
-      dockerfile: Dockerfile
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=test_password
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - monitoring
+  # subscription-checker:
+  #   build:
+  #     context: ./cron_services
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     - POSTGRES_DB=postgres
+  #     - POSTGRES_USER=admin
+  #     - POSTGRES_PASSWORD=Lenovo$25
+  #     - POSTGRES_HOST=db
+  #     - POSTGRES_PORT=5432
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   networks:
+  #     - monitoring
 
   # 🧩 Node Exporter (host metrics)
   node_exporter:
@@ -117,7 +117,7 @@ services:
     container_name: postgres_exporter
     restart: unless-stopped
     environment:
-      DATA_SOURCE_NAME: "postgresql://admin:test_password@db:5432/postgres?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://admin:Lenovo$25@db:5432/postgres?sslmode=disable"
     ports:
       - "9187:9187"
     depends_on:
@@ -160,8 +160,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=civaschenko
+      - GF_SECURITY_ADMIN_PASSWORD=Teodorathome11
     volumes:
       - grafana_data:/var/lib/grafana
     depends_on:
