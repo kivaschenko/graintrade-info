@@ -417,7 +417,7 @@ def format_telegram_weekly_digest(df: pd.DataFrame, usd_to_uah: float) -> str:
     message += "• ETF — фінансовий інструмент, не пряма ціна фізичного товару\n\n"
 
     # Footer
-    message += f"🕐 Оновлено: {current_time} {current_date}\n"
+    message += f"🕐 Оновлено: {current_time} (UTC timezone) {current_date}\n"
     message += "🔎 Джерела: Yahoo Finance (ф'ючерси CBOT, ETF)"
 
     return message
