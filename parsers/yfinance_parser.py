@@ -365,7 +365,7 @@ def format_telegram_daily_report(df: pd.DataFrame, usd_to_uah: float) -> str:
 
     # Footer
     message += "📝 <b>Дані отримані з фондових бірж у реальному часі</b>\n"
-    message += f"🕐 Оновлено: {current_time} {current_date}\n"
+    message += f"🕐 Оновлено: {current_time} (UTC timezone) {current_date}\n"
     message += "🔎 Джерела: Yahoo Finance (CBOT, NYSE, NASDAQ)"
 
     return message
@@ -417,7 +417,7 @@ def format_telegram_weekly_digest(df: pd.DataFrame, usd_to_uah: float) -> str:
     message += "• ETF — фінансовий інструмент, не пряма ціна фізичного товару\n\n"
 
     # Footer
-    message += f"🕐 Оновлено: {current_time} {current_date}\n"
+    message += f"🕐 Оновлено: {current_time} (UTC timezone) {current_date}\n"
     message += "🔎 Джерела: Yahoo Finance (ф'ючерси CBOT, ETF)"
 
     return message
