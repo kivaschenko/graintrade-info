@@ -99,9 +99,7 @@ services:
     restart: unless-stopped
     environment:
       # Update this to point to your production Postgres instance
-      DATA_SOURCE_NAME: "postgresql://admin:your_postgres_password@localhost:5432/postgres?sslmode=disable"
-    ports:
-      - "9187:9187"
+      DATA_SOURCE_NAME: "postgresql://grain:teomeo2358@65.108.68.57:5433/postgres?sslmode=disable"
     network_mode: "host"
 
   # 🔴 Redis Exporter
@@ -111,9 +109,7 @@ services:
     restart: unless-stopped
     command:
       # Update this to point to your production Redis instance
-      - "--redis.addr=redis://localhost:6379"
-    ports:
-      - "9121:9121"
+      - "--redis.addr=redis://:Teodorathome@localhost:6379/1"
     network_mode: "host"
 
   # 📈 Prometheus
@@ -126,6 +122,8 @@ services:
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - grain-network
 
@@ -137,10 +135,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_SECURITY_ADMIN_USER=civaschenko
+      - GF_SECURITY_ADMIN_PASSWORD=Teodorathome11
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
     networks:
