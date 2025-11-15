@@ -138,7 +138,7 @@ sudo -u postgres psql
 ## Create database
 ```
 CREATE DATABASE graintrade;
-CREATE USER grain WITH ENCRYPTED PASSWORD 'teomeo2358';
+CREATE USER grain WITH ENCRYPTED PASSWORD 'your_secure_password_here';
 GRANT ALL PRIVILEGES ON DATABASE graintrade TO grain;
 ```
 

@@ -2,9 +2,9 @@
 
 # Quick script to import dashboards via Grafana API
 
-GRAFANA_URL="http://65.108.68.57:3000"
-USERNAME="civaschenko"
-PASSWORD="Teodorathome11"
+GRAFANA_URL="${GRAFANA_URL:-http://localhost:3000}"
+USERNAME="${GRAFANA_USERNAME:-admin}"
+PASSWORD="${GRAFANA_PASSWORD:-changeme}"
 
 echo "🚀 Creating GrainTrade System Overview Dashboard..."
 
