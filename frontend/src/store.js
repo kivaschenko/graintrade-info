@@ -33,10 +33,18 @@ export default createStore({
     },
   },
   actions: {
-    async login({ commit }, { username, password }) {
+    async login({ commit }, credentials) {
       try {
         const params = new URLSearchParams();
-        params.append('username', username);
+        const { email, username, password } = credentials;
+        const identifier = (email || username || '').trim();
+        if (!identifier) {
+          throw new Error('Missing login identifier');
+        }
+        if (!password) {
+          throw new Error('Missing password');
+        }
+        params.append('username', identifier);
         params.append('password', password);
         const response = await axios.post(`${backendUrl}/token`, params);
         const token = response.data.access_token;
