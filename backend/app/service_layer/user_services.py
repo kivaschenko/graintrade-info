@@ -1,10 +1,39 @@
 import logging
+import secrets
+import string
 from ..schemas import UserInResponse
 from ..rabbit_mq import rabbitmq, QueueName
-from ..models.user_model import cleanup_deleted_users
+from ..models.user_model import cleanup_deleted_users, username_exists
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
+
+
+async def generate_unique_username(email: str | None = None) -> str:
+    """Generate a unique, human-friendly username."""
+
+    def _sanitize_email_local_part(email_value: str) -> str:
+        local_part = email_value.split("@", 1)[0].lower()
+        sanitized = "".join(ch for ch in local_part if ch.isascii() and ch.isalnum())
+        return sanitized[:12]
+
+    prefix = "graintrade"
+    if email:
+        candidate_prefix = _sanitize_email_local_part(email)
+        if candidate_prefix:
+            prefix = candidate_prefix
+
+    alphabet = string.ascii_lowercase + string.digits
+    for _ in range(10):
+        suffix = "".join(secrets.choice(alphabet) for _ in range(6))
+        nickname = f"{prefix}_{suffix}"
+        if not await username_exists(nickname):
+            logger.info(f"Generated unique username: {nickname}")
+            return nickname
+
+    raise RuntimeError("Unable to generate unique username")
 
 
 async def send_user_to_rabbitmq(
@@ -71,3 +100,29 @@ async def send_recovery_event(
         logging.error(f"Failed to send recovery event to RabbitMQ: {e}")
     finally:
         await rabbitmq.close()  # Ensure the connection is closed
+
+
+def generate_username(email: str | None = None) -> str:
+    """Generate a human-friendly username."""
+
+    def _sanitize_email_local_part(email_value: str) -> str:
+        local_part = email_value.split("@", 1)[0].lower()
+        sanitized = "".join(ch for ch in local_part if ch.isascii() and ch.isalnum())
+        return sanitized[:12]
+
+    prefix = "graintrade"
+    if email:
+        candidate_prefix = _sanitize_email_local_part(email)
+        if candidate_prefix:
+            prefix = candidate_prefix
+
+    alphabet = string.ascii_lowercase + string.digits
+    for _ in range(10):
+        suffix = "".join(secrets.choice(alphabet) for _ in range(6))
+        nickname = f"{prefix}_{suffix}"
+    return nickname
+
+
+if __name__ == "__main__":
+    # Example usage
+    print(generate_username(input("Enter email here: ")))
