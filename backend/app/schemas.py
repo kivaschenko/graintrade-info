@@ -147,19 +147,22 @@ class TokenData(BaseModel):
     scopes: list[str] = []
 
 
-class User(BaseModel):
-    username: str
-    email: EmailStr = ""
-    full_name: str | None
+class UserBase(BaseModel):
+    email: EmailStr
+    full_name: str | None = None
     phone: str | None = None
     disabled: bool | None = None
 
 
-class UserInCreate(User):
+class User(UserBase):
+    username: str
+
+
+class UserInCreate(UserBase):
     password: str
 
 
-class UserInUpdate(User):
+class UserInUpdate(UserBase):
     id: int
     username: Optional[str] = None
     email: Optional[EmailStr] = None
