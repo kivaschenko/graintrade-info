@@ -28,6 +28,7 @@ from ..models import items_model, subscription_model, tarif_model, category_mode
 from ..service_layer import item_services
 from ..service_layer.geocoding_service import geocode_with_fallback
 from . import JWT_SECRET
+from ..utils.entitlements import ensure_feature
 
 router = APIRouter(tags=["Items"])
 oauth2_scheme = OAuth2PasswordBearer(
@@ -454,6 +455,8 @@ async def import_items_from_file(
             status_code=400, detail="Only .csv, .xls and .xlsx files are supported"
         )
 
+    await ensure_feature(int(user_id), "import_export")
+
     try:
         # Read file content
         contents = await file.read()
@@ -516,6 +519,8 @@ async def export_items_to_file(
             detail="Import/export functionality requires Business plan subscription",
         )
 
+    await ensure_feature(int(user_id), "exports")
+
     try:
         # Get items to export
         if user_items_only:
@@ -572,6 +577,7 @@ async def get_import_template(
         )
 
     try:
+        await ensure_feature(int(user_id), "import_export")
         # Return template information
         # In a real implementation, you would return a FileResponse with the template
         return {

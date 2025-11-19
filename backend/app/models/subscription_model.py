@@ -1,6 +1,25 @@
 from typing import List
 import uuid
+from datetime import datetime, timedelta
+
 from ..database import database
+from ..utils.metrics import set_active_subscriptions
+
+
+async def _refresh_active_gauge(connection):
+    try:
+        total = await connection.fetchval(
+            """
+            SELECT COUNT(*)
+            FROM subscriptions
+            WHERE status = 'active'
+              AND (end_date IS NULL OR end_date > CURRENT_TIMESTAMP)
+            """
+        )
+        set_active_subscriptions(int(total or 0))
+    except Exception:
+        # Metrics must not break business logic
+        pass
 from ..schemas import (
     SubscriptionInDB,
     SubscriptionInResponse,
@@ -12,9 +31,20 @@ from ..schemas import (
 # CRUD operations for Subscription
 async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
     query = """
-        INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, order_id, status, provider)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status, provider, created_at
+        INSERT INTO subscriptions (
+            user_id,
+            tarif_id,
+            start_date,
+            end_date,
+            order_id,
+            status,
+            provider,
+            provider_payment_token,
+            is_trial,
+            trial_expires_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status, provider, provider_payment_token, is_trial, trial_expires_at, created_at
     """
     if subscription.order_id is None:
         subscription.order_id = (
@@ -30,20 +60,36 @@ async def create(subscription: SubscriptionInDB) -> SubscriptionInResponse:
             subscription.order_id,
             subscription.status,
             subscription.provider,
+            subscription.provider_payment_token,
+            subscription.is_trial,
+            subscription.trial_expires_at,
         )
         new_subscription = SubscriptionInResponse(**row)
+        try:
+            await _refresh_active_gauge(connection)
+        except Exception:
+            pass
         return new_subscription
 
 
 async def create_free_subscription(user_id: int) -> SubscriptionInResponse:
     order_id = str(uuid.uuid4())
     query = """
-        INSERT INTO subscriptions (user_id, tarif_id, start_date, end_date, order_id, status)
-        SELECT $1, id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', $2, 'active'
+        INSERT INTO subscriptions (
+            user_id,
+            tarif_id,
+            start_date,
+            end_date,
+            order_id,
+            status,
+            is_trial,
+            trial_expires_at
+        )
+        SELECT $1, id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', $2, 'active', FALSE, NULL
         FROM tarifs 
         WHERE scope = 'free'
         LIMIT 1
-        RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status, created_at
+        RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status, is_trial, trial_expires_at, created_at
     """
     async with database.pool.acquire() as connection:
         async with connection.transaction():
@@ -51,9 +97,77 @@ async def create_free_subscription(user_id: int) -> SubscriptionInResponse:
                 row = await connection.fetchrow(query, user_id, order_id)
                 if row is None:
                     raise ValueError("No free tarif found")
-                return SubscriptionInResponse(**row)
+                subscription = SubscriptionInResponse(**row)
+                try:
+                    await _refresh_active_gauge(connection)
+                except Exception:
+                    pass
+                return subscription
             except Exception as e:
                 raise ValueError(f"Failed to create subscription: {str(e)}")
+
+
+async def create_trial_subscription(
+    user_id: int,
+    scope: str = "premium",
+    trial_days: int = 7,
+) -> SubscriptionInResponse:
+    order_id = f"trial-{uuid.uuid4()}"
+    start_date = datetime.utcnow()
+    trial_expires = start_date + timedelta(days=trial_days)
+
+    async with database.pool.acquire() as connection:
+        async with connection.transaction():
+            tarif_row = await connection.fetchrow(
+                "SELECT id FROM tarifs WHERE scope = $1 LIMIT 1", scope
+            )
+            if tarif_row is None:
+                raise ValueError(f"Tarif with scope '{scope}' not found")
+
+            insert_query = """
+                INSERT INTO subscriptions (
+                    user_id,
+                    tarif_id,
+                    start_date,
+                    end_date,
+                    order_id,
+                    status,
+                    provider,
+                    provider_payment_token,
+                    is_trial,
+                    trial_expires_at
+                )
+                VALUES ($1, $2, $3, $4, $5, 'active', 'trial', NULL, TRUE, $4)
+                RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status,
+                          provider, provider_payment_token, is_trial, trial_expires_at, created_at
+            """
+            row = await connection.fetchrow(
+                insert_query,
+                user_id,
+                tarif_row["id"],
+                start_date,
+                trial_expires,
+                order_id,
+            )
+
+            # Deactivate other active subscriptions for the user
+            await connection.execute(
+                """
+                    UPDATE subscriptions
+                    SET status = 'inactive'
+                    WHERE user_id = $1 AND status = 'active' AND id <> $2
+                """,
+                user_id,
+                row["id"],
+            )
+
+            subscription = SubscriptionInResponse(**row)
+            try:
+                await _refresh_active_gauge(connection)
+            except Exception:
+                pass
+
+            return subscription
 
 
 async def update_status_by_order_id(status: str, order_id: str):
@@ -81,12 +195,13 @@ async def update_status_by_order_id(status: str, order_id: str):
             # Clean up other subscriptions for the same user
             user_id = row["user_id"]
             await conn.execute(clean_query, user_id, order_id)
+        await _refresh_active_gauge(conn)
         return row
 
 
 async def get_by_id(subscription_id: int) -> SubscriptionInResponse:
     query = """
-        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at, provider, provider_payment_token
+        SELECT id, user_id, tarif_id, start_date, end_date, status, created_at, provider, provider_payment_token, is_trial, trial_expires_at
         FROM subscriptions
         WHERE id = $1
     """
@@ -108,11 +223,12 @@ async def delete(subscription_id: int) -> None:
     query = "UPDATE subscriptions SET status = 'inactive' WHERE id = $1"
     async with database.pool.acquire() as connection:
         await connection.execute(query, subscription_id)
+        await _refresh_active_gauge(connection)
 
 
 async def get_by_user_id(user_id: int) -> SubscriptionInResponse:
     query = """
-        SELECT id, user_id, tarif_id, start_date, end_date, order_id, status, created_at, provider, provider_payment_token
+        SELECT id, user_id, tarif_id, start_date, end_date, order_id, status, created_at, provider, provider_payment_token, is_trial, trial_expires_at
         FROM subscriptions
         WHERE user_id = $1
         ORDER BY created_at DESC
