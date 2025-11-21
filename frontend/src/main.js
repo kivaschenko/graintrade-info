@@ -8,10 +8,14 @@ import router from './router';
 import store from './store';
 import i18n from './i18n';
 import { initAnalytics } from './config/analytics';
+import { loadConsent, hasAnalyticsConsent } from './utils/cookie-consent';
 const app = createApp(App);
 
 app.use(router).use(store).use(i18n);
 
-initAnalytics();
+const storedConsent = loadConsent();
+if (hasAnalyticsConsent(storedConsent)) {
+    initAnalytics();
+}
 
 app.mount('#app');
