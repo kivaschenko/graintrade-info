@@ -4,5 +4,10 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 module.exports = defineConfig({
-  transpileDependencies: true,
+  transpileDependencies: [
+    'vuetify',
+    'vuex-persistedstate',
+    'vue3-google-login',
+    'vue3-clarity',
+  ],
 });

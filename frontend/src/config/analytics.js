@@ -1,4 +1,7 @@
 const isProduction = process.env.NODE_ENV === 'production';
+let analyticsInitialized = false;
+let currentGaMeasurementId = null;
+let clarityProjectIdCache = null;
 
 function injectScript(src, attributes = {}) {
     if (!src || document.querySelector(`script[src="${src}"]`)) {
@@ -24,7 +27,13 @@ function injectInlineScript(id, content) {
 }
 
 export function initAnalytics() {
+    if (analyticsInitialized) {
+        return;
+    }
     if (!isProduction) {
+        return;
+    }
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
         return;
     }
 
@@ -32,6 +41,7 @@ export function initAnalytics() {
     const clarityProjectId = process.env.VUE_APP_MS_CLARITY_PROJECT_ID;
 
     if (gaMeasurementId) {
+        window[`ga-disable-${gaMeasurementId}`] = false;
         injectScript(`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`);
         injectInlineScript(
             'ga4-init',
@@ -57,5 +67,59 @@ gtag('config', '${gaMeasurementId}', {
   y.parentNode.insertBefore(t,y);
 })(window, document, 'clarity', 'script', '${clarityProjectId}');`
         );
+        clarityProjectIdCache = clarityProjectId;
     }
+
+    analyticsInitialized = Boolean(gaMeasurementId || clarityProjectId);
+    currentGaMeasurementId = gaMeasurementId || null;
+}
+
+export function disableAnalytics() {
+    if (!analyticsInitialized) {
+        return;
+    }
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return;
+    }
+
+    if (currentGaMeasurementId) {
+        window[`ga-disable-${currentGaMeasurementId}`] = true;
+    }
+
+    const gtagScript = document.querySelector(
+        'script[src^="https://www.googletagmanager.com/gtag/js"]'
+    );
+    if (gtagScript && gtagScript.parentNode) {
+        gtagScript.parentNode.removeChild(gtagScript);
+    }
+
+    const gaInline = document.getElementById('ga4-init');
+    if (gaInline && gaInline.parentNode) {
+        gaInline.parentNode.removeChild(gaInline);
+    }
+
+    if (clarityProjectIdCache) {
+        const clarityScript = document.querySelector(
+            'script[src^="https://www.clarity.ms/tag/"]'
+        );
+        if (clarityScript && clarityScript.parentNode) {
+            clarityScript.parentNode.removeChild(clarityScript);
+        }
+        const clarityInline = document.getElementById('ms-clarity-init');
+        if (clarityInline && clarityInline.parentNode) {
+            clarityInline.parentNode.removeChild(clarityInline);
+        }
+        try {
+            if (typeof window.clarity === 'function') {
+                window.clarity('stop');
+            }
+        } catch (error) {
+            /* swallow */
+        }
+        delete window.clarity;
+    }
+
+    analyticsInitialized = false;
+    currentGaMeasurementId = null;
+    clarityProjectIdCache = null;
 }
