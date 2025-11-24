@@ -1,4 +1,26 @@
 # 🌾 GrainTrade - Agricultural Trading Platform
+# 🌾 GrainTrade - Agricultural Trading Platform
+
+> Note for reviewers and potential employers
+>
+> This repository is now public as part of my portfolio. GrainTrade is my ongoing pet project: a production-deployed, microservices-based marketplace for agricultural commodities in Ukraine. You can explore the live site at https://graintrade.info/.
+>
+> Highlights:
+> - End-to-end ownership: architecture, backend (FastAPI), frontend (Vue 3), infrastructure, CI/CD.
+> - Event-driven microservices: RabbitMQ, Redis caching, WebSocket real-time chat/notifications.
+> - Observability and security: Prometheus + Grafana, Apache reverse proxy, SSL, rate limiting.
+>
+> What to expect:
+> - Active development: some features are evolving; APIs and UI may change.
+> - Clear structure: each service lives in its own folder with dedicated Dockerfiles and docs.
+> - Quick tour: start with the sections “Architecture Overview”, “Features”, and “Quick Start”.
+>
+> Useful links:
+> - Production: https://graintrade.info/
+> - API Docs: https://api.graintrade.info/docs
+> - Repo Roadmap: TECH_STACK_AND_ROADMAP.md
+>
+> I’m happy to walk through design decisions, trade-offs, and next milestones. Feel free to reach out via email listed below.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-Jenkins-orange)](Jenkinsfile)

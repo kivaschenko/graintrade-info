@@ -7,5 +7,15 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 import i18n from './i18n';
+import { initAnalytics } from './config/analytics';
+import { loadConsent, hasAnalyticsConsent } from './utils/cookie-consent';
+const app = createApp(App);
 
-createApp(App).use(router).use(store).use(i18n).mount('#app');
+app.use(router).use(store).use(i18n);
+
+const storedConsent = loadConsent();
+if (hasAnalyticsConsent(storedConsent)) {
+    initAnalytics();
+}
+
+app.mount('#app');

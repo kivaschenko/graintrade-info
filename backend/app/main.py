@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html
 from typing import Annotated, Dict
 from .utils.openapi_filters import filter_schema_for_premium
+from .utils.metrics import metrics_middleware, router as metrics_router
 
 from .database import database, redis_db
 from .routers import user_routers
@@ -81,6 +82,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.middleware("http")(metrics_middleware)
+app.include_router(metrics_router)
 
 app.include_router(category_routers.router)
 app.include_router(item_routers.router)
