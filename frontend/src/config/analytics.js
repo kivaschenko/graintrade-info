@@ -1,7 +1,35 @@
-const isProduction = process.env.NODE_ENV === 'production';
 let analyticsInitialized = false;
 let currentGaMeasurementId = null;
 let clarityProjectIdCache = null;
+
+const analyticsFlag = (process.env.VUE_APP_ENABLE_ANALYTICS || '').trim().toLowerCase();
+const localhostHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0']);
+
+function getRuntimeWindow() {
+    try {
+        return window;
+    } catch (error) {
+        return undefined;
+    }
+}
+
+// Default to disabling analytics on localhost, with an opt-in override via VUE_APP_ENABLE_ANALYTICS.
+function shouldEnableAnalytics(runtimeWindow) {
+    if (!runtimeWindow || !runtimeWindow.document) {
+        return false;
+    }
+
+    if (analyticsFlag === 'true') {
+        return true;
+    }
+
+    if (analyticsFlag === 'false') {
+        return false;
+    }
+
+    const hostname = runtimeWindow.location?.hostname || '';
+    return hostname ? !localhostHosts.has(hostname) : false;
+}
 
 function injectScript(src, attributes = {}) {
     if (!src || document.querySelector(`script[src="${src}"]`)) {
@@ -30,10 +58,12 @@ export function initAnalytics() {
     if (analyticsInitialized) {
         return;
     }
-    if (!isProduction) {
+    const runtimeWindow = getRuntimeWindow();
+    if (!shouldEnableAnalytics(runtimeWindow)) {
         return;
     }
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
+    const runtimeDocument = runtimeWindow.document;
+    if (!runtimeDocument) {
         return;
     }
 
@@ -41,7 +71,7 @@ export function initAnalytics() {
     const clarityProjectId = process.env.VUE_APP_MS_CLARITY_PROJECT_ID;
 
     if (gaMeasurementId) {
-        window[`ga-disable-${gaMeasurementId}`] = false;
+        runtimeWindow[`ga-disable-${gaMeasurementId}`] = false;
         injectScript(`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`);
         injectInlineScript(
             'ga4-init',
@@ -78,12 +108,14 @@ export function disableAnalytics() {
     if (!analyticsInitialized) {
         return;
     }
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
+    const runtimeWindow = getRuntimeWindow();
+    const runtimeDocument = runtimeWindow?.document;
+    if (!runtimeWindow || !runtimeDocument) {
         return;
     }
 
     if (currentGaMeasurementId) {
-        window[`ga-disable-${currentGaMeasurementId}`] = true;
+        runtimeWindow[`ga-disable-${currentGaMeasurementId}`] = true;
     }
 
     const gtagScript = document.querySelector(
@@ -110,13 +142,13 @@ export function disableAnalytics() {
             clarityInline.parentNode.removeChild(clarityInline);
         }
         try {
-            if (typeof window.clarity === 'function') {
-                window.clarity('stop');
+            if (typeof runtimeWindow.clarity === 'function') {
+                runtimeWindow.clarity('stop');
             }
         } catch (error) {
             /* swallow */
         }
-        delete window.clarity;
+        delete runtimeWindow.clarity;
     }
 
     analyticsInitialized = false;
