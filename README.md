@@ -1,5 +1,4 @@
 # 🌾 GrainTrade - Agricultural Trading Platform
-# 🌾 GrainTrade - Agricultural Trading Platform
 
 > Note for reviewers and potential employers
 >
