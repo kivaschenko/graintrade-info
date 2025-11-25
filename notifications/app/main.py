@@ -1,7 +1,9 @@
 import asyncio
 import logging
 
+from prometheus_client import start_http_server
 
+from .config import METRICS_ENABLED, METRICS_HOST, METRICS_PORT
 from .database import database
 from .rabbit_mq import QueueName, get_rabbitmq_connection
 from .consumers import (
@@ -67,6 +69,17 @@ async def main():
 
 if __name__ == "__main__":
     logging.info("Starting notification service...")
+    if METRICS_ENABLED:
+        try:
+            start_http_server(port=METRICS_PORT, addr=METRICS_HOST)
+        except OSError as exc:
+            logging.error(f"Failed to start Prometheus metrics server: {exc}")
+        else:
+            logging.info(
+                "Prometheus metrics endpoint available on %s:%s",
+                METRICS_HOST,
+                METRICS_PORT,
+            )
     loop = asyncio.get_event_loop()
     loop.run_until_complete(database.connect())
     logging.info("Connected to database.")

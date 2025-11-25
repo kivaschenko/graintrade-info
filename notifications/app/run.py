@@ -1,6 +1,9 @@
 import asyncio
 import logging
-from .config import RABBITMQ_URL
+
+from prometheus_client import start_http_server
+
+from .config import METRICS_ENABLED, METRICS_HOST, METRICS_PORT, RABBITMQ_URL
 from .consumers import handle_item_notification
 
 import aio_pika
@@ -28,6 +31,17 @@ async def main():
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
+    if METRICS_ENABLED:
+        try:
+            start_http_server(port=METRICS_PORT, addr=METRICS_HOST)
+        except OSError as exc:
+            logging.error(f"Failed to start Prometheus metrics server: {exc}")
+        else:
+            logging.info(
+                "Prometheus metrics endpoint available on %s:%s",
+                METRICS_HOST,
+                METRICS_PORT,
+            )
     conn = loop.run_until_complete(main())
     try:
         loop.run_forever()

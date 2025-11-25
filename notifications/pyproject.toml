@@ -20,6 +20,7 @@ asyncpg = "^0.30.0"
 redis = "^6.2.0"
 python-telegram-bot = "^22.3"
 aiohttp = "^3.12.15"
+prometheus-client = "^0.21.1"
 
 
 [build-system]

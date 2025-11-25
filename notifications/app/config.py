@@ -36,3 +36,8 @@ VIBER_API_URL = "https://chatapi.viber.com/pa/send_message"
 
 # Preferences
 PREFERENCES_MODE = os.getenv("PREFERENCES_MODE", "db")
+
+# Metrics
+METRICS_ENABLED = os.getenv("METRICS_ENABLED", "true").lower() == "true"
+METRICS_HOST = os.getenv("METRICS_HOST", "0.0.0.0")
+METRICS_PORT = int(os.getenv("METRICS_PORT", 9108))
