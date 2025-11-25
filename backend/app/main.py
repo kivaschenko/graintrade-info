@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html
 from typing import Annotated, Dict
 from .utils.openapi_filters import filter_schema_for_premium
-from .utils.metrics import metrics_middleware, router as metrics_router
+from .utils.metrics import register_metrics_middleware, router as metrics_router
 
 from .database import database, redis_db
 from .routers import user_routers
@@ -25,8 +25,8 @@ from .routers import webhooks as webhooks_routers
 from .models import subscription_model
 
 
-JWT_SECRET = os.getenv("JWT_SECRET")
-ALGORITHM = os.getenv("ALGORITHM")
+JWT_SECRET: str = os.getenv("JWT_SECRET", '')
+ALGORITHM: str = os.getenv("ALGORITHM", '')
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRES_IN")
 
 
@@ -73,18 +73,17 @@ app.add_middleware(
         "http://localhost:80",
         "http://65.108.68.57:8080",
         "http://65.108.68.57",
+        "https://api.graintrade.info",
         "https://graintrade.info",
         "https://www.graintrade.info",
-        "https://stage.graintrade.info",
-        "https://www.stage.graintrade.info",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.middleware("http")(metrics_middleware)
-app.include_router(metrics_router)
+register_metrics_middleware(app)  # Register the metrics middleware
+app.include_router(metrics_router)  # Include the metrics router
 
 app.include_router(category_routers.router)
 app.include_router(item_routers.router)
@@ -123,7 +122,7 @@ async def _decode_token(token: Annotated[str, Depends(oauth2_premium_scheme)]):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, key=JWT_SECRET, algorithms=[ALGORITHM])
         if not isinstance(payload, dict):
             raise credentials_exception
         return payload

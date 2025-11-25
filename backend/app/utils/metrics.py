@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from typing import Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, FastAPI, Request
 from starlette.responses import Response
 from prometheus_client import Counter, Histogram, Gauge, CONTENT_TYPE_LATEST, generate_latest
 
@@ -38,22 +38,21 @@ router = APIRouter()
 async def metrics_endpoint():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
+def register_metrics_middleware(app: FastAPI):
+    @app.middleware("http")
+    async def metrics_middleware(request: Request, call_next):
+        if request.url.path == "/metrics":
+            return await call_next(request)
+        method = request.method
+        # Trim query params and limit path cardinality
+        path = request.url.path
+        start_time = time.perf_counter()
+        response = await call_next(request)
 
-async def metrics_middleware(request: Request, call_next):
-    if request.url.path == "/metrics":
-        return await call_next(request)
-
-    method = request.method
-    # Trim query params and limit path cardinality
-    path = request.url.path
-    start_time = time.perf_counter()
-
-    response = await call_next(request)
-
-    duration = time.perf_counter() - start_time
-    REQUEST_LATENCY.labels(method, path).observe(duration)
-    REQUEST_COUNT.labels(method, path, response.status_code).inc()
-    return response
+        duration = time.perf_counter() - start_time
+        REQUEST_LATENCY.labels(method, path).observe(duration)
+        REQUEST_COUNT.labels(method, path, response.status_code).inc()
+        return response
 
 
 def set_active_subscriptions(count: int):
