@@ -312,9 +312,9 @@ Month 3: 60 Premium subs                             = $1,740
 
 ## 10. Immediate Action Checklist (Week 1)
 
-[ ] Add GA4 + Clarity scripts to frontend (non-premium blocking).
+[X] Add GA4 + Clarity scripts to frontend (non-premium blocking).
 
-[ ] Implement /metrics in backend with Prometheus FastAPI instrumentation.
+[X] Implement /metrics in backend with Prometheus FastAPI instrumentation.
 
 [ ] Define entitlements JSON + integrate decorator across premium endpoints.
 
