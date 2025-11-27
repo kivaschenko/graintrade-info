@@ -21,10 +21,10 @@
 
             <div class="mt-4 pt-3 border-top">
               <div v-if="!isAuthenticated">
-                <p class="text-info">{{ $t('itemDetails.locationInfo') }}</p>
+                <!-- <p class="text-info">{{ $t('itemDetails.locationInfo') }}</p>
                 <a :href="googleMapsUrl" target="_blank" class="btn btn-outline-primary mb-3" :class="{ 'disabled': !item.latitude || !item.longitude }" :disabled="!item.latitude || !item.longitude">
                   <i class="bi bi-geo-alt-fill me-2"></i>{{ $t('itemDetails.viewOnGoogleMaps') }}
-                </a>
+                </a> -->
                 <div class="alert alert-warning text-center">
                   <i class="bi bi-info-circle me-2"></i>{{ $t('itemDetails.registerToAccessMap') }}
                 </div>
