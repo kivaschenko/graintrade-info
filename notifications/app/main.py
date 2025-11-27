@@ -80,7 +80,8 @@ if __name__ == "__main__":
                 METRICS_HOST,
                 METRICS_PORT,
             )
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     loop.run_until_complete(database.connect())
     logging.info("Connected to database.")
     rabbitmq = loop.run_until_complete(main())
