@@ -18,7 +18,7 @@ from app.service_layer.geocoding_service import (
 )
 
 
-async def test_geocoding():
+async def _run_geocoding_checks():
     print("🧪 Testing Nominatim Geocoding Service\n")
     print("=" * 60)
 
@@ -118,7 +118,11 @@ async def test_geocoding():
     print("\nNote: Some addresses may not be found if too generic.")
     print("This is normal and items will still be created (without map display).")
 
+def test_geocoding():
+    """Pytest entry point that runs the async geocoding checks."""
+    asyncio.run(_run_geocoding_checks())
+
 
 if __name__ == "__main__":
     print("\n🚀 Starting Geocoding Service Tests\n")
-    asyncio.run(test_geocoding())
+    asyncio.run(_run_geocoding_checks())
