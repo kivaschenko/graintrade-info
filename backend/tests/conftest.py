@@ -16,6 +16,7 @@ from app import database as database_module
 from app.main import app
 from app.models import category_model, items_model, subscription_model, tarif_model
 from app.routers import JWT_SECRET, ALGORITHM
+from app.schemas import ItemInResponse
 from app.service_layer import item_services
 
 
@@ -47,6 +48,26 @@ TEST_JWT_TOKEN = jwt.encode(TEST_TOKEN_PAYLOAD, JWT_SECRET, algorithm=ALGORITHM)
 @pytest.fixture(scope="session", autouse=True)
 def test_environment_stubs():
     monkeypatch = MonkeyPatch()
+    items_store = []
+    item_id_sequence = 0
+
+    def _build_item(item_data, user_id):
+        nonlocal item_id_sequence
+        item_id_sequence += 1
+        payload = (
+            item_data.model_dump()
+            if hasattr(item_data, "model_dump")
+            else item_data.dict()
+        )
+        payload.setdefault("region", None)
+        payload.setdefault("address", None)
+        payload.setdefault("latitude", None)
+        payload.setdefault("longitude", None)
+        payload["id"] = item_id_sequence
+        payload["uuid"] = str(uuid4())
+        payload["created_at"] = datetime.now(timezone.utc)
+        payload["user_id"] = user_id
+        return ItemInResponse(**payload)
 
     async def fake_usage(user_id: int):
         return {"items_count": 0, "tarif_scope": "business"}
@@ -55,12 +76,14 @@ def test_environment_stubs():
         return SimpleNamespace(items_limit=100)
 
     async def fake_create(item, user_id: int):
-        payload = item.model_dump() if hasattr(item, "model_dump") else item.dict()
-        payload.setdefault("id", 1)
-        payload["user_id"] = user_id
-        payload.setdefault("uuid", str(uuid4()))
-        payload.setdefault("created_at", datetime.now(timezone.utc).isoformat())
-        return SimpleNamespace(**payload)
+        new_item = _build_item(item, user_id)
+        items_store.insert(0, new_item)
+        return new_item
+
+    async def fake_get_all(offset: int = 0, limit: int = 10):
+        start = max(offset, 0)
+        end = start + limit
+        return items_store[start:end], len(items_store)
 
     async def fake_category(category_id: int):
         return SimpleNamespace(id=category_id, name="Wheat", ua_name="Пшениця")
@@ -86,6 +109,7 @@ def test_environment_stubs():
     )
     monkeypatch.setattr(tarif_model, "get_tarif_by_scope", fake_tarif)
     monkeypatch.setattr(items_model, "create", fake_create)
+    monkeypatch.setattr(items_model, "get_all", fake_get_all)
     monkeypatch.setattr(category_model, "get_by_id", fake_category)
     monkeypatch.setattr(item_services, "send_item_to_queue", fake_send_to_queue)
     monkeypatch.setattr(database_module.Database, "connect", fake_db_connect)
