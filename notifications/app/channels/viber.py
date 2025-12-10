@@ -1,6 +1,6 @@
 import logging
 import aiohttp
-from ..config import VIBER_TOKEN, VIBER_API_URL
+from ..config import VIBER_TOKEN, VIBER_API_URL, VIBER_SENDER_NAME
 from ..metrics import (
     EXTERNAL_SERVICE_ERRORS,
     FAILED_NOTIFICATIONS_COUNT,
@@ -13,21 +13,21 @@ HEADERS = {
 }
 
 
-async def send_viber_message(user_id: str, text: str):
+async def send_viber_message(user_id: str, text: str) -> bool:
     if not VIBER_TOKEN:
         logging.warning("Viber disabled: VIBER_TOKEN not set")
         FAILED_NOTIFICATIONS_COUNT.labels(channel="viber", reason="disabled").inc()
-        return
+        return False
     if not user_id:
         logging.warning("Viber skip: empty user_id")
         FAILED_NOTIFICATIONS_COUNT.labels(
             channel="viber", reason="missing_recipient"
         ).inc()
-        return
+        return False
     payload = {
         "receiver": user_id,
         "min_api_version": 1,
-        "sender": {"name": "NotifierBot"},
+        "sender": {"name": VIBER_SENDER_NAME},
         "type": "text",
         "text": text,
     }
@@ -45,9 +45,11 @@ async def send_viber_message(user_id: str, text: str):
                         service_name="viber", error_type=str(data.get("status"))
                     ).inc()
                     logging.error(f"Viber API error: {data}")
+                    return False
                 else:
                     NOTIFICATIONS_SENT_COUNT.labels(channel="viber").inc()
                     logging.info(f"[VIBER] -> {user_id}")
+                    return True
     except Exception as e:
         error_type = e.__class__.__name__
         FAILED_NOTIFICATIONS_COUNT.labels(channel="viber", reason=error_type).inc()
@@ -55,3 +57,6 @@ async def send_viber_message(user_id: str, text: str):
             service_name="viber", error_type=error_type
         ).inc()
         logging.error(f"Viber error: {e}")
+        return False
+
+    return False

@@ -1,9 +1,10 @@
-from typing import List
+from typing import Any, List
 import json
 import logging
 import aio_pika
 from jinja2 import Environment, FileSystemLoader, TemplateError
 from pathlib import Path
+from html import escape
 
 from .model import (
     get_user_by_username,
@@ -21,6 +22,7 @@ from .config import (
     ENABLE_EMAIL,
     ENABLE_TELEGRAM,
     ENABLE_VIBER,
+    VIBER_CHANNEL_ID,
 )
 from .channels.email import send_email
 from .channels.telegram_ptb import send_telegram_message
@@ -40,6 +42,15 @@ env = Environment(loader=FileSystemLoader(BASE_DIR / "app" / "templates"))
 OFFER_TYPES_UA = {"sell": "Продаю", "buy": "Купую"}
 
 
+def _safe_text(value: Any, default: str = "—") -> str:
+    if value is None:
+        return default
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped or stripped.lower() == "none":
+            return default
+        return stripped
+    return str(value)
 async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage):
     async with msg.process():
         data = json.loads(msg.body.decode())
@@ -196,26 +207,71 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
         # 'owner_id': 'None', 'category': 'None', 'user_id': '6',
         # 'category_name': 'Buckwheat', 'category_ua_name': 'Гречка'}
         item_id = int(data["id"])
-        offer_type = data.get("offer_type")
-        ua_offer_type = OFFER_TYPES_UA.get(offer_type)
-        en_offer_type = offer_type.capitalize()
-        ua_title = f"{ua_offer_type} #{data.get('category_ua_name')}"
-        en_title = f"{en_offer_type} #{data.get('category_name')}"
+        offer_type_raw = _safe_text(data.get("offer_type"), "").lower()
+        ua_offer_type = OFFER_TYPES_UA.get(offer_type_raw, "Пропозиція")
+        en_offer_type = offer_type_raw.capitalize() if offer_type_raw else "Offer"
+        category_ua = _safe_text(data.get("category_ua_name"))
+        category_en = _safe_text(data.get("category_name"))
+        if category_ua == "—" and category_en != "—":
+            category_ua = category_en
+        if category_en == "—" and category_ua != "—":
+            category_en = category_ua
+        ua_title = f"{ua_offer_type} #{category_ua}"
+        en_title = f"{en_offer_type} #{category_en}"
         event_type = data.get("type") or "item_notification"
         stop_processing = False
+        base_url = (BASE_URL or "").rstrip("/")
+        item_url = f"{base_url}/items/{item_id}" if base_url else f"/items/{item_id}"
+        type_icon = "🟢" if offer_type_raw == "sell" else "🔴"
+        description_raw = _safe_text(data.get("description"))
+        description_trimmed = (
+            f"{description_raw[:297]}..." if len(description_raw) > 300 else description_raw
+        )
+        description_html = escape(description_trimmed)
+        country = _safe_text(data.get("country"))
+        region_value = _safe_text(data.get("region"), "")
+        location = (
+            country
+            if not region_value or region_value == "—"
+            else f"{country}, {region_value}"
+        )
+        price = _safe_text(data.get("price"))
+        currency = _safe_text(data.get("currency"), "")
+        amount = _safe_text(data.get("amount"))
+        measure = _safe_text(data.get("measure"))
+        terms = _safe_text(data.get("terms_delivery"))
+        price_display = (
+            price if currency in ("", "—") else f"{price} {currency}".strip()
+        )
+        amount_display = (
+            amount if measure in ("", "—") else f"{amount} {measure}".strip()
+        )
+        ua_title_html = escape(ua_title)
+        en_title_html = escape(en_title)
+        price_html = escape(price)
+        currency_html = escape(currency)
+        amount_html = escape(amount)
+        measure_html = escape(measure)
+        location_html = escape(location)
+        terms_html = escape(terms)
+        price_html_display = (
+            price_html
+            if currency_html in ("", "—")
+            else f"{price_html} {currency_html}".strip()
+        )
+        amount_html_display = (
+            amount_html
+            if measure_html in ("", "—")
+            else f"{amount_html} {measure_html}".strip()
+        )
         if ENABLE_TELEGRAM and TELEGRAM_CHANNEL_ID:
-            item_url = f"{BASE_URL}/items/{item_id}"
-            type_icon = "🟢" if offer_type == "sell" else "🔴"
-            description = (data.get("description") or "—").strip()
-            if len(description) > 300:
-                description = description[:297] + "..."
             tg_text = (
-                f"{type_icon} <b>{ua_title} ({en_title})</b>\n\n"
-                f"💰 <b>Ціна (Price):</b> {data.get('price')} {data.get('currency')}\n"
-                f"📦 <b>Кількість (Amount):</b> {data.get('amount')} {data.get('measure')}\n"
-                f"📍 <b>Місце (Point):</b> {data.get('country')}{', ' + data.get('region') if data.get('region') else ''}\n"
-                f"🚚 <b>Умови (Incoterms):</b> {data.get('terms_delivery', '—')}\n"
-                f"📝 <b>Опис (Description):</b> description\n\n"
+                f"{type_icon} <b>{ua_title_html} ({en_title_html})</b>\n\n"
+                f"💰 <b>Ціна (Price):</b> {price_html_display}\n"
+                f"📦 <b>Кількість (Amount):</b> {amount_html_display}\n"
+                f"📍 <b>Місце (Point):</b> {location_html}\n"
+                f"🚚 <b>Умови (Incoterms):</b> {terms_html}\n"
+                f"📝 <b>Опис (Description):</b> {description_html}\n\n"
                 f'➡️ <a href="{item_url}">Детальніше (Details)</a>'
             )
             channel = "telegram"
@@ -308,7 +364,7 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
                             item_region=data["region"],
                             item_terms_delivery=data["terms_delivery"],
                             item_created_at=data["created_at"],
-                            item_url=f"{BASE_URL}/items/{data['id']}",
+                            item_url=item_url,
                         )
                     else:
                         template_name = "new_item_email.html"
@@ -324,7 +380,7 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
                             item_region=data["region"],
                             item_terms_delivery=data["terms_delivery"],
                             item_created_at=data["created_at"],
-                            item_url=f"{BASE_URL}/items/{data['id']}",
+                            item_url=item_url,
                         )
                 except TemplateError as exc:
                     status = "failure"
@@ -361,17 +417,59 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
                         start_time=start_time,
                         failure_reason=failure_reason,
                     )
-        # Viber broadcast to users (if you have IDs)
-        if ENABLE_VIBER:
+        if ENABLE_VIBER and VIBER_CHANNEL_ID:
             viber_text = (
-                f"🆕 Новий товар!\n"
-                f"{data['title']}\n"
-                f"Ціна: {data.get('price')} {data.get('currency')}\n"
-                f"Деталі: {BASE_URL}/items/{data['id']}"
+                f"{type_icon} {ua_title} ({en_title})\n\n"
+                f"💰 Ціна (Price): {price_display}\n"
+                f"📦 Кількість (Amount): {amount_display}\n"
+                f"📍 Місце (Point): {location}\n"
+                f"🚚 Умови (Incoterms): {terms}\n"
+                f"📝 Опис (Description): {description_trimmed}\n\n"
+                f"➡️ Детальніше (Details): {item_url}"
             )
-            print("Viber text:", viber_text)
-            # Example: if you collect viber_ids in DB
-            # for pref in preferences: await send_viber_message(pref.viber_id, viber_text)
+            channel = "viber"
+            start_time = begin_notification_processing()
+            status = "success"
+            failure_reason = None
+            try:
+                sent = await send_viber_message(VIBER_CHANNEL_ID, viber_text)
+            except Exception as exc:  # pragma: no cover - network issues
+                status = "failure"
+                failure_reason = exc.__class__.__name__
+                logging.error(
+                    "Unexpected error sending Viber message to channel %s for item %s: %s",
+                    VIBER_CHANNEL_ID,
+                    item_id,
+                    exc,
+                )
+            else:
+                if not sent:
+                    status = "failure"
+                    failure_reason = "send_failed"
+                    logging.error(
+                        "Failed to deliver Viber notification to channel %s for item %s",
+                        VIBER_CHANNEL_ID,
+                        item_id,
+                    )
+                else:
+                    logging.info(
+                        "Viber notification sent to channel %s for item %s",
+                        VIBER_CHANNEL_ID,
+                        item_id,
+                    )
+                    record_delivery_latency(data.get("created_at"), channel)
+            finally:
+                finish_notification_processing(
+                    event_type=event_type,
+                    channel=channel,
+                    status=status,
+                    start_time=start_time,
+                    failure_reason=failure_reason,
+                )
+        elif ENABLE_VIBER and not VIBER_CHANNEL_ID:
+            logging.debug(
+                "Viber notifications enabled but VIBER_CHANNEL_ID is not configured; skipping channel broadcast."
+            )
 
 
 async def handle_payment_notification(msg: aio_pika.abc.AbstractIncomingMessage):
