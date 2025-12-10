@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 import logging
-from typing import Any, Annotated, Callable, Dict, Iterable, Optional, Set
+from typing import Any, Callable, Dict, Iterable, Optional, Set
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -94,7 +94,7 @@ async def _get_subscription_snapshot(user_id: int) -> SubscriptionSnapshot:
 
     # Expired or inactive subscriptions default to free scope
     if status_value != "active" or (
-        end_date_value and end_date_value < datetime.utcnow().date()
+        end_date_value and end_date_value < datetime.now(timezone.utc).date()
     ):
         return SubscriptionSnapshot(
             user_id=user_id, scope="free", status=status_value, end_date=end_date_value
@@ -157,7 +157,7 @@ def require_entitlement(
         raise ValueError(f"Unknown subscription plan '{min_plan}'")
 
     async def dependency(
-        token: Annotated[str, Depends(oauth_scheme)],
+        token: str = Depends(oauth_scheme),
     ) -> EntitlementContext:
         if not token:
             raise HTTPException(
