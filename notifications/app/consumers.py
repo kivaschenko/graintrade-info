@@ -2,7 +2,7 @@ from typing import List
 import json
 import logging
 import aio_pika
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, TemplateError
 from pathlib import Path
 
 from .model import (
@@ -27,6 +27,12 @@ from .channels.telegram_ptb import send_telegram_message
 from .channels.viber import send_viber_message
 from .model import create_item_telegram_message_id
 from .channels.telegram_ptb import delete_telegram_message
+from .metrics import (
+    TEMPLATE_RENDERING_ERRORS,
+    begin_notification_processing,
+    finish_notification_processing,
+    record_delivery_latency,
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = Environment(loader=FileSystemLoader(BASE_DIR / "app" / "templates"))
@@ -37,30 +43,82 @@ OFFER_TYPES_UA = {"sell": "Продаю", "buy": "Купую"}
 async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage):
     async with msg.process():
         data = json.loads(msg.body.decode())
-        if data["type"] == "new_message":
-            try:
-                user = await get_user_by_username(data["to_username"])
-            except Exception as e:
-                logging.error(f"Error fetching user or item: {e}")
-                return
+        event_type = data.get("type", "unknown")
+        if event_type == "new_message":
+            channel = "email"
+            start_time = begin_notification_processing()
+            status = "success"
+            failure_reason = None
+            template_name = "new_message_email.html"
             subject = "You have a new message"
-            # body = f"You received a new message: {data['message_text']}\nView item: {BASE_URL}/items/{data['item_id']}"
-            # await send_email(user.email, subject, body)
-            html_body = env.get_template("new_message_email.html").render(
-                user_name=user.full_name or user.username,
-                message_text=data["message_text"],
-                item_url=f"{BASE_URL}/items/{data['item_id']}",
-            )
-            await send_email(user.email, subject, html_body)
-            logging.info(f"Email sent to {user.email} with subject: {subject}")
+            try:
+                try:
+                    user = await get_user_by_username(data["to_username"])
+                except Exception as exc:
+                    status = "failure"
+                    failure_reason = "user_lookup_failed"
+                    logging.error(f"Error fetching user for notification: {exc}")
+                    user = None  # Ensure user is defined for downstream logic
+                else:
+                    if not user.email:
+                        status = "failure"
+                        failure_reason = "missing_email"
+                        logging.warning(
+                            f"User {user.username} missing email for new message notification"
+                        )
+                    else:
+                        try:
+                            html_body = env.get_template(template_name).render(
+                                user_name=user.full_name or user.username,
+                                message_text=data["message_text"],
+                                item_url=f"{BASE_URL}/items/{data['item_id']}",
+                            )
+                        except TemplateError as exc:
+                            status = "failure"
+                            failure_reason = "template_render_error"
+                            TEMPLATE_RENDERING_ERRORS.labels(
+                                template_name=template_name
+                            ).inc()
+                            logging.error(
+                                f"Template rendering error for new message notification: {exc}"
+                            )
+                        except (
+                            Exception
+                        ) as exc:  # pragma: no cover - unexpected render errors
+                            status = "failure"
+                            failure_reason = exc.__class__.__name__
+                            logging.error(
+                                f"Unexpected error rendering new message template: {exc}"
+                            )
+                        else:
+                            try:
+                                await send_email(user.email, subject, html_body)
+                            except Exception as exc:
+                                status = "failure"
+                                failure_reason = exc.__class__.__name__
+                                logging.error(
+                                    f"Failed to send new message email to {user.email}: {exc}"
+                                )
+                            else:
+                                logging.info(
+                                    f"Email sent to {user.email} with subject: {subject}"
+                                )
+                                record_delivery_latency(data.get("created_at"), channel)
+            finally:
+                finish_notification_processing(
+                    event_type=event_type,
+                    channel=channel,
+                    status=status,
+                    start_time=start_time,
+                    failure_reason=failure_reason,
+                )
+            return
         elif (
-            data["type"] == "commodity_prices_daily"
-            or data["type"] == "commodity_prices_weekly"
+            event_type == "commodity_prices_daily"
+            or event_type == "commodity_prices_weekly"
         ):
             # Currently no action needed for commodity price notifications
-            logging.info(
-                f"Received commodity price notification of type: {data['type']}"
-            )
+            logging.info(f"Received commodity price notification of type: {event_type}")
 
             # check destination channels if needed
             if (
@@ -72,14 +130,34 @@ async def handle_message_notification(msg: aio_pika.abc.AbstractIncomingMessage)
                 message_data = data.get("data", {})
                 tg_text = message_data.get("telegram_message", "")
                 if tg_text:
-                    message = await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
-                    if message:
-                        logging.info(
-                            f"Commodity prices message sent to Telegram channel {TELEGRAM_CHANNEL_ID}"
+                    channel = "telegram"
+                    start_time = begin_notification_processing()
+                    status = "success"
+                    failure_reason = None
+                    try:
+                        message = await send_telegram_message(
+                            TELEGRAM_CHANNEL_ID, tg_text
                         )
-                    else:
-                        logging.error(
-                            "Failed to send commodity prices message to Telegram."
+                        if message:
+                            logging.info(
+                                f"Commodity prices message sent to Telegram channel {TELEGRAM_CHANNEL_ID}"
+                            )
+                            record_delivery_latency(
+                                message_data.get("created_at"), channel
+                            )
+                        else:
+                            status = "failure"
+                            failure_reason = "send_failed"
+                            logging.error(
+                                "Failed to send commodity prices message to Telegram."
+                            )
+                    finally:
+                        finish_notification_processing(
+                            event_type=event_type,
+                            channel=channel,
+                            status=status,
+                            start_time=start_time,
+                            failure_reason=failure_reason,
                         )
                 else:
                     logging.warning(
@@ -123,6 +201,8 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
         en_offer_type = offer_type.capitalize()
         ua_title = f"{ua_offer_type} #{data.get('category_ua_name')}"
         en_title = f"{en_offer_type} #{data.get('category_name')}"
+        event_type = data.get("type") or "item_notification"
+        stop_processing = False
         if ENABLE_TELEGRAM and TELEGRAM_CHANNEL_ID:
             item_url = f"{BASE_URL}/items/{item_id}"
             type_icon = "🟢" if offer_type == "sell" else "🔴"
@@ -138,15 +218,47 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
                 f"📝 <b>Опис (Description):</b> description\n\n"
                 f'➡️ <a href="{item_url}">Детальніше (Details)</a>'
             )
-            message = await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
-            if not message:
-                logging.error("Failed to send Telegram message.")
+            channel = "telegram"
+            start_time = begin_notification_processing()
+            status = "success"
+            failure_reason = None
+            try:
+                message = await send_telegram_message(TELEGRAM_CHANNEL_ID, tg_text)
+                if not message:
+                    status = "failure"
+                    failure_reason = "send_failed"
+                    logging.error("Failed to send Telegram message.")
+                    stop_processing = True
+                else:
+                    message_id = message.message_id
+                    chat = message.chat
+                    try:
+                        if chat:
+                            await create_item_telegram_message_id(
+                                item_id, message_id, chat.id
+                            )
+                    except Exception as exc:
+                        status = "failure"
+                        failure_reason = "persist_failed"
+                        logging.error(
+                            f"Failed to persist telegram message metadata for item {item_id}: {exc}"
+                        )
+                        stop_processing = True
+                    else:
+                        logging.info(
+                            f"Telegram message sent to channel {TELEGRAM_CHANNEL_ID}"
+                        )
+                        record_delivery_latency(data.get("created_at"), channel)
+            finally:
+                finish_notification_processing(
+                    event_type=event_type,
+                    channel=channel,
+                    status=status,
+                    start_time=start_time,
+                    failure_reason=failure_reason,
+                )
+            if stop_processing:
                 return
-            message_id = message.message_id
-            chat = message.chat
-            if message and chat:
-                await create_item_telegram_message_id(item_id, message_id, chat.id)
-                logging.info(f"Telegram message sent to channel {TELEGRAM_CHANNEL_ID}")
         try:
             preferences = await get_users_preferences(
                 int(data["category_id"]), data["country"]
@@ -167,49 +279,88 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
                     email=pref.email,  # type: ignore
                     hashed_password="mocked_password",  # Not used in email
                 )
-                if not user.email:
-                    logging.warning(f"User {user.username} has no email, skipping.")
-                    continue
-                logging.info(f"Sending email to {user.email}")
-
-                # Prepare the HTML body using Jinja2 template
-                if not user.full_name:
-                    user.full_name = user.username
-                # Choose template according language of notifications
-                if pref.language == "ua":
-                    template_name = "ua_new_item_email.html"
-                    subject = "New item created: {}".format(data["title"])
-                    html_body = env.get_template(template_name).render(
-                        user_name=user.full_name or user.username,
-                        item_title=ua_title,
-                        item_price=data["price"],
-                        item_currency=data["currency"],
-                        item_measure=data["measure"],
-                        item_amount=data["amount"],
-                        item_country=data["country"],
-                        item_region=data["region"],
-                        item_terms_delivery=data["terms_delivery"],
-                        item_created_at=data["created_at"],
-                        item_url=f"{BASE_URL}/items/{data['id']}",
+                channel = "email"
+                start_time = begin_notification_processing()
+                status = "success"
+                failure_reason = None
+                template_name = "ua_new_item_email.html"
+                subject = "New item created: {}".format(data["title"])
+                try:
+                    if not user.email:
+                        status = "failure"
+                        failure_reason = "missing_email"
+                        logging.warning(f"User {user.username} has no email, skipping.")
+                        continue
+                    if not user.full_name:
+                        user.full_name = user.username
+                    # Choose template according language of notifications
+                    if pref.language == "ua":
+                        template_name = "ua_new_item_email.html"
+                        subject = "New item created: {}".format(data["title"])
+                        html_body = env.get_template(template_name).render(
+                            user_name=user.full_name or user.username,
+                            item_title=ua_title,
+                            item_price=data["price"],
+                            item_currency=data["currency"],
+                            item_measure=data["measure"],
+                            item_amount=data["amount"],
+                            item_country=data["country"],
+                            item_region=data["region"],
+                            item_terms_delivery=data["terms_delivery"],
+                            item_created_at=data["created_at"],
+                            item_url=f"{BASE_URL}/items/{data['id']}",
+                        )
+                    else:
+                        template_name = "new_item_email.html"
+                        subject = "Нова пропозиція створена: {}".format(data["title"])
+                        html_body = env.get_template(template_name).render(
+                            user_name=user.full_name or user.username,
+                            item_title=en_title,
+                            item_price=data["price"],
+                            item_currency=data["currency"],
+                            item_measure=data["measure"],
+                            item_amount=data["amount"],
+                            item_country=data["country"],
+                            item_region=data["region"],
+                            item_terms_delivery=data["terms_delivery"],
+                            item_created_at=data["created_at"],
+                            item_url=f"{BASE_URL}/items/{data['id']}",
+                        )
+                except TemplateError as exc:
+                    status = "failure"
+                    failure_reason = "template_render_error"
+                    TEMPLATE_RENDERING_ERRORS.labels(template_name=template_name).inc()
+                    logging.error(
+                        f"Template rendering error for item notification email: {exc}"
+                    )
+                except Exception as exc:  # pragma: no cover - unexpected render errors
+                    status = "failure"
+                    failure_reason = exc.__class__.__name__
+                    logging.error(
+                        f"Unexpected error preparing item notification email: {exc}"
                     )
                 else:
-                    template_name = "new_item_email.html"
-                    subject = "Нова пропозиція створена: {}".format(data["title"])
-                    html_body = env.get_template(template_name).render(
-                        user_name=user.full_name or user.username,
-                        item_title=en_title,
-                        item_price=data["price"],
-                        item_currency=data["currency"],
-                        item_measure=data["measure"],
-                        item_amount=data["amount"],
-                        item_country=data["country"],
-                        item_region=data["region"],
-                        item_terms_delivery=data["terms_delivery"],
-                        item_created_at=data["created_at"],
-                        item_url=f"{BASE_URL}/items/{data['id']}",
+                    try:
+                        await send_email(user.email, subject, html_body)
+                    except Exception as exc:
+                        status = "failure"
+                        failure_reason = exc.__class__.__name__
+                        logging.error(
+                            f"Failed to send item notification email to {user.email}: {exc}"
+                        )
+                    else:
+                        logging.info(
+                            f"Item notification email sent to {user.email} ({pref.language})"
+                        )
+                        record_delivery_latency(data.get("created_at"), channel)
+                finally:
+                    finish_notification_processing(
+                        event_type=event_type,
+                        channel=channel,
+                        status=status,
+                        start_time=start_time,
+                        failure_reason=failure_reason,
                     )
-                await send_email(user.email, subject, html_body)
-            logging.info(f"Email sent to {user.email} with subject: {subject}")
         # Viber broadcast to users (if you have IDs)
         if ENABLE_VIBER:
             viber_text = (
@@ -226,6 +377,12 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
 async def handle_payment_notification(msg: aio_pika.abc.AbstractIncomingMessage):
     async with msg.process():
         data = json.loads(msg.body.decode())
+        event_type = data.get("type") or "payment_notification"
+        channel = "email"
+        start_time = begin_notification_processing()
+        status = "success"
+        failure_reason = None
+        template_name = "payment_confirmation_email.html"
         try:
             user_subscription = await get_user_subscritpion_by_order_id(
                 data["order_id"]
@@ -234,24 +391,65 @@ async def handle_payment_notification(msg: aio_pika.abc.AbstractIncomingMessage)
                 logging.warning(
                     f"No subscription found for order ID: {data['order_id']}"
                 )
+                status = "failure"
+                failure_reason = "subscription_missing"
                 return
             user = await get_user_by_id(user_id=user_subscription.user_id)
             if not user.email:
                 logging.warning(f"User {user.username} has no email, skipping.")
+                status = "failure"
+                failure_reason = "missing_email"
                 return
             subject = "Payment Confirmation"
-            html_body = env.get_template("payment_confirmation_email.html").render(
-                user_name=user.full_name or user.username,
-                order_id=data["order_id"],
-                amount=data["amount"] / 100,  # Assuming amount is in cents
-                currency=data["currency"],
-                status=data["response_status"],
-                subscription_details=f"{user_subscription.tarif.name} - {user_subscription.tarif.price} {user_subscription.tarif.currency}",  # type: ignore
-            )
-            await send_email(to_email=user.email, subject=subject, body_html=html_body)
+            try:
+                html_body = env.get_template(template_name).render(
+                    user_name=user.full_name or user.username,
+                    order_id=data["order_id"],
+                    amount=data["amount"] / 100,  # Assuming amount is in cents
+                    currency=data["currency"],
+                    status=data["response_status"],
+                    subscription_details=f"{user_subscription.tarif.name} - {user_subscription.tarif.price} {user_subscription.tarif.currency}",  # type: ignore
+                )
+            except TemplateError as exc:
+                status = "failure"
+                failure_reason = "template_render_error"
+                TEMPLATE_RENDERING_ERRORS.labels(template_name=template_name).inc()
+                logging.error(
+                    f"Template rendering error for payment confirmation: {exc}"
+                )
+                return
+            except Exception as exc:  # pragma: no cover - unexpected render errors
+                status = "failure"
+                failure_reason = exc.__class__.__name__
+                logging.error(
+                    f"Unexpected error rendering payment confirmation template: {exc}"
+                )
+                return
+            try:
+                await send_email(
+                    to_email=user.email, subject=subject, body_html=html_body
+                )
+            except Exception as exc:
+                status = "failure"
+                failure_reason = exc.__class__.__name__
+                logging.error(
+                    f"Failed to send payment confirmation email to {user.email}: {exc}"
+                )
+                return
             logging.info(f"Payment confirmation email sent to {user.email}")
+            record_delivery_latency(data.get("created_at"), channel)
         except Exception as e:
             logging.error(f"Error processing payment notification: {e}")
+            status = "failure"
+            failure_reason = e.__class__.__name__
+        finally:
+            finish_notification_processing(
+                event_type=event_type,
+                channel=channel,
+                status=status,
+                start_time=start_time,
+                failure_reason=failure_reason,
+            )
 
 
 async def handle_password_recovery_notification(
@@ -259,17 +457,41 @@ async def handle_password_recovery_notification(
 ):
     async with msg.process():
         data = json.loads(msg.body.decode())
+        event_type = data.get("type") or "password_recovery"
+        channel = "email"
+        start_time = begin_notification_processing()
+        status = "success"
+        failure_reason = None
+        template_name = "password_recovery_email.html"
 
         try:
             subject = "Password Recovery"
-            html_body = env.get_template("password_recovery_email.html").render(
+            html_body = env.get_template(template_name).render(
                 user_name=data["full_name"] or data["username"],
                 recovery_url=data["recovery_url"],
             )
             await send_email(data["email"], subject, html_body)
             logging.info(f"Password recovery email sent to {data['email']}")
+            record_delivery_latency(data.get("created_at"), channel)
+        except TemplateError as exc:
+            status = "failure"
+            failure_reason = "template_render_error"
+            TEMPLATE_RENDERING_ERRORS.labels(template_name=template_name).inc()
+            logging.error(
+                f"Template rendering error for password recovery email: {exc}"
+            )
         except Exception as e:
+            status = "failure"
+            failure_reason = e.__class__.__name__
             logging.error(f"Error processing password recovery notification: {e}")
+        finally:
+            finish_notification_processing(
+                event_type=event_type,
+                channel=channel,
+                status=status,
+                start_time=start_time,
+                failure_reason=failure_reason,
+            )
 
 
 async def handle_deleted_item_notification(
@@ -280,28 +502,51 @@ async def handle_deleted_item_notification(
         item_id = int(data["id"])
         telegram_message_id = int(data.get("telegram_message_id", 0))
         chat_id = int(data.get("chat_id", 0))
+        event_type = data.get("type") or "deleted_item"
+        channel = "telegram"
+        start_time = begin_notification_processing()
+        status = "success"
+        failure_reason = None
         if ENABLE_TELEGRAM and TELEGRAM_CHANNEL_ID:
             if not telegram_message_id:
+                status = "failure"
+                failure_reason = "missing_message_id"
                 logging.warning(
                     f"No telegram message found for item ID: {item_id} (cannot delete)"
                 )
-                return
-            if not chat_id:
+            elif not chat_id:
+                status = "failure"
+                failure_reason = "missing_chat_id"
                 logging.warning(
                     f"Chat id missing for stored telegram message {telegram_message_id} (item {item_id})"
                 )
-                return
-            deleted = await delete_telegram_message(
-                chat_id=chat_id, message_id=telegram_message_id
-            )
-            if deleted is False:
-                logging.error(
-                    f"Failed to delete Telegram message {telegram_message_id} in chat {chat_id}"
-                )
             else:
-                logging.info(
-                    f"Telegram message {telegram_message_id} in chat {chat_id} deleted successfully"
+                deleted = await delete_telegram_message(
+                    chat_id=chat_id, message_id=telegram_message_id
                 )
+                if deleted is False:
+                    status = "failure"
+                    failure_reason = "delete_failed"
+                    logging.error(
+                        f"Failed to delete Telegram message {telegram_message_id} in chat {chat_id}"
+                    )
+                else:
+                    logging.info(
+                        f"Telegram message {telegram_message_id} in chat {chat_id} deleted successfully"
+                    )
+        else:
+            status = "failure"
+            failure_reason = "telegram_disabled"
+            logging.info(
+                "Telegram deletion skipped because the channel is disabled or missing configuration"
+            )
+        finish_notification_processing(
+            event_type=event_type,
+            channel=channel,
+            status=status,
+            start_time=start_time,
+            failure_reason=failure_reason,
+        )
 
 
 async def handle_user_registration_notification(
@@ -324,6 +569,7 @@ async def handle_user_registration_notification(
     """
     async with msg.process():
         data = json.loads(msg.body.decode())
+        event_type = data.get("type") or "user_registration"
 
         if not ENABLE_EMAIL:
             logging.info("Email notifications are disabled, skipping welcome email")
@@ -340,21 +586,56 @@ async def handle_user_registration_notification(
                 )
                 return
 
-            # Send English version
-            subject_en = "Welcome to GrainTrade Info! 🌾"
-            html_body_en = env.get_template("welcome_email_en.html").render(
-                user_name=full_name
-            )
-            await send_email(email, subject_en, html_body_en)
-            logging.info(f"Welcome email (EN) sent to {email}")
-
-            # Send Ukrainian version
-            subject_ua = "Ласкаво просимо до GrainTrade Info! 🌾"
-            html_body_ua = env.get_template("welcome_email_ua.html").render(
-                user_name=full_name
-            )
-            await send_email(email, subject_ua, html_body_ua)
-            logging.info(f"Welcome email (UA) sent to {email}")
+            for lang, template_name, subject in (
+                ("en", "welcome_email_en.html", "Welcome to GrainTrade Info! 🌾"),
+                (
+                    "ua",
+                    "welcome_email_ua.html",
+                    "Ласкаво просимо до GrainTrade Info! 🌾",
+                ),
+            ):
+                channel = "email"
+                start_time = begin_notification_processing()
+                status = "success"
+                failure_reason = None
+                try:
+                    html_body = env.get_template(template_name).render(
+                        user_name=full_name
+                    )
+                    await send_email(email, subject, html_body)
+                except TemplateError as exc:
+                    status = "failure"
+                    failure_reason = "template_render_error"
+                    TEMPLATE_RENDERING_ERRORS.labels(template_name=template_name).inc()
+                    logging.error(
+                        f"Template rendering error for welcome email ({lang}): {exc}"
+                    )
+                except Exception as exc:
+                    status = "failure"
+                    failure_reason = exc.__class__.__name__
+                    logging.error(
+                        f"Failed to send welcome email ({lang}) to {email}: {exc}"
+                    )
+                else:
+                    logging.info(f"Welcome email ({lang.upper()}) sent to {email}")
+                    record_delivery_latency(data.get("created_at"), channel)
+                finally:
+                    finish_notification_processing(
+                        event_type=event_type,
+                        channel=channel,
+                        status=status,
+                        start_time=start_time,
+                        failure_reason=failure_reason,
+                    )
 
         except Exception as e:
             logging.error(f"Error processing user registration notification: {e}")
+            # Ensure failures are captured for metrics even on unexpected exceptions
+            start_time = begin_notification_processing()
+            finish_notification_processing(
+                event_type=event_type,
+                channel="email",
+                status="failure",
+                start_time=start_time,
+                failure_reason=e.__class__.__name__,
+            )

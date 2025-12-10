@@ -1,14 +1,16 @@
 # app/rabbit_mq.py
-from pathlib import Path
-import aio_pika
 import json
 import os
 import logging
+from pathlib import Path
 
+import aio_pika
 from typing import List
 from enum import StrEnum
 
 from dotenv import load_dotenv
+
+from .metrics import EXTERNAL_SERVICE_ERRORS
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -74,6 +76,9 @@ class RabbitMQ:
                 logger.info(f"Connected to RabbitMQ on {self.host}, queue: {queue}")
         except Exception as e:
             logger.error(f"Failed to connect to RabbitMQ: {e}")
+            EXTERNAL_SERVICE_ERRORS.labels(
+                service_name="rabbitmq", error_type=e.__class__.__name__
+            ).inc()
 
     async def publish(self, message: dict, queue: str):
         if not self.channel:
@@ -89,6 +94,9 @@ class RabbitMQ:
             logger.info(f"Message published to RabbitMQ: {message}")
         except Exception as e:
             logger.error(f"Failed to publish message to RabbitMQ: {e}")
+            EXTERNAL_SERVICE_ERRORS.labels(
+                service_name="rabbitmq", error_type=e.__class__.__name__
+            ).inc()
 
     async def consume(self, queue: str, callback):
         if not self.channel:
@@ -99,11 +107,20 @@ class RabbitMQ:
             await self.connection.connected.wait()
         except Exception as e:
             logger.error(f"Failed to consume messages from RabbitMQ: {e}")
+            EXTERNAL_SERVICE_ERRORS.labels(
+                service_name="rabbitmq", error_type=e.__class__.__name__
+            ).inc()
 
     async def close(self):
         if self.connection:
-            await self.connection.close()
-            logger.info("RabbitMQ connection closed")
+            try:
+                await self.connection.close()
+                logger.info("RabbitMQ connection closed")
+            except Exception as e:
+                logger.error(f"Error closing RabbitMQ connection: {e}")
+                EXTERNAL_SERVICE_ERRORS.labels(
+                    service_name="rabbitmq", error_type=e.__class__.__name__
+                ).inc()
 
 
 # Initialize RabbitMQ connection

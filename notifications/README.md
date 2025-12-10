@@ -112,6 +112,11 @@ DEBUG=false
 LOG_LEVEL=info
 MAX_EMAIL_RETRIES=3
 MAX_TELEGRAM_RETRIES=3
+
+# Metrics
+METRICS_ENABLED=true
+METRICS_HOST=0.0.0.0
+METRICS_PORT=9108
 ```
 
 ### 2. Install Dependencies
@@ -405,6 +410,9 @@ SMTP_PASSWORD=secure-app-password
 TELEGRAM_BOT_TOKEN=production_bot_token
 DEBUG=false
 LOG_LEVEL=warning
+METRICS_ENABLED=true
+METRICS_HOST=0.0.0.0
+METRICS_PORT=9108
 ```
 
 ## Monitoring & Logging

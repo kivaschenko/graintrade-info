@@ -15,8 +15,8 @@
       >{{ $t('pagination.next') }} &gt;</button>
     </div>
 
-    <div class="container mt-5">
-      <div v-if="!hasMapAccess" class="alert alert-info">
+    <!-- <div class="container mt-5">
+      <div v-if="hasMapAccess" class="alert alert-info">
         {{ $t('map.registerToView') }}
         <router-link to="/register" class="btn btn-primary ml-3">{{ $t('navbar.register') }}</router-link>
       </div>
@@ -46,7 +46,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
     <CategoryCards />
   </div>
 </template>

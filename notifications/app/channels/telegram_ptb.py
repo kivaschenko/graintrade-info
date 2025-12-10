@@ -4,6 +4,11 @@ from telegram import Bot
 from telegram.constants import ParseMode
 
 from ..config import TELEGRAM_TOKEN
+from ..metrics import (
+    EXTERNAL_SERVICE_ERRORS,
+    FAILED_NOTIFICATIONS_COUNT,
+    NOTIFICATIONS_SENT_COUNT,
+)
 
 
 if not TELEGRAM_TOKEN:
@@ -21,6 +26,7 @@ async def send_telegram_message(
     """
     if not bot:
         logging.warning("Telegram disabled: TELEGRAM_TOKEN not set")
+        FAILED_NOTIFICATIONS_COUNT.labels(channel="telegram", reason="disabled").inc()
         return None
     try:
         message = await bot.send_message(
@@ -29,8 +35,14 @@ async def send_telegram_message(
         logging.info(
             f"[TELEGRAM] Sent message_id={message.message_id} to chat_id={message.chat.id}"
         )
+        NOTIFICATIONS_SENT_COUNT.labels(channel="telegram").inc()
         return message
     except Exception as e:
+        error_type = e.__class__.__name__
+        FAILED_NOTIFICATIONS_COUNT.labels(channel="telegram", reason=error_type).inc()
+        EXTERNAL_SERVICE_ERRORS.labels(
+            service_name="telegram", error_type=error_type
+        ).inc()
         logging.error(f"Telegram send error (chat {chat_id}): {e}")
         return None
 
@@ -64,6 +76,13 @@ async def delete_telegram_message(chat_id: int, message_id: int) -> bool:
         logging.info(f"[TELEGRAM] Deleted message_id={message_id} in chat_id={chat_id}")
         return True
     except Exception as e:
+        error_type = e.__class__.__name__
+        EXTERNAL_SERVICE_ERRORS.labels(
+            service_name="telegram", error_type=error_type
+        ).inc()
+        FAILED_NOTIFICATIONS_COUNT.labels(
+            channel="telegram", reason="delete_failed"
+        ).inc()
         logging.error(
             f"Telegram delete message error for message_id={message_id} chat_id={chat_id}: {e}"
         )
