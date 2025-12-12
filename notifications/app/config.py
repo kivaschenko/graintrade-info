@@ -33,8 +33,12 @@ TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
 # Viber
 VIBER_TOKEN = os.getenv("VIBER_TOKEN")
 VIBER_CHANNEL_ID = os.getenv("VIBER_CHANNEL_ID")
-VIBER_SENDER_NAME = os.getenv("VIBER_SENDER_NAME", "GrainTrade")
+VIBER_SENDER_NAME = os.getenv("VIBER_SENDER_NAME", "GrainTrade.Info")
 VIBER_API_URL = "https://chatapi.viber.com/pa/send_message"
+# New Channels Post API endpoint (used for posting to channels)
+VIBER_CHANNEL_POST_URL = os.getenv(
+	"VIBER_CHANNEL_POST_URL", "https://chatapi.viber.com/pa/post"
+)
 
 # Preferences
 PREFERENCES_MODE = os.getenv("PREFERENCES_MODE", "db")

@@ -26,7 +26,7 @@ from .config import (
 )
 from .channels.email import send_email
 from .channels.telegram_ptb import send_telegram_message
-from .channels.viber import send_viber_message
+from .channels.viber import send_viber_message, send_viber_channel_post
 from .model import create_item_telegram_message_id
 from .channels.telegram_ptb import delete_telegram_message
 from .metrics import (
@@ -432,7 +432,7 @@ async def handle_item_notification(msg: aio_pika.abc.AbstractIncomingMessage):
             status = "success"
             failure_reason = None
             try:
-                sent = await send_viber_message(VIBER_CHANNEL_ID, viber_text)
+                sent = await send_viber_channel_post(VIBER_CHANNEL_ID, viber_text)
             except Exception as exc:  # pragma: no cover - network issues
                 status = "failure"
                 failure_reason = exc.__class__.__name__
