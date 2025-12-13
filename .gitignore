@@ -206,7 +206,7 @@ pnpm-debug.log*
 *.zip
 
 # Ignore inside docs
-docs/
+# docs/
 
 # Ignore parser inputs
 parsers/inputs/
