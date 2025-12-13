@@ -9,14 +9,14 @@
           <div class="card-body p-4">
             <form @submit.prevent="handleLogin">
               <div class="mb-3">
-                <label for="username" class="form-label">{{ $t('auth.username') || 'Username' }}:</label>
+                <label for="email" class="form-label">{{ $t('auth.email') || 'Email' }}:</label>
                 <input 
-                  type="text" 
-                  id="username" 
-                  v-model="username" 
+                  type="email" 
+                  id="email" 
+                  v-model="email" 
                   class="form-control" 
                   required
-                  :placeholder="$t('auth.usernamePlaceholder') || 'Enter your username'"
+                  :placeholder="$t('auth.emailPlaceholder') || 'Enter your email'"
                 />
               </div>
               <div class="mb-3">
@@ -60,22 +60,22 @@
 import { mapActions } from 'vuex'; 
 
 export default {
-    data() {
-        return {
-            username: '',
-            password: '',
-        };
-    },
+  data() {
+    return {
+      email: '',
+      password: '',
+    };
+  },
     methods: {
         ...mapActions(['login']),
         async handleLogin() {
-            await this.login({ username: this.username, password: this.password });
+      await this.login({ email: this.email, password: this.password });
             if (this.$store.state.isAuthenticated) {
                 // Redirect to the intended page or home
                 const redirect = this.$route.query.redirect || '/';
                 this.$router.push(redirect);
             } else {
-                alert('Invalid username or password');
+        alert('Invalid email or password');
             }
         },
     },

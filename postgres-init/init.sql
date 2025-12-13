@@ -144,6 +144,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     provider VARCHAR(50) DEFAULT 'fondy',
     provider_customer_id VARCHAR(100),
     provider_payment_token VARCHAR(100),
+    is_trial BOOLEAN DEFAULT FALSE,
+    trial_expires_at TIMESTAMP,
     CONSTRAINT subscriptions_order_id_unique_constraint UNIQUE (order_id)
 
 );
@@ -545,7 +547,14 @@ BEGIN
 
     -- Handle expired paid subscriptions in one statement
     INSERT INTO subscriptions (
-        user_id, tarif_id, start_date, end_date, status, order_id
+        user_id,
+        tarif_id,
+        start_date,
+        end_date,
+        status,
+        order_id,
+        is_trial,
+        trial_expires_at
     )
     SELECT 
         s.user_id,
@@ -553,7 +562,9 @@ BEGIN
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP + INTERVAL '1 month',
         'active',
-        'auto-renewal-' || uuid_generate_v4()
+        'auto-renewal-' || uuid_generate_v4(),
+        FALSE,
+        NULL
     FROM subscriptions s
     JOIN tarifs t ON s.tarif_id = t.id
     WHERE t.scope != 'free'

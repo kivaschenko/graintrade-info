@@ -9,25 +9,7 @@
           <div class="card-body p-4">
             <form @submit.prevent="handleSubmit" class="registration-form">
               <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="username" class="form-label">{{ $t('registration.username') }}</label>
-                    <input
-                      type="text"
-                      id="username"
-                      v-model="formData.username"
-                      class="form-control"
-                      :class="{ 'is-invalid': errors.username }"
-                      required
-                      :placeholder="$t('registration.usernamePlaceholder') || 'Enter your username'"
-                    />
-                    <div class="invalid-feedback" v-if="errors.username">
-                      {{ errors.username }}
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="col-md-6">
+                <div class="col-12">
                   <div class="mb-3">
                     <label for="email" class="form-label">{{ $t('registration.email') }}</label>
                     <input
@@ -45,6 +27,10 @@
                   </div>
                 </div>
               </div>
+
+              <p class="text-muted small mb-4">
+                {{ $t('registration.autoNicknameInfo') || 'We will generate a nickname for you automatically after registration.' }}
+              </p>
 
               <div class="row">
                 <div class="col-md-6">
@@ -159,7 +145,6 @@ export default {
     const store = useStore();
     
     const formData = reactive({
-      username: '',
       email: '',
       full_name: '',
       phone: '',
@@ -175,10 +160,8 @@ export default {
       // Clear previous errors
       Object.keys(errors).forEach(key => delete errors[key]);
       
-      if (!formData.username) {
-        errors.username = 'Username is required';
-      }
-      
+      formData.email = formData.email.trim();
+
       if (!formData.email) {
         errors.email = 'Email is required';
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -208,10 +191,9 @@ export default {
 
       try {
         const response = await publicApi.post('/users/', {
-          username: formData.username,
-          email: formData.email,
-          full_name: formData.full_name,
-          phone: formData.phone,
+          email: formData.email.trim().toLowerCase(),
+          full_name: formData.full_name ? formData.full_name.trim() : null,
+          phone: formData.phone ? formData.phone.trim() : null,
           password: formData.password
         });
 

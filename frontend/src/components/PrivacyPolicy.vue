@@ -5,7 +5,7 @@
         <div class="brand fw-bold fs-3">{{ t('brand') }}</div>
         <div class="stamp text-muted">
           <span>{{ t('updated') }}</span>:
-          <span id="updated-date">2025-08-15</span>
+          <span id="updated-date">2025-11-20</span>
         </div>
       </div>
       <div class="col-auto">
@@ -83,33 +83,37 @@ export default {
           print: "Print",
           download: "Download",
           privacy_title: "Privacy Policy",
-          privacy_intro: "We respect your privacy and keep your data safe.",
+          privacy_intro: "We respect your privacy, keep your data safe, and explain clearly how cookies and analytics work on Graintrade.info.",
           privacy_what_title: "1. Data we collect",
           privacy_what_list: [
             "Email, full name, and phone number during registration and payment.",
             "Payment info (transaction ID, amount, blockchain address).",
             "We use official payment gateways such as LiqPay for card payments and crypto providers for cryptocurrency payments.",
             "Additional minimal info required for payment processing (such as payment method, status, and confirmation).",
-            "IP address (server logs)."
+            "IP address (server logs).",
+            "Usage data (page views, interaction events, browser/device information) collected only if you accept analytics cookies."
           ],
           privacy_why_title: "2. Why we collect it",
           privacy_why_list: [
             "To process subscriptions and payments.",
             "To provide support.",
-            "To keep the service secure and prevent fraud."
+            "To keep the service secure and prevent fraud.",
+            "To understand product performance and improve features when you allow analytics."
           ],
           privacy_store_title: "3. Storage & protection",
           privacy_store_list: [
             "The data is stored on secure servers located in European Union countries (currently in Finland).",
             "We do not sell or share personal data.",
-            "Payments are processed via official gateways (LiqPay, crypto providers); we do not store private keys or card data."
+            "Payments are processed via official gateways (LiqPay, crypto providers); we do not store private keys or card data.",
+            "Analytics data is aggregated and retained according to Google Analytics 4 and Microsoft Clarity policies; you can withdraw consent at any time."
           ],
           privacy_cookies_title: "4. Cookies",
-          privacy_cookies_text: "We do not use cookies or tracking tools. If we add analytics later, we will request consent.",
+          privacy_cookies_text: "We use essential cookies to make the site work and, with your consent, analytics cookies from Google Analytics 4 and Microsoft Clarity. You can change or withdraw consent at any time via the cookie banner or the footer link.",
           privacy_rights_title: "5. Your rights (GDPR)",
           privacy_rights_list: [
             "Access, correction, deletion of your personal data.",
             "Objection to processing (unsubscribe).",
+            "Withdraw consent for analytics cookies at any time through the cookie settings link in the footer.",
             "Contact us: "
           ],
           crypto_title: "Crypto Payments Disclaimer",
@@ -128,33 +132,37 @@ export default {
           print: "Надрукувати",
           download: "Завантажити",
           privacy_title: "Політика конфіденційності",
-          privacy_intro: "Ми поважаємо вашу приватність та дбаємо про безпеку даних.",
+          privacy_intro: "Ми поважаємо вашу приватність, дбаємо про безпеку даних та пояснюємо, як саме працюють файли cookie й аналітика на Graintrade.info.",
           privacy_what_title: "1. Які дані ми збираємо",
           privacy_what_list: [
             "Електронна пошта, ПІБ та телефон під час реєстрації та оплати.",
             "Платіжна інформація (ID транзакції, сума, блокчейн-адреса).",
             "Ми використовуємо офіційні платіжні шлюзи, такі як LiqPay для карткових оплат та криптопровайдерів для криптовалют.",
             "Додаткова мінімальна інформація, необхідна для обробки платежу (метод оплати, статус, підтвердження).",
-            "IP-адреса (журнали сервера)."
+            "IP-адреса (журнали сервера).",
+            "Дані про використання (перегляди сторінок, події взаємодії, інформація про браузер/пристрій) збираються лише після того, як ви погодитесь на аналітичні файли cookie."
           ],
           privacy_why_title: "2. Навіщо це потрібно",
           privacy_why_list: [
             "Щоб обробляти підписки та платежі.",
             "Щоб надавати підтримку.",
-            "Щоб забезпечувати безпеку та запобігати шахрайству."
+            "Щоб забезпечувати безпеку та запобігати шахрайству.",
+            "Щоб розуміти, як працює продукт, та покращувати функціонал, якщо ви дозволяєте аналітику."
           ],
           privacy_store_title: "3. Зберігання та захист",
           privacy_store_list: [
             "Дані зберігаються на захищених серверах, що розташовані в країнах Єропейського Союзу (на поточний момент у Фінляндії).",
             "Ми не продаємо та не передаємо персональні дані третім сторонам.",
-            "Платежі обробляються через офіційні шлюзи (LiqPay, криптопровайдери); ми не зберігаємо приватні ключі чи дані карток."
+            "Платежі обробляються через офіційні шлюзи (LiqPay, криптопровайдери); ми не зберігаємо приватні ключі чи дані карток.",
+            "Аналітичні дані агрегуються та зберігаються згідно з політиками Google Analytics 4 та Microsoft Clarity; ви можете відкликати згоду будь-коли."
           ],
           privacy_cookies_title: "4. Cookies",
-          privacy_cookies_text: "Ми не використовуємо cookies або інструменти відстеження. Якщо додамо аналітику — попросимо згоду.",
+          privacy_cookies_text: "Ми використовуємо необхідні файли cookie для роботи сайту та, за вашої згоди, аналітичні cookie Google Analytics 4 і Microsoft Clarity. Ви можете змінити або відкликати згоду в будь-який момент через банер або посилання у футері.",
           privacy_rights_title: "5. Ваші права (GDPR)",
           privacy_rights_list: [
             "Доступ, виправлення, видалення ваших даних.",
             "Заперечення проти обробки (відписка).",
+            "Відкликання згоди на аналітичні файли cookie у будь-який момент через посилання \"Налаштування cookies\" у футері.",
             "Зв'яжіться з нами: "
           ],
           crypto_title: "Дисклеймер щодо криптоплатежів",

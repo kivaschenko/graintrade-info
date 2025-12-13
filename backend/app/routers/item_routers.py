@@ -28,6 +28,7 @@ from ..models import items_model, subscription_model, tarif_model, category_mode
 from ..service_layer import item_services
 from ..service_layer.geocoding_service import geocode_with_fallback
 from . import JWT_SECRET
+from ..utils.entitlements import EntitlementContext, require_entitlement
 
 router = APIRouter(tags=["Items"])
 oauth2_scheme = OAuth2PasswordBearer(
@@ -426,23 +427,23 @@ async def get_countries():
 
 @router.post("/items/import", response_model=dict, tags=["Items", "Import/Export"])
 async def import_items_from_file(
+    entitlement: Annotated[
+        EntitlementContext,
+        Depends(
+            require_entitlement(
+                oauth_scheme=oauth2_scheme,
+                feature="import_export",
+                requires_scopes={"import:export"},
+                min_plan="business",
+                audit_event="items_import",
+            )
+        ),
+    ],
     file: UploadFile = File(...),
-    token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
     """Import items from CSV/Excel file. Requires Business plan subscription."""
-    if token is None or token == "null" or token == "":
-        logging.error("No token provided")
-        raise HTTPException(status_code=401, detail="Invalid token")
 
-    user_id, scopes = await get_current_user_id(token)
-
-    # Check for import/export scope (Business plan only)
-    if "import:export" not in scopes:
-        logging.error("Import/export requires Business plan subscription")
-        raise HTTPException(
-            status_code=403,
-            detail="Import/export functionality requires Business plan subscription",
-        )
+    user_id = entitlement.user_id
 
     # Validate file
     if not file.filename:
@@ -495,26 +496,25 @@ async def import_items_from_file(
 
 @router.get("/items/export", response_model=dict, tags=["Items", "Import/Export"])
 async def export_items_to_file(
+    entitlement: Annotated[
+        EntitlementContext,
+        Depends(
+            require_entitlement(
+                oauth_scheme=oauth2_scheme,
+                feature="exports",
+                requires_scopes={"import:export"},
+                min_plan="business",
+                audit_event="items_export",
+            )
+        ),
+    ],
     format: str = Query("csv", enum=["csv", "xls"]),
     user_items_only: bool = Query(
         False, description="Export only current user's items"
     ),
-    token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
     """Export items to CSV/Excel file. Requires Business plan subscription."""
-    if token is None or token == "null" or token == "":
-        logging.error("No token provided")
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user_id, scopes = await get_current_user_id(token)
-
-    # Check for import/export scope (Business plan only)
-    if "import:export" not in scopes:
-        logging.error("Import/export requires Business plan subscription")
-        raise HTTPException(
-            status_code=403,
-            detail="Import/export functionality requires Business plan subscription",
-        )
+    user_id = entitlement.user_id
 
     try:
         # Get items to export
@@ -553,24 +553,21 @@ async def export_items_to_file(
 
 @router.get("/items/template", response_model=dict, tags=["Items", "Import/Export"])
 async def get_import_template(
+    _entitlement: Annotated[
+        EntitlementContext,
+        Depends(
+            require_entitlement(
+                oauth_scheme=oauth2_scheme,
+                feature="import_export",
+                requires_scopes={"import:export"},
+                min_plan="business",
+                audit_event="items_import_template",
+            )
+        ),
+    ],
     format: str = Query("csv", enum=["csv", "xls"]),
-    token: Annotated[str, Depends(oauth2_scheme)] = "null",
 ):
     """Download template file for importing items. Requires Business plan subscription."""
-    if token is None or token == "null" or token == "":
-        logging.error("No token provided")
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user_id, scopes = await get_current_user_id(token)
-
-    # Check for import/export scope (Business plan only)
-    if "import:export" not in scopes:
-        logging.error("Import/export requires Business plan subscription")
-        raise HTTPException(
-            status_code=403,
-            detail="Import/export functionality requires Business plan subscription",
-        )
-
     try:
         # Return template information
         # In a real implementation, you would return a FileResponse with the template

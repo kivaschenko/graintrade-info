@@ -99,8 +99,8 @@ def get_user(username: str):
     return user_model.get_by_username(username)
 
 
-async def authenticate_user(username: str, password: str):
-    user = await get_user(username)
+async def authenticate_user(email: str, password: str):
+    user = await user_model.get_by_email(email)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -196,13 +196,14 @@ async def login_for_access_token(
     if not form_data.username or not form_data.password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username and password are required",
+            detail="Email and password are required",
         )
-    user = await authenticate_user(form_data.username, form_data.password)
+    email_input = form_data.username.strip().lower()
+    user = await authenticate_user(email_input, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user.disabled:
@@ -230,6 +231,7 @@ async def login_for_access_token(
                 "sub": user.username,
                 "scopes": scopes,
                 "user_id": user.id,
+                "email": user.email,
             },
             expires_delta=access_token_expires,
         )
@@ -271,13 +273,34 @@ async def create_user(
     user: UserInCreate,
     background_tasks: BackgroundTasks,
 ):
+    normalized_email = user.email.lower()
+    existing_user = await user_model.get_by_email(normalized_email)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email is already registered",
+        )
+
     hashed_password = get_password_hash(user.password)
+    try:
+        generated_username = await user_services.generate_unique_username(
+            normalized_email
+        )
+    except RuntimeError as exc:
+        logging.error("Failed to generate username: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate username",
+        ) from exc
+
+    normalized_full_name = user.full_name.strip() if user.full_name else None
+    normalized_phone = user.phone.strip() if user.phone else None
     user_to_db = UserInDB(
         hashed_password=hashed_password,
-        username=user.username,
-        email=user.email,
-        full_name=user.full_name,
-        phone=user.phone,
+        username=generated_username,
+        email=normalized_email,
+        full_name=normalized_full_name,
+        phone=normalized_phone,
     )
     new_user = await user_model.create(user_to_db)
     logging.info(f"Created a new User: {new_user}")

@@ -25,6 +25,15 @@
             <li class="nav-item mb-2 mb-md-0">
               <a class="nav-link text-white-50" href="https://home.graintrade.info/faq">{{ $t('footer.faq') }}</a>
             </li>
+            <li class="nav-item mb-2 mb-md-0">
+              <button
+                type="button"
+                class="nav-link text-white-50 cookie-settings-trigger"
+                @click="openCookieSettings"
+              >
+                {{ $t('footer.cookieSettings') }}
+              </button>
+            </li>
           </ul>
         </div>
         <div class="col-md-3 text-md-end">
@@ -51,21 +60,25 @@
 import { mapState } from 'vuex';
 
 export default {
-	name: 'FooterPage',
-	data() {
-		return {
-			selectedLocale: this.$store.state.currentLocale, // Initialize with current locale
-		};
-	},
-	computed: {
-		...mapState(['isAuthenticated', 'currentLocale']),
-	},
-	methods: {
-		changeLocale() {
-			this.$store.commit('setLocale', this.selectedLocale); // Commit the new locale to the store
-			this.$i18n.locale = this.selectedLocale; // Update i18n locale
-		},
-	},
+  name: 'FooterPage',
+  emits: ['open-cookie-settings'],
+  data() {
+    return {
+      selectedLocale: this.$store.state.currentLocale, // Initialize with current locale
+    };
+  },
+  computed: {
+    ...mapState(['isAuthenticated', 'currentLocale']),
+  },
+  methods: {
+    changeLocale() {
+      this.$store.commit('setLocale', this.selectedLocale); // Commit the new locale to the store
+      this.$i18n.locale = this.selectedLocale; // Update i18n locale
+    },
+    openCookieSettings() {
+      this.$emit('open-cookie-settings');
+    },
+  },
 };
 </script>
 
@@ -74,5 +87,16 @@ export default {
 .nav-link:hover {
   color: white !important;
   transition: var(--graintrade-transition);
+}
+
+.cookie-settings-trigger {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.cookie-settings-trigger:focus {
+  outline: none;
+  box-shadow: none;
 }
 </style>

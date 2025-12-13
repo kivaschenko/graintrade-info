@@ -52,18 +52,17 @@ async def create(user, scope: str = "free") -> UserInResponse:
     return user
 
 
-async def get_by_username(username: str) -> UserInResponse:
+async def get_by_username(username: str) -> UserInResponse | None:
     query = """
         SELECT id, username, email, full_name, phone, hashed_password, disabled
         FROM users
         WHERE username = $1
     """
     async with database.pool.acquire() as conn:
-        try:
-            row = await conn.fetchrow(query, username)
-            return UserInResponse(**row)
-        except Exception as e:
-            raise ValueError(f"User with username {username} not found. {e}")
+        row = await conn.fetchrow(query, username)
+    if not row:
+        return None
+    return UserInResponse(**row)
 
 
 async def get_by_id(user_id: int) -> UserInResponse:
@@ -109,26 +108,37 @@ async def cleanup_deleted_users():
         await conn.execute(query)
 
 
-async def get_by_email(email: str) -> UserInResponse:
+async def get_by_email(email: str) -> UserInResponse | None:
     query = """
         SELECT id, username, email, full_name, phone, disabled, hashed_password
         FROM users
-        WHERE email = $1
+        WHERE LOWER(email) = LOWER($1)
     """
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, email)
+    if not row:
+        return None
     return UserInResponse(**row)
 
 
-async def get_by_username_and_email(username: str, email: str) -> UserInResponse:
+async def get_by_username_and_email(username: str, email: str) -> UserInResponse | None:
     query = """
         SELECT id, username, email, full_name, phone, disabled, hashed_password
         FROM users
-        WHERE username = $1 AND email = $2
+        WHERE username = $1 AND LOWER(email) = LOWER($2)
     """
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, username, email)
+    if not row:
+        return None
     return UserInResponse(**row)
+
+
+async def username_exists(username: str) -> bool:
+    query = "SELECT 1 FROM users WHERE username = $1"
+    async with database.pool.acquire() as conn:
+        row = await conn.fetchrow(query, username)
+    return row is not None
 
 
 async def update_password(user_id: int, hashed_password: str) -> UserInResponse | None:

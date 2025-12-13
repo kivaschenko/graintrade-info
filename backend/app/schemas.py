@@ -147,19 +147,22 @@ class TokenData(BaseModel):
     scopes: list[str] = []
 
 
-class User(BaseModel):
-    username: str
-    email: EmailStr = ""
-    full_name: str | None
+class UserBase(BaseModel):
+    email: EmailStr
+    full_name: str | None = None
     phone: str | None = None
     disabled: bool | None = None
 
 
-class UserInCreate(User):
+class User(UserBase):
+    username: str
+
+
+class UserInCreate(UserBase):
     password: str
 
 
-class UserInUpdate(User):
+class UserInUpdate(UserBase):
     id: int
     username: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -225,8 +228,8 @@ class SubscriptionInDB(BaseModel):
     start_date: date | None
     end_date: date | None
     status: SubscriptionStatus = SubscriptionStatus.INACTIVE
-    provider: str = "fondy"  # Payment provider name
-    provider_payment_token: Optional[str] = None  # Token for payment provider
+    is_trial: bool = False
+    trial_expires_at: date | None = None
 
 
 class SubscriptionInResponse(BaseModel):
@@ -241,6 +244,8 @@ class SubscriptionInResponse(BaseModel):
     status: SubscriptionStatus
     created_at: datetime = Field(alias="created_at")
     tarif: TarifInResponse | None = None
+    is_trial: bool = False
+    trial_expires_at: date | None = None
 
     @property
     def formatted_created_at(self) -> str:
