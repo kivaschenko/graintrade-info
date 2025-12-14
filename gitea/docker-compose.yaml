@@ -1,0 +1,45 @@
+services:
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__server__ROOT_URL=https://gitea.graintrade.info/
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=db
+      - GITEA__database__NAME=postgres
+      - GITEA__database__USER=admin
+      - GITEA__database__PASSWD=temp12345
+    volumes:
+      - gitea-data:/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    ports:
+      - "127.0.0.1:6543:3000"
+    depends_on:
+      - db
+    restart: always
+  
+  db:
+      image: postgres:13
+      container_name: gitea-db
+      environment:
+        - POSTGRES_USER=admin
+        - POSTGRES_PASSWORD=temp12345
+        - POSTGRES_DB=postgres
+      volumes:
+        - gitea-db-data:/var/lib/postgresql/data
+      ports:
+        - "54321:5432"
+      restart: always
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U admin"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+        start_period: 10s
+
+volumes:
+  gitea-data:
+  gitea-db-data:
