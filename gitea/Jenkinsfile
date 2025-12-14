@@ -1,0 +1,150 @@
+def serviceCatalog = [
+    [name: 'backend', paths: ['backend/'], health: 'http://127.0.0.1:8000/health'],
+    [name: 'chat-room', paths: ['chat-room/'], health: 'http://127.0.0.1:8001/health'],
+    [name: 'notifications', paths: ['notifications/'], health: 'http://127.0.0.1:8002/health'],
+    [name: 'frontend', paths: ['frontend/']],
+    [name: 'landing-service', paths: ['landing-service/'], health: 'http://127.0.0.1:8003/health']
+]
+
+def globalTriggerRoots = [
+    'docker-compose.yaml',
+    'docker-compose.dev.yaml',
+    'create_app_dashboard.sh',
+    'create_dashboards.sh',
+    'create_system_dashboard.sh',
+    'create_working_dashboard.sh',
+    'scripts/'
+]
+
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+    }
+
+    environment {
+        COMPOSE_FILE = 'docker-compose.yaml'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Select services') {
+            steps {
+                script {
+                    def diffCommand = '''
+                        set -eo pipefail
+                        if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+                          git diff --name-only HEAD^ HEAD
+                        else
+                          git show --pretty="" --name-only HEAD
+                        fi
+                    '''
+
+                    def changedFilesRaw = sh(script: diffCommand, returnStdout: true).trim()
+                    def changedFiles = changedFilesRaw ? changedFilesRaw.readLines().findAll { it?.trim() } : []
+
+                    if (changedFiles) {
+                        echo "Changed files:\n${changedFiles.join('\n')}"
+                    } else {
+                        echo 'No changes detected compared to the previous commit.'
+                    }
+
+                    def selected = []
+                    serviceCatalog.each { svc ->
+                        def match = svc.paths.any { prefix ->
+                            changedFiles.any { it.startsWith(prefix) }
+                        }
+                        if (match) {
+                            selected << svc.name
+                        }
+                    }
+
+                    def globalChange = changedFiles.any { file ->
+                        globalTriggerRoots.any { root -> file == root || file.startsWith(root) }
+                    }
+
+                    if (globalChange) {
+                        echo 'Global or shared infrastructure files changed – rebuilding every service.'
+                        selected = serviceCatalog.collect { it.name }
+                    }
+
+                    selected = selected.unique()
+                    env.SERVICES_TO_BUILD = selected.join(' ')
+
+                    if (selected) {
+                        currentBuild.description = "redeploy ${selected.join(', ')}"
+                        echo "Services scheduled for rebuild: ${selected.join(', ')}"
+                    } else {
+                        currentBuild.description = 'no redeploy'
+                        echo 'No microservice-level changes detected.'
+                    }
+                }
+            }
+        }
+
+        stage('Compose build & deploy') {
+            when {
+                expression { env.SERVICES_TO_BUILD?.trim() }
+            }
+            steps {
+                script {
+                    def targets = env.SERVICES_TO_BUILD.split().findAll { it?.trim() }
+                    targets.each { serviceName ->
+                        def svc = serviceCatalog.find { it.name == serviceName }
+                        echo "Redeploying ${serviceName}"
+
+                        sh """
+                            set -eo pipefail
+                            cd ${env.WORKSPACE}
+                            docker compose -f ${env.COMPOSE_FILE} build --pull ${serviceName}
+                            docker compose -f ${env.COMPOSE_FILE} up -d ${serviceName}
+                        """
+
+                        sh """
+                            cd ${env.WORKSPACE}
+                            docker compose -f ${env.COMPOSE_FILE} ps ${serviceName}
+                        """
+
+                        if (svc?.health) {
+                            sleep time: 5, unit: 'SECONDS'
+                            sh """
+                                set -eo pipefail
+                                curl --fail --silent --show-error --max-time 15 ${svc.health}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Nothing to deploy') {
+            when {
+                expression { !(env.SERVICES_TO_BUILD?.trim()) }
+            }
+            steps {
+                echo 'Skipping compose build – no detectable service changes.'
+            }
+        }
+    }
+
+    post {
+        success {
+            if (env.SERVICES_TO_BUILD?.trim()) {
+                echo "Deployment finished for: ${env.SERVICES_TO_BUILD}"
+            } else {
+                echo 'Pipeline finished without redeploying services.'
+            }
+        }
+        failure {
+            echo 'Deployment failed. Inspect Jenkins logs for details.'
+        }
+    }
+}
