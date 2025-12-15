@@ -217,6 +217,3 @@ parsers/outputs/
 parsers/logs/
 # Ignore parser temporary files
 parsers/tmp/
-
-# Ignore business roadmap
-ProjectAudit_BusinessRoadmap.md
