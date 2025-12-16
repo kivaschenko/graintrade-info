@@ -34,6 +34,9 @@ class QueueName(StrEnum):
     MESSAGE_EVENTS = "message.events"
     RECOVERY_EVENTS = "recovery.events"
     DELETED_ITEMS = "deleted.items"
+    # TODO: Introduce a Business Events emitter 
+    # (e.g., publish “ITEM_CREATED”, “SUBSCRIPTION_UPGRADED”, “ALERT_TRIGGERED”) 
+    # into RabbitMQ → drive analytics & future billing metrics. 
 
 
 # Generate the list of all queue names dynamically
