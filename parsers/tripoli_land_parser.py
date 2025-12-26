@@ -25,7 +25,7 @@ def parse_company_prices(company_slug: str, company_name: str):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
     }
     # Формуємо URL для компанії
-    url = BASE_URL + f"/ua/{company_slug}"
+    url = BASE_URL + f"/ua/companies/{company_slug}"
 
     try:
         response = requests.get(url, headers=headers)
@@ -113,10 +113,10 @@ def main():
         print(f"\nДані успішно збережено у файл {FILENAME_RESULT}")
 
 if __name__ == "__main__":
-    # main()
+    main()
     # Для тестування парсингу однієї компанії
-    test_company_slug = "kernel"
-    test_company_name = "Кернел"
-    df_test = parse_company_prices(test_company_slug, test_company_name)
-    if df_test is not None:
-        print(df_test.head(10))
+    # test_company_slug = "kernel"
+    # test_company_name = "Кернел"
+    # df_test = parse_company_prices(test_company_slug, test_company_name)
+    # if df_test is not None:
+    #     print(df_test.head(10))
