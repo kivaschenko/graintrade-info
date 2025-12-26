@@ -47,7 +47,7 @@ ENV PYSPARK_DRIVER_PYTHON=/usr/local/bin/python
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 # Expose API port
-EXPOSE 8001
+EXPOSE 8004
 
 # Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8004"]

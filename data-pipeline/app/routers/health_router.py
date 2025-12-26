@@ -1,9 +1,10 @@
 # src/data_pipeline/routers/health_router.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from datetime import datetime
 
-from app.database import get_db, check_connection
+from app.database import get_db
 from app.config import settings
 
 router = APIRouter(prefix="/health", tags=["health"])
@@ -25,7 +26,7 @@ def database_health(db: Session = Depends(get_db)):
     """Check database connectivity"""
     try:
         # Try to execute a simple query
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         return {
             "status": "healthy",
             "database": "connected",

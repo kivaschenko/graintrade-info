@@ -95,14 +95,14 @@ It transforms raw data through three layers:
 
 **Development Mode:**
 ```bash
-python -m data_pipeline.main
+python -m app.main
 # or
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8004
 ```
 
 **Production Mode:**
 ```bash
-gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
+gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8004
 ```
 
 **With Docker:**

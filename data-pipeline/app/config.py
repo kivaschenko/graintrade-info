@@ -3,7 +3,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
+print(f"Base directory for config: {BASE_DIR}")
 load_dotenv(BASE_DIR / ".env")
 
 
@@ -25,7 +26,7 @@ class Settings:
     
     # API Configuration
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
-    API_PORT: int = int(os.getenv("API_PORT", "8001"))
+    API_PORT: int = int(os.getenv("API_PORT", "8004"))
     
     # Environment
     ENV: str = os.getenv("ENV", "development")
