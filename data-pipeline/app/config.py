@@ -40,5 +40,30 @@ class Settings:
     # AirFlow (for future use)
     AIRFLOW_HOME: str = os.getenv("AIRFLOW_HOME", "./airflow")
 
+    # Hetzner Object Storage
+    HETZNER_STORAGE_ENDPOINT: str = os.getenv("HETZNER_STORAGE_ENDPOINT", "hel1.your-objectstorage.com")
+    HETZNER_STORAGE_ACCESS_KEY: str = os.getenv("HETZNER_STORAGE_ACCESS_KEY", "")
+    HETZNER_STORAGE_SECRET_KEY: str = os.getenv("HETZNER_STORAGE_SECRET_KEY", "")
+    HETZNER_STORAGE_REGION: str = os.getenv("HETZNER_STORAGE_REGION", "hel1")
+    HETZNER_STORAGE_BUCKET: str = os.getenv("HETZNER_STORAGE_BUCKET", "graintrade-info")
+
+    # RabbitMQ Configuration
+    RABBITMQ_USER: str = os.getenv("RABBITMQ_USER", "")
+    RABBITMQ_PASS: str = os.getenv("RABBITMQ_PASS", "")
+    RABBITMQ_HOST: str = os.getenv("RABBITMQ_HOST", "")
+    RABBITMQ_URL: str = os.getenv("RABBITMQ_URL", "")
+    RABBITMQ_VHOST: str = os.getenv("RABBITMQ_VHOST", "/")
+
+    # Redis Configuration
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "redis")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_URL: str = os.getenv("REDIS_URL", "")
+
+    # Domain for links in notifications
+    BASE_URL: str = os.getenv("BASE_URL", "https://graintrade.info")
+
+    # Telegram Bot
+    TELEGRAM_TOKEN: str = os.getenv("TELEGRAM_TOKEN", "")
+    TELEGRAM_CHANNEL_ID: str = os.getenv("TELEGRAM_CHANNEL_ID", "")
 
 settings = Settings()

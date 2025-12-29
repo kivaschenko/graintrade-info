@@ -1,4 +1,6 @@
+from pathlib import Path
 from datetime import datetime, timezone
+import os
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -15,10 +17,11 @@ COMPANIES = {
     "agroprosperis": "Агропросперіс (NCH)"
     # Додайте інші компанії за потреби
 }
-
-FILENAME_RESULT = "tripoli_prices.csv"
-
+BASE_OUT_DIR = Path(__file__).resolve().parent.parent.parent
+RESULT_DIR = BASE_OUT_DIR / "parsers_results" / "tripoli_land"
+os.makedirs(RESULT_DIR, exist_ok=True)
 TIMESTAMP = ' '.join(datetime.now(timezone.utc).isoformat().split('.')[0].split('T'))
+FILENAME_RESULT = f"{RESULT_DIR}/tripoli_prices_{TIMESTAMP.replace(':', '-').replace(' ', '_')}.csv"
 
 def parse_company_prices(company_slug: str, company_name: str):
     headers = {
