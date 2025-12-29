@@ -8,7 +8,7 @@ import pandas as pd
 
 from app.parser_services.base_parser import BaseParser
 from app.logger import logger
-from app.storage_services import LocalStorageService, HetznerStorageService
+from app.storage_services import HetznerStorageService
 
 BASE_URL = "https://tripoli.land"
 
