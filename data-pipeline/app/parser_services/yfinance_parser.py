@@ -6,7 +6,6 @@ Fetches futures contracts and ETFs from Yahoo Finance with RabbitMQ integration
 import yfinance as yf
 from datetime import datetime
 import pandas as pd
-import requests
 import json
 import asyncio
 import aio_pika
@@ -14,6 +13,8 @@ import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
+
+from app.utils.rates import fetch_usd_to_uah
 
 # Initialize logging
 logging.basicConfig(
@@ -33,7 +34,6 @@ RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 RABBITMQ_VHOST = os.getenv("RABBITMQ_VHOST", "/")
 RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "message.events")
 
-COURSE_UAH_USD_FALLBACK = 41.0  # fallback value
 
 # --- COMMODITIES CONFIG ---
 # Futures contracts and ETFs only
@@ -132,42 +132,6 @@ COMMODITIES = {
 
 
 # --- HELPER FUNCTIONS ---
-
-
-def fetch_usd_to_uah() -> float:
-    """Get current USD/UAH exchange rate from multiple sources"""
-
-    # Source 1: exchangerate-api.com
-    try:
-        url = "https://api.exchangerate-api.com/v4/latest/USD"
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if "rates" in data and "UAH" in data["rates"]:
-                rate = float(data["rates"]["UAH"])
-                logger.info(f"USD/UAH rate from exchangerate-api.com: {rate}")
-                return rate
-    except Exception as e:
-        logger.warning(f"Failed to get rate from exchangerate-api.com: {e}")
-
-    # Source 2: NBU (National Bank of Ukraine) - official rate
-    try:
-        url = "https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&json"
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if data and len(data) > 0:
-                rate = float(data[0]["rate"])
-                logger.info(f"USD/UAH rate from NBU: {rate}")
-                return rate
-    except Exception as e:
-        logger.warning(f"Failed to get rate from NBU: {e}")
-
-    # Fallback to static value
-    logger.warning(
-        f"All exchange rate sources failed, using fallback: {COURSE_UAH_USD_FALLBACK}"
-    )
-    return COURSE_UAH_USD_FALLBACK
 
 
 def fetch_price_yf(ticker: str):

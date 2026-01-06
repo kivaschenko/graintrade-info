@@ -242,6 +242,22 @@ curl -X POST "http://localhost:8001/ingestion/start" \
   }'
 ```
 
+## 🌾 Grain Forecast Pipeline
+
+The predictive pipeline at `app/services/grain_forecast_pipeline.py` downloads Yahoo Finance
+historical data for grains and correlated macro assets, stores bronze/silver Delta snapshots,
+updates the `commodities` table with the freshest CBOT quotes, and writes multi-day forecasts
+into the `predictions` table.
+
+### Run
+```bash
+python -m app.services.grain_forecast_pipeline
+```
+
+Artifacts are exported to `parsers_results/grain_forecast`, while Delta outputs land under the
+`BRONZE_LAYER_PATH` and `SILVER_LAYER_PATH` directories defined in `.env`. The run summary
+includes how many commodity rows were refreshed and how many forecast horizons were produced.
+
 ## 🧪 Testing
 
 ```bash

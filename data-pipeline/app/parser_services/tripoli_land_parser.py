@@ -19,7 +19,24 @@ COMPANIES = {
     "tas-agro": "ТАС АГРО",
     "astarta-kiev": "Астарта-Київ",
     "mhp": "МХП",
-    "agroprosperis": "Агропросперіс (NCH)"
+    "agroprosperis": "Агропросперіс (NCH)",
+    "prodinvest-servis": "Продінвест-Сервіс",
+    "prometey": "Прометей",
+    "expograin": "Експогрейн",
+    "mko-trans-servis": "МКО-Транс-Сервіс",
+    "ukrzernoinvest-2013": "Укрзернінвест-2013",
+    "ooo-spoteks-treyd": "СПОТЕКС-ТРЕЙД",
+    "agromino": "Агроміно",
+    "ags-grain": "АГС-ГРЕЙН",
+    "greynheven": "Грейнхевен",
+    "bruklin-kiev": "Бруклін-Київ",
+    "ramburs": "Рамбурс",
+    "kortiya-ukraina": "Кортія-Україна",
+    "glenport": "Гленпорт",
+    "ooo-vvt-grupp": "ВВТ-Груп",
+    "almeyda-grup-almeida-group": "Алмейда Груп",
+    "ooo-agrotreyd-2022": "Агротрейд 2022",
+    "dileks-treyd-dilex-trade": "Ділекс Трейд",
     # Додайте інші компанії за потреби
 }
 
@@ -116,7 +133,7 @@ class TripoliLandParser(BaseParser):
         all_data = pd.DataFrame()
         for company_slug, company_name in COMPANIES.items():
             logger.info(f"Parsing prices for company: {company_name} ({company_slug})")
-            data_company = self._parse_company_prices(company_slug, company_name)
+            data_company = self._parse_prices(company_slug, company_name)
             if data_company is not None:
                 logger.info(f"Found records: {len(data_company)}")
                 logger.info(data_company.head(3))
@@ -158,14 +175,16 @@ class TripoliLandParser(BaseParser):
 
 
 
-    def _parse_company_prices(self, company_slug: str, company_name: str):
+    def _parse_prices(self, company_slug: str, company_name: str):
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
         }
+        logger.info(f"Fetching data for company: {company_name} ({company_slug})")
         # Формуємо URL для компанії
         url = BASE_URL + f"/ua/companies/{company_slug}"
 
         try:
+            logger.info(f"Requesting URL: {url}")
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
