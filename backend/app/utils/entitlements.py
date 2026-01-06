@@ -22,14 +22,14 @@ ENTITLEMENTS: Dict[str, Dict[str, Any]] = {
         "alerts_limit": 5,
         "map": True,
     },
-    "premium": {
+    "basic": {
         "exports": True,
         "import_export": False,
         "history_days": 30,
         "alerts_limit": 50,
         "map": True,
     },
-    "business": {
+    "premium": {
         "exports": True,
         "import_export": True,
         "history_days": 180,
@@ -37,7 +37,7 @@ ENTITLEMENTS: Dict[str, Dict[str, Any]] = {
         "map": True,
         "sponsored_slots": 1,
     },
-    "enterprise": {
+    "business": {
         "exports": True,
         "import_export": True,
         "history_days": 365,
@@ -49,9 +49,9 @@ ENTITLEMENTS: Dict[str, Dict[str, Any]] = {
 
 PLAN_ORDER: Dict[str, int] = {
     "free": 0,
-    "premium": 1,
-    "business": 2,
-    "enterprise": 3,
+    "basic": 1,
+    "premium": 2,
+    "business": 3,
 }
 
 
