@@ -206,7 +206,7 @@ pnpm-debug.log*
 *.zip
 
 # Ignore inside docs
-docs/
+# docs/
 
 # Ignore parser inputs
 parsers/inputs/
@@ -217,6 +217,3 @@ parsers/outputs/
 parsers/logs/
 # Ignore parser temporary files
 parsers/tmp/
-
-# Ignore business roadmap
-ProjectAudit_BusinessRoadmap.md
