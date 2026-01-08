@@ -67,3 +67,5 @@ class Settings:
     TELEGRAM_CHANNEL_ID: str = os.getenv("TELEGRAM_CHANNEL_ID", "")
 
 settings = Settings()
+
+print(f"Configuration loaded: ENV={settings.ENV}, DATABASE_URL={settings.DATABASE_URL}")

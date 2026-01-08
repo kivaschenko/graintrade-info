@@ -4,13 +4,15 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import numpy as np
+import sys
 import pandas as pd
 import yfinance as yf
 from pandas.api.types import is_datetime64tz_dtype
 
+from app.data_sources.investing import InvestingDataSourceError, fetch_investing_history
 from app.config import settings
 from app.database import SessionLocal
 from app.logger import logger
@@ -18,6 +20,17 @@ from app.models import Commodity, Prediction
 from app.parser_services.yfinance_parser import COMMODITIES
 from app.spark_services.spark_session import get_spark_session
 from app.utils.rates import fetch_usd_to_uah
+
+# When running this file directly, ensure repository package root is on sys.path
+# so `from app...` imports resolve (useful for debugging / direct execution).
+if __package__ is None:
+    try:
+        repo_root = Path(__file__).resolve().parents[2]
+        repo_root_str = str(repo_root)
+        if repo_root_str not in sys.path:
+            sys.path.insert(0, repo_root_str)
+    except Exception:
+        pass
 
 PIPELINE_SOURCE_NAME = "Yahoo Finance Predictive Pipeline"
 MOST_USED_COMMODITIES = [
@@ -80,14 +93,15 @@ ADDITIONAL_MARKET_SIGNALS: Dict[str, Dict[str, str]] = {
         "description": "ICE U.S. Dollar Index",
         "region": "Global",
     },
-    "Baltic Dry Index": {
-        "ticker": "^BDI",
-        "unit": "index",
-        "kg_per_unit": None,
+    # As indicator about war/peace situation in Ukraine and its impact on grain exports
+    "Gold Futures": {
+        "ticker": "GC=F",
+        "unit": "ounce",
+        "kg_per_unit": 32.1507,
         "cents_per_dollar": 1,
-        "category": "shipping",
-        "description": "Baltic Exchange Dry Index",
-        "region": "Global",
+        "category": "macro",
+        "description": "COMEX Gold futures",
+        "region": "COMEX",
     },
     "USD/UAH": {
         "ticker": "UAH=X",
@@ -97,6 +111,21 @@ ADDITIONAL_MARKET_SIGNALS: Dict[str, Dict[str, str]] = {
         "category": "currency",
         "description": "USD to UAH FX rate",
         "region": "Ukraine",
+    },
+    "S&P GSCI Agriculture": {
+        "ticker": "SPGSAG",
+        "unit": "index",
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "macro",
+        "description": "S&P GSCI Agriculture Index",
+        "region": "Global",
+        "data_source": "investing",
+        "investing": {
+            "type": "index",
+            "symbol": "S&P GSCI Agriculture",
+            "country": "world",
+        },
     },
 }
 
@@ -124,6 +153,22 @@ def _to_utc_datetime(value) -> datetime:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
     raise TypeError(f"Unsupported type for _to_utc_datetime: {type(value)}")
+
+
+def _ensure_scalar(value):
+    """Return a Python scalar when the input is a single-element array/Series.
+
+    If the input is a pandas Series or numpy array with exactly one element,
+    return that element as a Python scalar. Otherwise return the value unchanged.
+    This avoids ambiguous truth-value checks on Series objects.
+    """
+    if isinstance(value, (pd.Series, np.ndarray)):
+        try:
+            if getattr(value, "size", None) == 1:
+                return value.item()
+        except Exception:
+            pass
+    return value
 
 
 class GrainForecastPipeline:
@@ -180,30 +225,99 @@ class GrainForecastPipeline:
             combined[name] = {**cfg}
         return combined
 
+    def _resolve_history_window(self) -> tuple[datetime, datetime]:
+        now = datetime.now(timezone.utc)
+        period = self.history_period.lower()
+        days = 365
+        try:
+            if period.endswith("mo"):
+                qty = int(period[:-2])
+                days = max(30, qty * 30)
+            elif period.endswith("w"):
+                qty = int(period[:-1])
+                days = max(7, qty * 7)
+            elif period.endswith("d"):
+                qty = int(period[:-1])
+                days = max(1, qty)
+            elif period.endswith("y"):
+                qty = int(period[:-1])
+                days = max(365, qty * 365)
+        except ValueError:
+            logger.warning("Unable to parse history_period '%s', defaulting to 1y", self.history_period)
+        start_date = now - timedelta(days=days)
+        return start_date, now
+
+    def _fetch_from_yfinance(self, ticker: str) -> pd.DataFrame:
+        try:
+            hist = yf.download(
+                tickers=ticker,
+                period=self.history_period,
+                interval="1d",
+                auto_adjust=False,
+                progress=False,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to download %s from Yahoo Finance: %s", ticker, exc)
+            return pd.DataFrame()
+
+        if hist.empty:
+            return hist
+
+        hist = hist.reset_index().rename(columns={"Date": "date"})
+        hist["date"] = pd.to_datetime(hist["date"], utc=True)
+        return hist
+
+    def _fetch_from_investing(
+        self,
+        cfg: Dict[str, Any],
+        start_date: datetime,
+        end_date: datetime,
+    ) -> pd.DataFrame:
+        instrument_cfg = cfg.get("investing")
+        if not instrument_cfg:
+            logger.warning("Missing Investing.com configuration for %s", cfg.get("description", cfg.get("ticker")))
+            return pd.DataFrame()
+        try:
+            return fetch_investing_history(instrument_cfg, start_date, end_date)
+        except InvestingDataSourceError as exc:
+            logger.error(
+                "Investing.com download failed for %s: %s",
+                cfg.get("description", instrument_cfg.get("symbol")),
+                exc,
+            )
+            return pd.DataFrame()
+
     def _download_market_history(self, usd_to_uah: float) -> pd.DataFrame:
         frames: List[pd.DataFrame] = []
+        history_start, history_end = self._resolve_history_window()
         for name, cfg in self.master_config.items():
-            ticker = cfg["ticker"]
-            try:
-                hist = yf.download(
-                    tickers=ticker,
-                    period=self.history_period,
-                    interval="1d",
-                    auto_adjust=False,
-                    progress=False,
+            if not cfg.get("enabled", True):
+                logger.info(
+                    "Skipping %s: data source disabled%s",
+                    name,
+                    f" ({cfg.get('disabled_reason')})" if cfg.get("disabled_reason") else "",
                 )
-            except Exception as exc:  # noqa: BLE001
-                logger.error("Failed to download %s (%s): %s", name, ticker, exc)
                 continue
+            data_source = cfg.get("data_source", "yfinance").lower()
+            if data_source == "investing":
+                hist = self._fetch_from_investing(cfg, history_start, history_end)
+            else:
+                ticker = cfg.get("ticker")
+                if not ticker:
+                    logger.warning("Skipping %s: ticker not configured", name)
+                    continue
+                hist = self._fetch_from_yfinance(ticker)
 
             if hist.empty:
-                logger.warning("No data returned for %s (%s)", name, ticker)
+                logger.warning("No data returned for %s", name)
                 continue
 
-            hist = hist.reset_index().rename(columns={"Date": "date"})
-            hist["date"] = pd.to_datetime(hist["date"], utc=True)
+            hist = hist.copy()
+            if "date" not in hist.columns:
+                logger.warning("Skipping %s: history missing 'date' column", name)
+                continue
             hist["name"] = name
-            hist["ticker"] = ticker
+            hist["ticker"] = cfg.get("ticker") or cfg.get("investing", {}).get("symbol") or name
             hist["category"] = cfg.get("category", "futures")
             hist["unit"] = cfg.get("unit", "unit")
             hist["kg_per_unit"] = cfg.get("kg_per_unit")
@@ -212,8 +326,9 @@ class GrainForecastPipeline:
             hist["region"] = cfg.get("region", "Global")
             hist["variety"] = cfg.get("variety")
 
-            # price_in_dollars = hist["Close"].astype(float) / hist["cents_per_dollar"]
-            price_in_dollars = hist["Close"].astype(float).values[:,0] / hist["cents_per_dollar"].values
+            # compute price in dollars using the configured cents_per_dollar
+            cents_per_dollar = float(cfg.get("cents_per_dollar", 1))
+            price_in_dollars = hist["Close"].astype(float) / cents_per_dollar
             hist["price_in_dollars"] = price_in_dollars
 
             kg_per_unit = cfg.get("kg_per_unit")
@@ -231,7 +346,7 @@ class GrainForecastPipeline:
 
         if not frames:
             return pd.DataFrame()
-
+        # TODO: verify empty or all-NA entries before combining
         combined_df = pd.concat(frames, ignore_index=True)
         combined_df.sort_values(["ticker", "date"], inplace=True)
         return combined_df
@@ -301,8 +416,15 @@ class GrainForecastPipeline:
         try:
             for _, row in latest_records.iterrows():
                 record_date = _to_utc_datetime(row["date"])
-                price_value = row["usd_per_ton"] if not pd.isna(row["usd_per_ton"]) else row["price_in_dollars"]
-                unit = "ton" if not pd.isna(row["usd_per_ton"]) else row.get("unit", "unit")
+                usd_per_ton_raw = _ensure_scalar(row.get("usd_per_ton"))
+                price_in_dollars_raw = _ensure_scalar(row.get("price_in_dollars"))
+
+                if not pd.isna(usd_per_ton_raw):
+                    price_value = float(usd_per_ton_raw)
+                    unit = "ton"
+                else:
+                    price_value = float(price_in_dollars_raw) if not pd.isna(price_in_dollars_raw) else 0.0
+                    unit = row.get("unit", "unit")
                 existing = (
                     session.query(Commodity)
                     .filter(
@@ -353,6 +475,8 @@ class GrainForecastPipeline:
         return inserted
 
     def _make_forecasts(self, df: pd.DataFrame) -> List[Dict[str, object]]:
+        """Generate price forecasts for the most used commodities."""
+        logger.info("Generating forecasts for commodities")
         payloads: List[Dict[str, object]] = []
         for commodity_name in MOST_USED_COMMODITIES:
             subset = df[df["name"] == commodity_name].sort_values("date")
@@ -416,6 +540,7 @@ class GrainForecastPipeline:
                         "features_used": features_used,
                     }
                 )
+        logger.info("Generated %d forecast payloads", len(payloads))
         return payloads
 
     def _linear_trend_forecast(self, series: pd.Series, window: int = 90) -> Dict[str, object]:
@@ -440,6 +565,7 @@ class GrainForecastPipeline:
         }
 
     def _persist_predictions(self, payloads: List[Dict[str, object]]) -> int:
+        logger.info("Persisting %d predictions to database", len(payloads))
         if not payloads:
             return 0
         session = SessionLocal()

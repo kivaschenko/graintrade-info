@@ -147,11 +147,11 @@ class GrainTradeComUaParser(BaseParser):
             return {}
 
     def save_results(self, results: List[Dict[str, Any]], filepath: str = RESULT_PATH, file_ext: str = "csv", storage_type: str = "hetzner") -> None:
+        if not results:
+            logger.warning("No results to save.")
+            return
         if storage_type == "hetzner":
             logger.info("Saving results to Hetzner storage.")
-            if not results:
-                logger.warning("No results to save.")
-                return
             
             df = pd.DataFrame(results)
 
@@ -163,9 +163,6 @@ class GrainTradeComUaParser(BaseParser):
             logger.info(f"GrainTradeComUa data uploaded to Hetzner: {filepath}")
         elif storage_type == "local":
             logger.info("Saving results locally.")
-            if not results:
-                logger.warning("No results to save.")
-                return
             
             df = pd.DataFrame(results)
             df.to_csv(filepath, index=False, encoding='utf-8')
