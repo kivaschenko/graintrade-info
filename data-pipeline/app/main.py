@@ -14,6 +14,7 @@ from app.routers import (
     data_source_router,
     ingestion_router,
     health_router,
+    forecast_router,
 )
 
 
@@ -71,6 +72,7 @@ app.include_router(health_router)
 app.include_router(commodity_router)
 app.include_router(data_source_router)
 app.include_router(ingestion_router)
+app.include_router(forecast_router)
 
 
 @app.get("/")

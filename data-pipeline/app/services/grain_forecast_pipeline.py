@@ -1,6 +1,7 @@
 """End-to-end pipeline for parsing, transforming, and forecasting grain prices."""
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,6 +19,7 @@ from app.database import SessionLocal
 from app.logger import logger
 from app.models import Commodity, Prediction
 from app.parser_services.yfinance_parser import COMMODITIES
+from app.rabbit_mq import get_rabbitmq_instance
 from app.spark_services.spark_session import get_spark_session
 from app.utils.rates import fetch_usd_to_uah
 
@@ -130,14 +132,28 @@ ADDITIONAL_MARKET_SIGNALS: Dict[str, Dict[str, str]] = {
 }
 
 
-def _safe_float(value):
-    if value is None:
-        return None
-    if isinstance(value, (float, int)):
-        return float(value)
-    if pd.isna(value):  # type: ignore[arg-type]
-        return None
-    return float(value)
+def _safe_float(value: object, default: float | None = None) -> float | None:
+    """
+    Safely convert a value to float, handling pandas Series/arrays by coercing to a Python scalar.
+    """
+    try:
+        scalar_value = _ensure_scalar(value)
+        return float(scalar_value)
+    except (TypeError, ValueError):
+        scalar_value = value
+
+    # If still a Series/array, attempt to extract single value
+    try:
+        if pd.isna(scalar_value):  # now scalar, safe to call
+            return default
+    except Exception:
+        # fall through to final return
+        pass
+
+    try:
+        return float(scalar_value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _to_utc_datetime(value) -> datetime:
@@ -202,6 +218,9 @@ class GrainForecastPipeline:
         synced_records = self._sync_latest_commodities(features_df)
         prediction_payloads = self._make_forecasts(features_df)
         stored_predictions = self._persist_predictions(prediction_payloads)
+        
+        # Publish predictions to RabbitMQ for notifications microservice
+        published_count = self._publish_predictions_to_rabbitmq(prediction_payloads)
 
         summary = {
             "status": "completed",
@@ -209,6 +228,7 @@ class GrainForecastPipeline:
             "records_transformed": len(features_df),
             "commodities_updated": synced_records,
             "predictions_saved": stored_predictions,
+            "predictions_published": published_count,
             "usd_uah_rate": usd_to_uah,
             "bronze_artifact": str(bronze_artifact) if bronze_artifact else "",
             "silver_artifact": str(silver_artifact) if silver_artifact else "",
@@ -415,7 +435,17 @@ class GrainForecastPipeline:
         inserted = 0
         try:
             for _, row in latest_records.iterrows():
+                # Coerce potentially-array/Series values to scalars
+                name_raw = row.get("name")
+                name = _ensure_scalar(name_raw)
+                region_raw = row.get("region", "Global")
+                region = _ensure_scalar(region_raw) or "Global"
+                variety = _ensure_scalar(row.get("variety"))
+                unit_raw = _ensure_scalar(row.get("unit", "unit"))
+
+                # Date -> UTC datetime (handles Series / Timestamp)
                 record_date = _to_utc_datetime(row["date"])
+
                 usd_per_ton_raw = _ensure_scalar(row.get("usd_per_ton"))
                 price_in_dollars_raw = _ensure_scalar(row.get("price_in_dollars"))
 
@@ -424,25 +454,30 @@ class GrainForecastPipeline:
                     unit = "ton"
                 else:
                     price_value = float(price_in_dollars_raw) if not pd.isna(price_in_dollars_raw) else 0.0
-                    unit = row.get("unit", "unit")
+                    unit = unit_raw or "unit"
+
+                # Query using plain Python scalars to avoid passing Series to SQLAlchemy
                 existing = (
                     session.query(Commodity)
                     .filter(
-                        Commodity.name == row["name"],
-                        Commodity.region == row.get("region", "Global"),
+                        Commodity.name == name,
+                        Commodity.region == region,
                         Commodity.date == record_date,
                         Commodity.source_name == PIPELINE_SOURCE_NAME,
                     )
                     .first()
                 )
+
+                # Ensure feature values are scalars before _safe_float
                 notes_payload = {
-                    "ma_7": _safe_float(row.get("ma_7")),
-                    "ma_30": _safe_float(row.get("ma_30")),
-                    "volatility_30d": _safe_float(row.get("volatility_30d")),
-                    "momentum_ratio": _safe_float(row.get("momentum_ratio")),
-                    "uah_price": _safe_float(row.get("uah_price")),
+                    "ma_7": _safe_float(_ensure_scalar(row.get("ma_7"))),
+                    "ma_30": _safe_float(_ensure_scalar(row.get("ma_30"))),
+                    "volatility_30d": _safe_float(_ensure_scalar(row.get("volatility_30d"))),
+                    "momentum_ratio": _safe_float(_ensure_scalar(row.get("momentum_ratio"))),
+                    "uah_price": _safe_float(_ensure_scalar(row.get("uah_price"))),
                 }
                 notes_str = json.dumps(notes_payload, ensure_ascii=False)
+
                 if existing:
                     existing.price = float(price_value)
                     existing.currency = "USD"
@@ -452,9 +487,9 @@ class GrainForecastPipeline:
                     continue
 
                 commodity_row = Commodity(
-                    name=row["name"],
-                    variety=row.get("variety"),
-                    region=row.get("region", "Global"),
+                    name=name,
+                    variety=variety,
+                    region=region,
                     price=float(price_value),
                     currency="USD",
                     unit=unit,
@@ -524,10 +559,14 @@ class GrainForecastPipeline:
                     "price_basis": price_basis,
                     "last_price": _safe_float(target_series.iloc[-1]),
                 }
+                
+                # Extract scalar values from last_row to avoid Series objects in payload
+                region_value = _ensure_scalar(last_row.get("region", "Global")) or "Global"
+                
                 payloads.append(
                     {
                         "commodity_name": commodity_name,
-                        "region": last_row.get("region", "Global"),
+                        "region": region_value,
                         "predicted_price": float(predicted_price),
                         "currency": "USD",
                         "prediction_date": prediction_date,
@@ -572,41 +611,55 @@ class GrainForecastPipeline:
         upserted = 0
         try:
             for payload in payloads:
+                # Extract all scalar values from payload to avoid Series being passed to SQLAlchemy
+                commodity_name = _ensure_scalar(payload["commodity_name"])
+                region = _ensure_scalar(payload["region"])
+                predicted_price = float(_ensure_scalar(payload["predicted_price"]))
+                currency = _ensure_scalar(payload["currency"])
+                prediction_horizon_days = int(_ensure_scalar(payload["prediction_horizon_days"]))
+                confidence_score = float(_ensure_scalar(payload["confidence_score"]))
+                lower_bound = float(_ensure_scalar(payload["lower_bound"]))
+                upper_bound = float(_ensure_scalar(payload["upper_bound"]))
+                model_name = _ensure_scalar(payload["model_name"])
+                model_version = _ensure_scalar(payload.get("model_version", "1.0"))
+                features_used = payload["features_used"]
                 prediction_date = _to_utc_datetime(payload["prediction_date"])
+
                 existing = (
                     session.query(Prediction)
                     .filter(
-                        Prediction.commodity_name == payload["commodity_name"],
-                        Prediction.region == payload["region"],
+                        Prediction.commodity_name == commodity_name,
+                        Prediction.region == region,
                         Prediction.prediction_date == prediction_date,
-                        Prediction.prediction_horizon_days == payload["prediction_horizon_days"],
-                        Prediction.model_name == payload["model_name"],
+                        Prediction.prediction_horizon_days == prediction_horizon_days,
+                        Prediction.model_name == model_name,
                     )
                     .first()
                 )
 
                 if existing:
-                    existing.predicted_price = payload["predicted_price"]
-                    existing.currency = payload["currency"]
-                    existing.confidence_score = payload["confidence_score"]
-                    existing.lower_bound = payload["lower_bound"]
-                    existing.upper_bound = payload["upper_bound"]
-                    existing.features_used = payload["features_used"]
+                    existing.predicted_price = predicted_price
+                    existing.currency = currency
+                    existing.confidence_score = confidence_score
+                    existing.lower_bound = lower_bound
+                    existing.upper_bound = upper_bound
+                    existing.model_version = model_version
+                    existing.features_used = features_used
                 else:
                     session.add(
                         Prediction(
-                            commodity_name=payload["commodity_name"],
-                            region=payload["region"],
-                            predicted_price=payload["predicted_price"],
-                            currency=payload["currency"],
+                            commodity_name=commodity_name,
+                            region=region,
+                            predicted_price=predicted_price,
+                            currency=currency,
                             prediction_date=prediction_date,
-                            prediction_horizon_days=payload["prediction_horizon_days"],
-                            confidence_score=payload["confidence_score"],
-                            lower_bound=payload["lower_bound"],
-                            upper_bound=payload["upper_bound"],
-                            model_name=payload["model_name"],
-                            model_version=payload["model_version"],
-                            features_used=payload["features_used"],
+                            prediction_horizon_days=prediction_horizon_days,
+                            confidence_score=confidence_score,
+                            lower_bound=lower_bound,
+                            upper_bound=upper_bound,
+                            model_name=model_name,
+                            model_version=model_version,
+                            features_used=features_used,
                         )
                     )
                     upserted += 1
@@ -618,6 +671,61 @@ class GrainForecastPipeline:
         finally:
             session.close()
         return upserted
+
+    def _publish_predictions_to_rabbitmq(self, payloads: List[Dict[str, object]]) -> int:
+        """
+        Publish prediction payloads to RabbitMQ for consumption by notifications microservice.
+        
+        :param payloads: List of prediction dictionaries
+        :return: Number of successfully published messages
+        """
+        if not payloads:
+            return 0
+        
+        logger.info("Publishing %d predictions to RabbitMQ", len(payloads))
+        published = 0
+        
+        try:
+            # Run async RabbitMQ operations
+            published = asyncio.run(self._async_publish_predictions(payloads))
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to publish predictions to RabbitMQ: %s", exc)
+        
+        return published
+    
+    async def _async_publish_predictions(self, payloads: List[Dict[str, object]]) -> int:
+        """Async helper to publish predictions to RabbitMQ."""
+        rabbitmq = get_rabbitmq_instance()
+        await rabbitmq.connect()
+        published = 0
+        
+        try:
+            for payload in payloads:
+                # Prepare message for notifications microservice
+                message = {
+                    "type": "grain_price_forecast",
+                    "commodity_name": _ensure_scalar(payload["commodity_name"]),
+                    "region": _ensure_scalar(payload["region"]),
+                    "predicted_price": float(_ensure_scalar(payload["predicted_price"])),
+                    "currency": _ensure_scalar(payload["currency"]),
+                    "prediction_date": str(_to_utc_datetime(payload["prediction_date"])),
+                    "prediction_horizon_days": int(_ensure_scalar(payload["prediction_horizon_days"])),
+                    "confidence_score": float(_ensure_scalar(payload["confidence_score"])),
+                    "lower_bound": float(_ensure_scalar(payload["lower_bound"])),
+                    "upper_bound": float(_ensure_scalar(payload["upper_bound"])),
+                    "model_name": _ensure_scalar(payload["model_name"]),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+                
+                # Publish to predictions queue
+                await rabbitmq.publish(message, "predictions_queue")
+                published += 1
+                
+        finally:
+            await rabbitmq.close()
+        
+        logger.info("Published %d predictions to RabbitMQ", published)
+        return published
 
 
 if __name__ == "__main__":

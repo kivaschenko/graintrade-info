@@ -210,10 +210,11 @@ pnpm-debug.log*
 # Ignore parser inputs
 parsers/inputs/
 # Ignore parser outputs
-parsers/results/*
+parsers/results/
 parsers/outputs/
 # Ignore parser logs
 parsers/logs/
 # Ignore parser temporary files
 parsers/tmp/
 parsers_requests/
+data-pipeline/parsers_results/
