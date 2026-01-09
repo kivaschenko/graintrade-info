@@ -16,7 +16,7 @@ engine = create_engine(
     echo=settings.ENV == "development"
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, info={"app_name": "data_pipeline"})
 
 # Metadata for reflection and migrations
 metadata = MetaData()

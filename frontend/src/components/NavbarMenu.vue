@@ -14,6 +14,9 @@
             <router-link class="nav-link" to="/">{{ $t('navbar.home') }}</router-link>
           </li>
           <li class="nav-item">
+            <router-link class="nav-link" to="/analytics">{{ $t('navbar.analytics') }}</router-link>
+          </li>
+          <li class="nav-item">
             <router-link class="nav-link" to="/items/new">{{ $t('navbar.addNew') }}</router-link>
           </li>
           <li class="nav-item">

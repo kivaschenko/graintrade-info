@@ -68,4 +68,7 @@ class Settings:
 
 settings = Settings()
 
-print(f"Configuration loaded: ENV={settings.ENV}, DATABASE_URL={settings.DATABASE_URL}")
+if settings.ENV == "development":
+    print("Running in development mode")
+else:
+    print("Running in production mode")
