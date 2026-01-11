@@ -137,15 +137,17 @@ pipeline {
     }
 
     post {
-        success {
-            if (env.SERVICES_TO_BUILD?.trim()) {
-                echo "Deployment finished for: ${env.SERVICES_TO_BUILD}"
-            } else {
-                echo 'Pipeline finished without redeploying services.'
+        script {
+            success {
+                if (env.SERVICES_TO_BUILD?.trim()) {
+                    echo "Deployment finished for: ${env.SERVICES_TO_BUILD}"
+                } else {
+                    echo 'Pipeline finished without redeploying services.'
+                }
             }
-        }
-        failure {
-            echo 'Deployment failed. Inspect Jenkins logs for details.'
+            failure {
+                echo 'Deployment failed. Inspect Jenkins logs for details.'
+            }
         }
     }
 }
