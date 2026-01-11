@@ -3,7 +3,8 @@ def serviceCatalog = [
     [name: 'chat-room', paths: ['chat-room/'], health: 'http://127.0.0.1:8001/health'],
     [name: 'notifications', paths: ['notifications/'], health: 'http://127.0.0.1:8002/health'],
     [name: 'frontend', paths: ['frontend/']],
-    [name: 'landing-service', paths: ['landing-service/'], health: 'http://127.0.0.1:8003/health']
+    [name: 'landing-service', paths: ['landing-service/'], health: 'http://127.0.0.1:8003/health'],
+    [name: 'data-pipeline', paths: ['data-pipeline/'], health: 'http://127.0.0.1:8004/health']
 ]
 
 def globalTriggerRoots = [
