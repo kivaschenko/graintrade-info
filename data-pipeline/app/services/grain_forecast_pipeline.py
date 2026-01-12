@@ -1,23 +1,38 @@
 """End-to-end pipeline for parsing, transforming, and forecasting grain prices."""
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import numpy as np
+import sys
 import pandas as pd
 import yfinance as yf
 from pandas.api.types import is_datetime64tz_dtype
 
+from app.data_sources.investing import InvestingDataSourceError, fetch_investing_history
 from app.config import settings
 from app.database import SessionLocal
 from app.logger import logger
 from app.models import Commodity, Prediction
 from app.parser_services.yfinance_parser import COMMODITIES
+from app.rabbit_mq import get_rabbitmq_instance
 from app.spark_services.spark_session import get_spark_session
 from app.utils.rates import fetch_usd_to_uah
+
+# When running this file directly, ensure repository package root is on sys.path
+# so `from app...` imports resolve (useful for debugging / direct execution).
+if __package__ is None:
+    try:
+        repo_root = Path(__file__).resolve().parents[2]
+        repo_root_str = str(repo_root)
+        if repo_root_str not in sys.path:
+            sys.path.insert(0, repo_root_str)
+    except Exception:
+        pass
 
 PIPELINE_SOURCE_NAME = "Yahoo Finance Predictive Pipeline"
 MOST_USED_COMMODITIES = [
@@ -80,14 +95,15 @@ ADDITIONAL_MARKET_SIGNALS: Dict[str, Dict[str, str]] = {
         "description": "ICE U.S. Dollar Index",
         "region": "Global",
     },
-    "Baltic Dry Index": {
-        "ticker": "^BDI",
-        "unit": "index",
-        "kg_per_unit": None,
+    # As indicator about war/peace situation in Ukraine and its impact on grain exports
+    "Gold Futures": {
+        "ticker": "GC=F",
+        "unit": "ounce",
+        "kg_per_unit": 32.1507,
         "cents_per_dollar": 1,
-        "category": "shipping",
-        "description": "Baltic Exchange Dry Index",
-        "region": "Global",
+        "category": "macro",
+        "description": "COMEX Gold futures",
+        "region": "COMEX",
     },
     "USD/UAH": {
         "ticker": "UAH=X",
@@ -98,17 +114,46 @@ ADDITIONAL_MARKET_SIGNALS: Dict[str, Dict[str, str]] = {
         "description": "USD to UAH FX rate",
         "region": "Ukraine",
     },
+    "S&P GSCI Agriculture": {
+        "ticker": "SPGSAG",
+        "unit": "index",
+        "kg_per_unit": None,
+        "cents_per_dollar": 1,
+        "category": "macro",
+        "description": "S&P GSCI Agriculture Index",
+        "region": "Global",
+        "data_source": "investing",
+        "investing": {
+            "type": "index",
+            "symbol": "S&P GSCI Agriculture",
+            "country": "world",
+        },
+    },
 }
 
 
-def _safe_float(value):
-    if value is None:
-        return None
-    if isinstance(value, (float, int)):
-        return float(value)
-    if pd.isna(value):  # type: ignore[arg-type]
-        return None
-    return float(value)
+def _safe_float(value: object, default: float | None = None) -> float | None:
+    """
+    Safely convert a value to float, handling pandas Series/arrays by coercing to a Python scalar.
+    """
+    try:
+        scalar_value = _ensure_scalar(value)
+        return float(scalar_value)
+    except (TypeError, ValueError):
+        scalar_value = value
+
+    # If still a Series/array, attempt to extract single value
+    try:
+        if pd.isna(scalar_value):  # now scalar, safe to call
+            return default
+    except Exception:
+        # fall through to final return
+        pass
+
+    try:
+        return float(scalar_value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _to_utc_datetime(value) -> datetime:
@@ -124,6 +169,22 @@ def _to_utc_datetime(value) -> datetime:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
     raise TypeError(f"Unsupported type for _to_utc_datetime: {type(value)}")
+
+
+def _ensure_scalar(value):
+    """Return a Python scalar when the input is a single-element array/Series.
+
+    If the input is a pandas Series or numpy array with exactly one element,
+    return that element as a Python scalar. Otherwise return the value unchanged.
+    This avoids ambiguous truth-value checks on Series objects.
+    """
+    if isinstance(value, (pd.Series, np.ndarray)):
+        try:
+            if getattr(value, "size", None) == 1:
+                return value.item()
+        except Exception:
+            pass
+    return value
 
 
 class GrainForecastPipeline:
@@ -157,6 +218,9 @@ class GrainForecastPipeline:
         synced_records = self._sync_latest_commodities(features_df)
         prediction_payloads = self._make_forecasts(features_df)
         stored_predictions = self._persist_predictions(prediction_payloads)
+        
+        # Publish predictions to RabbitMQ for notifications microservice
+        published_count = self._publish_predictions_to_rabbitmq(prediction_payloads)
 
         summary = {
             "status": "completed",
@@ -164,6 +228,7 @@ class GrainForecastPipeline:
             "records_transformed": len(features_df),
             "commodities_updated": synced_records,
             "predictions_saved": stored_predictions,
+            "predictions_published": published_count,
             "usd_uah_rate": usd_to_uah,
             "bronze_artifact": str(bronze_artifact) if bronze_artifact else "",
             "silver_artifact": str(silver_artifact) if silver_artifact else "",
@@ -180,30 +245,99 @@ class GrainForecastPipeline:
             combined[name] = {**cfg}
         return combined
 
+    def _resolve_history_window(self) -> tuple[datetime, datetime]:
+        now = datetime.now(timezone.utc)
+        period = self.history_period.lower()
+        days = 365
+        try:
+            if period.endswith("mo"):
+                qty = int(period[:-2])
+                days = max(30, qty * 30)
+            elif period.endswith("w"):
+                qty = int(period[:-1])
+                days = max(7, qty * 7)
+            elif period.endswith("d"):
+                qty = int(period[:-1])
+                days = max(1, qty)
+            elif period.endswith("y"):
+                qty = int(period[:-1])
+                days = max(365, qty * 365)
+        except ValueError:
+            logger.warning("Unable to parse history_period '%s', defaulting to 1y", self.history_period)
+        start_date = now - timedelta(days=days)
+        return start_date, now
+
+    def _fetch_from_yfinance(self, ticker: str) -> pd.DataFrame:
+        try:
+            hist = yf.download(
+                tickers=ticker,
+                period=self.history_period,
+                interval="1d",
+                auto_adjust=False,
+                progress=False,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to download %s from Yahoo Finance: %s", ticker, exc)
+            return pd.DataFrame()
+
+        if hist.empty:
+            return hist
+
+        hist = hist.reset_index().rename(columns={"Date": "date"})
+        hist["date"] = pd.to_datetime(hist["date"], utc=True)
+        return hist
+
+    def _fetch_from_investing(
+        self,
+        cfg: Dict[str, Any],
+        start_date: datetime,
+        end_date: datetime,
+    ) -> pd.DataFrame:
+        instrument_cfg = cfg.get("investing")
+        if not instrument_cfg:
+            logger.warning("Missing Investing.com configuration for %s", cfg.get("description", cfg.get("ticker")))
+            return pd.DataFrame()
+        try:
+            return fetch_investing_history(instrument_cfg, start_date, end_date)
+        except InvestingDataSourceError as exc:
+            logger.error(
+                "Investing.com download failed for %s: %s",
+                cfg.get("description", instrument_cfg.get("symbol")),
+                exc,
+            )
+            return pd.DataFrame()
+
     def _download_market_history(self, usd_to_uah: float) -> pd.DataFrame:
         frames: List[pd.DataFrame] = []
+        history_start, history_end = self._resolve_history_window()
         for name, cfg in self.master_config.items():
-            ticker = cfg["ticker"]
-            try:
-                hist = yf.download(
-                    tickers=ticker,
-                    period=self.history_period,
-                    interval="1d",
-                    auto_adjust=False,
-                    progress=False,
+            if not cfg.get("enabled", True):
+                logger.info(
+                    "Skipping %s: data source disabled%s",
+                    name,
+                    f" ({cfg.get('disabled_reason')})" if cfg.get("disabled_reason") else "",
                 )
-            except Exception as exc:  # noqa: BLE001
-                logger.error("Failed to download %s (%s): %s", name, ticker, exc)
                 continue
+            data_source = cfg.get("data_source", "yfinance").lower()
+            if data_source == "investing":
+                hist = self._fetch_from_investing(cfg, history_start, history_end)
+            else:
+                ticker = cfg.get("ticker")
+                if not ticker:
+                    logger.warning("Skipping %s: ticker not configured", name)
+                    continue
+                hist = self._fetch_from_yfinance(ticker)
 
             if hist.empty:
-                logger.warning("No data returned for %s (%s)", name, ticker)
+                logger.warning("No data returned for %s", name)
                 continue
 
-            hist = hist.reset_index().rename(columns={"Date": "date"})
-            hist["date"] = pd.to_datetime(hist["date"], utc=True)
+            hist = hist.copy()
+            if "date" not in hist.columns:
+                logger.warning("Skipping %s: history missing 'date' column", name)
+                continue
             hist["name"] = name
-            hist["ticker"] = ticker
+            hist["ticker"] = cfg.get("ticker") or cfg.get("investing", {}).get("symbol") or name
             hist["category"] = cfg.get("category", "futures")
             hist["unit"] = cfg.get("unit", "unit")
             hist["kg_per_unit"] = cfg.get("kg_per_unit")
@@ -212,8 +346,9 @@ class GrainForecastPipeline:
             hist["region"] = cfg.get("region", "Global")
             hist["variety"] = cfg.get("variety")
 
-            # price_in_dollars = hist["Close"].astype(float) / hist["cents_per_dollar"]
-            price_in_dollars = hist["Close"].astype(float).values[:,0] / hist["cents_per_dollar"].values
+            # compute price in dollars using the configured cents_per_dollar
+            cents_per_dollar = float(cfg.get("cents_per_dollar", 1))
+            price_in_dollars = hist["Close"].astype(float) / cents_per_dollar
             hist["price_in_dollars"] = price_in_dollars
 
             kg_per_unit = cfg.get("kg_per_unit")
@@ -231,7 +366,7 @@ class GrainForecastPipeline:
 
         if not frames:
             return pd.DataFrame()
-
+        # TODO: verify empty or all-NA entries before combining
         combined_df = pd.concat(frames, ignore_index=True)
         combined_df.sort_values(["ticker", "date"], inplace=True)
         return combined_df
@@ -300,27 +435,49 @@ class GrainForecastPipeline:
         inserted = 0
         try:
             for _, row in latest_records.iterrows():
+                # Coerce potentially-array/Series values to scalars
+                name_raw = row.get("name")
+                name = _ensure_scalar(name_raw)
+                region_raw = row.get("region", "Global")
+                region = _ensure_scalar(region_raw) or "Global"
+                variety = _ensure_scalar(row.get("variety"))
+                unit_raw = _ensure_scalar(row.get("unit", "unit"))
+
+                # Date -> UTC datetime (handles Series / Timestamp)
                 record_date = _to_utc_datetime(row["date"])
-                price_value = row["usd_per_ton"] if not pd.isna(row["usd_per_ton"]) else row["price_in_dollars"]
-                unit = "ton" if not pd.isna(row["usd_per_ton"]) else row.get("unit", "unit")
+
+                usd_per_ton_raw = _ensure_scalar(row.get("usd_per_ton"))
+                price_in_dollars_raw = _ensure_scalar(row.get("price_in_dollars"))
+
+                if not pd.isna(usd_per_ton_raw):
+                    price_value = float(usd_per_ton_raw)
+                    unit = "ton"
+                else:
+                    price_value = float(price_in_dollars_raw) if not pd.isna(price_in_dollars_raw) else 0.0
+                    unit = unit_raw or "unit"
+
+                # Query using plain Python scalars to avoid passing Series to SQLAlchemy
                 existing = (
                     session.query(Commodity)
                     .filter(
-                        Commodity.name == row["name"],
-                        Commodity.region == row.get("region", "Global"),
+                        Commodity.name == name,
+                        Commodity.region == region,
                         Commodity.date == record_date,
                         Commodity.source_name == PIPELINE_SOURCE_NAME,
                     )
                     .first()
                 )
+
+                # Ensure feature values are scalars before _safe_float
                 notes_payload = {
-                    "ma_7": _safe_float(row.get("ma_7")),
-                    "ma_30": _safe_float(row.get("ma_30")),
-                    "volatility_30d": _safe_float(row.get("volatility_30d")),
-                    "momentum_ratio": _safe_float(row.get("momentum_ratio")),
-                    "uah_price": _safe_float(row.get("uah_price")),
+                    "ma_7": _safe_float(_ensure_scalar(row.get("ma_7"))),
+                    "ma_30": _safe_float(_ensure_scalar(row.get("ma_30"))),
+                    "volatility_30d": _safe_float(_ensure_scalar(row.get("volatility_30d"))),
+                    "momentum_ratio": _safe_float(_ensure_scalar(row.get("momentum_ratio"))),
+                    "uah_price": _safe_float(_ensure_scalar(row.get("uah_price"))),
                 }
                 notes_str = json.dumps(notes_payload, ensure_ascii=False)
+
                 if existing:
                     existing.price = float(price_value)
                     existing.currency = "USD"
@@ -330,9 +487,9 @@ class GrainForecastPipeline:
                     continue
 
                 commodity_row = Commodity(
-                    name=row["name"],
-                    variety=row.get("variety"),
-                    region=row.get("region", "Global"),
+                    name=name,
+                    variety=variety,
+                    region=region,
                     price=float(price_value),
                     currency="USD",
                     unit=unit,
@@ -353,6 +510,8 @@ class GrainForecastPipeline:
         return inserted
 
     def _make_forecasts(self, df: pd.DataFrame) -> List[Dict[str, object]]:
+        """Generate price forecasts for the most used commodities."""
+        logger.info("Generating forecasts for commodities")
         payloads: List[Dict[str, object]] = []
         for commodity_name in MOST_USED_COMMODITIES:
             subset = df[df["name"] == commodity_name].sort_values("date")
@@ -400,10 +559,14 @@ class GrainForecastPipeline:
                     "price_basis": price_basis,
                     "last_price": _safe_float(target_series.iloc[-1]),
                 }
+                
+                # Extract scalar values from last_row to avoid Series objects in payload
+                region_value = _ensure_scalar(last_row.get("region", "Global")) or "Global"
+                
                 payloads.append(
                     {
                         "commodity_name": commodity_name,
-                        "region": last_row.get("region", "Global"),
+                        "region": region_value,
                         "predicted_price": float(predicted_price),
                         "currency": "USD",
                         "prediction_date": prediction_date,
@@ -416,6 +579,7 @@ class GrainForecastPipeline:
                         "features_used": features_used,
                     }
                 )
+        logger.info("Generated %d forecast payloads", len(payloads))
         return payloads
 
     def _linear_trend_forecast(self, series: pd.Series, window: int = 90) -> Dict[str, object]:
@@ -440,47 +604,62 @@ class GrainForecastPipeline:
         }
 
     def _persist_predictions(self, payloads: List[Dict[str, object]]) -> int:
+        logger.info("Persisting %d predictions to database", len(payloads))
         if not payloads:
             return 0
         session = SessionLocal()
         upserted = 0
         try:
             for payload in payloads:
+                # Extract all scalar values from payload to avoid Series being passed to SQLAlchemy
+                commodity_name = _ensure_scalar(payload["commodity_name"])
+                region = _ensure_scalar(payload["region"])
+                predicted_price = float(_ensure_scalar(payload["predicted_price"]))
+                currency = _ensure_scalar(payload["currency"])
+                prediction_horizon_days = int(_ensure_scalar(payload["prediction_horizon_days"]))
+                confidence_score = float(_ensure_scalar(payload["confidence_score"]))
+                lower_bound = float(_ensure_scalar(payload["lower_bound"]))
+                upper_bound = float(_ensure_scalar(payload["upper_bound"]))
+                model_name = _ensure_scalar(payload["model_name"])
+                model_version = _ensure_scalar(payload.get("model_version", "1.0"))
+                features_used = payload["features_used"]
                 prediction_date = _to_utc_datetime(payload["prediction_date"])
+
                 existing = (
                     session.query(Prediction)
                     .filter(
-                        Prediction.commodity_name == payload["commodity_name"],
-                        Prediction.region == payload["region"],
+                        Prediction.commodity_name == commodity_name,
+                        Prediction.region == region,
                         Prediction.prediction_date == prediction_date,
-                        Prediction.prediction_horizon_days == payload["prediction_horizon_days"],
-                        Prediction.model_name == payload["model_name"],
+                        Prediction.prediction_horizon_days == prediction_horizon_days,
+                        Prediction.model_name == model_name,
                     )
                     .first()
                 )
 
                 if existing:
-                    existing.predicted_price = payload["predicted_price"]
-                    existing.currency = payload["currency"]
-                    existing.confidence_score = payload["confidence_score"]
-                    existing.lower_bound = payload["lower_bound"]
-                    existing.upper_bound = payload["upper_bound"]
-                    existing.features_used = payload["features_used"]
+                    existing.predicted_price = predicted_price
+                    existing.currency = currency
+                    existing.confidence_score = confidence_score
+                    existing.lower_bound = lower_bound
+                    existing.upper_bound = upper_bound
+                    existing.model_version = model_version
+                    existing.features_used = features_used
                 else:
                     session.add(
                         Prediction(
-                            commodity_name=payload["commodity_name"],
-                            region=payload["region"],
-                            predicted_price=payload["predicted_price"],
-                            currency=payload["currency"],
+                            commodity_name=commodity_name,
+                            region=region,
+                            predicted_price=predicted_price,
+                            currency=currency,
                             prediction_date=prediction_date,
-                            prediction_horizon_days=payload["prediction_horizon_days"],
-                            confidence_score=payload["confidence_score"],
-                            lower_bound=payload["lower_bound"],
-                            upper_bound=payload["upper_bound"],
-                            model_name=payload["model_name"],
-                            model_version=payload["model_version"],
-                            features_used=payload["features_used"],
+                            prediction_horizon_days=prediction_horizon_days,
+                            confidence_score=confidence_score,
+                            lower_bound=lower_bound,
+                            upper_bound=upper_bound,
+                            model_name=model_name,
+                            model_version=model_version,
+                            features_used=features_used,
                         )
                     )
                     upserted += 1
@@ -492,6 +671,61 @@ class GrainForecastPipeline:
         finally:
             session.close()
         return upserted
+
+    def _publish_predictions_to_rabbitmq(self, payloads: List[Dict[str, object]]) -> int:
+        """
+        Publish prediction payloads to RabbitMQ for consumption by notifications microservice.
+        
+        :param payloads: List of prediction dictionaries
+        :return: Number of successfully published messages
+        """
+        if not payloads:
+            return 0
+        
+        logger.info("Publishing %d predictions to RabbitMQ", len(payloads))
+        published = 0
+        
+        try:
+            # Run async RabbitMQ operations
+            published = asyncio.run(self._async_publish_predictions(payloads))
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to publish predictions to RabbitMQ: %s", exc)
+        
+        return published
+    
+    async def _async_publish_predictions(self, payloads: List[Dict[str, object]]) -> int:
+        """Async helper to publish predictions to RabbitMQ."""
+        rabbitmq = get_rabbitmq_instance()
+        await rabbitmq.connect()
+        published = 0
+        
+        try:
+            for payload in payloads:
+                # Prepare message for notifications microservice
+                message = {
+                    "type": "grain_price_forecast",
+                    "commodity_name": _ensure_scalar(payload["commodity_name"]),
+                    "region": _ensure_scalar(payload["region"]),
+                    "predicted_price": float(_ensure_scalar(payload["predicted_price"])),
+                    "currency": _ensure_scalar(payload["currency"]),
+                    "prediction_date": str(_to_utc_datetime(payload["prediction_date"])),
+                    "prediction_horizon_days": int(_ensure_scalar(payload["prediction_horizon_days"])),
+                    "confidence_score": float(_ensure_scalar(payload["confidence_score"])),
+                    "lower_bound": float(_ensure_scalar(payload["lower_bound"])),
+                    "upper_bound": float(_ensure_scalar(payload["upper_bound"])),
+                    "model_name": _ensure_scalar(payload["model_name"]),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+                
+                # Publish to predictions queue
+                await rabbitmq.publish(message, "predictions_queue")
+                published += 1
+                
+        finally:
+            await rabbitmq.close()
+        
+        logger.info("Published %d predictions to RabbitMQ", published)
+        return published
 
 
 if __name__ == "__main__":

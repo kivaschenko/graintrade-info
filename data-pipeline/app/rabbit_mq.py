@@ -79,5 +79,5 @@ def get_rabbitmq_instance() -> RabbitMQ:
         username=settings.RABBITMQ_USER,
         password=settings.RABBITMQ_PASS,
         vhost=settings.RABBITMQ_VHOST,
-        queues=["data_processing_queue"],
+        queues=["data_processing_queue", "predictions_queue"],
     )

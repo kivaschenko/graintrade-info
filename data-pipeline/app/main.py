@@ -14,6 +14,7 @@ from app.routers import (
     data_source_router,
     ingestion_router,
     health_router,
+    forecast_router,
 )
 
 
@@ -56,6 +57,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:8080",
         "http://localhost:80",
+        "http://65.108.68.57:8080",
+        "http://65.108.68.57",
         "https://api.graintrade.info",
         "https://graintrade.info",
         "https://www.graintrade.info",
@@ -71,6 +74,7 @@ app.include_router(health_router)
 app.include_router(commodity_router)
 app.include_router(data_source_router)
 app.include_router(ingestion_router)
+app.include_router(forecast_router)
 
 
 @app.get("/")

@@ -67,3 +67,8 @@ class Settings:
     TELEGRAM_CHANNEL_ID: str = os.getenv("TELEGRAM_CHANNEL_ID", "")
 
 settings = Settings()
+
+if settings.ENV == "development":
+    print("Running in development mode")
+else:
+    print("Running in production mode")

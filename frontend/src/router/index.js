@@ -14,6 +14,7 @@ import ContactsRequisites from '@/components/ContactsRequisites.vue';
 import CryptoCheckout from '@/components/CryptoCheckout.vue';
 import AboutUs from '@/components/AboutUs.vue';
 import SubscriptionCheckout from '@/components/SubscriptionCheckout.vue';
+import AnalyticsPage from '@/components/AnalyticsPage.vue';
 
 const routes = [
   {
@@ -123,6 +124,11 @@ const routes = [
     path: '/subscription-checkout',
     name: 'SubscriptionCheckout',
     component: SubscriptionCheckout,
+  },
+  {
+    path: '/analytics',
+    name: 'Analytics',
+    component: AnalyticsPage,
   }
 ];
 const router = createRouter({
