@@ -19,6 +19,12 @@ from app.database import SessionLocal
 from app.logger import logger
 from app.models import Commodity, Prediction
 from app.parser_services.yfinance_parser import COMMODITIES
+from app.parser_services import (
+    BaseParser, 
+    CurrencyParser, 
+    GrainTradeComUaParser, 
+    TripoliLandParser,
+)
 from app.rabbit_mq import get_rabbitmq_instance
 from app.spark_services.spark_session import get_spark_session
 from app.utils.rates import fetch_usd_to_uah
@@ -132,65 +138,19 @@ ADDITIONAL_MARKET_SIGNALS: Dict[str, Dict[str, str]] = {
 }
 
 
-def _safe_float(value: object, default: float | None = None) -> float | None:
-    """
-    Safely convert a value to float, handling pandas Series/arrays by coercing to a Python scalar.
-    """
-    try:
-        scalar_value = _ensure_scalar(value)
-        return float(scalar_value)
-    except (TypeError, ValueError):
-        scalar_value = value
+# -------------------
+# Main pipeline class
+# -------------------
 
-    # If still a Series/array, attempt to extract single value
-    try:
-        if pd.isna(scalar_value):  # now scalar, safe to call
-            return default
-    except Exception:
-        # fall through to final return
-        pass
-
-    try:
-        return float(scalar_value)
-    except (TypeError, ValueError):
-        return default
-
-
-def _to_utc_datetime(value) -> datetime:
-    # Handle pandas Series by extracting the first value
-    if isinstance(value, pd.Series):
-        value = value.iloc[0]
-    if isinstance(value, pd.Timestamp):
-        if value.tzinfo is None:
-            return value.to_pydatetime().replace(tzinfo=timezone.utc)
-        return value.to_pydatetime().astimezone(timezone.utc)
-    if isinstance(value, datetime):
-        if value.tzinfo is None:
-            return value.replace(tzinfo=timezone.utc)
-        return value.astimezone(timezone.utc)
-    raise TypeError(f"Unsupported type for _to_utc_datetime: {type(value)}")
-
-
-def _ensure_scalar(value):
-    """Return a Python scalar when the input is a single-element array/Series.
-
-    If the input is a pandas Series or numpy array with exactly one element,
-    return that element as a Python scalar. Otherwise return the value unchanged.
-    This avoids ambiguous truth-value checks on Series objects.
-    """
-    if isinstance(value, (pd.Series, np.ndarray)):
-        try:
-            if getattr(value, "size", None) == 1:
-                return value.item()
-        except Exception:
-            pass
-    return value
-
+DATA_SOURCES = {
+    "currency": {"parser": CurrencyParser, "description": "Currency exchange rates"},
+}
 
 class GrainForecastPipeline:
     """High-level orchestrator that parses, transforms, and forecasts grain prices."""
 
-    def __init__(self, history_period: str = "2y", forecast_horizon: int = 7) -> None:
+    def __init__(self, parsers: List[BaseParser], history_period: str = "2y", forecast_horizon: int = 7) -> None:
+        self.parsers = parsers
         self.history_period = history_period
         self.forecast_horizon = forecast_horizon
         self.base_dir = Path(__file__).resolve().parent.parent.parent
@@ -199,6 +159,7 @@ class GrainForecastPipeline:
         self.bronze_delta_path = f"{settings.BRONZE_LAYER_PATH}/yfinance_grain_bronze"
         self.silver_delta_path = f"{settings.SILVER_LAYER_PATH}/yfinance_grain_silver"
         self.master_config = self._build_master_config()
+        self.parsing_results: List[Dict[str, Any]] = []
 
     def run(self) -> Dict[str, int | float | str]:
         logger.info("Starting grain forecast pipeline")
@@ -726,6 +687,65 @@ class GrainForecastPipeline:
         
         logger.info("Published %d predictions to RabbitMQ", published)
         return published
+
+# ----------------
+# Helper functions
+# ----------------
+
+def _safe_float(value: object, default: float | None = None) -> float | None:
+    """
+    Safely convert a value to float, handling pandas Series/arrays by coercing to a Python scalar.
+    """
+    try:
+        scalar_value = _ensure_scalar(value)
+        return float(scalar_value)
+    except (TypeError, ValueError):
+        scalar_value = value
+
+    # If still a Series/array, attempt to extract single value
+    try:
+        if pd.isna(scalar_value):  # now scalar, safe to call
+            return default
+    except Exception:
+        # fall through to final return
+        pass
+
+    try:
+        return float(scalar_value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _to_utc_datetime(value) -> datetime:
+    # Handle pandas Series by extracting the first value
+    if isinstance(value, pd.Series):
+        value = value.iloc[0]
+    if isinstance(value, pd.Timestamp):
+        if value.tzinfo is None:
+            return value.to_pydatetime().replace(tzinfo=timezone.utc)
+        return value.to_pydatetime().astimezone(timezone.utc)
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+    raise TypeError(f"Unsupported type for _to_utc_datetime: {type(value)}")
+
+
+def _ensure_scalar(value):
+    """Return a Python scalar when the input is a single-element array/Series.
+
+    If the input is a pandas Series or numpy array with exactly one element,
+    return that element as a Python scalar. Otherwise return the value unchanged.
+    This avoids ambiguous truth-value checks on Series objects.
+    """
+    if isinstance(value, (pd.Series, np.ndarray)):
+        try:
+            if getattr(value, "size", None) == 1:
+                return value.item()
+        except Exception:
+            pass
+    return value
+
 
 
 if __name__ == "__main__":
