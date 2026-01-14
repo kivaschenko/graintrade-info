@@ -17,31 +17,6 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Create data_sources table
-    op.create_table(
-        'data_sources',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=200), nullable=False),
-        sa.Column('source_type', sa.String(length=50), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('url', sa.String(length=500), nullable=True),
-        sa.Column('file_path', sa.String(length=500), nullable=True),
-        sa.Column('api_endpoint', sa.String(length=500), nullable=True),
-        sa.Column('credentials_required', sa.Boolean(), nullable=True),
-        sa.Column('config', postgresql.JSON(astext_type=sa.Text()), nullable=True),
-        sa.Column('update_frequency', sa.String(length=50), nullable=True),
-        sa.Column('last_ingestion', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('next_scheduled_ingestion', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('is_active', sa.Boolean(), nullable=True),
-        sa.Column('is_validated', sa.Boolean(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('created_by', sa.String(length=100), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('name')
-    )
-    op.create_index(op.f('ix_data_sources_id'), 'data_sources', ['id'], unique=False)
-
     # Create commodities table
     op.create_table(
         'commodities',
@@ -73,7 +48,6 @@ def upgrade() -> None:
     op.create_table(
         'ingestion_logs',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('data_source_id', sa.Integer(), nullable=False),
         sa.Column('job_id', sa.String(length=100), nullable=True),
         sa.Column('status', sa.String(length=20), nullable=False),
         sa.Column('layer', sa.String(length=20), nullable=True),
@@ -87,7 +61,6 @@ def upgrade() -> None:
         sa.Column('error_details', sa.Text(), nullable=True),
         sa.Column('input_path', sa.String(length=500), nullable=True),
         sa.Column('output_path', sa.String(length=500), nullable=True),
-        sa.ForeignKeyConstraint(['data_source_id'], ['data_sources.id'], ),
         sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_ingestion_logs_id'), 'ingestion_logs', ['id'], unique=False)

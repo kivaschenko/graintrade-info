@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 # Direct parser imports - no registry, no dynamic lookup
 try:
     from app.parser_services.apk_inform_parser import APKInformParser
-    from app.parser_services.investing_com_parser import InvestingComParser
+    from app.parser_services.investingcom_parser import InvestingComParser
     from app.parser_services.yfinance_parser import YFinanceParser
     from app.parser_services.tripoli_land_parser import TripoliLandParser
     from app.parser_services.currency_parser import CurrencyParser
