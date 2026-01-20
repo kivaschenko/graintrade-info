@@ -1,0 +1,42 @@
+# GrainTrade Terraform Configuration Example
+# Copy this file to terraform.tfvars and update with your values
+
+# Azure Region (westeurope recommended for EU users)
+location = "westeurope"
+
+# Environment (dev, staging, prod)
+environment = "prod"
+
+# Resource naming (must be unique across Azure)
+resource_group_name   = "graintrade-rg"
+storage_account_name  = "graintradesa"  # Must be lowercase, 3-24 chars, globally unique
+container_registry_name = "graintradeacr"  # Must be 5-50 chars, globally unique
+key_vault_name        = "graintrade-kv"  # Must be 3-24 chars, globally unique
+
+# Virtual Network Configuration
+vnet_name         = "vnet-graintrade"
+vnet_address_space = ["10.0.0.0/16"]
+
+# PostgreSQL Configuration
+postgres_server_name = "graintrade-postgres"
+postgres_admin_user  = "adminuser"  # Change this to a strong username
+
+# Redis Configuration
+redis_name = "graintrade-redis"
+
+# App Service Configuration
+app_service_sku   = "B1"  # Options: B0, B1, B2, B3, S1, S2, S3
+backend_app_name  = "graintrade-backend"
+chat_app_name     = "graintrade-chat"
+
+# Security: Your IP address for direct database access
+# Get your IP: curl https://checkip.amazonaws.com
+allowed_ip = "YOUR_IP_ADDRESS_HERE"
+
+# Tags applied to all resources
+tags = {
+  project     = "graintrade"
+  environment = "prod"
+  managed_by  = "terraform"
+  owner       = "your-email@example.com"
+}

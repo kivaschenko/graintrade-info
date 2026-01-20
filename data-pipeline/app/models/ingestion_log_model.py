@@ -1,7 +1,6 @@
 # src/data_pipeline/models/ingestion_log_model.py
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Text, Float
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from app.database import Base
 
 
@@ -15,7 +14,7 @@ class IngestionLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # Source reference
-    data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=False)
+    parser_name = Column(String(50), nullable=True)  # apk_inform, yfinance, etc.
     
     # Execution details
     job_id = Column(String(100), unique=True, index=True)
@@ -29,6 +28,7 @@ class IngestionLog(Base):
     execution_time_seconds = Column(Float)
     
     # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True))
     
