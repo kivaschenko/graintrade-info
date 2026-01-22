@@ -1,6 +1,6 @@
 # Offer Parser Microservice
 
-Natural language parser for agricultural commodity offers. Converts user text into structured offer or search query data using LLM (with regex fallback).
+Natural language parser for agricultural commodity offers. Converts user text into structured offer or search query data using LLM (with regex fallback). **Now with full Ukrainian language support!** 🇺🇦
 
 ## Features
 
@@ -10,7 +10,7 @@ Natural language parser for agricultural commodity offers. Converts user text in
 - 🔍 **Dual Intent** — Detects both offer creation and search query intents
 - 📊 **Batch Processing** — Parse multiple offers in a single request
 - 📝 **Quality Specs** — Extracts quality parameters (protein %, moisture, etc.)
-- 🌍 **Multi-language** — Handles Ukrainian, English, and Russian agricultural terminology
+- �🇧 🇺🇦 **Bilingual Support** — Full support for English and Ukrainian languages with auto-detection
 - ✅ **Validation** — Comprehensive data validation with confidence scoring
 - 📈 **Monitoring** — Built-in health checks and status endpoints
 
@@ -191,6 +191,66 @@ curl -X POST http://localhost:8005/parse/batch \
 **GET** `/status` — Detailed service status
 
 **GET** `/examples` — Example parsing inputs/outputs
+
+## Ukrainian Language Support 🇺🇦
+
+The parser now supports **full Ukrainian language support** with automatic language detection!
+
+### Features
+
+- ✅ **Auto-Detection** — Automatically detects English or Ukrainian
+- ✅ **Ukrainian Keywords** — Recognizes: продаю, купую, пшениця, кукурудза, тонни, грн, etc.
+- ✅ **Ukrainian Locations** — Ізмаїл, Одеса, Чорноморськ, Миколаїв, Херсон
+- ✅ **Ukrainian Crops** — Пшениця, Кукурудза, Ячмінь, Жито, Овес, Соняшник, Соя
+- ✅ **Mixed Language** — Handles mixed English/Ukrainian text
+- ✅ **Bilingual LLM Prompts** — OpenAI and Anthropic prompts are bilingual
+
+### Quick Examples
+
+**English Offer:**
+```bash
+curl -X POST http://localhost:8005/parse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Sell wheat 560 tonnes FOB $234.56/t in Izmail",
+    "user_id": "user_123",
+    "source": "chat"
+  }'
+```
+
+**Ukrainian Offer:**
+```bash
+curl -X POST http://localhost:8005/parse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Продаю пшеницю 560 тонн FOB 234.56 доларів за тонну в Ізмаїлі",
+    "user_id": "user_123",
+    "source": "chat"
+  }'
+```
+
+**Explicit Language Specification:**
+```bash
+curl -X POST http://localhost:8005/parse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Продаю пшеницю 560 тонн",
+    "user_id": "user_123",
+    "source": "chat",
+    "language": "uk"
+  }'
+```
+
+**Language Options:**
+- `"auto"` — Auto-detect (default)
+- `"en"` — English
+- `"uk"` — Ukrainian
+
+### Full Documentation
+
+See [UKRAINIAN_SUPPORT.md](UKRAINIAN_SUPPORT.md) for comprehensive Ukrainian language documentation.
+
+---
 
 ## Configuration
 

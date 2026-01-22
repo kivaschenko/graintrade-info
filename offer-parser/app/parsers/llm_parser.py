@@ -119,48 +119,49 @@ class LLMOfferParser:
         return {}, 0.0, "none"
     
     def _build_prompt_template(self) -> str:
-        """Build the LLM prompt for parsing"""
+        """Build the LLM prompt for parsing (English & Ukrainian support)"""
         return """Parse the following agricultural offer text and extract structured data.
+Supports English and Ukrainian languages.
 
 User Input:
 {user_text}
 
 Determine if this is:
-1. An OFFER (someone is selling or buying)
-2. A SEARCH (someone is looking for offers)
+1. An OFFER (someone is selling or buying) / ПРОПОЗИЦІЯ (продаю або купую)
+2. A SEARCH (someone is looking for offers) / ПОШУК (шукаю пропозиції)
 
-For OFFER, extract:
-- offer_type: "sell" or "buy"
-- crop: crop type (e.g., wheat, corn)
+For OFFER, extract / Для ПРОПОЗИЦІЇ:
+- offer_type: "sell" or "buy" / "продаж" або "покупка"
+- crop: crop type (e.g., wheat, corn, пшениця, кукурудза)
 - grade: grade if mentioned (e.g., 1, 2)
-- quantity: numeric quantity
-- quantity_unit: unit (e.g., tonnes, kg)
-- price: numeric price
+- quantity: numeric quantity / числова кількість
+- quantity_unit: unit (e.g., tonnes, kg, тонни, кг)
+- price: numeric price / числова ціна
 - price_unit: unit (e.g., USD/tonne, UAH/t)
-- location: port, city, or region
+- location: port, city, or region / порт, місто чи регіон
 - delivery_terms: FOB, CIF, DDP, etc. (leave null if unknown)
-- expiry_date: expiration date in YYYY-MM-DD format if mentioned
-- quality_specs: array of {{name, value/min/max, unit}} (e.g., protein >= 23%)
+- expiry_date: expiration date in YYYY-MM-DD format if mentioned / дата закінчення
+- quality_specs: array of {name, value/min/max, unit} (e.g., protein >= 23%, білок >= 23%)
 - confidence: confidence score 0.0-1.0
 
-For SEARCH, extract:
+For SEARCH, extract / Для ПОШУКУ:
 - intent: "search"
-- crop: what crop to find
+- crop: what crop to find / яку культуру знайти
 - offer_type: "buy" or "sell"
-- min_quantity, max_quantity: quantity range
-- max_price: maximum price willing to pay
+- min_quantity, max_quantity: quantity range / діапазон кількості
+- max_price: maximum price willing to pay / максимальна ціна
 - price_currency: currency
-- location: where to deliver
+- location: where to deliver / де доставити
 - delivery_terms: preferred terms
 - include_delivery_cost: boolean
-- expiry_by: deadline
+- expiry_by: deadline / крайній термін
 - limit: max number of results
 - sort_by: date_desc, price_asc, relevance
 - confidence: score 0.0-1.0
 
-Return valid JSON only. Example:
+Return valid JSON only (without markdown formatting). Example:
 
-{{
+{
   "intent": "create_offer",
   "offer_type": "sell",
   "crop": "wheat",
@@ -172,6 +173,22 @@ Return valid JSON only. Example:
   "location": "Izmail port, Ukraine",
   "delivery_terms": "FOB",
   "expiry_date": "2026-02-09",
-  "quality_specs": [{{"name": "protein", "min": 23, "unit": "%"}}],
+  "quality_specs": [{"name": "protein", "min": 23, "unit": "%"}],
   "confidence": 0.98
-}}"""
+}
+
+Ukrainian example / Український приклад:
+{
+  "intent": "create_offer",
+  "offer_type": "sell",
+  "crop": "Пшениця",
+  "quantity": 560,
+  "quantity_unit": "тонни",
+  "price": 8600,
+  "price_unit": "UAH/tonne",
+  "location": "Ізмаїл, Україна",
+  "delivery_terms": "FOB",
+  "expiry_date": "2026-02-09",
+  "quality_specs": [{"name": "білок", "min": 23, "unit": "%"}],
+  "confidence": 0.95
+}"""

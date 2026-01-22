@@ -12,11 +12,12 @@ from fastapi.responses import JSONResponse
 from .config import settings
 from .models import (
     ParseOfferRequest, ParseOfferResponse, HealthResponse,
-    BatchParseRequest, BatchParseResponse
+    BatchParseRequest, BatchParseResponse, LanguageEnum
 )
 from .parsers.llm_parser import LLMOfferParser
 from .validators.offer_validator import OfferValidator
 from .services.domain_service import DomainService
+from .utils.language_detector import LanguageDetector
 
 # Configure logging
 logging.basicConfig(
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI app
 app = FastAPI(
     title="Offer Parser Service",
-    description="Natural language parser for agricultural commodity offers",
+    description="Natural language parser for agricultural commodity offers (English & Ukrainian)",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -48,6 +49,7 @@ app.add_middleware(
 parser = LLMOfferParser()
 validator = OfferValidator()
 domain_service = DomainService()
+language_detector = LanguageDetector()
 
 
 # ============= HEALTH & STATUS =============
@@ -96,6 +98,7 @@ async def parse_offer(request: ParseOfferRequest) -> ParseOfferResponse:
     Parse natural language text into structured offer or search query.
     
     Supports both offer creation and search intents.
+    Supports English and Ukrainian languages.
     Uses LLM if configured, falls back to regex parsing.
     """
     start_time = time.time()
@@ -121,6 +124,13 @@ async def parse_offer(request: ParseOfferRequest) -> ParseOfferResponse:
                 confidence=0.0,
                 parsing_method="none"
             )
+        
+        # Auto-detect language if not specified
+        if request.language == LanguageEnum.auto:
+            detected_language = LanguageDetector.detect(request.text)
+            logger.info(f"Auto-detected language: {detected_language}")
+        else:
+            detected_language = request.language.value
         
         # Parse text
         parsed_data, confidence, parsing_method = await parser.parse(request.text, request.user_id)

@@ -6,6 +6,13 @@ from datetime import datetime
 from enum import Enum
 
 
+class LanguageEnum(str, Enum):
+    """Supported languages"""
+    english = "en"
+    ukrainian = "uk"
+    auto = "auto"
+
+
 class ParseSourceEnum(str, Enum):
     """Source channel for parsed offer"""
     chat = "chat"
@@ -51,17 +58,25 @@ class ParseOfferRequest(BaseModel):
         ...,
         min_length=10,
         max_length=2000,
-        description="Natural language text describing the offer or search"
+        description="Natural language text describing the offer or search (English or Ukrainian)"
     )
     user_id: str = Field(..., description="User ID for context/personalization")
     source: ParseSourceEnum = Field(default=ParseSourceEnum.api, description="Source channel")
+    language: LanguageEnum = Field(default=LanguageEnum.auto, description="Language: 'en', 'uk', or 'auto' (auto-detect)")
     
     class Config:
         examples = [
             {
                 "text": "Sell wheat 2 grade in Izmail port Ukraine on FOB 234.56 dollars per ton 560 t amount price actual until 09/02/2026 protein at least 23%",
                 "user_id": "user_123",
-                "source": "chat"
+                "source": "chat",
+                "language": "en"
+            },
+            {
+                "text": "Продаю пшеницю 2 клас в порту Ізмаїл Україна FOB 234.56 доларів за тонну 560 т до 09/02/2026 білок мінімум 23%",
+                "user_id": "user_789",
+                "source": "chat",
+                "language": "uk"
             },
             {
                 "text": "Find me top 5 latest offers of corn to delivery in Shpola Cherkaska oblast Ukraine including cost for delivery DDP by price not more 8600 UAH per ton total amount 200 t until 02/02/2026",

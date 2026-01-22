@@ -121,36 +121,47 @@ class DomainService:
 
 
 def default_crops() -> List[str]:
-    """Default crop types"""
+    """Default crop types (English & Ukrainian)"""
     return [
-        # Grains
+        # Grains (English)
         "Wheat", "Corn", "Barley", "Rye", "Oats", "Millet",
-        # Legumes
+        # Grains (Ukrainian)
+        "Пшениця", "Кукурудза", "Ячмінь", "Жито", "Овес", "Просо",
+        # Legumes (English)
         "Soybean", "Pea", "Chickpea", "Lentil", "Bean",
-        # Oil seeds
+        # Legumes (Ukrainian)
+        "Соя", "Горох", "Нут", "Сочевиця", "Боби",
+        # Oil seeds (English)
         "Sunflower", "Rapeseed", "Safflower", "Sesame",
-        # Seeds
+        # Oil seeds (Ukrainian)
+        "Соняшник", "Ріпак", "Сафлор", "Кунжут",
+        # Seeds (English & Ukrainian)
         "Seed Wheat", "Seed Barley", "Seed Sunflower",
-        # Fertilizers
+        "Насіння пшениці", "Насіння ячменю", "Насіння соняшнику",
+        # Fertilizers (English & Ukrainian)
         "Urea", "Ammonia Nitrate", "DAP", "MAP", "Potassium Chloride",
+        "Сечовина", "Аміачна селітра", "Суперфосфат", "Хлористий калій",
         # Other
-        "Flour", "Meal", "Hay", "Straw", "Sugar Beet", "Rice", "Buckwheat"
+        "Flour", "Meal", "Hay", "Straw", "Sugar Beet", "Rice", "Buckwheat",
+        "Борошно", "Мука", "Сіно", "Солома", "Цукровий буряк", "Рис", "Гречка"
     ]
 
 
 def default_ports() -> List[str]:
-    """Default Ukrainian and regional ports"""
+    """Default Ukrainian and regional ports (English & Ukrainian)"""
     return [
         # Ukrainian Danube ports
         "Izmail", "Reni", "Kilia",
+        "Ізмаїл", "Рені", "Кілія",
         # Ukrainian Sea ports
         "Odesa", "Chornomorsk", "Pivdennyy",
+        "Одеса", "Чорноморськ", "Південний",
         # Belarusian
         "Brest", "Minsk",
         # Turkish
         "Samsun", "Rize", "Trabzon",
         # Romanian
-        "Constanta", "Galati",
+        "Constanta", "Galati", "Констанца", "Галац",
         # Bulgarian
         "Varna", "Burgas",
         # Middle Eastern
@@ -159,17 +170,24 @@ def default_ports() -> List[str]:
 
 
 def default_regions() -> List[str]:
-    """Default regions in Ukraine and surroundings"""
+    """Default regions in Ukraine and surroundings (English & Ukrainian)"""
     return [
-        # Ukrainian regions
+        # Ukrainian regions (English)
         "Kyiv", "Kharkiv", "Odesa", "Dnipropetrovsk", "Donetsk", "Luhansk",
         "Zaporizhzhia", "Kherson", "Mykolaiv", "Cherkasy", "Poltava",
         "Chernihiv", "Sumy", "Zhytomyr", "Vinnytsia", "Khmelnytskyi",
         "Ternopil", "Ivano-Frankivsk", "Lviv", "Volyn",
+        # Ukrainian regions (Ukrainian)
+        "Київ", "Харків", "Одеса", "Дніпропетровськ", "Донецьк", "Луганськ",
+        "Запоріжжя", "Херсон", "Миколаїв", "Черкаси", "Полтава",
+        "Чернігів", "Суми", "Житомир", "Вінниця", "Хмельницький",
+        "Тернопіль", "Івано-Франківськ", "Львів", "Волинь",
         # Cities
         "Shpola", "Cherkaska",
+        "Шпола", "Черкаська",
         # Neighboring countries
         "Poland", "Moldova", "Romania", "Hungary", "Slovakia", "Belarus", "Russia",
+        "Польща", "Молдова", "Румунія", "Угорщина", "Словаччина", "Білорусь", "Росія",
     ]
 
 

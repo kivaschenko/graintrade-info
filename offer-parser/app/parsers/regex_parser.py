@@ -20,43 +20,49 @@ class RegexOfferParser:
         self._compile_patterns()
     
     def _compile_patterns(self):
-        """Compile regex patterns for common offer formats"""
+        """Compile regex patterns for common offer formats (English & Ukrainian)"""
         
-        # Intent patterns
-        self.intent_sell = re.compile(r'\b(sell|selling|sale|vend|offer|have for sale)\b', re.IGNORECASE)
-        self.intent_buy = re.compile(r'\b(buy|buying|purchase|looking for|need|want|find me)\b', re.IGNORECASE)
+        # Intent patterns (English & Ukrainian)
+        self.intent_sell = re.compile(
+            r'\b(sell|selling|sale|vend|offer|have for sale|продаю|продажа|пропоную|мають на продаж)\b', 
+            re.IGNORECASE | re.UNICODE
+        )
+        self.intent_buy = re.compile(
+            r'\b(buy|buying|purchase|looking for|need|want|find me|купую|покупаю|шукаю|потребую|знайти)\b', 
+            re.IGNORECASE | re.UNICODE
+        )
         
-        # Quantity patterns: "560 tonnes", "200t", "100 tons"
+        # Quantity patterns: "560 tonnes", "200t", "100 tons", "560 t", "560 тонн", "200 т"
         self.quantity_pattern = re.compile(
-            r'(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:tonnes?|tons?|metric\s+tons?|mt|t\.)\b',
-            re.IGNORECASE
+            r'(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:tonnes?|tons?|metric\s+tons?|m\.?t\.?|t(?:\s|$|[^a-z])|тонн[и]?|т(?:\s|$|[^а-я]))',
+            re.IGNORECASE | re.UNICODE
         )
         
-        # Price patterns: "$320/t", "234.56 USD per tonne", "8600 UAH"
+        # Price patterns: "$320/t", "234.56 USD per tonne", "8600 UAH", "320 грн за тонну"
         self.price_pattern = re.compile(
-            r'(?:price|cost|rate|fee)?\s*(?:\$|€|¥)?\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:per|\/|\s)(\w+)?',
-            re.IGNORECASE
+            r'(?:price|cost|rate|fee|ціна|вартість|коштує)?\s*(?:\$|€|¥|₴)?\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:per|\/|\s|за)(\w+)?',
+            re.IGNORECASE | re.UNICODE
         )
         
-        # Currency pattern: "USD", "UAH", "EUR"
-        self.currency_pattern = re.compile(r'\b([A-Z]{3})\b')
+        # Currency pattern: "USD", "UAH", "EUR", "грн"
+        self.currency_pattern = re.compile(r'\b([A-Z]{3}|грн|зл)\b', re.UNICODE)
         
-        # Date patterns: various formats
+        # Date patterns: various formats (English & Ukrainian)
         self.date_pattern = re.compile(
-            r'(?:until|by|before|till|deadline|expir[ey]|valid)\s*(?:date)?\s*(?:of|is)?\s*([0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4})',
-            re.IGNORECASE
+            r'(?:until|by|before|till|deadline|expir[ey]|valid|до|по|на|листопада|грудня|січня|лютого|березня|квітня|травня|червня|липня|серпня|вересня|жовтня|листопада|грудня)\s*(?:date|дата)?\s*(?:of|is|з|на)?\s*([0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4})',
+            re.IGNORECASE | re.UNICODE
         )
         
-        # Delivery terms: FOB, CIF, DDP, etc.
+        # Delivery terms: FOB, CIF, DDP, etc. + Ukrainian variants
         self.delivery_terms_pattern = re.compile(
             r'\b(FOB|CIF|DDP|EXW|FAS|CFR|CPT|DAP|DAT|FCA)\b',
             re.IGNORECASE
         )
         
-        # Quality specs: "protein at least 23%", "moisture max 15%"
+        # Quality specs: "protein at least 23%", "moisture max 15%", "білок щонайменше 23%"
         self.quality_pattern = re.compile(
-            r'(protein|moisture|ash|fiber|fat|acid|gluten|starch|falling|wet)\s*(?:at\s)?(?:least|max|minimum|maximum|>|<|=)?\s*(\d+(?:\.\d+)?)\s*(%)?',
-            re.IGNORECASE
+            r'(protein|moisture|ash|fiber|fat|acid|gluten|starch|falling|wet|білок|вологість|зола|клітковина|жир|кислота|крохмаль)\s*(?:at\s|щонайменше|максимум)?(?:least|max|minimum|maximum|>|<|=)?\s*(\d+(?:\.\d+)?)\s*(%)?',
+            re.IGNORECASE | re.UNICODE
         )
         
         # Port pattern
