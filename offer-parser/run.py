@@ -1,6 +1,5 @@
 """Run offer parser service locally"""
 
-import sys
 import uvicorn
 from app.config import settings
 

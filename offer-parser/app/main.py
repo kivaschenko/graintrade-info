@@ -3,11 +3,12 @@
 import logging
 import time
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import redis.asyncio as aioredis
 
 from .config import settings
 from .models import (
@@ -60,7 +61,7 @@ async def health_check():
     return HealthResponse(
         status="ok",
         version="1.0.0",
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         llm_provider=settings.llm_provider,
         redis_connected=await _check_redis_connection(),
         db_connected=await _check_db_connection() if settings.database_url else None
@@ -339,7 +340,6 @@ async def general_exception_handler(request, exc):
 async def _check_redis_connection() -> bool:
     """Check Redis connectivity"""
     try:
-        import aioredis
         redis = await aioredis.from_url(settings.redis_url, decode_responses=True)
         await redis.ping()
         await redis.close()
