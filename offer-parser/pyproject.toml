@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "offer-parser"
+version = "1.0.0"
+description = "Natural language offer parser microservice for GrainTrade"
+authors = ["GrainTrade Team <dev@graintrade.info>"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.104.1"
+uvicorn = "^0.24.0"
+pydantic = "^2.5.0"
+pydantic-settings = "^2.1.0"
+sqlalchemy = "^2.0.23"
+asyncpg = "^0.29.0"
+python-dotenv = "^1.0.0"
+spacy = "^3.7.2"
+openai = "^1.3.0"
+anthropic = "^0.7.0"
+httpx = "^0.25.1"
+aioredis = "^2.0.1"
+redis = "^5.0.1"
+pydantic-core = "^2.13.0"
+psycopg2-binary = "^2.9.9"
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+python-multipart = "^0.0.6"
+structlog = "^23.2.0"
+python-dateutil = "^2.9.0.post0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.11.0"
+flake8 = "^6.1.0"
+mypy = "^1.7.0"
+isort = "^5.12.0"
+pytest-cov = "^4.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
