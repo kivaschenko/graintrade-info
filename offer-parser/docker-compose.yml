@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Offer Parser Microservice
+  offer-parser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: graintrade-offer-parser
+    ports:
+      - "8005:8005"
+    environment:
+      # Service Config
+      - DEBUG=false
+      - LOG_LEVEL=info
+      - HOST=0.0.0.0
+      - PORT=8005
+
+      # LLM Configuration (choose one provider)
+      # OpenAI
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=gpt-4-turbo-preview
+      - OPENAI_TEMPERATURE=0.3
+
+      # Anthropic Claude
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - ANTHROPIC_MODEL=claude-3-opus-20240229
+
+      # Provider (openai, anthropic, fallback)
+      - LLM_PROVIDER=${LLM_PROVIDER:-fallback}
+
+      # Redis (for caching, optional)
+      - REDIS_URL=redis://redis:6379/3
+      - REDIS_TIMEOUT=5
+
+      # Database (optional, for logging)
+      - DATABASE_URL=postgresql+asyncpg://graintrade:password@postgres:5432/graintrade
+      - DB_POOL_MIN_SIZE=2
+      - DB_POOL_MAX_SIZE=10
+
+      # Parsing Config
+      - MIN_CONFIDENCE_THRESHOLD=0.7
+      - ENABLE_REGEX_FALLBACK=true
+      - MAX_TEXT_LENGTH=2000
+      - REQUEST_TIMEOUT=10
+
+    volumes:
+      - ./app:/app/app
+      - ./data:/app/data
+    depends_on:
+      - redis
+    networks:
+      - graintrade-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: graintrade-redis-parser
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - graintrade-network
+    restart: unless-stopped
+
+networks:
+  graintrade-network:
+    driver: bridge
+
+volumes:
+  redis-data:
