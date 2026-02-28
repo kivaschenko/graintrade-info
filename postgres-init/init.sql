@@ -622,7 +622,7 @@ CREATE TABLE IF NOT EXISTS user_notification_preferences (
     ua_interested_categories TEXT[],
     country VARCHAR(150) DEFAULT 'Ukraine',
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
     language VARCHAR(10) DEFAULT 'en'
 );
 
