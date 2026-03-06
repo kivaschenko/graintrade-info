@@ -2,6 +2,8 @@ name: grain
 services:
   backend:
     build: ./backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: always
     env_file:
       - ./backend/.env
@@ -19,6 +21,8 @@ services:
 
   chat-room:
     build: ./chat-room
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: always
     env_file:
       - ./chat-room/.env
@@ -36,6 +40,8 @@ services:
 
   notifications:
     build: ./notifications
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: always
     env_file:
       - ./notifications/.env
@@ -53,6 +59,8 @@ services:
 
   data-pipeline:
     build: ./data-pipeline
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: always
     env_file:
       - ./data-pipeline/.env
@@ -98,74 +106,74 @@ services:
       timeout: 10s
       retries: 3
 
-  # 🧩 Node Exporter (host metrics)
-  node_exporter:
-    image: prom/node-exporter:latest
-    container_name: node_exporter
-    restart: unless-stopped
-    network_mode: "host"
-    pid: "host"
-    volumes:
-      - /:/host:ro,rslave
-    command:
-      - "--path.rootfs=/host"
+#   # 🧩 Node Exporter (host metrics)
+#   node_exporter:
+#     image: prom/node-exporter:latest
+#     container_name: node_exporter
+#     restart: unless-stopped
+#     network_mode: "host"
+#     pid: "host"
+#     volumes:
+#       - /:/host:ro,rslave
+#     command:
+#       - "--path.rootfs=/host"
 
-  # 📊 PostgreSQL Exporter
-  postgres_exporter:
-    image: prometheuscommunity/postgres-exporter
-    container_name: postgres_exporter
-    restart: unless-stopped
-    environment:
-      # Update this to point to your production Postgres instance
-      DATA_SOURCE_NAME: "postgresql://grain:teomeo2358@65.108.68.57:5433/postgres?sslmode=disable"
-    network_mode: "host"
+#   # 📊 PostgreSQL Exporter
+#   postgres_exporter:
+#     image: prometheuscommunity/postgres-exporter
+#     container_name: postgres_exporter
+#     restart: unless-stopped
+#     environment:
+#       # Update this to point to your production Postgres instance
+#       DATA_SOURCE_NAME: "postgresql://grain:teomeo2358@65.108.68.57:5433/postgres?sslmode=disable"
+#     network_mode: "host"
 
-  # 🔴 Redis Exporter
-  redis_exporter:
-    image: oliver006/redis_exporter
-    container_name: redis_exporter
-    restart: unless-stopped
-    command:
-      # Update this to point to your production Redis instance
-      - "--redis.addr=redis://:Teodorathome@localhost:6379/1"
-    network_mode: "host"
+#   # 🔴 Redis Exporter
+#   redis_exporter:
+#     image: oliver006/redis_exporter
+#     container_name: redis_exporter
+#     restart: unless-stopped
+#     command:
+#       # Update this to point to your production Redis instance
+#       - "--redis.addr=redis://:Teodorathome@localhost:6379/1"
+#     network_mode: "host"
 
-  # 📈 Prometheus
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - grain-network
+#   # 📈 Prometheus
+#   prometheus:
+#     image: prom/prometheus:latest
+#     container_name: prometheus
+#     restart: unless-stopped
+#     ports:
+#       - "9090:9090"
+#     volumes:
+#       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+#       - prometheus_data:/prometheus
+#     extra_hosts:
+#       - "host.docker.internal:host-gateway"
+#     networks:
+#       - grain-network
 
-  # 🧠 Grafana
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=civaschenko
-      - GF_SECURITY_ADMIN_PASSWORD=Teodorathome11
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - prometheus
-    networks:
-      - grain-network
+#   # 🧠 Grafana
+#   grafana:
+#     image: grafana/grafana:latest
+#     container_name: grafana
+#     restart: unless-stopped
+#     ports:
+#       - "3000:3000"
+#     environment:
+#       - GF_SECURITY_ADMIN_USER=civaschenko
+#       - GF_SECURITY_ADMIN_PASSWORD=Teodorathome11
+#     volumes:
+#       - grafana_data:/var/lib/grafana
+#       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+#     depends_on:
+#       - prometheus
+#     networks:
+#       - grain-network
 
-volumes:
-  prometheus_data:
-  grafana_data:
+# volumes:
+#   prometheus_data:
+#   grafana_data:
 
 networks:
   grain-network:
