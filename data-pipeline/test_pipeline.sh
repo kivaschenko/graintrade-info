@@ -1,7 +1,8 @@
 #!/bin/bash
 # Quick test script for the grain forecast pipeline
 
-cd /home/ikost/Projects/graintrade-info/data-pipeline
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
 source venv/bin/activate
 
 echo "========================================="
