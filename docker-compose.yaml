@@ -57,22 +57,22 @@ services:
       timeout: 10s
       retries: 3
 
-        #  data-pipeline:
-        #    build: ./data-pipeline
-        #    restart: always
-        #    env_file:
-        #      - ./data-pipeline/.env
-        #    ports:
-        #      - "8004:8004"
-        #    volumes:
-        #      - ./data-pipeline:/data-pipeline
-        #    networks:
-        #      - grain-network
-        #    healthcheck:
-        #      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
-        #      interval: 30s
-        #      timeout: 10s
-        #      retries: 3
+  data-pipeline:
+    build: ./data-pipeline
+    restart: always
+    env_file:
+      - ./data-pipeline/.env
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./data-pipeline:/data-pipeline
+    networks:
+      - grain-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build:
@@ -87,7 +87,7 @@ services:
     depends_on:
       - backend
       - chat-room
-        #      - data-pipeline
+      - data-pipeline
 
   landing-service:
     build: ./landing-service
