@@ -355,6 +355,26 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
+### Migration Recovery (If Revisions Were Lost)
+
+If the migrations directory was cleaned or a baseline revision was accidentally deleted, recover safely with:
+
+```bash
+# Verify revision files exist
+ls -la alembic/versions
+
+# Check database revision state
+alembic current
+
+# If database already has schema but revision table is empty/missing, stamp it to baseline
+alembic stamp 001
+
+# Then run normal upgrades
+alembic upgrade head
+```
+
+Use stamp only when schema already exists and matches the baseline migration.
+
 ## 📊 Monitoring
 
 ### Metrics Endpoints

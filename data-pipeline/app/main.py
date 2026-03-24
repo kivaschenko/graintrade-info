@@ -54,13 +54,13 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8080",
-        "http://localhost:80",
-        "http://65.108.68.57:8080",
-        "http://65.108.68.57",
-        "https://api.graintrade.info",
-        "https://graintrade.info",
+    allow_origins=["*"] if settings.ENV == "development" else [
+        "http://localhost:8080/",
+        "http://localhost:80/",
+        "http://65.108.142.153:8080/",
+        "http://65.108.142.153:80/",
+        "https://api.graintrade.info/",
+        "https://graintrade.info/",
         "https://www.graintrade.info",
     ],
     allow_credentials=True,

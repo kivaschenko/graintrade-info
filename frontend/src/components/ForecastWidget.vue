@@ -4,57 +4,63 @@
 <template>
   <div class="forecast-widget">
     <h2 class="widget-title">📊 Price Forecasts</h2>
-    
+
     <div v-if="loading" class="loading">
       <span class="spinner"></span> Loading forecasts...
     </div>
-    
+
     <div v-else-if="error" class="error">
       ⚠️ {{ error }}
     </div>
-    
+
+    <!-- Empty state: DB has no future predictions yet -->
+    <div v-else-if="forecasts.length === 0" class="empty-state">
+      <p>📭 No forecasts available yet. Pipeline may not have run today.</p>
+    </div>
+
     <div v-else class="forecasts-grid">
-      <div 
-        v-for="forecast in forecasts" 
+      <div
+        v-for="forecast in forecasts"
         :key="forecast.commodity"
         class="forecast-card"
       >
         <h3 class="commodity-name">{{ forecast.commodity }}</h3>
         <div class="region">{{ forecast.region }}</div>
-        
+
         <!-- Tomorrow's Forecast -->
         <div v-if="forecast.next_day" class="forecast-item tomorrow">
           <div class="label">Tomorrow</div>
-          <div class="price">${{ forecast.next_day.price.toFixed(2) }}</div>
+          <div class="price">${{ safePrice(forecast.next_day.price) }}</div>
           <div class="confidence">
-            <span 
-              class="confidence-bar" 
-              :style="{ width: (forecast.next_day.confidence * 100) + '%' }"
+            <span
+              class="confidence-bar"
+              :style="{ width: safePercent(forecast.next_day.confidence) }"
             ></span>
-            {{ (forecast.next_day.confidence * 100).toFixed(0) }}% confidence
+            {{ safeConfidenceLabel(forecast.next_day.confidence) }} confidence
           </div>
         </div>
-        
+
         <!-- Week Ahead Forecast -->
         <div v-if="forecast.week_ahead" class="forecast-item week">
           <div class="label">Week Ahead</div>
-          <div class="price">${{ forecast.week_ahead.price.toFixed(2) }}</div>
-          <div class="range">
-            Range: ${{ forecast.week_ahead.lower_bound.toFixed(2) }} - 
-            ${{ forecast.week_ahead.upper_bound.toFixed(2) }}
+          <div class="price">${{ safePrice(forecast.week_ahead.price) }}</div>
+          <!-- Only show range if both bounds are present -->
+          <div v-if="forecast.week_ahead.lower_bound != null && forecast.week_ahead.upper_bound != null" class="range">
+            Range: ${{ safePrice(forecast.week_ahead.lower_bound) }} –
+            ${{ safePrice(forecast.week_ahead.upper_bound) }}
           </div>
           <div class="confidence">
-            <span 
-              class="confidence-bar" 
-              :style="{ width: (forecast.week_ahead.confidence * 100) + '%' }"
+            <span
+              class="confidence-bar"
+              :style="{ width: safePercent(forecast.week_ahead.confidence) }"
             ></span>
-            {{ (forecast.week_ahead.confidence * 100).toFixed(0) }}% confidence
+            {{ safeConfidenceLabel(forecast.week_ahead.confidence) }} confidence
           </div>
         </div>
-        
+
         <!-- Price Change Indicator -->
-        <div 
-          v-if="forecast.next_day && forecast.week_ahead" 
+        <div
+          v-if="forecast.next_day && forecast.week_ahead"
           class="trend"
           :class="getTrendClass(forecast)"
         >
@@ -62,9 +68,9 @@
         </div>
       </div>
     </div>
-    
+
     <div class="widget-footer">
-      <small>Updated: {{ lastUpdated }}</small>
+      <small>Updated: {{ lastUpdated || '—' }}</small>
       <a href="/forecasts" class="view-all-link">View All Forecasts →</a>
     </div>
   </div>
@@ -75,72 +81,99 @@ import axios from 'axios';
 
 export default {
   name: 'ForecastWidget',
-  
+
   data() {
     return {
       forecasts: [],
       loading: true,
       error: null,
       lastUpdated: null,
+      refreshInterval: null,
     };
   },
-  
+
   mounted() {
     this.fetchForecasts();
     // Refresh every 5 minutes
     this.refreshInterval = setInterval(this.fetchForecasts, 5 * 60 * 1000);
   },
-  
+
   beforeUnmount() {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }
   },
-  
+
   methods: {
     async fetchForecasts() {
       try {
         this.loading = true;
         this.error = null;
-        
-        const apiUrl = process.env.VUE_APP_DATA_PIPELINE_URL || 'http://localhost:8004';
+
+        // ✅ Fixed: use /forecasts/homepage for the simplified homepage format
+        const apiUrl = process.env.VUE_APP_DATA_PIPELINE_API_URL || 'http://localhost:8004';
         const response = await axios.get(`${apiUrl}/forecasts/homepage`, {
-          timeout: 5000,
+          timeout: 8000,
         });
-        
+
         this.forecasts = response.data;
         this.lastUpdated = new Date().toLocaleTimeString();
-        this.loading = false;
-        
       } catch (err) {
         console.error('Failed to fetch forecasts:', err);
-        this.error = 'Unable to load forecasts. Please try again later.';
+
+        // Show more specific error messages to help diagnose issues
+        if (err.response) {
+          this.error = `Server error ${err.response.status}: ${err.response.data?.detail || 'Unknown error'}`;
+        } else if (err.code === 'ECONNABORTED') {
+          this.error = 'Request timed out. The pipeline server may be unavailable.';
+        } else {
+          this.error = 'Unable to load forecasts. Please try again later.';
+        }
+      } finally {
         this.loading = false;
       }
     },
-    
+
+    // ── Safe formatting helpers ──────────────────────────────────────────────
+
+    safePrice(value) {
+      if (value == null || isNaN(value)) return '—';
+      return Number(value).toFixed(2);
+    },
+
+    safePercent(value) {
+      if (value == null || isNaN(value)) return '0%';
+      return `${Math.round(value * 100)}%`;
+    },
+
+    safeConfidenceLabel(value) {
+      if (value == null || isNaN(value)) return '—';
+      return `${Math.round(value * 100)}%`;
+    },
+
+    // ── Trend helpers ────────────────────────────────────────────────────────
+
     getTrendClass(forecast) {
-      if (!forecast.next_day || !forecast.week_ahead) return 'neutral';
-      
-      const nextPrice = forecast.next_day.price;
-      const weekPrice = forecast.week_ahead.price;
-      const change = ((weekPrice - nextPrice) / nextPrice) * 100;
-      
+      const change = this._priceChange(forecast);
+      if (change === null) return 'trend-neutral';
       if (change > 2) return 'trend-up';
       if (change < -2) return 'trend-down';
       return 'trend-neutral';
     },
-    
+
     getTrendText(forecast) {
-      if (!forecast.next_day || !forecast.week_ahead) return '';
-      
-      const nextPrice = forecast.next_day.price;
-      const weekPrice = forecast.week_ahead.price;
-      const change = ((weekPrice - nextPrice) / nextPrice) * 100;
-      
+      const change = this._priceChange(forecast);
+      if (change === null) return '➡️ Stable';
       if (change > 2) return `📈 Rising ${change.toFixed(1)}%`;
       if (change < -2) return `📉 Falling ${Math.abs(change).toFixed(1)}%`;
       return '➡️ Stable';
+    },
+
+    _priceChange(forecast) {
+      const nextPrice = forecast.next_day?.price;
+      const weekPrice = forecast.week_ahead?.price;
+      if (nextPrice == null || weekPrice == null || nextPrice === 0) return null;
+      return ((weekPrice - nextPrice) / nextPrice) * 100;
     },
   },
 };
@@ -189,6 +222,16 @@ export default {
   color: #e74c3c;
   background: #ffebee;
   border-radius: 8px;
+}
+
+/* Empty state shown when DB has no future predictions */
+.empty-state {
+  text-align: center;
+  padding: 32px;
+  color: #7f8c8d;
+  background: #f9f9f9;
+  border-radius: 8px;
+  font-size: 15px;
 }
 
 .forecasts-grid {
@@ -313,7 +356,7 @@ export default {
   .forecasts-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .widget-footer {
     flex-direction: column;
     gap: 12px;

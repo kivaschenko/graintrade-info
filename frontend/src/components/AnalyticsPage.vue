@@ -358,7 +358,7 @@ export default {
         this.loading = true;
         this.error = null;
 
-        const apiUrl = process.env.VUE_APP_DATA_PIPELINE_API || 'http://localhost:8004';
+        const apiUrl = process.env.VUE_APP_DATA_PIPELINE_API_URL || 'http://localhost:8004';
         const response = await axios.get(`${apiUrl}/forecasts/homepage`, {
           timeout: 10000,
         });

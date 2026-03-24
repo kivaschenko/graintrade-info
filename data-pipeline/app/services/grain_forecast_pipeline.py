@@ -11,7 +11,6 @@ import numpy as np
 import sys
 import pandas as pd
 import yfinance as yf
-from pandas.api.types import is_datetime64tz_dtype
 
 from app.data_sources.investing import InvestingDataSourceError, fetch_investing_history
 from app.config import settings
@@ -20,10 +19,8 @@ from app.logger import logger
 from app.models import Commodity, Prediction
 from app.parser_services.yfinance_parser import COMMODITIES
 from app.parser_services import (
-    BaseParser, 
-    CurrencyParser, 
-    GrainTradeComUaParser, 
-    TripoliLandParser,
+    BaseParser,
+    CurrencyParser,
 )
 from app.rabbit_mq import get_rabbitmq_instance
 from app.spark_services.spark_session import get_spark_session
@@ -149,8 +146,8 @@ DATA_SOURCES = {
 class GrainForecastPipeline:
     """High-level orchestrator that parses, transforms, and forecasts grain prices."""
 
-    def __init__(self, parsers: List[BaseParser], history_period: str = "2y", forecast_horizon: int = 7) -> None:
-        self.parsers = parsers
+    def __init__(self, parsers: List[BaseParser] | None = None, history_period: str = "2y", forecast_horizon: int = 7) -> None:
+        self.parsers = parsers or []
         self.history_period = history_period
         self.forecast_horizon = forecast_horizon
         self.base_dir = Path(__file__).resolve().parent.parent.parent
@@ -327,8 +324,10 @@ class GrainForecastPipeline:
 
         if not frames:
             return pd.DataFrame()
-        # TODO: verify empty or all-NA entries before combining
-        combined_df = pd.concat(frames, ignore_index=True)
+        valid_frames = [frame for frame in frames if not frame.empty and not frame.dropna(how="all").empty]
+        if not valid_frames:
+            return pd.DataFrame()
+        combined_df = pd.concat(valid_frames, ignore_index=True)
         combined_df.sort_values(["ticker", "date"], inplace=True)
         return combined_df
 
@@ -351,12 +350,8 @@ class GrainForecastPipeline:
             lambda s: s.rolling(window=30, min_periods=10).mean()
         )
         df["momentum_ratio"] = df["ma_7"] / df["ma_30"]
-        df["usd_per_ton_filled"] = df.groupby("ticker")["usd_per_ton"].transform(
-            lambda s: s.fillna(method="ffill")
-        )
-        df["uah_per_ton_filled"] = df.groupby("ticker")["uah_per_ton"].transform(
-            lambda s: s.fillna(method="ffill")
-        )
+        df["usd_per_ton_filled"] = df.groupby("ticker")["usd_per_ton"].transform(lambda s: s.ffill())
+        df["uah_per_ton_filled"] = df.groupby("ticker")["uah_per_ton"].transform(lambda s: s.ffill())
         return df
 
     def _write_parquet_artifact(self, df: pd.DataFrame, layer_name: str) -> Path | None:
@@ -374,7 +369,7 @@ class GrainForecastPipeline:
         try:
             export_df = df.copy()
             for column in export_df.columns:
-                if is_datetime64tz_dtype(export_df[column]):
+                if isinstance(export_df[column].dtype, pd.DatetimeTZDtype):
                     export_df[column] = (
                         export_df[column].dt.tz_convert("UTC").dt.tz_localize(None)
                     )
