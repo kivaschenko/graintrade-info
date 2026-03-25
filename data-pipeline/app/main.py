@@ -61,8 +61,8 @@ app = FastAPI(
     description="Data ingestion, transformation, and analytics pipeline for commodity price prediction",
     version="0.1.0",
     lifespan=lifespan,
-    docs_url="/docs" if settings.ENV != "production" else None,
-    redoc_url="/redoc" if settings.ENV != "production" else None,
+    docs_url="/docs" if settings.ENV != "production" else "/api-docs",
+    redoc_url="/redoc" if settings.ENV != "production" else "/api-redoc",
 )
 
 
@@ -91,7 +91,7 @@ def root():
         "service": "GrainTrade Data Pipeline",
         "version": "0.1.0",
         "status": "running",
-        "docs": "/docs" if settings.ENV != "production" else "disabled",
+        "docs": "/docs" if settings.ENV != "production" else "/api-docs",
     }
 
 
