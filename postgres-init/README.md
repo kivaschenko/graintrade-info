@@ -137,9 +137,10 @@ sudo -u postgres psql
 ```
 ## Create database
 ```
-CREATE DATABASE graintrade;
-CREATE USER grain WITH ENCRYPTED PASSWORD '<prod-password>';
-GRANT ALL PRIVILEGES ON DATABASE graintrade TO grain;
+-- Replace 'devuser' and 'devdb' with your preferred names
+CREATE USER devuser WITH PASSWORD 'devpassword';
+CREATE DATABASE devdb OWNER devuser;
+GRANT ALL PRIVILEGES ON DATABASE devdb TO devuser;
 ```
 
 ```

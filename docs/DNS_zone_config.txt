@@ -1,0 +1,21 @@
+;; Exported on 2026-03-06T05:46:18Z
+$ORIGIN	graintrade.info.
+$TTL	3600
+
+@	IN	SOA	hydrogen.ns.hetzner.com. dns.hetzner.com. 2026022800 86400 10800 3600000 3600
+
+; NS records
+@	IN	NS	helium.ns.hetzner.de.
+@	IN	NS	hydrogen.ns.hetzner.com.
+@	IN	NS	oxygen.ns.hetzner.com.
+
+; A records
+@	IN	A	65.108.142.153
+api	IN	A	65.108.142.153
+chat	IN	A	65.108.142.153
+data-pipeline	3600	IN	A	65.108.142.153
+gitea	IN	A	65.108.142.153
+home	IN	A	65.108.142.153
+
+; CNAME records
+www	IN	CNAME	graintrade.info.
