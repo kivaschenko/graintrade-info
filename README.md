@@ -21,14 +21,10 @@
 > I’m happy to walk through design decisions, trade-offs, and next milestones. Feel free to reach out via email listed below.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue)](https://github.com/your-repo/actions)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-Jenkins-orange)](Jenkinsfile)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue)](docker-compose.yaml)
-[![Azure](https://img.shields.io/badge/Cloud-Azure-0078D4?logo=microsoft-azure)](AZURE_MIGRATION_GUIDE.md)
-[![Terraform](https://img.shields.io/badge/IaC-Terraform-623CE4?logo=terraform)](terraform/README.md)
 
 A modern microservices-based platform for Ukrainian farmers to trade agricultural commodities including grain, seeds, fertilizers, and fuel. Built with FastAPI, Vue.js, and event-driven architecture using RabbitMQ.
-
-> **🚀 NEW: Azure Cloud Deployment** - Ready to deploy to Azure using Terraform and GitHub Actions! See [Azure Migration Guide](AZURE_MIGRATION_GUIDE.md) for complete setup instructions.
 
 ## 🏗️ Architecture Overview
 
@@ -137,62 +133,6 @@ A modern microservices-based platform for Ukrainian farmers to trade agricultura
 - **Cron Services**: Subscription management and automated tasks
 - **Parsers**: Data import and commodity price updates
 - **Apache Files**: Web server configuration and security
-
-## ☁️ Cloud Deployment (Azure)
-
-GrainTrade is now fully deployable to **Microsoft Azure** with infrastructure-as-code using Terraform and automated CI/CD via GitHub Actions.
-
-### Why Azure?
-- ✅ **Cost-effective**: ~$100/month startup, cheaper than dedicated servers at scale
-- ✅ **Scalable**: Auto-scaling based on traffic
-- ✅ **Managed Services**: PostgreSQL, Redis, Container Registry included
-- ✅ **Secure**: VNet, private endpoints, Key Vault integration
-- ✅ **DevOps-ready**: GitHub Actions native integration
-
-### Quick Azure Deployment
-
-```bash
-# 1. Clone and prepare
-git clone https://github.com/kivaschenko/graintrade-info.git
-cd graintrade-info/terraform
-
-# 2. Configure Azure access
-az login
-az account set --subscription "YOUR_SUBSCRIPTION_ID"
-
-# 3. Set up Terraform variables
-cp terraform.tfvars.example terraform.tfvars
-nano terraform.tfvars  # Update with your values
-
-# 4. Deploy infrastructure
-terraform init
-terraform plan
-terraform apply
-
-# 5. Build and push Docker images
-docker build -t <ACR_REGISTRY>/backend:latest ./backend
-docker push <ACR_REGISTRY>/backend:latest
-# ... repeat for other services
-
-# 6. Configure GitHub secrets for CI/CD
-# See AZURE_DEPLOYMENT_GUIDE.md for detailed setup
-```
-
-### Complete Documentation
-- 📖 [Azure Migration Guide](AZURE_MIGRATION_GUIDE.md) - Comprehensive strategy, cost analysis, architecture options
-- 📋 [Azure Deployment Guide](AZURE_DEPLOYMENT_GUIDE.md) - Step-by-step deployment instructions  
-- 🏗️ [Terraform Configuration](terraform/README.md) - Infrastructure setup and management
-- ⚙️ [GitHub Actions CI/CD](.github/workflows/deploy.yml) - Automated testing and deployment
-
-### Cost Comparison
-
-| Platform | Monthly Cost | Annual Cost |
-|----------|--------------|-------------|
-| **Hetzner** (current) | €27 | €324 |
-| **Azure** (startup) | $100 | $1,200* |
-| **Azure** (with credits) | ~$70 | ~$900* |
-
-*First 12 months. Azure becomes competitive with scale beyond 100 users.*
 
 ## 🚀 Quick Start
 

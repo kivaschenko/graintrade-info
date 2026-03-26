@@ -1,17 +1,23 @@
 """
 API endpoints for grain price forecasts.
 """
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date as date_type
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import cast, Date
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.logger import logger
 from app.models import Prediction
 from app.schemas.prediction_schema import PredictionResponse
 
 router = APIRouter(prefix="/forecasts", tags=["forecasts"])
+
+def _today_utc() -> date_type:
+    """Helper function to get today's date in UTC timezone."""
+    return datetime.now(timezone.utc).date()
 
 
 @router.get("/", response_model=List[PredictionResponse])
@@ -39,11 +45,11 @@ def get_forecasts(
         query = query.filter(Prediction.region == region)
     
     # Only future predictions within the specified horizon
-    today = datetime.now(timezone.utc).date()
+    today = _today_utc()
     max_date = today + timedelta(days=days_ahead)
     query = query.filter(
-        Prediction.prediction_date >= today,
-        Prediction.prediction_date <= max_date,
+        cast(Prediction.prediction_date, Date) >= today,
+        cast(Prediction.prediction_date, Date) <= max_date,
     )
     
     # Order by prediction date and limit results
@@ -51,7 +57,15 @@ def get_forecasts(
         Prediction.prediction_date.asc(),
         Prediction.commodity_name.asc()
     ).limit(limit).all()
-    
+
+    logger.info(
+        "Fetched %d forecasts | commodity=%s | region=%s | days_ahead=%d",
+        len(predictions),
+        commodity_name or "ALL",
+        region or "ALL",
+        days_ahead,
+    )
+
     return predictions
 
 
@@ -73,7 +87,7 @@ def get_homepage_forecasts(
         "Wheat ETF",
     ]
     
-    today = datetime.now(timezone.utc).date()
+    today = _today_utc()
     tomorrow = today + timedelta(days=1)
     week_ahead = today + timedelta(days=7)
     
@@ -83,14 +97,21 @@ def get_homepage_forecasts(
         # Get tomorrow's prediction
         next_day_pred = db.query(Prediction).filter(
             Prediction.commodity_name == commodity,
-            Prediction.prediction_date == tomorrow,
+            cast(Prediction.prediction_date, Date) == tomorrow,
         ).order_by(Prediction.created_at.desc()).first()
         
         # Get 7-day ahead prediction
         week_pred = db.query(Prediction).filter(
             Prediction.commodity_name == commodity,
-            Prediction.prediction_date == week_ahead,
+            cast(Prediction.prediction_date, Date) == week_ahead,
         ).order_by(Prediction.created_at.desc()).first()
+
+        logger.debug(
+            "Homepage forecast query | commodity=%s | tomorrow=%s | week_ahead=%s",
+            commodity,
+            next_day_pred.prediction_date if next_day_pred else "None",
+            week_pred.prediction_date if week_pred else "None",
+        )
         
         if next_day_pred or week_pred:
             forecast_item = {
@@ -111,7 +132,7 @@ def get_homepage_forecasts(
                 } if week_pred else None,
             }
             forecasts.append(forecast_item)
-    
+    logger.info("Returning %d homepage forecasts", len(forecasts))
     return forecasts
 
 
@@ -126,13 +147,13 @@ def get_commodity_forecast(
     
     Returns predictions for the specified commodity across multiple horizons.
     """
-    today = datetime.now(timezone.utc).date()
+    today = _today_utc()
     max_date = today + timedelta(days=days_ahead)
     
     predictions = db.query(Prediction).filter(
         Prediction.commodity_name == commodity_name,
-        Prediction.prediction_date >= today,
-        Prediction.prediction_date <= max_date,
+        cast(Prediction.prediction_date, Date) >= today,
+        cast(Prediction.prediction_date, Date) <= max_date,
     ).order_by(Prediction.prediction_date.asc()).all()
     
     if not predictions:

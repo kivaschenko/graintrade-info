@@ -1,0 +1,457 @@
+# name: Deploy to AWS ECS
+
+# on:
+#   push:
+#     branches:
+#       - main
+#       - develop
+#   pull_request:
+#     branches:
+#       - main
+#   workflow_dispatch:
+#     inputs:
+#       service:
+#         description: 'Service to deploy'
+#         required: false
+#         default: 'all'
+#         type: choice
+#         options:
+#           - all
+#           - backend
+#           - chat
+#           - notifications
+#           - pipeline
+
+# env:
+#   AWS_REGION: us-east-1
+#   ECS_CLUSTER: graintrade-cluster
+
+# jobs:
+#   # ==================== BUILD ====================
+
+#   build:
+#     name: Build Docker Images
+#     runs-on: ubuntu-latest
+#     permissions:
+#       id-token: write
+#       contents: read
+#     outputs:
+#       backend-image: ${{ steps.image.outputs.backend-image }}
+#       chat-image: ${{ steps.image.outputs.chat-image }}
+#       notifications-image: ${{ steps.image.outputs.notifications-image }}
+#       pipeline-image: ${{ steps.image.outputs.pipeline-image }}
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+#           aws-region: ${{ env.AWS_REGION }}
+
+#       - name: Login to Amazon ECR
+#         id: login-ecr
+#         uses: aws-actions/amazon-ecr-login@v2
+
+#       - name: Get commit short SHA
+#         id: vars
+#         run: |
+#           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+#           echo "tag=$(git describe --tags --abbrev=0 2>/dev/null || echo 'latest')" >> $GITHUB_OUTPUT
+
+#       - name: Build, tag, and push Backend image
+#         id: backend-build
+#         env:
+#           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#           IMAGE_TAG: ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
+#         run: |
+#           cd backend
+#           docker build -t $ECR_REGISTRY/graintrade-backend:$IMAGE_TAG .
+#           docker tag $ECR_REGISTRY/graintrade-backend:$IMAGE_TAG $ECR_REGISTRY/graintrade-backend:latest
+#           docker push $ECR_REGISTRY/graintrade-backend:$IMAGE_TAG
+#           docker push $ECR_REGISTRY/graintrade-backend:latest
+#           echo "image=$ECR_REGISTRY/graintrade-backend:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+#       - name: Build, tag, and push Chat image
+#         id: chat-build
+#         env:
+#           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#           IMAGE_TAG: ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
+#         run: |
+#           cd chat-room
+#           docker build -t $ECR_REGISTRY/graintrade-chat:$IMAGE_TAG .
+#           docker tag $ECR_REGISTRY/graintrade-chat:$IMAGE_TAG $ECR_REGISTRY/graintrade-chat:latest
+#           docker push $ECR_REGISTRY/graintrade-chat:$IMAGE_TAG
+#           docker push $ECR_REGISTRY/graintrade-chat:latest
+#           echo "image=$ECR_REGISTRY/graintrade-chat:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+#       - name: Build, tag, and push Notifications image
+#         id: notifications-build
+#         env:
+#           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#           IMAGE_TAG: ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
+#         run: |
+#           cd notifications
+#           docker build -t $ECR_REGISTRY/graintrade-notifications:$IMAGE_TAG .
+#           docker tag $ECR_REGISTRY/graintrade-notifications:$IMAGE_TAG $ECR_REGISTRY/graintrade-notifications:latest
+#           docker push $ECR_REGISTRY/graintrade-notifications:$IMAGE_TAG
+#           docker push $ECR_REGISTRY/graintrade-notifications:latest
+#           echo "image=$ECR_REGISTRY/graintrade-notifications:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+#       - name: Build, tag, and push Pipeline image
+#         id: pipeline-build
+#         env:
+#           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#           IMAGE_TAG: ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}
+#         run: |
+#           cd data-pipeline
+#           docker build -t $ECR_REGISTRY/graintrade-pipeline:$IMAGE_TAG .
+#           docker tag $ECR_REGISTRY/graintrade-pipeline:$IMAGE_TAG $ECR_REGISTRY/graintrade-pipeline:latest
+#           docker push $ECR_REGISTRY/graintrade-pipeline:$IMAGE_TAG
+#           docker push $ECR_REGISTRY/graintrade-pipeline:latest
+#           echo "image=$ECR_REGISTRY/graintrade-pipeline:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+#       - name: Output image URIs
+#         id: image
+#         run: |
+#           echo "backend-image=${{ steps.backend-build.outputs.image }}" >> $GITHUB_OUTPUT
+#           echo "chat-image=${{ steps.chat-build.outputs.image }}" >> $GITHUB_OUTPUT
+#           echo "notifications-image=${{ steps.notifications-build.outputs.image }}" >> $GITHUB_OUTPUT
+#           echo "pipeline-image=${{ steps.pipeline-build.outputs.image }}" >> $GITHUB_OUTPUT
+
+#   # ==================== TEST ====================
+
+#   test:
+#     name: Run Tests
+#     runs-on: ubuntu-latest
+#     needs: build
+#     strategy:
+#       matrix:
+#         service:
+#           - backend
+#           - chat-room
+#           - notifications
+#           - data-pipeline
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Set up Python
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.12'
+#           cache: 'pip'
+
+#       - name: Install dependencies for ${{ matrix.service }}
+#         run: |
+#           cd ${{ matrix.service }}
+#           pip install -r requirements.txt || pip install -r pyproject.toml
+
+#       - name: Run tests
+#         run: |
+#           cd ${{ matrix.service }}
+#           pytest tests/ -v --cov=app --cov-report=xml || true
+
+#       - name: Upload coverage
+#         uses: codecov/codecov-action@v3
+#         with:
+#           files: ./coverage.xml
+#           flags: ${{ matrix.service }}
+#           fail_ci_if_error: false
+
+#   # ==================== SECURITY SCAN ====================
+
+#   security:
+#     name: Security Scan
+#     runs-on: ubuntu-latest
+#     needs: build
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Run Trivy vulnerability scanner
+#         uses: aquasecurity/trivy-action@master
+#         with:
+#           scan-type: 'fs'
+#           scan-ref: '.'
+#           format: 'sarif'
+#           output: 'trivy-results.sarif'
+
+#       - name: Upload Trivy results to GitHub Security tab
+#         uses: github/codeql-action/upload-sarif@v2
+#         with:
+#           sarif_file: 'trivy-results.sarif'
+
+#   # ==================== DEPLOY ====================
+
+#   deploy:
+#     name: Deploy to ECS
+#     runs-on: ubuntu-latest
+#     needs: [build, test]
+#     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+#     permissions:
+#       id-token: write
+#       contents: read
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+#           aws-region: ${{ env.AWS_REGION }}
+
+#       - name: Update Backend service
+#         if: github.event.inputs.service == 'all' || github.event.inputs.service == 'backend'
+#         run: |
+#           aws ecs update-service \
+#             --cluster ${{ env.ECS_CLUSTER }} \
+#             --service graintrade-backend \
+#             --force-new-deployment \
+#             --region ${{ env.AWS_REGION }}
+
+#       - name: Update Chat service
+#         if: github.event.inputs.service == 'all' || github.event.inputs.service == 'chat'
+#         run: |
+#           aws ecs update-service \
+#             --cluster ${{ env.ECS_CLUSTER }} \
+#             --service graintrade-chat \
+#             --force-new-deployment \
+#             --region ${{ env.AWS_REGION }}
+
+#       - name: Update Notifications service
+#         if: github.event.inputs.service == 'all' || github.event.inputs.service == 'notifications'
+#         run: |
+#           aws ecs update-service \
+#             --cluster ${{ env.ECS_CLUSTER }} \
+#             --service graintrade-notifications \
+#             --force-new-deployment \
+#             --region ${{ env.AWS_REGION }}
+
+#       - name: Wait for deployments to complete
+#         run: |
+#           for service in graintrade-backend graintrade-chat graintrade-notifications; do
+#             echo "Waiting for $service to stabilize..."
+#             aws ecs wait services-stable \
+#               --cluster ${{ env.ECS_CLUSTER }} \
+#               --services $service \
+#               --region ${{ env.AWS_REGION }} || true
+#           done
+
+#       - name: Verify deployment
+#         run: |
+#           for service in graintrade-backend graintrade-chat graintrade-notifications; do
+#             echo "Checking $service status..."
+#             aws ecs describe-services \
+#               --cluster ${{ env.ECS_CLUSTER }} \
+#               --services $service \
+#               --region ${{ env.AWS_REGION }} \
+#               --query 'services[0].{Status:status,Running:runningCount,Desired:desiredCount}' \
+#               --output table
+#           done
+
+#       - name: Create deployment annotation
+#         if: always()
+#         run: |
+#           curl -X POST "https://api.github.com/repos/${{ github.repository }}/deployments" \
+#             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+#             -H "Accept: application/vnd.github.v3+json" \
+#             -d '{
+#               "ref": "${{ github.ref }}",
+#               "environment": "aws-production",
+#               "auto_merge": false,
+#               "description": "Deployed via GitHub Actions"
+#             }' || true
+
+#   # ==================== NOTIFICATIONS ====================
+
+#   notify:
+#     name: Send Notifications
+#     runs-on: ubuntu-latest
+#     if: always()
+#     needs: [build, test, deploy]
+
+#     steps:
+#       - name: Determine deployment status
+#         id: status
+#         run: |
+#           if [ "${{ needs.deploy.result }}" == "success" ]; then
+#             echo "status=✅ Deployment successful" >> $GITHUB_OUTPUT
+#             echo "color=good" >> $GITHUB_OUTPUT
+#           elif [ "${{ needs.deploy.result }}" == "skipped" ]; then
+#             echo "status=⏭️ Deployment skipped" >> $GITHUB_OUTPUT
+#             echo "color=warning" >> $GITHUB_OUTPUT
+#           else
+#             echo "status=❌ Deployment failed" >> $GITHUB_OUTPUT
+#             echo "color=danger" >> $GITHUB_OUTPUT
+#           fi
+
+#       - name: Send Slack notification
+#         if: always() && secrets.SLACK_WEBHOOK_URL != ''
+#         uses: slackapi/slack-github-action@v1.24.0
+#         with:
+#           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+#           payload: |
+#             {
+#               "text": "${{ steps.status.outputs.status }} - GrainTrade Deployment",
+#               "blocks": [
+#                 {
+#                   "type": "header",
+#                   "text": {
+#                     "type": "plain_text",
+#                     "text": "${{ steps.status.outputs.status }}"
+#                   }
+#                 },
+#                 {
+#                   "type": "section",
+#                   "fields": [
+#                     {
+#                       "type": "mrkdwn",
+#                       "text": "*Repository:*\n${{ github.repository }}"
+#                     },
+#                     {
+#                       "type": "mrkdwn",
+#                       "text": "*Branch:*\n${{ github.ref_name }}"
+#                     },
+#                     {
+#                       "type": "mrkdwn",
+#                       "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+#                     },
+#                     {
+#                       "type": "mrkdwn",
+#                       "text": "*Author:*\n${{ github.actor }}"
+#                     }
+#                   ]
+#                 },
+#                 {
+#                   "type": "section",
+#                   "text": {
+#                     "type": "mrkdwn",
+#                     "text": "*Build Status:* ${{ needs.build.result }}\n*Test Status:* ${{ needs.test.result }}\n*Deploy Status:* ${{ needs.deploy.result }}"
+#                   }
+#                 }
+#               ]
+#             }
+
+#   # ==================== ROLLBACK ====================
+
+#   rollback:
+#     name: Rollback on Failure (Manual)
+#     runs-on: ubuntu-latest
+#     if: failure()
+#     needs: deploy
+#     permissions:
+#       id-token: write
+#       contents: read
+
+#     steps:
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+#           aws-region: ${{ env.AWS_REGION }}
+
+#       - name: Get previous task definition revision
+#         id: rollback
+#         run: |
+#           for service in graintrade-backend graintrade-chat graintrade-notifications; do
+#             CURRENT_TASK=$(aws ecs describe-services \
+#               --cluster ${{ env.ECS_CLUSTER }} \
+#               --services $service \
+#               --region ${{ env.AWS_REGION }} \
+#               --query 'services[0].taskDefinition' \
+#               --output text)
+            
+#             # Extract revision number
+#             REVISION=$(echo $CURRENT_TASK | rev | cut -d':' -f1 | rev)
+#             PREVIOUS_REVISION=$((REVISION - 1))
+            
+#             if [ $PREVIOUS_REVISION -gt 0 ]; then
+#               TASK_DEF=$(echo $CURRENT_TASK | rev | cut -d':' -f2- | rev)
+#               echo "Rolling back $service to revision $PREVIOUS_REVISION"
+#               aws ecs update-service \
+#                 --cluster ${{ env.ECS_CLUSTER }} \
+#                 --service $service \
+#                 --task-definition "$TASK_DEF:$PREVIOUS_REVISION" \
+#                 --region ${{ env.AWS_REGION }}
+#             fi
+#           done
+
+#       - name: Send rollback notification
+#         if: always()
+#         uses: slackapi/slack-github-action@v1.24.0
+#         with:
+#           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+#           payload: |
+#             {
+#               "text": "⚠️ Automatic Rollback Initiated - GrainTrade",
+#               "blocks": [
+#                 {
+#                   "type": "header",
+#                   "text": {
+#                     "type": "plain_text",
+#                     "text": "⚠️ Rollback Initiated"
+#                   }
+#                 },
+#                 {
+#                   "type": "section",
+#                   "text": {
+#                     "type": "mrkdwn",
+#                     "text": "Deployment failed and automatic rollback was triggered.\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+#                   }
+#                 }
+#               ]
+#             }
+
+# # ==================== SCHEDULED TASKS ====================
+
+#   schedule:
+#     if: github.event_name == 'schedule'
+#     name: Scheduled Health Check
+#     runs-on: ubuntu-latest
+#     permissions:
+#       id-token: write
+#       contents: read
+
+#     steps:
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+#           aws-region: ${{ env.AWS_REGION }}
+
+#       - name: Health check all services
+#         run: |
+#           for service in graintrade-backend graintrade-chat graintrade-notifications; do
+#             echo "Checking $service health..."
+#             STATUS=$(aws ecs describe-services \
+#               --cluster ${{ env.ECS_CLUSTER }} \
+#               --services $service \
+#               --region ${{ env.AWS_REGION }} \
+#               --query 'services[0].status' \
+#               --output text)
+            
+#             RUNNING=$(aws ecs describe-services \
+#               --cluster ${{ env.ECS_CLUSTER }} \
+#               --services $service \
+#               --region ${{ env.AWS_REGION }} \
+#               --query 'services[0].runningCount' \
+#               --output text)
+            
+#             DESIRED=$(aws ecs describe-services \
+#               --cluster ${{ env.ECS_CLUSTER }} \
+#               --services $service \
+#               --region ${{ env.AWS_REGION }} \
+#               --query 'services[0].desiredCount' \
+#               --output text)
+            
+#             echo "$service: $STATUS (Running: $RUNNING/$DESIRED)"
+#           done

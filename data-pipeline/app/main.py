@@ -18,6 +18,21 @@ from app.routers import (
 )
 
 
+production_cors_origins = [
+    origin.rstrip("/")
+    for origin in [
+        "http://localhost:8080/",
+        "http://localhost:80/",
+        "http://65.108.142.153:8080/",
+        "http://65.108.142.153:80/",
+        "https://api.graintrade.info/",
+        "https://graintrade.info/",
+        "https://www.graintrade.info/",
+        "https://data-pipeline.graintrade.info/",
+    ]
+]
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -46,23 +61,15 @@ app = FastAPI(
     description="Data ingestion, transformation, and analytics pipeline for commodity price prediction",
     version="0.1.0",
     lifespan=lifespan,
-    docs_url="/docs" if settings.ENV != "production" else None,
-    redoc_url="/redoc" if settings.ENV != "production" else None,
+    docs_url="/docs" if settings.ENV != "production" else "/api-docs",
+    redoc_url="/redoc" if settings.ENV != "production" else "/api-redoc",
 )
 
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8080",
-        "http://localhost:80",
-        "http://65.108.68.57:8080",
-        "http://65.108.68.57",
-        "https://api.graintrade.info",
-        "https://graintrade.info",
-        "https://www.graintrade.info",
-    ],
+    allow_origins=["*"] if settings.ENV == "development" else production_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -84,7 +91,7 @@ def root():
         "service": "GrainTrade Data Pipeline",
         "version": "0.1.0",
         "status": "running",
-        "docs": "/docs" if settings.ENV != "production" else "disabled",
+        "docs": "/docs" if settings.ENV != "production" else "/api-docs",
     }
 
 
