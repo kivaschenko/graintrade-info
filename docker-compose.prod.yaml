@@ -2,7 +2,7 @@ name: grain
 services:
   backend:
     # Use Docker Hub image for production and a version tag for stability
-    image: gitea.graintrade.info/kivaschenko/grain-backend:${BUILD_NUMBER:-latest}
+    image: gitea.graintrade.info/kivaschenko/grain-backend:${TAG:-latest}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: always
@@ -19,7 +19,7 @@ services:
       retries: 3
 
   chat-room:
-    image: gitea.graintrade.info/kivaschenko/grain-chat-room:${BUILD_NUMBER:-latest}
+    image: gitea.graintrade.info/kivaschenko/grain-chat-room:${TAG:-latest}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: always
@@ -36,7 +36,7 @@ services:
       retries: 3
 
   notifications:
-    image: gitea.graintrade.info/kivaschenko/grain-notifications:${BUILD_NUMBER:-latest}
+    image: gitea.graintrade.info/kivaschenko/grain-notifications:${TAG:-latest}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: always
@@ -53,7 +53,7 @@ services:
       retries: 3
 
   data-pipeline:
-    image: gitea.graintrade.info/kivaschenko/grain-data-pipeline:${BUILD_NUMBER:-latest}
+    image: gitea.graintrade.info/kivaschenko/grain-data-pipeline:${TAG:-latest}
     restart: always
     env_file:
       - ./envs/data-pipeline.env
@@ -68,8 +68,10 @@ services:
       retries: 3
 
   frontend:
-    image: gitea.graintrade.info/kivaschenko/grain-frontend:${BUILD_NUMBER:-latest}
+    image: gitea.graintrade.info/kivaschenko/grain-frontend:${TAG:-latest}
     restart: always
+    env_file:
+      - ./envs/frontend.env
     ports:
       - "8080:80"
     networks:
@@ -80,7 +82,7 @@ services:
       - data-pipeline
 
   landing-service:
-    image: gitea.graintrade.info/kivaschenko/grain-landing-service:${BUILD_NUMBER:-latest}
+    image: gitea.graintrade.info/kivaschenko/grain-landing-service:${TAG:-latest}
     restart: always
     ports:
       - "8003:8003"

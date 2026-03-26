@@ -71,12 +71,7 @@ Run Jenkins as a container so it shares the host Docker/Compose binaries:
 docker network create cicd || true
 docker volume create jenkins_home
 
-docker run -d \
-  --name jenkins \
-  -p 127.0.0.1:8888:8080 \
-  -v jenkins_home:/var/jenkins_home \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  jenkins/jenkins:lts
+docker run -d -p 8888:8080 --name jenkins -v jenkins_home:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock jenkins/jenkins:lts
 ```
 Then:
 1. Unlock Jenkins using the password from `docker logs jenkins`.
