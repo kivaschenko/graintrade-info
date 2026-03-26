@@ -70,8 +70,6 @@ services:
   frontend:
     image: gitea.graintrade.info/kivaschenko/grain-frontend:${BUILD_NUMBER:-latest}
     restart: always
-    env_file:
-      - ./envs/frontend.env
     ports:
       - "8080:80"
     networks:
