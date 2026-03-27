@@ -1,10 +1,9 @@
-# src/data_pipeline/config.py
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-print(f"Base directory for config: {BASE_DIR}")
 load_dotenv(BASE_DIR / ".env")
 
 
@@ -17,6 +16,12 @@ class Settings:
     # Spark Configuration
     SPARK_MASTER: str = os.getenv("SPARK_MASTER", "local[*]")
     SPARK_APP_NAME: str = os.getenv("SPARK_APP_NAME", "GrainTrade-DataPipeline")
+    SPARK_DRIVER_MEMORY: str = os.getenv("SPARK_DRIVER_MEMORY", "2g")
+    SPARK_EXECUTOR_MEMORY: str = os.getenv("SPARK_EXECUTOR_MEMORY", "2g")
+    SPARK_DRIVER_MAX_RESULT_SIZE: str = os.getenv("SPARK_DRIVER_MAX_RESULT_SIZE", "1g")
+    SPARK_LOCAL_IP: str = os.getenv("SPARK_LOCAL_IP", "127.0.0.1")
+    SPARK_DELTA_PACKAGE: str = os.getenv("SPARK_DELTA_PACKAGE", "io.delta:delta-spark_2.13:4.0.0")
+    SPARK_EXTRA_PACKAGES: str = os.getenv("SPARK_EXTRA_PACKAGES", "org.postgresql:postgresql:42.7.3")
     
     # Delta Lake paths
     BRONZE_LAYER_PATH: str = os.getenv("BRONZE_LAYER_PATH", "/tmp/delta/bronze")
@@ -36,6 +41,7 @@ class Settings:
     
     # Data sources
     DATA_SOURCES_PATH: str = os.getenv("DATA_SOURCES_PATH", "./data_sources")
+    ENABLED_PARSERS: str = os.getenv("ENABLED_PARSERS", "yfinance")
     
     # AirFlow (for future use)
     AIRFLOW_HOME: str = os.getenv("AIRFLOW_HOME", "./airflow")
@@ -67,8 +73,3 @@ class Settings:
     TELEGRAM_CHANNEL_ID: str = os.getenv("TELEGRAM_CHANNEL_ID", "")
 
 settings = Settings()
-
-if settings.ENV == "development":
-    print("Running in development mode")
-else:
-    print("Running in production mode")

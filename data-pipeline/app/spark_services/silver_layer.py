@@ -4,15 +4,19 @@ from pyspark.sql.functions import (
     col, current_timestamp, to_date, trim, upper, lower,
     when, regexp_replace, coalesce
 )
+
+import pandas as pd
+
 from app.config import settings
 from app.logger import logger
 from app.spark_services.bronze_layer import read_bronze_table
 
 
 def transform_to_silver(
-    bronze_table_name: str,
+    bronze_table_name: str | None,
     silver_table_name: str,
-    transformation_rules: dict = None
+    transformation_rules: dict = None,
+    source_data=None,
 ) -> dict:
     """
     Transform and clean Bronze data to Silver layer
@@ -21,6 +25,7 @@ def transform_to_silver(
         bronze_table_name: Name of the bronze table to read
         silver_table_name: Name of the silver table to write
         transformation_rules: Optional transformation rules
+        source_data: Optional in-memory parser output
     
     Returns:
         dict: Transformation statistics
@@ -29,7 +34,22 @@ def transform_to_silver(
     
     try:
         # Read bronze data
-        df = read_bronze_table(bronze_table_name)
+        if source_data is not None:
+            from app.spark_services.spark_session import get_spark_session
+
+            spark = get_spark_session()
+            if isinstance(source_data, pd.DataFrame):
+                df = spark.createDataFrame(source_data)
+            elif isinstance(source_data, list):
+                df = spark.createDataFrame(source_data)
+            elif isinstance(source_data, dict):
+                df = spark.createDataFrame([source_data])
+            else:
+                raise ValueError(f"Unsupported source_data type: {type(source_data)!r}")
+        else:
+            if not bronze_table_name:
+                raise ValueError("bronze_table_name is required when source_data is not provided")
+            df = read_bronze_table(bronze_table_name)
         records_read = df.count()
         logger.info(f"Read {records_read} records from bronze")
         
