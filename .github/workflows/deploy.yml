@@ -143,6 +143,8 @@ jobs:
           DEPLOY_PORT: ${{ env.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           IMAGE_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -156,18 +158,26 @@ jobs:
             exit 1
           fi
 
+          if [ -z "${DOCKERHUB_USERNAME:-}" ] || [ -z "${DOCKERHUB_TOKEN:-}" ]; then
+            echo "ERROR: Docker Hub secrets are not set"
+            exit 1
+          fi
+
           if [ -z "${DEPLOY_PORT:-}" ]; then
             DEPLOY_PORT=22
           fi
-          
-          # Use the workflow image tag for deployment
+
           IMAGE_TAG=${{ env.TAG }}
-          
-          # Pull new images and restart services on the remote server
+
           ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" << EOF
           set -euo pipefail
           cd /home/$DEPLOY_USER/production
+
+          echo "$DOCKERHUB_TOKEN" | docker login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
+
+          # Fast validation: auth + repository/tag exists
+          docker pull docker.io/$IMAGE_NAMESPACE/grain-backend:$IMAGE_TAG
+
           IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml pull
           IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml up -d
           EOF
-
