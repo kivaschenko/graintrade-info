@@ -1,6 +1,6 @@
 # tests/test_config.py
 import pytest
-from data_pipeline.config import settings
+from app.config import settings
 
 
 def test_settings_exist():

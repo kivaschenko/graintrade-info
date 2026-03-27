@@ -16,7 +16,6 @@
 >
 > Useful links:
 > - Production: https://graintrade.info/
-> - API Docs: https://api.graintrade.info/docs
 > - Repo Roadmap: TECH_STACK_AND_ROADMAP.md
 >
 > I’m happy to walk through design decisions, trade-offs, and next milestones. Feel free to reach out via email listed below.

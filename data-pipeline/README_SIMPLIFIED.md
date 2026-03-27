@@ -8,7 +8,7 @@
 
 ## What It Does
 
-- Collects grain commodity price data from 6 Ukrainian sources
+- Collects grain commodity price data with a yfinance-first MVP ingestion flow
 - Stores data in Delta Lake (bronze/silver/gold layers)
 - Predicts prices using historical trends
 - Publishes predictions to frontend API and Telegram channel
@@ -30,7 +30,7 @@ cp .env.example .env
 
 ### 2. Configure Data Sources
 
-Edit `.env` - each parser has its own section:
+Edit `.env` for the active MVP parser set:
 
 ```bash
 # Yahoo Finance
@@ -38,13 +38,8 @@ YF_TICKERS=CBOT_ZWZ21,CBOT_ZWH22,CBOT_ZYH22
 YF_PERIOD=1y
 YF_INTERVAL=daily
 
-# Investing.com
-IC_INSTRUMENTS=WHEAT,CORN,SOY
-IC_START_DATE=2023-01-01
-
-# APK Inform
-APK_REGIONS=Kyiv,Kharkiv,Odesa
-APK_UPLOAD_STORAGE=true
+# Enable only the stable MVP parser by default
+ENABLED_PARSERS=yfinance
 ```
 
 ### 3. Run Data Pipeline
@@ -62,12 +57,9 @@ All parsers store data in Bronze layer (raw), then transform to Silver (clean).
 
 | Parser | Source | Env Vars | Frequency |
 |--------|--------|----------|-----------|
-| `apk_inform` | APK-Inform.com | `APK_*` | Daily |
-| `investing_com` | Investing.com | `IC_*` | Daily |
 | `yfinance` | Yahoo Finance | `YF_*` | Hourly |
-| `tripoli_land` | Tripoli.land | `TL_*` | Daily |
-| `currency` | Exchange rates | `CURR_*` | Hourly |
-| `graintradecomua` | GrainTrade.com.ua | `GT_*` | Daily |
+
+Other parsers remain in the codebase but are disabled by default for the MVP. Enable them explicitly through `ENABLED_PARSERS` after validating their dependencies and source stability.
 
 ## Running Ingestion Jobs
 
