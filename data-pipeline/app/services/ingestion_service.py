@@ -4,27 +4,88 @@ Ingestion Service - Simplified orchestrator (NOT a factory pattern)
 This replaces the factory pattern approach with direct, simple parser usage.
 Configuration comes from environment variables, not database JSON.
 """
-from typing import Dict, Any
+from typing import Any, Callable, Dict
 from datetime import datetime
-import uuid
+
+import pandas as pd
 
 from app.config import settings
 from app.logger import logger
 from app.models import IngestionLog
+from app.utils.rates import fetch_usd_to_uah
 from sqlalchemy.orm import Session
 
 
-# Direct parser imports - no registry, no dynamic lookup
-try:
+class CallableParser:
+    def __init__(self, parse_func: Callable[[], Any]) -> None:
+        self._parse_func = parse_func
+
+    def parse(self) -> Any:
+        return self._parse_func()
+
+
+def _enabled_parser_names() -> list[str]:
+    configured = [item.strip() for item in settings.ENABLED_PARSERS.split(",") if item.strip()]
+    return configured or ["yfinance"]
+
+
+def _build_yfinance_dataset() -> pd.DataFrame:
+    from app.parser_services.yfinance_parser import get_commodity_prices
+
+    return get_commodity_prices(fetch_usd_to_uah())
+
+
+def _parser_factories() -> Dict[str, Callable[[], Any]]:
+    return {
+        "yfinance": lambda: CallableParser(_build_yfinance_dataset),
+        "apk_inform": _create_apk_inform_parser,
+        "investing_com": _create_investing_parser,
+        "tripoli_land": _create_tripoli_land_parser,
+        "currency": _create_currency_parser,
+        "graintradecomua": _create_graintradecomua_parser,
+    }
+
+
+def _create_apk_inform_parser():
     from app.parser_services.apk_inform_parser import APKInformParser
+
+    return APKInformParser(regions=getattr(settings, "APK_REGIONS", "Kyiv").split(","))
+
+
+def _create_investing_parser():
     from app.parser_services.investingcom_parser import InvestingComParser
-    from app.parser_services.yfinance_parser import YFinanceParser
+
+    instrument_cfg = {
+        "type": getattr(settings, "IC_INSTRUMENT_TYPE", "commodity"),
+        "symbol": getattr(settings, "IC_SYMBOL", "Wheat"),
+        "country": getattr(settings, "IC_COUNTRY", "world"),
+    }
+    start_date = pd.Timestamp(getattr(settings, "IC_START_DATE", "2023-01-01")).to_pydatetime()
+    end_date_raw = getattr(settings, "IC_END_DATE", None)
+    end_date = pd.Timestamp(end_date_raw).to_pydatetime() if end_date_raw else datetime.utcnow()
+    return InvestingComParser(
+        instrument_cfg=instrument_cfg,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
+def _create_tripoli_land_parser():
     from app.parser_services.tripoli_land_parser import TripoliLandParser
+
+    return TripoliLandParser()
+
+
+def _create_currency_parser():
     from app.parser_services.currency_parser import CurrencyParser
-    from app.parser_services.graintradecomua_parser import GraintradeComuaParser
-except ImportError as e:
-    logger.warning(f"Not all parsers available: {e}")
-    # Parsers will be imported on-demand if they fail
+
+    return CurrencyParser()
+
+
+def _create_graintradecomua_parser():
+    from app.parser_services.graintradecomua_parser import GrainTradeComUaParser
+
+    return GrainTradeComUaParser(parse_history=getattr(settings, "GT_PARSE_HISTORY", True))
 
 
 def get_parser_instance(parser_name: str):
@@ -40,55 +101,26 @@ def get_parser_instance(parser_name: str):
     Raises:
         ValueError: If parser_name is not recognized
     """
-    if parser_name == "apk_inform":
-        return APKInformParser(
-            regions=settings.APK_REGIONS.split(",") if hasattr(settings, "APK_REGIONS") else ["Kyiv"],
-            upload_to_storage=getattr(settings, "APK_UPLOAD_STORAGE", False),
-            storage_type=getattr(settings, "APK_STORAGE_TYPE", "local"),
-        )
-    
-    elif parser_name == "investing_com":
-        return InvestingComParser(
-            instruments=settings.IC_INSTRUMENTS.split(",") if hasattr(settings, "IC_INSTRUMENTS") else ["WHEAT"],
-            start_date=getattr(settings, "IC_START_DATE", "2023-01-01"),
-            end_date=getattr(settings, "IC_END_DATE", None),
-            retry_attempts=getattr(settings, "IC_RETRY_ATTEMPTS", 3),
-        )
-    
-    elif parser_name == "yfinance":
-        return YFinanceParser(
-            tickers=settings.YF_TICKERS.split(",") if hasattr(settings, "YF_TICKERS") else ["CBOT_ZWZ21"],
-            period=getattr(settings, "YF_PERIOD", "1y"),
-            interval=getattr(settings, "YF_INTERVAL", "daily"),
-            progress=settings.ENV == "development",
-        )
-    
-    elif parser_name == "tripoli_land":
-        return TripoliLandParser(
-            companies=settings.TL_COMPANIES.split(",") if hasattr(settings, "TL_COMPANIES") else ["company1"],
-            base_url=getattr(settings, "TL_BASE_URL", "https://tripoli.land"),
-            storage_type=getattr(settings, "TL_STORAGE_TYPE", "local"),
-            output_format=getattr(settings, "TL_OUTPUT_FORMAT", "json"),
-        )
-    
-    elif parser_name == "currency":
-        return CurrencyParser(
-            symbols=settings.CURR_SYMBOLS.split(",") if hasattr(settings, "CURR_SYMBOLS") else ["USD", "EUR"],
-            intervals=settings.CURR_INTERVALS.split(",") if hasattr(settings, "CURR_INTERVALS") else ["1h"],
-        )
-    
-    elif parser_name == "graintradecomua":
-        return GraintradeComuaParser(
-            base_url=getattr(settings, "GT_BASE_URL", "https://graintradecomua.com"),
-            api_key=getattr(settings, "GT_API_KEY", ""),
-            timeout=getattr(settings, "GT_TIMEOUT", 30),
-        )
-    
-    else:
+    enabled = set(_enabled_parser_names())
+    if parser_name not in enabled:
         raise ValueError(
-            f"Unknown parser: {parser_name}. "
-            f"Available: apk_inform, investing_com, yfinance, tripoli_land, currency, graintradecomua"
+            f"Parser '{parser_name}' is disabled. Enabled parsers: {', '.join(sorted(enabled))}"
         )
+
+    factory = _parser_factories().get(parser_name)
+    if not factory:
+        raise ValueError(f"Unknown parser: {parser_name}")
+    return factory()
+
+
+def _count_records(raw_data: Any) -> int:
+    if isinstance(raw_data, pd.DataFrame):
+        return len(raw_data.index)
+    if isinstance(raw_data, list):
+        return len(raw_data)
+    if isinstance(raw_data, dict):
+        return 1
+    return 0 if raw_data is None else 1
 
 
 def run_ingestion(
@@ -139,13 +171,13 @@ def run_ingestion(
         logger.info(f"Parser {parser_name} starting data collection...")
         raw_data = parser.parse()
         
-        records_read = len(raw_data) if isinstance(raw_data, list) else 1
+        records_read = _count_records(raw_data)
         logger.info(f"Parser {parser_name} collected {records_read} records")
         
         # Store in appropriate layer
         if layer == "bronze":
             # Store raw data in bronze layer
-            output_path = f"{settings.BRONZE_LAYER_PATH}/{parser_name}_{datetime.now().isoformat()}"
+            output_path = f"{settings.BRONZE_LAYER_PATH}/{parser_name}_raw"
             records_written = _write_bronze_layer(parser_name, raw_data, output_path)
         elif layer == "silver":
             # Transform and clean
@@ -239,7 +271,7 @@ def get_available_parsers() -> Dict[str, Dict[str, Any]]:
     
     Used by API endpoint to show what parsers are available and their config.
     """
-    return {
+    available = {
         "apk_inform": {
             "name": "APK Inform Parser",
             "description": "Scrapes agricultural data from apk-inform.com",
@@ -271,3 +303,5 @@ def get_available_parsers() -> Dict[str, Dict[str, Any]]:
             "categories": "All commodity categories",
         },
     }
+    enabled = set(_enabled_parser_names())
+    return {name: meta for name, meta in available.items() if name in enabled}

@@ -52,7 +52,7 @@ It transforms raw data through three layers:
 
 - Python 3.12+
 - PostgreSQL 15+
-- Java 11+ (for Spark)
+- Java 21 (for Spark 4 runtime compatibility)
 - Docker & Docker Compose (optional)
 
 ### Installation
@@ -122,6 +122,7 @@ export PYSPARK_DRIVER_PYTHON=$PYSPARK_PYTHON
 For local mode (development):
 ```bash
 export SPARK_MASTER='local[*]'
+export ENABLED_PARSERS='yfinance'
 ```
 
 ## 📖 API Documentation

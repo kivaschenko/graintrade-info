@@ -13,7 +13,7 @@ concurrency:
 env:
   REGISTRY: docker.io
   NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
-  TAG: ${{ github.sha }}
+  TAG: ${{ github.sha }}[:7]
 
 jobs:
   build-and-push:
@@ -110,36 +110,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          
+          # Use the short SHA tag for deployment
+          IMAGE_TAG=${{ env.TAG }}
+          
+          # Update docker compose files with the new image tags and deploy
+          scp -P "${{ secrets.DEPLOY_PORT }}" docker-compose.prod.yaml "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/home/${{ secrets.DEPLOY_USER }}/production/docker-compose.prod.yaml"
+          
+          # Pull new images and restart services on the remote server
           ssh -p "${{ secrets.DEPLOY_PORT }}" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << EOF
           set -euo pipefail
-          cd /home/kivaschenko/production
-          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=${{ secrets.DOCKERHUB_USERNAME }} TAG=${{ github.sha }} docker compose -f docker-compose.prod.yaml pull
-          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=${{ secrets.DOCKERHUB_USERNAME }} TAG=${{ github.sha }} docker compose -f docker-compose.prod.yaml up -d
+          cd /home/${{ secrets.DEPLOY_USER }}/production
+          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=${{ secrets.DOCKERHUB_USERNAME }} TAG=${IMAGE_TAG} docker compose -f docker-compose.prod.yaml pull
+          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=${{ secrets.DOCKERHUB_USERNAME }} TAG=${IMAGE_TAG} docker compose -f docker-compose.prod.yaml up -d
           EOF
-#         if: failure()
-#         run: |
-#           echo "❌ Deployment failed. Check logs for details."
-#           exit 1
 
-#   # Job 9: Security scanning (optional but recommended)
-#   security-scan:
-#     name: Security Scanning
-#     runs-on: ubuntu-latest
-#     needs: detect-changes
-#     if: github.event_name == 'push'
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
-
-#       - name: Run Trivy vulnerability scanner
-#         uses: aquasecurity/trivy-action@master
-#         with:
-#           scan-type: 'fs'
-#           scan-ref: '.'
-#           format: 'sarif'
-#           output: 'trivy-results.sarif'
-
-#       - name: Upload Trivy results to GitHub Security
-#         uses: github/codeql-action/upload-sarif@v2
-#         with:
-#           sarif_file: 'trivy-results.sarif'

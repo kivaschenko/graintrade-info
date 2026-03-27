@@ -12,7 +12,6 @@ import sys
 import pandas as pd
 import yfinance as yf
 
-from app.data_sources.investing import InvestingDataSourceError, fetch_investing_history
 from app.config import settings
 from app.database import SessionLocal
 from app.logger import logger
@@ -116,21 +115,6 @@ ADDITIONAL_MARKET_SIGNALS: Dict[str, Dict[str, str]] = {
         "category": "currency",
         "description": "USD to UAH FX rate",
         "region": "Ukraine",
-    },
-    "S&P GSCI Agriculture": {
-        "ticker": "SPGSAG",
-        "unit": "index",
-        "kg_per_unit": None,
-        "cents_per_dollar": 1,
-        "category": "macro",
-        "description": "S&P GSCI Agriculture Index",
-        "region": "Global",
-        "data_source": "investing",
-        "investing": {
-            "type": "index",
-            "symbol": "S&P GSCI Agriculture",
-            "country": "world",
-        },
     },
 }
 
@@ -245,29 +229,8 @@ class GrainForecastPipeline:
         hist["date"] = pd.to_datetime(hist["date"], utc=True)
         return hist
 
-    def _fetch_from_investing(
-        self,
-        cfg: Dict[str, Any],
-        start_date: datetime,
-        end_date: datetime,
-    ) -> pd.DataFrame:
-        instrument_cfg = cfg.get("investing")
-        if not instrument_cfg:
-            logger.warning("Missing Investing.com configuration for %s", cfg.get("description", cfg.get("ticker")))
-            return pd.DataFrame()
-        try:
-            return fetch_investing_history(instrument_cfg, start_date, end_date)
-        except InvestingDataSourceError as exc:
-            logger.error(
-                "Investing.com download failed for %s: %s",
-                cfg.get("description", instrument_cfg.get("symbol")),
-                exc,
-            )
-            return pd.DataFrame()
-
     def _download_market_history(self, usd_to_uah: float) -> pd.DataFrame:
         frames: List[pd.DataFrame] = []
-        history_start, history_end = self._resolve_history_window()
         for name, cfg in self.master_config.items():
             if not cfg.get("enabled", True):
                 logger.info(
@@ -276,15 +239,11 @@ class GrainForecastPipeline:
                     f" ({cfg.get('disabled_reason')})" if cfg.get("disabled_reason") else "",
                 )
                 continue
-            data_source = cfg.get("data_source", "yfinance").lower()
-            if data_source == "investing":
-                hist = self._fetch_from_investing(cfg, history_start, history_end)
-            else:
-                ticker = cfg.get("ticker")
-                if not ticker:
-                    logger.warning("Skipping %s: ticker not configured", name)
-                    continue
-                hist = self._fetch_from_yfinance(ticker)
+            ticker = cfg.get("ticker")
+            if not ticker:
+                logger.warning("Skipping %s: ticker not configured", name)
+                continue
+            hist = self._fetch_from_yfinance(ticker)
 
             if hist.empty:
                 logger.warning("No data returned for %s", name)

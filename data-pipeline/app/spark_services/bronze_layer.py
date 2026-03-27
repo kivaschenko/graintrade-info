@@ -1,18 +1,23 @@
 # src/data_pipeline/spark_services/bronze_layer.py
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import current_timestamp, lit, input_file_name
-from typing import Optional
+from typing import Any, Optional
+
+import pandas as pd
+
 from app.config import settings
 from app.logger import logger
 from app.spark_services.spark_session import get_spark_session
 
 
 def ingest_to_bronze(
-    source_path: str,
-    source_format: str,
-    source_name: str,
+    source_path: str | None = None,
+    source_format: str = "csv",
+    source_name: str = "unknown_source",
     table_name: str = "raw_data",
-    options: Optional[dict] = None
+    options: Optional[dict] = None,
+    source_data: Any = None,
+    output_path: str | None = None,
 ) -> dict:
     """
     Ingest raw data to Bronze layer (Delta Lake)
@@ -23,6 +28,8 @@ def ingest_to_bronze(
         source_name: Name of the data source
         table_name: Name for the bronze table
         options: Additional options for reading source data
+        source_data: In-memory parser output (list[dict], dict, pandas.DataFrame)
+        output_path: Optional explicit Delta output path
     
     Returns:
         dict: Ingestion statistics
@@ -30,16 +37,31 @@ def ingest_to_bronze(
     spark = get_spark_session()
     options = options or {}
     
-    logger.info(f"Starting bronze ingestion from {source_path} ({source_format})")
+    logger.info("Starting bronze ingestion for %s (%s)", source_name, source_format)
     
     try:
         # Read source data
         df = None
-        if source_format.lower() == "csv":
+        if source_data is not None:
+            if isinstance(source_data, pd.DataFrame):
+                df = spark.createDataFrame(source_data)
+            elif isinstance(source_data, list):
+                df = spark.createDataFrame(source_data)
+            elif isinstance(source_data, dict):
+                df = spark.createDataFrame([source_data])
+            else:
+                raise ValueError(f"Unsupported source_data type: {type(source_data)!r}")
+        elif source_format.lower() == "csv":
+            if not source_path:
+                raise ValueError("source_path is required for csv ingestion")
             df = spark.read.csv(source_path, header=True, inferSchema=True, **options)
         elif source_format.lower() == "json":
+            if not source_path:
+                raise ValueError("source_path is required for json ingestion")
             df = spark.read.json(source_path, **options)
         elif source_format.lower() == "parquet":
+            if not source_path:
+                raise ValueError("source_path is required for parquet ingestion")
             df = spark.read.parquet(source_path, **options)
         else:
             raise ValueError(f"Unsupported source format: {source_format}")
@@ -54,7 +76,7 @@ def ingest_to_bronze(
               .withColumn("_source_file", input_file_name()))
         
         # Write to Bronze Delta table
-        bronze_path = f"{settings.BRONZE_LAYER_PATH}/{table_name}"
+        bronze_path = output_path or f"{settings.BRONZE_LAYER_PATH}/{table_name}"
         
         df.write \
             .format("delta") \

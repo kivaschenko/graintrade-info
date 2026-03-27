@@ -2,10 +2,9 @@
 FROM python:3.12-slim AS builder
 WORKDIR /app
 
-# Install system dependencies for Spark
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    openjdk-21-jre-headless \
     procps \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -27,13 +26,12 @@ COPY alembic.ini ./
 # Stage 2: Final stage
 FROM python:3.12-slim
 
-# Install Java for Spark
+WORKDIR /app
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-21-jre-headless \
     procps \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
 
 # Copy from builder
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
@@ -45,6 +43,7 @@ ENV PYTHONPATH=/app
 ENV PYSPARK_PYTHON=/usr/local/bin/python
 ENV PYSPARK_DRIVER_PYTHON=/usr/local/bin/python
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Expose API port
 EXPOSE 8004
