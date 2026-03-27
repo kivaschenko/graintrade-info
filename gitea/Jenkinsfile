@@ -1,153 +1,177 @@
-def serviceCatalog = [
-    [name: 'backend', paths: ['backend/'], health: 'http://127.0.0.1:8000/health'],
-    [name: 'chat-room', paths: ['chat-room/'], health: 'http://127.0.0.1:8001/health'],
-    [name: 'notifications', paths: ['notifications/'], health: 'http://127.0.0.1:8002/health'],
-    [name: 'frontend', paths: ['frontend/']],
-    [name: 'landing-service', paths: ['landing-service/'], health: 'http://127.0.0.1:8003/health'],
-    [name: 'data-pipeline', paths: ['data-pipeline/'], health: 'http://127.0.0.1:8004/health']
-]
-
-def globalTriggerRoots = [
-    'docker-compose.yaml',
-    'docker-compose.dev.yaml',
-    'create_app_dashboard.sh',
-    'create_dashboards.sh',
-    'create_system_dashboard.sh',
-    'create_working_dashboard.sh',
-    'scripts/'
-]
-
 pipeline {
-    agent any
+  agent any
 
-    options {
-        timestamps()
-        disableConcurrentBuilds()
-        buildDiscarder(logRotator(numToKeepStr: '30'))
-    }
+  options {
+    timestamps()
+    ansiColor('xterm')
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '10'))
+    timeout(time: 90, unit: 'MINUTES')
+  }
 
-    environment {
-        COMPOSE_FILE = 'docker-compose.yaml'
-    }
+  triggers {
+    // Use Gitea webhook as primary trigger; polling can be added if needed.
+    pollSCM('')
+  }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
+  environment {
+    REGISTRY = 'gitea.graintrade.info'
+    REGISTRY_NAMESPACE = 'kivaschenko'
 
-        stage('Select services') {
-            steps {
-                script {
-                    def diffCommand = '''
-                        set -eo pipefail
-                        if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
-                          git diff --name-only HEAD^ HEAD
-                        else
-                          git show --pretty="" --name-only HEAD
-                        fi
-                    '''
+    IMAGE_BACKEND = "${env.REGISTRY}/${env.REGISTRY_NAMESPACE}/grain-backend"
+    IMAGE_FRONTEND = "${env.REGISTRY}/${env.REGISTRY_NAMESPACE}/grain-frontend"
+    IMAGE_CHAT_ROOM = "${env.REGISTRY}/${env.REGISTRY_NAMESPACE}/grain-chat-room"
+    IMAGE_NOTIFICATIONS = "${env.REGISTRY}/${env.REGISTRY_NAMESPACE}/grain-notifications"
+    IMAGE_DATA_PIPELINE = "${env.REGISTRY}/${env.REGISTRY_NAMESPACE}/grain-data-pipeline"
+    IMAGE_LANDING_SERVICE = "${env.REGISTRY}/${env.REGISTRY_NAMESPACE}/grain-landing-service"
 
-                    def changedFilesRaw = sh(script: diffCommand, returnStdout: true).trim()
-                    def changedFiles = changedFilesRaw ? changedFilesRaw.readLines().findAll { it?.trim() } : []
+    DEPLOY_PATH = '/home/kivaschenko/production'
+  }
 
-                    if (changedFiles) {
-                        echo "Changed files:\n${changedFiles.join('\n')}"
-                    } else {
-                        echo 'No changes detected compared to the previous commit.'
-                    }
-
-                    def selected = []
-                    serviceCatalog.each { svc ->
-                        def match = svc.paths.any { prefix ->
-                            changedFiles.any { it.startsWith(prefix) }
-                        }
-                        if (match) {
-                            selected << svc.name
-                        }
-                    }
-
-                    def globalChange = changedFiles.any { file ->
-                        globalTriggerRoots.any { root -> file == root || file.startsWith(root) }
-                    }
-
-                    if (globalChange) {
-                        echo 'Global or shared infrastructure files changed – rebuilding every service.'
-                        selected = serviceCatalog.collect { it.name }
-                    }
-
-                    selected = selected.unique()
-                    env.SERVICES_TO_BUILD = selected.join(' ')
-
-                    if (selected) {
-                        currentBuild.description = "redeploy ${selected.join(', ')}"
-                        echo "Services scheduled for rebuild: ${selected.join(', ')}"
-                    } else {
-                        currentBuild.description = 'no redeploy'
-                        echo 'No microservice-level changes detected.'
-                    }
-                }
-            }
-        }
-
-        stage('Compose build & deploy') {
-            when {
-                expression { env.SERVICES_TO_BUILD?.trim() }
-            }
-            steps {
-                script {
-                    def targets = env.SERVICES_TO_BUILD.split().findAll { it?.trim() }
-                    targets.each { serviceName ->
-                        def svc = serviceCatalog.find { it.name == serviceName }
-                        echo "Redeploying ${serviceName}"
-
-                        sh """
-                            set -eo pipefail
-                            cd ${env.WORKSPACE}
-                            docker compose -f ${env.COMPOSE_FILE} build --pull ${serviceName}
-                            docker compose -f ${env.COMPOSE_FILE} up -d ${serviceName}
-                        """
-
-                        sh """
-                            cd ${env.WORKSPACE}
-                            docker compose -f ${env.COMPOSE_FILE} ps ${serviceName}
-                        """
-
-                        if (svc?.health) {
-                            sleep time: 5, unit: 'SECONDS'
-                            sh """
-                                set -eo pipefail
-                                curl --fail --silent --show-error --max-time 15 ${svc.health}
-                            """
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Nothing to deploy') {
-            when {
-                expression { !(env.SERVICES_TO_BUILD?.trim()) }
-            }
-            steps {
-                echo 'Skipping compose build – no detectable service changes.'
-            }
-        }
-    }
-
-    post {
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
         script {
-            success {
-                if (env.SERVICES_TO_BUILD?.trim()) {
-                    echo "Deployment finished for: ${env.SERVICES_TO_BUILD}"
-                } else {
-                    echo 'Pipeline finished without redeploying services.'
-                }
-            }
-            failure {
-                echo 'Deployment failed. Inspect Jenkins logs for details.'
-            }
+          env.FULL_SHA = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+          env.SHORT_SHA = sh(script: 'git rev-parse --short=12 HEAD', returnStdout: true).trim()
+          // One immutable tag for all services in this pipeline run.
+          env.DEPLOY_TAG = env.FULL_SHA
         }
+        echo "Deploy tag for all microservices: ${env.DEPLOY_TAG}"
+      }
     }
+
+    stage('Prepare Frontend Production Env') {
+      steps {
+        withCredentials([string(credentialsId: 'frontend-env-production', variable: 'FRONTEND_ENV_PROD')]) {
+          sh '''
+            set -euo pipefail
+            cat > frontend/.env.production <<'EOF'
+            ${FRONTEND_ENV_PROD}
+            EOF
+          '''
+        }
+      }
+    }
+
+    stage('Docker Login') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'gitea-registry-creds',
+          usernameVariable: 'REG_USER',
+          passwordVariable: 'REG_PASS'
+        )]) {
+          sh '''
+            set -euo pipefail
+            echo "$REG_PASS" | docker login "$REGISTRY" -u "$REG_USER" --password-stdin
+          '''
+        }
+      }
+    }
+
+    stage('Build & Push All Images') {
+      parallel {
+        stage('Backend') {
+          steps {
+            sh '''
+              set -euo pipefail
+              docker build -t "$IMAGE_BACKEND:$DEPLOY_TAG" ./backend
+              docker push "$IMAGE_BACKEND:$DEPLOY_TAG"
+            '''
+          }
+        }
+
+        stage('Frontend') {
+          steps {
+            sh '''
+              set -euo pipefail
+              docker build -t "$IMAGE_FRONTEND:$DEPLOY_TAG" ./frontend
+              docker push "$IMAGE_FRONTEND:$DEPLOY_TAG"
+            '''
+          }
+        }
+
+        stage('Chat Room') {
+          steps {
+            sh '''
+              set -euo pipefail
+              docker build -t "$IMAGE_CHAT_ROOM:$DEPLOY_TAG" ./chat-room
+              docker push "$IMAGE_CHAT_ROOM:$DEPLOY_TAG"
+            '''
+          }
+        }
+
+        stage('Notifications') {
+          steps {
+            sh '''
+              set -euo pipefail
+              docker build -t "$IMAGE_NOTIFICATIONS:$DEPLOY_TAG" ./notifications
+              docker push "$IMAGE_NOTIFICATIONS:$DEPLOY_TAG"
+            '''
+          }
+        }
+
+        stage('Data Pipeline') {
+          steps {
+            sh '''
+              set -euo pipefail
+              docker build -t "$IMAGE_DATA_PIPELINE:$DEPLOY_TAG" ./data-pipeline
+              docker push "$IMAGE_DATA_PIPELINE:$DEPLOY_TAG"
+            '''
+          }
+        }
+
+        stage('Landing Service') {
+          steps {
+            sh '''
+              set -euo pipefail
+              docker build -t "$IMAGE_LANDING_SERVICE:$DEPLOY_TAG" ./landing-service
+              docker push "$IMAGE_LANDING_SERVICE:$DEPLOY_TAG"
+            '''
+          }
+        }
+      }
+    }
+
+    stage('Deploy All Services') {
+      steps {
+        withCredentials([sshUserPrivateKey(
+          credentialsId: 'prod-ssh-key',
+          keyFileVariable: 'SSH_KEY',
+          usernameVariable: 'SSH_USER'
+        )]) {
+          withCredentials([
+            string(credentialsId: 'prod-host', variable: 'PROD_HOST'),
+            string(credentialsId: 'prod-port', variable: 'PROD_PORT')
+          ]) {
+            sh '''
+              set -euo pipefail
+              SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no -p $PROD_PORT"
+
+              ssh $SSH_OPTS "$SSH_USER@$PROD_HOST" "
+                set -euo pipefail
+                cd '$DEPLOY_PATH'
+                TAG='$DEPLOY_TAG' docker compose -f docker-compose.prod.yaml pull
+                TAG='$DEPLOY_TAG' docker compose -f docker-compose.prod.yaml up -d
+              "
+            '''
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      sh 'docker logout "$REGISTRY" || true'
+      cleanWs(deleteDirs: true, notFailBuild: true)
+    }
+    success {
+      echo "Pipeline completed successfully for tag ${env.DEPLOY_TAG}"
+    }
+    failure {
+      echo "Pipeline failed. Check logs above."
+    }
+  }
 }
