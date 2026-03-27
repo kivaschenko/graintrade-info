@@ -13,7 +13,7 @@ concurrency:
 env:
   REGISTRY: docker.io
   NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
-  TAG: ${{ github.sha }}[:7]
+  TAG: ${{ github.sha }}
 
 jobs:
   build-and-push:
