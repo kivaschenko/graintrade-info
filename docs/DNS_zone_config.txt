@@ -14,7 +14,6 @@ $TTL	3600
 api	IN	A	65.108.142.153
 chat	IN	A	65.108.142.153
 data-pipeline	3600	IN	A	65.108.142.153
-gitea	IN	A	65.108.142.153
 home	IN	A	65.108.142.153
 
 ; CNAME records
