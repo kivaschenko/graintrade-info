@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  REGISTRY: gitea.graintrade.info
-  NAMESPACE: ${{ secrets.GITEA_REGISTRY_USERNAME }}
+  REGISTRY: docker.io
+  NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
   TAG: ${{ github.sha }}
 
 jobs:
@@ -27,62 +27,68 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Gitea Registry
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: gitea.graintrade.info
-          username: ${{ secrets.GITEA_REGISTRY_USERNAME }}
-          password: ${{ secrets.GITEA_REGISTRY_TOKEN }}
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Prepare frontend production env
         shell: bash
         run: |
           set -euo pipefail
-          printf '%s' "$FRONTEND_ENV_PRODUCTION" > frontend/.env.production
-        env:
-          FRONTEND_ENV_PRODUCTION: ${{ secrets.FRONTEND_ENV_PRODUCTION }}
+          cat > frontend/.env.production <<'EOF'
+          ${{ secrets.FRONTEND_ENV_PRODUCTION }}
+          EOF
 
       - name: Build and push backend
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
-          tags: gitea.graintrade.info/${{ env.NAMESPACE }}/grain-backend:${{ env.TAG }}
+          tags: |
+            docker.io/${{ env.NAMESPACE }}/grain-backend:${{ env.TAG }}
 
       - name: Build and push frontend
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
-          tags: gitea.graintrade.info/${{ env.NAMESPACE }}/grain-frontend:${{ env.TAG }}
+          tags: |
+            docker.io/${{ env.NAMESPACE }}/grain-frontend:${{ env.TAG }}
 
       - name: Build and push chat-room
         uses: docker/build-push-action@v6
         with:
           context: ./chat-room
           push: true
-          tags: gitea.graintrade.info/${{ env.NAMESPACE }}/grain-chat-room:${{ env.TAG }}
+          tags: |
+            docker.io/${{ env.NAMESPACE }}/grain-chat-room:${{ env.TAG }}
 
       - name: Build and push notifications
         uses: docker/build-push-action@v6
         with:
           context: ./notifications
           push: true
-          tags: gitea.graintrade.info/${{ env.NAMESPACE }}/grain-notifications:${{ env.TAG }}
+          tags: |
+            docker.io/${{ env.NAMESPACE }}/grain-notifications:${{ env.TAG }}
 
       - name: Build and push data-pipeline
         uses: docker/build-push-action@v6
         with:
           context: ./data-pipeline
           push: true
-          tags: gitea.graintrade.info/${{ env.NAMESPACE }}/grain-data-pipeline:${{ env.TAG }}
+          tags: |
+            docker.io/${{ env.NAMESPACE }}/grain-data-pipeline:${{ env.TAG }}
 
       - name: Build and push landing-service
         uses: docker/build-push-action@v6
         with:
           context: ./landing-service
           push: true
-          tags: gitea.graintrade.info/${{ env.NAMESPACE }}/grain-landing-service:${{ env.TAG }}
+          tags: |
+            docker.io/${{ env.NAMESPACE }}/grain-landing-service:${{ env.TAG }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -102,15 +108,38 @@ jobs:
 
       - name: Deploy to production
         shell: bash
-        env:
-          GITEA_REGISTRY_TOKEN: ${{ secrets.GITEA_REGISTRY_TOKEN }}
-          GITEA_REGISTRY_USERNAME: ${{ secrets.GITEA_REGISTRY_USERNAME }}
-          DEPLOY_TAG: ${{ github.sha }}
         run: |
           set -euo pipefail
-          ssh -p "${{ secrets.DEPLOY_PORT }}" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
-            "set -euo pipefail
-             echo \"${GITEA_REGISTRY_TOKEN}\" | docker login gitea.graintrade.info -u \"${GITEA_REGISTRY_USERNAME}\" --password-stdin
-             cd /home/kivaschenko/production
-             IMAGE_REGISTRY=gitea.graintrade.info IMAGE_NAMESPACE=${GITEA_REGISTRY_USERNAME} TAG=${DEPLOY_TAG} docker compose -f docker-compose.prod.yaml pull
-             IMAGE_REGISTRY=gitea.graintrade.info IMAGE_NAMESPACE=${GITEA_REGISTRY_USERNAME} TAG=${DEPLOY_TAG} docker compose -f docker-compose.prod.yaml up -d"
+          ssh -p "${{ secrets.DEPLOY_PORT }}" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << EOF
+          set -euo pipefail
+          cd /home/kivaschenko/production
+          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=${{ secrets.DOCKERHUB_USERNAME }} TAG=${{ github.sha }} docker compose -f docker-compose.prod.yaml pull
+          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=${{ secrets.DOCKERHUB_USERNAME }} TAG=${{ github.sha }} docker compose -f docker-compose.prod.yaml up -d
+          EOF
+#         if: failure()
+#         run: |
+#           echo "❌ Deployment failed. Check logs for details."
+#           exit 1
+
+#   # Job 9: Security scanning (optional but recommended)
+#   security-scan:
+#     name: Security Scanning
+#     runs-on: ubuntu-latest
+#     needs: detect-changes
+#     if: github.event_name == 'push'
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Run Trivy vulnerability scanner
+#         uses: aquasecurity/trivy-action@master
+#         with:
+#           scan-type: 'fs'
+#           scan-ref: '.'
+#           format: 'sarif'
+#           output: 'trivy-results.sarif'
+
+#       - name: Upload Trivy results to GitHub Security
+#         uses: github/codeql-action/upload-sarif@v2
+#         with:
+#           sarif_file: 'trivy-results.sarif'
