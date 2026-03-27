@@ -21,7 +21,7 @@
 > I’m happy to walk through design decisions, trade-offs, and next milestones. Feel free to reach out via email listed below.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![CI/CD](https://img.shields.io/badge/CI%2FCD-Jenkins-orange)](Jenkinsfile)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue)](.github/workflows/deploy.yml)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue)](docker-compose.yaml)
 
 A modern microservices-based platform for Ukrainian farmers to trade agricultural commodities including grain, seeds, fertilizers, and fuel. Built with FastAPI, Vue.js, and event-driven architecture using RabbitMQ.
@@ -72,7 +72,7 @@ A modern microservices-based platform for Ukrainian farmers to trade agricultura
 - **Real-time Updates**: WebSocket connections for live data
 - **Caching**: Redis for performance optimization
 - **Monitoring**: Prometheus + Grafana observability stack
-- **CI/CD**: Jenkins pipeline with Docker Hub integration
+- **CI/CD**: GitHub Actions with Docker Hub integration
 
 ## 📦 Technology Stack
 
@@ -99,7 +99,7 @@ A modern microservices-based platform for Ukrainian farmers to trade agricultura
 - **Web Server**: Apache2 with SSL (Let's Encrypt)
 - **Monitoring**: Prometheus, Grafana, Node Exporter
 - **Security**: Fail2Ban, UFW firewall
-- **CI/CD**: Jenkins with Docker Hub registry
+- **CI/CD**: GitHub Actions with Docker Hub registry
 
 ### Communication
 - **Message Queue**: RabbitMQ for service-to-service communication
@@ -314,7 +314,7 @@ graintrade-info/
 ├── scripts/             # Deployment scripts
 ├── docker-compose.yaml  # Production deployment
 ├── docker-compose.dev.yaml  # Development setup
-├── Jenkinsfile         # CI/CD pipeline
+├── .github/workflows/   # GitHub Actions CI/CD
 └── README.md           # This file
 ```
 
