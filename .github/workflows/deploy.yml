@@ -183,4 +183,3 @@ jobs:
           IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml pull
           IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml up -d
           EOF
-
