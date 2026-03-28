@@ -2,6 +2,7 @@ from datetime import date, timedelta, datetime, timezone
 
 from ..database import database
 from ..schemas import UserInDB, UserInResponse, PreferencesUpdateSchema
+from ..logger import logger
 
 ORDER_ID = "registration-{}"
 
@@ -214,7 +215,8 @@ async def get_user_preferences(user_id: int) -> PreferencesUpdateSchema:
     async with database.pool.acquire() as connection:
         row = await connection.fetchrow(query, user_id)
         if row is None:
-            raise ValueError("User preferences not found for the given user_id.")
+            logger.info("User preferences not found for the given user_id: %s", user_id)
+            return None
         return PreferencesUpdateSchema(
             notify_new_messages=row["notify_new_messages"],
             notify_new_items=row["notify_new_items"],
@@ -225,10 +227,10 @@ async def get_user_preferences(user_id: int) -> PreferencesUpdateSchema:
         )
 
 
-async def create_user_preferences(user_id: int, prefs_data: PreferencesUpdateSchema):
+async def create_user_preferences(user_id: int, prefs_data: PreferencesUpdateSchema) -> PreferencesUpdateSchema:
     query = """
         INSERT INTO user_notification_preferences (user_id, notify_new_messages, notify_new_items, interested_categories, country, ua_interested_categories, language)
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING user_id, notify_new_messages, notify_new_items, interested_categories, country, language, ua_interested_categories
     """
     async with database.pool.acquire() as connection:
