@@ -17,6 +17,7 @@ env:
 
 jobs:
   build-and-push:
+    environment: production_env
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -91,6 +92,7 @@ jobs:
             docker.io/${{ env.NAMESPACE }}/grain-landing-service:${{ env.TAG }}
 
   deploy:
+    environment: production_env
     runs-on: ubuntu-latest
     needs: build-and-push
     permissions:
