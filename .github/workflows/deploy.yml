@@ -209,26 +209,6 @@ jobs:
             DEPLOY_PORT=22
           fi
 
-
-          if [ -z "${DEPLOY_HOST:-}" ]; then
-            echo "ERROR: DEPLOY_HOST secret is not set"
-            exit 1
-          fi
-
-          if [ -z "${DEPLOY_USER:-}" ]; then
-            echo "ERROR: DEPLOY_USER secret is not set"
-            exit 1
-          fi
-
-          if [ -z "${DOCKERHUB_USERNAME:-}" ] || [ -z "${DOCKERHUB_TOKEN:-}" ]; then
-            echo "ERROR: Docker Hub secrets are not set"
-            exit 1
-          fi
-
-          if [ -z "${DEPLOY_PORT:-}" ]; then
-            DEPLOY_PORT=22
-          fi
-
           IMAGE_TAG=${{ env.TAG }}
 
           ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" << EOF
