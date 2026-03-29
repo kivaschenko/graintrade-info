@@ -14,7 +14,6 @@ env:
   REGISTRY: docker.io
   NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
   TAG: ${{ github.sha }}
-  TAG: ${{ github.sha }}
 
 jobs:
   build-and-push:
@@ -102,15 +101,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Configure SSH
         shell: bash
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
@@ -137,49 +129,17 @@ jobs:
             exit 1
           fi
 
-
-          if [ -z "${DEPLOY_HOST:-}" ]; then
-            echo "ERROR: DEPLOY_HOST secret is not set"
-            exit 1
-          fi
-
-          if [ -z "${DEPLOY_SSH_KEY:-}" ]; then
-            echo "ERROR: DEPLOY_SSH_KEY secret is not set"
-            exit 1
-          fi
-
-          if [ -z "${DEPLOY_PORT:-}" ]; then
-            DEPLOY_PORT=22
-          fi
-
-          if ! [[ "$DEPLOY_PORT" =~ ^[0-9]+$ ]] || [ "$DEPLOY_PORT" -lt 1 ] || [ "$DEPLOY_PORT" -gt 65535 ]; then
-            echo "ERROR: DEPLOY_PORT is invalid: '$DEPLOY_PORT'"
-            exit 1
-          fi
-
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
           echo "DEPLOY_PORT=$DEPLOY_PORT" >> "$GITHUB_ENV"
 
-          echo "DEPLOY_PORT=$DEPLOY_PORT" >> "$GITHUB_ENV"
-
       - name: Deploy to production
         shell: bash
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ env.DEPLOY_PORT }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          IMAGE_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ env.DEPLOY_PORT }}
@@ -212,18 +172,7 @@ jobs:
           IMAGE_TAG=${{ env.TAG }}
 
           ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" << EOF
-
-          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" << EOF
           set -euo pipefail
-          cd /home/$DEPLOY_USER/production
-
-          echo "$DOCKERHUB_TOKEN" | docker login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
-
-          # Fast validation: auth + repository/tag exists
-          docker pull docker.io/$IMAGE_NAMESPACE/grain-backend:$IMAGE_TAG
-
-          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml pull
-          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml up -d
           cd /home/$DEPLOY_USER/production
 
           echo "$DOCKERHUB_TOKEN" | docker login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
