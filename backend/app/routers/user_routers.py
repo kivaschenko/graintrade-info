@@ -1,6 +1,4 @@
 from datetime import timedelta, datetime, timezone
-import logging
-
 from typing import Annotated
 
 from fastapi import (
@@ -30,9 +28,7 @@ from ..models import user_model, subscription_model
 from ..service_layer import user_services
 from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from ..schemas import PreferencesUpdateSchema
-
-# Set up logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+from ..logger import logger
 
 router = APIRouter(tags=["users"])
 
@@ -140,15 +136,15 @@ async def get_current_user(
         token_scopes = payload.get("scopes", [])
         token_data = TokenData(scopes=token_scopes, username=username)
     except jwt.PyJWTError as e:
-        logging.error(f"Error decoding token: {e}")
+        logger.error(f"Error decoding token: {e}")
         raise credentials_exception
     user = await get_user(username=token_data.username)
     if not user:
-        logging.error("User not found")
+        logger.error("User not found")
         raise credentials_exception
     for scope in security_scopes.scopes:
         if scope not in token_data.scopes:
-            logging.error("Not enough permissions")
+            logger.error("Not enough permissions")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough permissions",
@@ -160,7 +156,7 @@ async def get_current_active_user(
     current_user: Annotated[UserInResponse, Security(get_current_user, scopes=["me"])],
 ):
     """Get the current active user."""
-    logging.info(f"Current user: {current_user.username}")
+    logger.info(f"Current user: {current_user.username}")
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -177,10 +173,10 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]):
         user_id: str = payload.get("user_id")
         scopes: str = payload.get("scopes")
         if user_id is None:
-            logging.error("No user_id found in token")
+            logger.error("No user_id found in token")
             raise credentials_exception
     except jwt.PyJWTError as e:
-        logging.error(e)
+        logger.error(e)
         raise credentials_exception
     return user_id, scopes
 
@@ -242,11 +238,11 @@ async def login_for_access_token(
                 detail="Failed to create access token",
             )
 
-        logging.info(f"Access token created for user {user.username}")
+        logger.info(f"Access token created for user {user.username}")
         return Token(access_token=access_token, token_type="bearer")
 
     except Exception as e:
-        logging.error(f"Error during token creation: {e}")
+        logger.error(f"Error during token creation: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during authentication",
@@ -257,7 +253,7 @@ async def login_for_access_token(
 async def read_users_me(
     current_user: Annotated[UserInResponse, Depends(get_current_active_user)],
 ):
-    logging.info(f"Current user within users/me: {current_user.username}")
+    logger.info(f"Current user within users/me: {current_user.username}")
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -287,7 +283,7 @@ async def create_user(
             normalized_email
         )
     except RuntimeError as exc:
-        logging.error("Failed to generate username: %s", exc)
+        logger.error("Failed to generate username: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate username",
@@ -303,7 +299,7 @@ async def create_user(
         phone=normalized_phone,
     )
     new_user = await user_model.create(user_to_db)
-    logging.info(f"Created a new User: {new_user}")
+    logger.info(f"Created a new User: {new_user}")
     background_tasks.add_task(user_services.send_user_to_rabbitmq, new_user)
     return new_user
 
@@ -329,7 +325,7 @@ async def read_user(
         user = await user_model.get_by_id(user_id)
         # Hide email and phone for security
         user = hide_sensitive_data(user)
-        logging.info(f"Retrieved user: {user.username}")
+        logger.info(f"Retrieved user: {user.username}")
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -337,7 +333,7 @@ async def read_user(
             )
         return user
     except Exception as e:
-        logging.error(f"Error getting user: {e}")
+        logger.error(f"Error getting user: {e}")
         raise HTTPException(status_code=404, detail="User not found")
 
 
@@ -397,7 +393,7 @@ async def delete_user(
             detail="You can only delete your own user",
         )
     await user_model.delete(user_id)
-    logging.info(f"User with ID {user_id} deleted")
+    logger.info(f"User with ID {user_id} deleted")
     background_tasks.add_task(
         user_services.cleanup_users
     )  # Cleanup disabled users by calling the cleanup function
@@ -440,29 +436,41 @@ async def update_preferences(
     token: Annotated[str, Depends(oauth2_scheme)],
 ):
     if not prefs_data:
-        logging.error("Preferences data is empty")
+        logger.error("Preferences data is empty")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Preferences data cannot be empty",
         )
     if token is None or token == "null" or token == "":
-        logging.error("Token is missing or invalid")
+        logger.error("Token is missing or invalid")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is required for updating preferences",
         )
     user_id, _ = await get_current_user_id(token)  # Not needed scopes here
+
+    # Check if user exists before updating preferences
+    user_prefs = await user_model.get_user_preferences(int(user_id))
     try:
-        updated_prefs = await user_model.update_user_preferences(
-            int(user_id), prefs_data
-        )
+        if not user_prefs:
+            logger.info("Creating preferences for user ID %s", user_id)
+            updated_prefs = await user_model.create_user_preferences(
+                int(user_id), prefs_data
+            )
+        else:
+            logger.info("Updating preferences for user ID %s", user_id)
+            updated_prefs = await user_model.update_user_preferences(
+                int(user_id), prefs_data
+            )
+        logger.info(f"Updated preferences for user ID {user_id}: {updated_prefs}")
         return updated_prefs
+
     except Exception as e:
-        logging.error(f"Error updating preferences: {e}")
+        logger.error(f"Error updating preferences: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update preferences",
-        )
+        detail="Failed to update preferences",
+    )
 
 
 @router.get("/preferences", summary="Get user preferences")
@@ -470,7 +478,7 @@ async def get_preferences(
     token: Annotated[str, Depends(oauth2_scheme)],
 ):
     if token is None or token == "null" or token == "":
-        logging.error("Token is missing or invalid")
+        logger.error("Token is missing or invalid")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is required for updating preferences",
@@ -484,7 +492,7 @@ async def get_preferences(
             )
         return prefs
     except Exception as e:
-        logging.error(f"Error fetching preferences: {e}")
+        logger.error(f"Error fetching preferences: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch preferences",
@@ -497,7 +505,7 @@ async def get_preferences_by_user_id(
     token: Annotated[str, Depends(oauth2_scheme)],
 ):
     if token is None or token == "null" or token == "":
-        logging.error("Token is missing or invalid")
+        logger.error("Token is missing or invalid")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is required for updating preferences",
@@ -510,7 +518,7 @@ async def get_preferences_by_user_id(
             )
         return prefs
     except Exception as e:
-        logging.error(f"Error fetching preferences: {e}")
+        logger.error(f"Error fetching preferences: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch preferences",

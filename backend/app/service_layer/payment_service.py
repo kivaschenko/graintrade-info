@@ -9,7 +9,6 @@ from ..schemas import (
     SubscriptionInResponse,
 )
 from ..payments import (
-    FondyPaymentService,
     LiqPayPaymentService,
     make_start_end_dates_for_monthly_case,
 )
@@ -20,7 +19,6 @@ logging.basicConfig(level=logging.INFO)
 
 
 PAYMENT_PROVIDERS = {
-    "fondy": FondyPaymentService,
     "liqpay": LiqPayPaymentService,
     # Add other payment providers here as needed
 }
@@ -114,7 +112,7 @@ async def payment_for_subscription_handler(
 
 async def update_subscription_and_save_payment_confirmation(
     payment_response: Dict[str, Any],
-    payment_provider_name: str = "fondy",
+    payment_provider_name: str = "liqpay",
 ):
     """Update subscription status and save payment confirmation"""
     payment_service = PAYMENT_PROVIDERS.get(payment_provider_name)
@@ -158,7 +156,7 @@ async def update_subscription_and_save_payment_confirmation(
 
 
 async def verify_payment_status(
-    order_id: str, payment_provider_name: str = "fondy"
+    order_id: str, payment_provider_name: str = "liqpay"
 ) -> bool:
     """Verify payment status for a given order ID"""
     payment_service = PAYMENT_PROVIDERS.get(payment_provider_name)
@@ -177,14 +175,7 @@ async def verify_payment_status(
     except Exception as e:
         logging.error(f"Error checking payment status: {str(e)}")
         return False
-    if payment_provider_name == "fondy":
-        if status["order_status"] == "approved":
-            # Process successful payment
-            await update_subscription_and_save_payment_confirmation(
-                status, payment_provider_name
-            )
-            return True
-    elif payment_provider_name == "liqpay":
+    if payment_provider_name == "liqpay":
         if status["status"] in ["success", "subscribed"]:
             # Process successful payment
             await update_subscription_and_save_payment_confirmation(

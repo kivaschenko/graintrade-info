@@ -16,342 +16,166 @@
 >
 > Useful links:
 > - Production: https://graintrade.info/
-> - Repo Roadmap: TECH_STACK_AND_ROADMAP.md
+> - Architecture audit: [ARCHITECTURE_AUDIT.md](ARCHITECTURE_AUDIT.md)
+> - Business roadmap: [docs/ProjectAudit_BusinessRoadmap.md](docs/ProjectAudit_BusinessRoadmap.md)
+> - **Licensing**: Available under dual licensing (AGPL v3 open-source + commercial). See [License](#license) section.
 >
 > I’m happy to walk through design decisions, trade-offs, and next milestones. Feel free to reach out via email listed below.
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL%20v3%20%2B%20Commercial-blue.svg)](LICENSE)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue)](.github/workflows/deploy.yml)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue)](docker-compose.yaml)
 
-A modern microservices-based platform for Ukrainian farmers to trade agricultural commodities including grain, seeds, fertilizers, and fuel. Built with FastAPI, Vue.js, and event-driven architecture using RabbitMQ.
+GrainTrade is a microservices platform for agricultural commodity trading in Ukraine.
 
-## 🏗️ Architecture Overview
+- Production: https://graintrade.info/
+- Architecture audit: [ARCHITECTURE_AUDIT.md](ARCHITECTURE_AUDIT.md)
+- Business roadmap: [docs/ProjectAudit_BusinessRoadmap.md](docs/ProjectAudit_BusinessRoadmap.md)
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│    Frontend     │    │   Landing       │    │   Apache        │
-│   (Vue.js)      │    │   Service       │    │   Reverse       │
-│   Port: 8080    │    │   Port: 8003    │    │   Proxy         │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         │                       │                       │
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│    Backend      │    │   Chat Room     │    │ Notifications   │
-│   (FastAPI)     │    │   Service       │    │   Service       │
-│   Port: 8000    │    │   Port: 8001    │    │   Port: 8002    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         │                       │                       │
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   PostgreSQL    │    │    RabbitMQ     │    │     Redis       │
-│   Database      │    │   Message       │    │    Cache        │
-│   Port: 5432    │    │   Queue         │    │   Port: 6379    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+## Services
 
-## 🚀 Features
+| Service | Port | Role |
+|---|---:|---|
+| Backend | 8000 | Main API |
+| Chat Room | 8001 | Real-time chat |
+| Notifications | 8002 | Email/notification workflows |
+| Landing Service | 8003 | Marketing pages |
+| Data Pipeline | 8004 | Forecasting and analytics API |
+| Frontend | 8080 | Vue web app |
 
-### Core Platform
-- **Agricultural Trading**: Buy/sell grain, seeds, fertilizers, fuel
-- **User Management**: Registration, authentication, subscription plans
-- **Geospatial Search**: Location-based item filtering with Mapbox integration
-- **Real-time Communication**: WebSocket-based chat system
-- **Payment Processing**: Integrated payment gateway
-- **Multilingual Support**: Ukrainian and English interfaces
+Infrastructure: PostgreSQL (5432), Redis (6379), RabbitMQ (5672/15672).
 
-### Technical Features
-- **Microservices Architecture**: Independent, scalable services
-- **Event-Driven**: RabbitMQ message queue for service communication
-- **Real-time Updates**: WebSocket connections for live data
-- **Caching**: Redis for performance optimization
-- **Monitoring**: Prometheus + Grafana observability stack
-- **CI/CD**: GitHub Actions with Docker Hub integration
-
-## 📦 Technology Stack
-
-### Backend Services
-- **Framework**: FastAPI 0.115.4+ (Python 3.12)
-- **Database**: PostgreSQL with asyncpg driver
-- **Cache**: Redis with async support
-- **Message Queue**: RabbitMQ with aio-pika
-- **Authentication**: JWT tokens with bcrypt
-- **API Documentation**: OpenAPI/Swagger auto-generation
-
-### Frontend
-- **Framework**: Vue.js 3.5+ with Composition API
-- **Build Tool**: Vue CLI with Webpack
-- **UI Framework**: Bootstrap 5.3+
-- **Maps**: Mapbox GL JS 3.8+
-- **HTTP Client**: Axios
-- **State Management**: Vuex 4
-- **Routing**: Vue Router 4
-- **Internationalization**: Vue I18n
-
-### Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **Web Server**: Apache2 with SSL (Let's Encrypt)
-- **Monitoring**: Prometheus, Grafana, Node Exporter
-- **Security**: Fail2Ban, UFW firewall
-- **CI/CD**: GitHub Actions with Docker Hub registry
-
-### Communication
-- **Message Queue**: RabbitMQ for service-to-service communication
-- **WebSocket**: Real-time chat and notifications
-- **Email**: SMTP integration for notifications
-- **External APIs**: Payment gateways, geocoding services
-
-## 🏗️ Services Architecture
-
-### Core Services
-
-| Service | Port | Description | Technology |
-|---------|------|-------------|------------|
-| **Backend** | 8000 | Main API service | FastAPI, PostgreSQL, Redis |
-| **Chat Room** | 8001 | Real-time messaging | FastAPI, WebSocket, RabbitMQ |
-| **Notifications** | 8002 | Email & push notifications | FastAPI, SMTP, Telegram |
-| **Frontend** | 8080 | Web application | Vue.js, Nginx |
-| **Landing** | 8003 | Marketing pages | Flask, Jinja2 |
-
-### Supporting Services
-
-| Service | Port | Description |
-|---------|------|-------------|
-| **PostgreSQL** | 5432 | Primary database |
-| **Redis** | 6379 | Cache & sessions |
-| **RabbitMQ** | 5672/15672 | Message queue |
-| **Prometheus** | 9090 | Metrics collection |
-| **Grafana** | 3000 | Monitoring dashboard |
-
-### Utility Services
-- **Cron Services**: Subscription management and automated tasks
-- **Parsers**: Data import and commodity price updates
-- **Apache Files**: Web server configuration and security
-
-## 🚀 Quick Start
+## Quick Start (Local via Docker)
 
 ### Prerequisites
-- Docker & Docker Compose
-- Node.js 16+ (for development)
-- Python 3.12+ (for development)
+
+- Docker and Docker Compose
 - Git
 
-### Production Deployment
+### 1. Clone
 
-1. **Clone the repository**
 ```bash
 git clone https://github.com/kivaschenko/graintrade-info.git
 cd graintrade-info
 ```
 
-2. **Configure environment variables**
-```bash
-# Backend services
-cp backend/sample_env backend/.env
-cp chat-room/.env.example chat-room/.env
-cp notifications/.env.example notifications/.env
+### 2. Create environment files
 
-# Frontend
-cp frontend/.env.example frontend/.env.production
+```bash
+cp backend/sample_env backend/.env
+cp chat-room/.env.prod.example chat-room/.env
+cp notifications/.env.prod.example notifications/.env
+cp data-pipeline/.env.example data-pipeline/.env
 ```
 
-3. **Start all services**
+Create `frontend/.env.production` manually (required by compose) with at least:
+
+```env
+VUE_APP_BACKEND_URL=http://localhost:8000
+VUE_APP_CHAT_HTTP_URL=http://localhost:8001
+VUE_APP_CHAT_WS_URL=ws://localhost:8001
+VUE_APP_DATA_PIPELINE_API_URL=http://localhost:8004
+VUE_APP_MAPBOX_TOKEN=your_mapbox_token
+```
+
+### 3. Start the stack
+
 ```bash
 docker-compose up -d --build
 ```
 
-4. **Verify deployment**
+### 4. Verify
+
 ```bash
-docker-compose logs
+docker-compose ps
 curl http://localhost:8000/health
+curl http://localhost:8001/health
+curl http://localhost:8002/health
+curl http://localhost:8003/health
+curl http://localhost:8004/health
 ```
 
-### Development Mode
+Main URLs:
 
-1. **Start infrastructure services**
-```bash
-cd rabbitmq-init
-docker-compose up -d
-```
-
-2. **Run backend services**
-```bash
-# Terminal 1 - Main Backend
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-fastapi dev
-
-# Terminal 2 - Chat Service
-cd chat-room
-source venv/bin/activate
-pip install -r requirements.txt
-fastapi dev --port 8001
-
-# Terminal 3 - Notifications
-cd notifications
-source venv/bin/activate
-pip install -r requirements.txt
-python -m app.main
-```
-
-3. **Run frontend**
-```bash
-# Terminal 4 - Frontend
-cd frontend
-npm install
-npm run serve
-```
-
-4. **Access the application**
 - Frontend: http://localhost:8080
-- API Documentation: http://localhost:8000/docs
-- Chat API: http://localhost:8001/docs
-- Notifications API: http://localhost:8002/docs
+- Backend docs: http://localhost:8000/docs
+- Chat docs: http://localhost:8001/docs
+- Notifications docs: http://localhost:8002/docs
+- Data Pipeline docs: http://localhost:8004/docs
 
-## � Configuration
+## Production Compose
 
-### Environment Variables
+- Use [docker-compose.prod.yaml](docker-compose.prod.yaml) for prebuilt images.
+- This file expects service env files under an `envs/` directory:
+  - `envs/backend.env`
+  - `envs/chat-room.env`
+  - `envs/notifications.env`
+  - `envs/data-pipeline.env`
 
-Each service requires specific environment variables:
+## Service Documentation
 
-#### Backend (.env)
-```env
-DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
-REDIS_URL=redis://localhost:6379
-RABBITMQ_URL=amqp://guest:guest@localhost:5672/
-JWT_SECRET=your_jwt_secret
-MAPBOX_ACCESS_TOKEN=your_mapbox_token
-SMTP_PASSWORD=your_smtp_password
-```
+- [backend/README.md](backend/README.md)
+- [chat-room/README.md](chat-room/README.md)
+- [notifications/README.md](notifications/README.md)
+- [data-pipeline/README.md](data-pipeline/README.md)
+- [frontend/README.md](frontend/README.md)
+- [landing-service/README.md](landing-service/README.md)
+- [monitoring/README.md](monitoring/README.md)
 
-#### Frontend (.env.production)
-```env
-VUE_APP_API_URL=https://api.graintrade.info
-VUE_APP_CHAT_URL=https://chat.graintrade.info
-VUE_APP_MAPBOX_TOKEN=your_mapbox_token
-VUE_APP_WEBSOCKET_URL=wss://chat.graintrade.info/ws
-```
+## Repository Layout
 
-### Service Health Checks
-
-All services include health check endpoints:
-- Backend: `GET /health`
-- Chat Room: `GET /health`
-- Notifications: `GET /health`
-- Landing: `GET /health`
-
-## 📊 Monitoring & Observability
-
-### Metrics Collection
-- **Prometheus**: Collects metrics from all services
-- **Node Exporter**: System metrics
-- **PostgreSQL Exporter**: Database metrics
-- **Redis Exporter**: Cache metrics
-
-### Dashboards
-- **Grafana**: http://localhost:3000 (admin/admin123)
-- Pre-configured dashboards for system and application metrics
-
-### Logging
-- Centralized logging with structured JSON logs
-- Service-specific log levels and rotation
-- Health check monitoring with alerts
-
-## 🔒 Security
-
-### Infrastructure Security
-- **SSL/TLS**: Let's Encrypt certificates
-- **Firewall**: UFW with restricted access
-- **Fail2Ban**: Intrusion prevention
-- **Security Headers**: CORS, CSP, HSTS
-
-### Application Security
-- **Authentication**: JWT tokens with expiration
-- **Password Hashing**: bcrypt with salt
-- **Input Validation**: Pydantic schemas
-- **Rate Limiting**: Redis-based throttling
-- **SQL Injection Prevention**: Parameterized queries
-
-## 🚢 Deployment
-
-### CI/CD Pipeline
-1. **Build**: Docker images for each service
-2. **Test**: Automated testing with pytest
-3. **Push**: Images to Docker Hub registry
-4. **Deploy**: Docker Compose on production server
-5. **Monitor**: Health checks and rollback capability
-
-### Production Infrastructure
-- **Server**: Hetzner AX41-NVMe recommended
-- **Load Balancer**: Apache2 reverse proxy
-- **SSL**: Automated Let's Encrypt renewal
-- **Backup**: Database and volume backups
-- **Monitoring**: 24/7 health monitoring
-
-## 📁 Project Structure
-
-```
+```text
 graintrade-info/
-├── apache_files/          # Apache2 configuration
-├── backend/               # Main FastAPI service
-├── chat-room/            # Real-time messaging service
-├── cron_services/        # Scheduled tasks
-├── frontend/             # Vue.js web application
-├── landing-service/      # Marketing website
-├── monitoring/           # Prometheus & Grafana config
-├── notifications/        # Email & push notifications
-├── parsers/             # Data import utilities
-├── postgres-init/       # Database initialization
-├── rabbitmq-init/       # Message queue setup
-├── scripts/             # Deployment scripts
-├── docker-compose.yaml  # Production deployment
-├── docker-compose.dev.yaml  # Development setup
-├── .github/workflows/   # GitHub Actions CI/CD
-└── README.md           # This file
+|- backend/
+|- chat-room/
+|- notifications/
+|- data-pipeline/
+|- frontend/
+|- landing-service/
+|- monitoring/
+|- cron_services/
+|- parsers/
+|- docker-compose.yaml
+|- docker-compose.prod.yaml
+`- README.md
 ```
 
-## 🤝 Contributing
+## Development Notes
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Follow the coding standards for each service
-4. Write tests for new functionality
-5. Update documentation as needed
-6. Submit a pull request
+- Root compose file [docker-compose.yaml](docker-compose.yaml) builds services from source.
+- CI/CD workflow is in [.github/workflows/deploy.yml](.github/workflows/deploy.yml).
+- Monitoring-related helper scripts live in the repository root and [monitoring](monitoring).
 
-### Development Guidelines
-- Follow PEP 8 for Python code
-- Use Vue.js style guide for frontend
-- Write comprehensive tests
-- Update API documentation
-- Use conventional commit messages
+## Contributing
 
-## 📄 License
+1. Create a feature branch.
+2. Keep changes scoped to one service when possible.
+3. Add or update tests and docs for behavioral changes.
+4. Open a pull request with a clear summary.
 
-This project is licensed under the MIT - see the [LICENSE](LICENSE) file for details.
+## License
 
-## 🔗 Links
+GrainTrade is available under a **dual-license model**:
 
-- **Production**: [graintrade.info](https://graintrade.info)
-- **API Documentation**: [api.graintrade.info/docs](https://api.graintrade.info/docs)
-- **Repository**: [GitHub](https://github.com/kivaschenko/graintrade-info)
-- **Issues**: [GitHub Issues](https://github.com/kivaschenko/graintrade-info/issues/new)
+### 1. **Open Source License (AGPL v3)**
+Free to use, modify, and distribute under the GNU Affero General Public License v3.0.
+See [LICENSE](LICENSE) for full terms.
 
-## 📧 Support
+- ✅ Self-hosted deployments
+- ✅ Internal use and forks (with source sharing for network use)
+- ✅ Non-commercial projects
 
-For support and questions:
+### 2. **Commercial License**
+For businesses and teams that want proprietary use without copyleft obligations.
+
+- 💼 SaaS deployments with competitive modifications
+- 💼 Proprietary integrations
+- 💼 Closed-source derivatives
+
+[Learn more about commercial licensing](COMMERCIAL_LICENSE.md)
+
+## Contact
+
+- **License Inquiry**: kivaschenko@protonmail.com (subject: "Commercial License")
 - Email: kivaschenko@protonmail.com
-- GitHub Issues: [Create an issue](https://github.com/kivaschenko/graintrade-info/issues/new)
-
----
-
-**Made with ❤️ for Ukrainian farmers** 🇺🇦  
-Project by [yourname or startup]
+- Issues: https://github.com/kivaschenko/graintrade-info/issues/new

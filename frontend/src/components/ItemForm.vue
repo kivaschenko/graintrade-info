@@ -20,7 +20,7 @@
       </div>
       
       <!-- Info Card for Free Plan Users -->
-      <div class="col-lg-5 mb-4" v-if="!hasMapAccess && !isLoadingSubscription">
+      <!-- <div class="col-lg-5 mb-4" v-if="!hasMapAccess && !isLoadingSubscription">
         <div class="card h-100 graintrade-card">
           <div class="card-header text-center bg-graintrade-primary text-white">
             <h2 class="mb-0 text-white">
@@ -44,7 +44,7 @@
             </router-link>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Form -->
       <div :class="['mb-4', hasMapAccess || isLoadingSubscription ? 'col-lg-7' : 'col-lg-12']">
