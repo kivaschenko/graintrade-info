@@ -12,7 +12,7 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
     Create or update a payment record
 
     Args:
-        data (Dict[str, Any]): Payment data dictionary from Fondy response
+        data (Dict[str, Any]): Payment data dictionary from payment provider response
 
     Returns:
         Dict[str, Any]: Created/updated payment record

@@ -86,7 +86,7 @@ async def create_subscription(
             amount = current_tarif.price
             currency = current_tarif.currency
             order_desc = current_tarif.description
-        # Adopt language preference for LiqPay and Fondy
+        # Adopt language preference for LiqPay
         elif language == "uk":
             amount = current_tarif.ua_price
             currency = current_tarif.ua_currency

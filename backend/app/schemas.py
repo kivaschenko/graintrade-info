@@ -223,8 +223,8 @@ class SubscriptionInDB(BaseModel):
     user_id: int
     tarif_id: int
     order_id: Optional[str] = None
-    provider: str = "fondy"  # Default to Fondy payment provider
-    provider_payment_token: Optional[str] = None  # Token for Fondy payment
+    provider: str = "liqpay"  # Default to LiqPay payment provider
+    provider_payment_token: Optional[str] = None  # Token for payment provider
     start_date: date | None
     end_date: date | None
     status: SubscriptionStatus = SubscriptionStatus.INACTIVE
@@ -238,7 +238,7 @@ class SubscriptionInResponse(BaseModel):
     tarif_id: int
     order_id: str
     provider: str
-    provider_payment_token: Optional[str] = None  # Token for Fondy payment
+    provider_payment_token: Optional[str] = None  # Token for payment provider
     start_date: date
     end_date: date
     status: SubscriptionStatus
@@ -260,7 +260,7 @@ class SubscriptionInResponse(BaseModel):
 
 
 # class PaymentInDB(BaseModel):
-#     """Payment data model based on Fondy payment response"""
+#     """Payment data model"""
 
 #     id: Optional[int] = None
 #     payment_id: int
