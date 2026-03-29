@@ -4,8 +4,6 @@ from .payment_helpers import (
     get_signature_from_cache,
 )
 from .base import BasePaymentProvider
-
-from .fondy import FondyPaymentService
 from .liqpay import LiqPayPaymentService
 
 __all__ = [
@@ -13,6 +11,5 @@ __all__ = [
     "save_signature_to_cache",
     "get_signature_from_cache",
     "BasePaymentProvider",
-    "FondyPaymentService",
     "LiqPayPaymentService",
 ]

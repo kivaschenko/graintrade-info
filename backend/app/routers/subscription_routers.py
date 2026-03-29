@@ -60,14 +60,14 @@ async def get_tarif(tarif_id: int):
 async def create_subscription(
     user_id: int = Body(embed=True),
     tarif_id: int = Body(embed=True),
-    payment_provider: str = Body(embed=True),
+    payment_provider: str = Body(default="liqpay", embed=True),
     language: str = Body(embed=True),  # 'en' or 'uk'
 ):
     """Create a new subscription for a user."""
     if language == "ua":
         language = "uk"
     if not payment_provider:
-        payment_provider = "liqpay"  # Default payment provider
+        payment_provider = "liqpay"
     logging.info(
         f"Creating subscription with data: user_id={user_id}, tarif_id={tarif_id}"
     )
@@ -86,7 +86,7 @@ async def create_subscription(
             amount = current_tarif.price
             currency = current_tarif.currency
             order_desc = current_tarif.description
-        # Adopt language preference for LiqPay and Fondy
+        # Adopt language preference for LiqPay
         elif language == "uk":
             amount = current_tarif.ua_price
             currency = current_tarif.ua_currency
@@ -105,7 +105,12 @@ async def create_subscription(
         if checkout_result:
             return checkout_result
         else:
-            return {"status": "error", "message": "Error during payment attemp"}
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Payment provider is unavailable. Please try again later.",
+            )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}"

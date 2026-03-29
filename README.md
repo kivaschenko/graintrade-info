@@ -16,12 +16,13 @@
 >
 > Useful links:
 > - Production: https://graintrade.info/
-> - Architecture audit: ARCHITECTURE_AUDIT.md
-> - Business roadmap: docs/ProjectAudit_BusinessRoadmap.md
+> - Architecture audit: [ARCHITECTURE_AUDIT.md](ARCHITECTURE_AUDIT.md)
+> - Business roadmap: [docs/ProjectAudit_BusinessRoadmap.md](docs/ProjectAudit_BusinessRoadmap.md)
+> - **Licensing**: Available under dual licensing (AGPL v3 open-source + commercial). See [License](#license) section.
 >
 > I’m happy to walk through design decisions, trade-offs, and next milestones. Feel free to reach out via email listed below.
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL%20v3%20%2B%20Commercial-blue.svg)](LICENSE)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue)](.github/workflows/deploy.yml)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue)](docker-compose.yaml)
 
@@ -154,9 +155,27 @@ graintrade-info/
 
 ## License
 
-Licensed under GNU AGPL 3.0. See [LICENSE](LICENSE).
+GrainTrade is available under a **dual-license model**:
+
+### 1. **Open Source License (AGPL v3)**
+Free to use, modify, and distribute under the GNU Affero General Public License v3.0.
+See [LICENSE](LICENSE) for full terms.
+
+- ✅ Self-hosted deployments
+- ✅ Internal use and forks (with source sharing for network use)
+- ✅ Non-commercial projects
+
+### 2. **Commercial License**
+For businesses and teams that want proprietary use without copyleft obligations.
+
+- 💼 SaaS deployments with competitive modifications
+- 💼 Proprietary integrations
+- 💼 Closed-source derivatives
+
+[Learn more about commercial licensing](COMMERCIAL_LICENSE.md)
 
 ## Contact
 
+- **License Inquiry**: kivaschenko@protonmail.com (subject: "Commercial License")
 - Email: kivaschenko@protonmail.com
 - Issues: https://github.com/kivaschenko/graintrade-info/issues/new
