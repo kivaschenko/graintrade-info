@@ -58,17 +58,44 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
             k: v for k, v in data.items() if k not in required_fields and k != "id"
         }
 
-        query = """
-        INSERT INTO payments (payment_id, order_id, order_status, currency, amount, card_type, masked_card, payment_system, response_status, tran_type, order_time, additional_info, provider
+        insert_query = """
+        INSERT INTO payments (
+            payment_id,
+            order_id,
+            order_status,
+            currency,
+            amount,
+            card_type,
+            masked_card,
+            payment_system,
+            response_status,
+            tran_type,
+            order_time,
+            additional_info,
+            provider
         )
         VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
         )
-        ON CONFLICT (payment_id) DO UPDATE
-        SET 
-            order_status = EXCLUDED.order_status,
-            response_status = EXCLUDED.response_status,
-            additional_info = payments.additional_info || EXCLUDED.additional_info
+        RETURNING *;
+        """
+
+        update_by_order_query = """
+        UPDATE payments
+        SET
+            payment_id = $2,
+            order_status = $3,
+            currency = $4,
+            amount = $5,
+            card_type = $6,
+            masked_card = $7,
+            payment_system = $8,
+            response_status = $9,
+            tran_type = $10,
+            order_time = $11,
+            additional_info = COALESCE(payments.additional_info, '{}'::jsonb) || $12::jsonb,
+            provider = $13
+        WHERE order_id = $1
         RETURNING *;
         """
 
@@ -80,9 +107,9 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
         async with database.pool.acquire() as connection:
             async with connection.transaction():
                 payment = await connection.fetchrow(
-                    query,
-                    data["payment_id"],
+                    update_by_order_query,
                     data["order_id"],
+                    data["payment_id"],
                     data["order_status"],
                     data["currency"],
                     data["amount"],
@@ -95,6 +122,23 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
                     json.dumps(additional_info),
                     data["provider"],
                 )
+                if payment is None:
+                    payment = await connection.fetchrow(
+                        insert_query,
+                        data["payment_id"],
+                        data["order_id"],
+                        data["order_status"],
+                        data["currency"],
+                        data["amount"],
+                        data["card_type"],
+                        data["masked_card"],
+                        data["payment_system"],
+                        data["response_status"],
+                        data["tran_type"],
+                        order_time,
+                        json.dumps(additional_info),
+                        data["provider"],
+                    )
 
         if not payment:
             raise Exception("Payment record was not created/updated")
