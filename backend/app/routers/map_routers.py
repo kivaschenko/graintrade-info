@@ -73,7 +73,7 @@ async def increment_map_view(
         else:
             return {"status": "denied", "counter": counter_usage}
     except Exception as e:
-        logger.error(f"Error during update map_vie for user_id: {user_id} {e}.")
+        logger.error(f"Error during update map_view for user_id: {user_id} {e}.")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Counter {counter} not updated.",

@@ -86,7 +86,11 @@ class RabbitMQ:
                 ),
                 routing_key=queue,
             )
-            logger.info(f"Message published to RabbitMQ: {message}")
+            logger.info(
+                "Message published to RabbitMQ queue=%s payload=%s",
+                queue,
+                self._redact_message(message),
+            )
         except Exception as e:
             logger.error(f"Failed to publish message to RabbitMQ: {e}")
 
@@ -104,6 +108,23 @@ class RabbitMQ:
         if self.connection:
             await self.connection.close()
             logger.info("RabbitMQ connection closed")
+
+    @staticmethod
+    def _redact_message(message: dict) -> dict:
+        redacted = dict(message)
+        sensitive_keys = {
+            "sender_card_mask2",
+            "sender_card_bank",
+            "sender_first_name",
+            "sender_last_name",
+            "authcode_debit",
+            "rrn_debit",
+            "signature",
+        }
+        for key in sensitive_keys:
+            if key in redacted:
+                redacted[key] = "***"
+        return redacted
 
 
 # Initialize RabbitMQ connection
@@ -152,7 +173,7 @@ if __name__ == "__main__":
     async def test_rabbitmq():
         await rabbitmq.connect()
         queue = QueueName.ITEM_EVENTS
-        print(f"Publish messages to queue: {queue}")
+        logger.info(f"Publish messages to queue: {queue}")
         await publish_document_upload_event(rabbitmq, queue)
         await rabbitmq.close()
 
@@ -163,10 +184,10 @@ if __name__ == "__main__":
 
         async def callback(message: aio_pika.IncomingMessage):
             async with message.process():
-                print("Received message:", json.loads(message.body.decode()))
+                logger.info("Received message: %s", json.loads(message.body.decode()))
 
         queue = QueueName.ITEM_EVENTS
-        print(f"Consume messages from queue: {queue}")
+        logger.info(f"Consume messages from queue: {queue}")
         await rabbitmq.consume(queue, callback)
 
     asyncio.run(test_rabbitmq_consume())
