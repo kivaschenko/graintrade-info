@@ -27,7 +27,6 @@ async def confirm_liqpay(request: Request, background_tasks: BackgroundTasks):
 
         decoded_data = json.loads(base64.b64decode(data).decode("utf-8"))
         logger.info(f"LiqPay webhook decoded payload: order_id={decoded_data.get('order_id')}, status={decoded_data.get('status')}")
-        print(f"\n\tDecoded LiqPay data: {decoded_data}\n\tSignature: {signature}\n\tRemove this print statement in production code!\n")
     except Exception as e:
         logger.exception("Failed to decode LiqPay webhook payload")
         return JSONResponse(
@@ -75,3 +74,27 @@ async def confirm_liqpay(request: Request, background_tasks: BackgroundTasks):
                 payment_service.send_success_payment_details_to_queue,
                 payment_dict=decoded_data,
             )
+
+
+@router.get("/verify/liqpay/{order_id}")
+async def verify_liqpay(order_id: str):
+    """Fallback endpoint to verify and activate payment if webhook was missed."""
+    try:
+        verified = await payment_service.verify_payment_status(
+            order_id=order_id, payment_provider_name="liqpay"
+        )
+        if verified:
+            return JSONResponse(
+                content={"status": "success", "message": "Payment verified"},
+                status_code=200,
+            )
+        return JSONResponse(
+            content={"status": "pending", "message": "Payment is not confirmed yet"},
+            status_code=202,
+        )
+    except Exception as e:
+        logger.exception(f"LiqPay manual verification failed for order_id={order_id}")
+        return JSONResponse(
+            content={"status": "error", "message": str(e)},
+            status_code=500,
+        )

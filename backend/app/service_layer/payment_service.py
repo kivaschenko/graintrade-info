@@ -104,6 +104,7 @@ async def payment_for_subscription_handler(
         checkout_result: Dict[str, Any] = await payment_service.process_payment(
             amount, order_id, order_desc, currency, email, language=language
         )
+        checkout_result["order_id"] = order_id
         return checkout_result
     except Exception as e:
         logging.exception(f"Error in payment_for_subscription_handler: {str(e)}")
@@ -180,18 +181,24 @@ async def verify_payment_status(
     except Exception as e:
         logging.error(f"Error checking payment status: {str(e)}")
         return False
-    if payment_provider_name == "liqpay":
-        if status["status"] in ["success", "subscribed"]:
-            # Process successful payment
-            await update_subscription_and_save_payment_confirmation(
-                status, payment_provider_name
-            )
-            return True
 
-    logging.info(f"Payment {order_id} finished with status: {status['order_status']}")
+    provider_status = status.get("status")
+    if payment_provider_name == "liqpay" and provider_status in ["success", "subscribed"]:
+        # Process successful payment
+        updated = await update_subscription_and_save_payment_confirmation(
+            status, payment_provider_name
+        )
+        return bool(updated)
+
+    logging.info(
+        "Payment %s finished with provider status: %s",
+        order_id,
+        provider_status,
+    )
     return False
 
 
+# ----------------------------
 # RabbitMQ publisher
 
 
@@ -209,8 +216,3 @@ async def send_success_payment_details_to_queue(
         logging.info("RabbitMQ connection closed after publishing payment details")
         return True
     return False
-
-
-if __name__ == "__main__":
-    # Example usage
-    pass
