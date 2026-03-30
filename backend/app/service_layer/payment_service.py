@@ -106,7 +106,7 @@ async def payment_for_subscription_handler(
         )
         return checkout_result
     except Exception as e:
-        logging.error(f"Error in payment_for_subscription_handler: {str(e)}")
+        logging.exception(f"Error in payment_for_subscription_handler: {str(e)}")
         return None
 
 
@@ -142,15 +142,20 @@ async def update_subscription_and_save_payment_confirmation(
 
     # Save payment confirmation and update subscription status
     try:
+        order_id = payment_response.get("order_id")
+        logging.info(f"Normalizing payment data for order_id: {order_id}")
         payment_data = payment_service.normalize(payment_response)
-        await payment_model.create(payment_data)
+        logging.info(f"Creating payment record for order_id: {order_id}")
+        payment_record: Dict[str, Any] = await payment_model.create(payment_data)
+        logging.info(f"Payment record created, updating subscription for order_id: {order_id}")
         await subscription_model.update_status_by_order_id(
-            SubscriptionStatus.ACTIVE, payment_response["order_id"]
+            SubscriptionStatus.ACTIVE, order_id, payment_record
         )
+        logging.info(f"Subscription activated for order_id: {order_id}")
         return True
     except Exception as e:
-        logging.error(
-            f"Error updating subscription and saving payment confirmation: {str(e)}"
+        logging.exception(
+            f"Error updating subscription and saving payment confirmation for order_id {payment_response.get('order_id')}: {str(e)}"
         )
         return False
 

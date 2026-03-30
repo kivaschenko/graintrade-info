@@ -21,16 +21,35 @@ def make_start_end_dates_for_monthly_case() -> tuple[date, date]:
 
 def save_signature_to_cache(order_id: str, signature: str):
     r = redis.Redis().from_pool(redis_db.pool)
-    res = r.set(name=order_id, value=signature, ex=600)
-    if not res:
-        logging.error(f"Failed to save signature for order_id {order_id} in cache")
-    else:
+    try:
+        res = r.set(name=order_id, value=signature, ex=600)
+        if not res:
+            logging.error(f"Failed to save signature for order_id {order_id} in cache")
+            return False
         logging.info(f"Signature saved for order_id {order_id} in cache")
-    r.close()
+        return True
+    except Exception as e:
+        logging.error(
+            "Redis is unavailable while saving payment signature for order_id %s: %s",
+            order_id,
+            e,
+        )
+        return False
+    finally:
+        r.close()
 
 
 def get_signature_from_cache(order_id: str):
     r = redis.Redis().from_pool(redis_db.pool)
-    signature = r.get(name=order_id)
-    r.close()
-    return signature
+    try:
+        signature = r.get(name=order_id)
+        return signature
+    except Exception as e:
+        logging.error(
+            "Redis is unavailable while reading payment signature for order_id %s: %s",
+            order_id,
+            e,
+        )
+        return None
+    finally:
+        r.close()

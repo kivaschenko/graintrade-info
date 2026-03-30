@@ -1,8 +1,12 @@
-from typing import List
 import uuid
 from datetime import datetime, timedelta
 
 from ..database import database
+from ..schemas import (
+    SubscriptionInDB,
+    SubscriptionInResponse,
+    TarifInResponse,
+)
 from ..utils.metrics import set_active_subscriptions
 
 
@@ -20,11 +24,6 @@ async def _refresh_active_gauge(connection):
     except Exception:
         # Metrics must not break business logic
         pass
-from ..schemas import (
-    SubscriptionInDB,
-    SubscriptionInResponse,
-    TarifInResponse,
-)
 
 
 # -------------------
@@ -170,33 +169,37 @@ async def create_trial_subscription(
             return subscription
 
 
-async def update_status_by_order_id(status: str, order_id: str):
+async def update_status_by_order_id(
+    status: str, order_id: str, payment_record: dict | None = None
+) -> SubscriptionInResponse:
     if status not in ["active", "inactive", "expired"]:
         raise ValueError(
             "Invalid status value. Must be 'active', 'inactive', or 'expired'."
         )
+    payment_id = payment_record.get("id") if payment_record else None
     query = """
         UPDATE subscriptions
-        SET status = $1
-        WHERE order_id = $2
-        RETURNING id, user_id, order_id, status
+        SET status = $1,
+            payment_id = $2::integer
+        WHERE order_id = $3
+        RETURNING id, user_id, tarif_id, start_date, end_date, order_id, status,
+                  created_at, provider, provider_payment_token, is_trial, trial_expires_at
 """
     clean_query = """
         UPDATE subscriptions
         SET status = 'inactive'
-        WHERE user_id = $1 AND order_id <> $2
-        RETURNING id, user_id, order_id, status
+        WHERE user_id = $1 AND order_id <> $2 AND status = 'active'
 """
     async with database.pool.acquire() as conn:
         async with conn.transaction():
-            row = await conn.fetchrow(query, status, order_id)
+            row = await conn.fetchrow(query, status, payment_id, order_id)
             if row is None:
                 raise ValueError("Subscription with the given order_id does not exist.")
             # Clean up other subscriptions for the same user
             user_id = row["user_id"]
             await conn.execute(clean_query, user_id, order_id)
         await _refresh_active_gauge(conn)
-        return row
+        return SubscriptionInResponse(**row)
 
 
 async def get_by_id(subscription_id: int) -> SubscriptionInResponse:

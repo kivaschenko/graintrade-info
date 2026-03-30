@@ -7,6 +7,7 @@ import httpx
 import logging
 import os
 import json
+from urllib.parse import urljoin
 from dotenv import load_dotenv
 
 from ..payments.base import BasePaymentProvider
@@ -19,9 +20,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
 LIQPAY_PUBLIC_KEY = os.getenv("LIQPAY_PUBLIC_KEY")
 LIQPAY_PRIVATE_KEY = os.getenv("LIQPAY_PRIVATE_KEY")
-BASE_URL = os.getenv("BASE_URL", "localhost:8000")
-LIQPAY_CALLBACK_URL = f"{BASE_URL}/payments/confirm/liqpay"
-RESULT_URL = f"{BASE_URL}/tariffs"
+BASE_URL = os.getenv("BASE_URL", "")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "")
+
+
+def _join_url(base: str, path: str) -> str | None:
+    if not base:
+        return None
+    if not base.startswith(("http://", "https://")):
+        logging.warning("Skipping malformed base URL (missing scheme): %s", base)
+        return None
+    return urljoin(base.rstrip("/") + "/", path.lstrip("/"))
+
+
+LIQPAY_CALLBACK_URL = _join_url(BASE_URL, "/payments/confirm/liqpay")
+RESULT_URL = _join_url(FRONTEND_BASE_URL or BASE_URL, "/tariffs")
 ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
 
 
@@ -53,6 +66,8 @@ class LiqPayPaymentService(BasePaymentProvider):
         public_key: str = LIQPAY_PUBLIC_KEY,  # type: ignore
         private_key: str = LIQPAY_PRIVATE_KEY,  # type: ignore
     ):
+        if not public_key or not private_key:
+            raise ValueError("LiqPay keys are not configured")
         self.public_key = public_key
         self.private_key = private_key
 
@@ -93,12 +108,21 @@ class LiqPayPaymentService(BasePaymentProvider):
             params["email"] = email
         if server_callback_url:
             params["server_url"] = server_callback_url
+        else:
+            logging.warning("LiqPay server callback URL is not configured")
         if result_url:
             params["result_url"] = result_url
+        elif RESULT_URL:
+            params["result_url"] = RESULT_URL
 
         data = self._generate_data(params)
         signature = self._generate_signature(data)
-        save_signature_to_cache(order_id, signature)
+        signature_saved = save_signature_to_cache(order_id, signature)
+        if not signature_saved:
+            logging.warning(
+                "Continuing LiqPay checkout without cached signature for order_id: %s",
+                order_id,
+            )
         logging.info(f"LiqPay payment params: {params}")
         return {
             "status": "success",
@@ -149,18 +173,30 @@ class LiqPayPaymentService(BasePaymentProvider):
         except (ValueError, KeyError) as e:
             logging.error(f"Error parsing create_date: {str(e)}")
             order_time = datetime.now(tz=UTC).strftime("%d.%m.%Y %H:%M:%S")
+
+        # LiqPay live callbacks may omit card-related fields depending on payment method.
+        payment_id = payment_data.get("payment_id") or payment_data.get("transaction_id")
+        if payment_id is None:
+            # Keep deterministic fallback so persistence does not fail.
+            payment_id = 0
+
+        try:
+            amount_value = float(payment_data.get("amount", 0))
+        except (TypeError, ValueError):
+            amount_value = 0.0
+
         additional_info = payment_data.copy()
         normalized_data = dict(
-            payment_id=payment_data.get("payment_id"),
+            payment_id=payment_id,
             order_id=payment_data.get("order_id"),
-            order_status=payment_data.get("status"),
-            currency=payment_data.get("currency"),
-            amount=int(payment_data["amount"] * 100),  # Convert to cents
-            card_type=payment_data.get("sender_card_type"),
-            masked_card=payment_data.get("sender_card_mask2"),
-            payment_system=payment_data.get("paytype"),
-            response_status=payment_data.get("status"),
-            tran_type=payment_data.get("action"),
+            order_status=payment_data.get("status") or "unknown",
+            currency=payment_data.get("currency") or "UAH",
+            amount=int(amount_value * 100),  # Convert to cents
+            card_type=payment_data.get("sender_card_type") or "unknown",
+            masked_card=payment_data.get("sender_card_mask2") or "",
+            payment_system=payment_data.get("paytype") or payment_data.get("type") or "unknown",
+            response_status=payment_data.get("status") or "unknown",
+            tran_type=payment_data.get("action") or "pay",
             order_time=order_time,
             additional_info=additional_info,
             provider="liqpay",
