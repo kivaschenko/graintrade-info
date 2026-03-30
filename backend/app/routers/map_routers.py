@@ -1,4 +1,3 @@
-import logging
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -6,8 +5,8 @@ from fastapi.security import OAuth2PasswordBearer
 
 from ..models import subscription_model, tarif_model
 from ..utils.entitlements import EntitlementContext, require_entitlement
+from ..logger import logger
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 router = APIRouter(tags=["map"])
 oauth2_scheme = OAuth2PasswordBearer(
@@ -74,7 +73,7 @@ async def increment_map_view(
         else:
             return {"status": "denied", "counter": counter_usage}
     except Exception as e:
-        logging.error(f"Error during update map_vie for user_id: {user_id} {e}.")
+        logger.error(f"Error during update map_vie for user_id: {user_id} {e}.")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Counter {counter} not updated.",

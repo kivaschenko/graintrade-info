@@ -1,13 +1,8 @@
 import asyncpg
-import logging
 from typing import List, Optional, Tuple
 from ..database import database
 from ..schemas import ItemInDB, ItemInResponse, UserOwnerItemInResponse
-
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
+from ..logger import logger
 
 async def get_all(offset: int = 0, limit: int = 10) -> Tuple[List[ItemInResponse], int]:
     """Get all items according offset and limit cause."""
@@ -34,7 +29,7 @@ async def get_all(offset: int = 0, limit: int = 10) -> Tuple[List[ItemInResponse
 
     except asyncpg.exceptions.InvalidTextRepresentationError as e:
         # Handle specific error for invalid text representation
-        logging.error(f"Invalid text representation error: {e}")
+        logger.error(f"Invalid text representation error: {e}")
         return [], 0
 
 
@@ -183,8 +178,8 @@ async def get_items_by_user_id(
         if not rows:
             return [], 0
         items_list = [UserOwnerItemInResponse(**row) for row in rows]
-        logging.info(f"Found {len(rows)} items for user {user_id}")
-        logging.info(f"Total items count: {total_items}")
+        logger.info(f"Found {len(rows)} items for user {user_id}")
+        logger.info(f"Total items count: {total_items}")
         return items_list, total_items
 
 

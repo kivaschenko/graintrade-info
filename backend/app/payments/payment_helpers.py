@@ -1,12 +1,9 @@
 from datetime import date, timedelta
-import logging
 import redis
 from ..database import redis_db
+from ..logger import logger
 
 ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
-
-
-logging.basicConfig(level=logging.INFO)
 
 
 # ---------------------------
@@ -24,12 +21,12 @@ def save_signature_to_cache(order_id: str, signature: str):
     try:
         res = r.set(name=order_id, value=signature, ex=600)
         if not res:
-            logging.error(f"Failed to save signature for order_id {order_id} in cache")
+            logger.error(f"Failed to save signature for order_id {order_id} in cache")
             return False
-        logging.info(f"Signature saved for order_id {order_id} in cache")
+        logger.info(f"Signature saved for order_id {order_id} in cache")
         return True
     except Exception as e:
-        logging.error(
+        logger.error(
             "Redis is unavailable while saving payment signature for order_id %s: %s",
             order_id,
             e,
@@ -45,7 +42,7 @@ def get_signature_from_cache(order_id: str):
         signature = r.get(name=order_id)
         return signature
     except Exception as e:
-        logging.error(
+        logger.error(
             "Redis is unavailable while reading payment signature for order_id %s: %s",
             order_id,
             e,

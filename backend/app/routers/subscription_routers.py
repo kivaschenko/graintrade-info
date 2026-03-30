@@ -1,5 +1,4 @@
 from typing import List, Dict, Any
-import logging
 
 from fastapi import APIRouter, HTTPException, status, Body
 
@@ -12,9 +11,8 @@ from ..service_layer.payment_service import (
     activate_free_subscription,
 )
 from ..models import subscription_model, tarif_model, user_model
+from ..logger import logger
 
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 router = APIRouter(tags=["subscription"])
 
@@ -22,13 +20,13 @@ router = APIRouter(tags=["subscription"])
 @router.get("/tariffs", response_model=List[TarifInResponse])
 async def get_all_tarifs():
     """Get all tariff plans."""
-    logging.info("Fetching all tariffs")
+    logger.info("Fetching all tariffs")
     return await tarif_model.get_all()
 
 
 @router.get("/tariffs/{tarif_id}", response_model=TarifInResponse)
 async def get_tarif(tarif_id: int):
-    logging.info(f"Fetching tarif with ID: {tarif_id}")
+    logger.info(f"Fetching tarif with ID: {tarif_id}")
     current_tarif = await tarif_model.get_by_id(tarif_id)
     if current_tarif is None:
         raise HTTPException(
@@ -68,7 +66,7 @@ async def create_subscription(
         language = "uk"
     if not payment_provider:
         payment_provider = "liqpay"
-    logging.info(
+    logger.info(
         f"Creating subscription with data: user_id={user_id}, tarif_id={tarif_id}"
     )
     try:
@@ -122,7 +120,7 @@ async def create_subscription(
     response_model=SubscriptionInResponse,
 )
 async def get_subscription(subscription_id: int):
-    logging.info(f"Fetching subscription with ID: {subscription_id}")
+    logger.info(f"Fetching subscription with ID: {subscription_id}")
     subscription = await subscription_model.get_by_id(subscription_id)
     if subscription is None:
         raise HTTPException(
@@ -134,7 +132,7 @@ async def get_subscription(subscription_id: int):
 @router.delete("/subscriptions/{subscription_id}")
 async def delete_subscription(subscription_id: int):
     """Set current subscription status inactive."""
-    logging.info(f"Deleting subscription with ID: {subscription_id}")
+    logger.info(f"Deleting subscription with ID: {subscription_id}")
     await subscription_model.delete(subscription_id)
 
 
@@ -147,6 +145,6 @@ async def get_subscription_usage(user_id: int):
 @router.get("/subscriptions/user/{user_id}", response_model=SubscriptionInResponse)
 async def get_subscriptions_by_user(user_id: int):
     """Get active subscription for current user."""
-    logging.info(f"Fetching subscriptions for user ID: {user_id}")
+    logger.info(f"Fetching subscriptions for user ID: {user_id}")
     subscription = await subscription_model.get_by_user_id(user_id)
     return subscription
