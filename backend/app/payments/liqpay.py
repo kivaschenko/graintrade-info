@@ -4,7 +4,6 @@ from datetime import datetime, UTC
 import base64
 import hashlib
 import httpx
-import logging
 import os
 import json
 from urllib.parse import urljoin
@@ -13,8 +12,8 @@ from dotenv import load_dotenv
 from ..payments.base import BasePaymentProvider
 from .payment_helpers import (
     save_signature_to_cache,
-    get_signature_from_cache,
 )
+from ..logger import logger
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -22,25 +21,37 @@ LIQPAY_PUBLIC_KEY = os.getenv("LIQPAY_PUBLIC_KEY")
 LIQPAY_PRIVATE_KEY = os.getenv("LIQPAY_PRIVATE_KEY")
 BASE_URL = os.getenv("BASE_URL", "")
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "")
+LIQPAY_SERVER_CALLBACK_URL = os.getenv("LIQPAY_SERVER_CALLBACK_URL", "")
 
 
 def _join_url(base: str, path: str) -> str | None:
     if not base:
         return None
     if not base.startswith(("http://", "https://")):
-        logging.warning("Skipping malformed base URL (missing scheme): %s", base)
+        logger.warning("Skipping malformed base URL (missing scheme): %s", base)
         return None
     return urljoin(base.rstrip("/") + "/", path.lstrip("/"))
 
 
-LIQPAY_CALLBACK_URL = _join_url(BASE_URL, "/payments/confirm/liqpay")
+def _resolve_callback_url() -> str | None:
+    # If explicit callback URL is provided, use it as-is.
+    explicit = LIQPAY_SERVER_CALLBACK_URL.strip()
+    if explicit:
+        if not explicit.startswith(("http://", "https://")):
+            logger.warning(
+                "Skipping malformed LIQPAY_SERVER_CALLBACK_URL (missing scheme): %s",
+                explicit,
+            )
+            return None
+        return explicit.rstrip("/")
+
+    # Fallback to API base URL + callback path.
+    return _join_url(BASE_URL, "/payments/confirm/liqpay")
+
+
+LIQPAY_CALLBACK_URL = _resolve_callback_url()
 RESULT_URL = _join_url(FRONTEND_BASE_URL or BASE_URL, "/tariffs")
 ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
-
-
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
 
 # ----------------------
 # LiqPay payment service class
@@ -48,6 +59,7 @@ logging.basicConfig(
 
 class LiqPayPaymentService(BasePaymentProvider):
     API_URL = "https://www.liqpay.ua/api/3/checkout"
+    API_REQUEST_URL = "https://www.liqpay.ua/api/request"
     _supportedActions = ["pay", "hold", "subscribe", "paydonate"]
 
     _button_translations = {"uk": "Сплатити", "en": "Pay"}
@@ -109,21 +121,38 @@ class LiqPayPaymentService(BasePaymentProvider):
         if server_callback_url:
             params["server_url"] = server_callback_url
         else:
-            logging.warning("LiqPay server callback URL is not configured")
+            raise ValueError(
+                "LiqPay server callback URL is not configured. "
+                "Set LIQPAY_SERVER_CALLBACK_URL or BASE_URL with https scheme."
+            )
         if result_url:
             params["result_url"] = result_url
         elif RESULT_URL:
             params["result_url"] = RESULT_URL
 
+        logger.info(
+            "Preparing LiqPay payment: order_id=%s, amount=%.2f %s, server_callback_url=%s, result_url=%s",
+            order_id,
+            amount,
+            currency,
+            params.get("server_url"),
+            params.get("result_url"),
+        )
+
         data = self._generate_data(params)
         signature = self._generate_signature(data)
         signature_saved = save_signature_to_cache(order_id, signature)
         if not signature_saved:
-            logging.warning(
+            logger.warning(
                 "Continuing LiqPay checkout without cached signature for order_id: %s",
                 order_id,
             )
-        logging.info(f"LiqPay payment params: {params}")
+        logger.info(
+            "LiqPay payment params prepared: order_id=%s, server_url=%s, result_url=%s",
+            order_id,
+            params.get("server_url"),
+            params.get("result_url"),
+        )
         return {
             "status": "success",
             "liqpay_form": {
@@ -136,30 +165,30 @@ class LiqPayPaymentService(BasePaymentProvider):
         }
 
     async def check_payment_status(self, order_id: str) -> Dict[str, Any]:
-        """Check payment status using LiqPay API"""
-        signature = get_signature_from_cache(order_id)
-        if not signature:
-            raise ValueError("Signature not found in cache for order_id: " + order_id)
-
+        """Check payment status using LiqPay API by order_id."""
         params = {
+            "action": "status",
             "version": 3,
             "public_key": self.public_key,
             "order_id": order_id,
         }
         data = self._generate_data(params)
         generated_signature = self._generate_signature(data)
-        if generated_signature != signature:
-            raise ValueError("Invalid signature for order_id: " + order_id)
 
         async with httpx.AsyncClient() as client:
             r = await client.post(
-                url=self.API_URL + "/status",
+                url=self.API_REQUEST_URL,
                 data={"data": data, "signature": generated_signature},
             )
         if r.status_code != 200:
-            raise Exception("Error from LiqPay API")
+            raise Exception(f"Error from LiqPay API: HTTP {r.status_code}")
         response_data = r.json()
-        logging.info(f"LiqPay status response: {response_data}")
+        logger.info(
+            "LiqPay status response for order_id=%s: status=%s, raw=%s",
+            order_id,
+            response_data.get("status"),
+            response_data,
+        )
         return response_data
 
     def normalize(self, payment_data: dict) -> dict:
@@ -171,7 +200,7 @@ class LiqPayPaymentService(BasePaymentProvider):
                 int(payment_data["create_date"]) / 1000, tz=UTC
             ).strftime("%d.%m.%Y %H:%M:%S")
         except (ValueError, KeyError) as e:
-            logging.error(f"Error parsing create_date: {str(e)}")
+            logger.error(f"Error parsing create_date: {str(e)}")
             order_time = datetime.now(tz=UTC).strftime("%d.%m.%Y %H:%M:%S")
 
         # LiqPay live callbacks may omit card-related fields depending on payment method.
@@ -204,86 +233,53 @@ class LiqPayPaymentService(BasePaymentProvider):
 
         return normalized_data
 
-    def verify_signature(self, order_id: str, received_signature: str) -> bool:
-        """Verify the signature of the payment data"""
-        # TODO: Implement signature verification logic - regenerate signature for received data and compare with received_signature
-        signature = get_signature_from_cache(order_id)
-        if not signature:
-            logging.error(f"Signature not found in cache for order_id: {order_id}")
+    def verify_signature(self, data: Dict[str, Any], signature: str) -> bool:
+        """Verify LiqPay signature for a provided payload."""
+        try:
+            encoded_data = self._generate_data(data)
+            expected_signature = self._generate_signature(encoded_data)
+            return expected_signature == signature
+        except Exception as e:
+            logger.error(f"Failed to verify LiqPay signature: {e}")
             return False
-        return signature == received_signature
 
 
-# ----------------------
-# Webhook handler for LiqPay payment confirmation
-# async def handle_liqpay_webhook(payment_data: dict):
-#     try:
-#         # Extract necessary fields from payment_data
-#         order_id = payment_data.get("order_id")
-#         if not order_id:
-#             logging.error("Order ID is missing in the payment data")
-#             return False
-
-#         # Verify payment signature
-#         liqpay_service = LiqPayPaymentService(
-#             public_key=LIQPAY_PUBLIC_KEY,  # type: ignore
-#             private_key=LIQPAY_PRIVATE_KEY,  # type: ignore
-#         )
-#         if not await liqpay_service.verify_payment(payment_data):
-#             logging.error("Invalid payment signature")
-#             return False
-
-#         # Save payment confirmation and update subscription status
-#         await update_subscription_and_save_payment_confirmation(payment_data)
-
-#         # Send success details to RabbitMQ queue
-#         await send_success_payment_details_to_queue(payment_data)
-
-#         return True
-#     except Exception as e:
-#         logging.error(f"Error handling LiqPay webhook: {str(e)}")
-#         return False
-#     finally:
-#         logging.info("LiqPay webhook handler completed")
-#         return True
-#     return False
-
-payment_data_example = {
-    "payment_id": 2699352001,
-    "action": "pay",
-    "status": "success",
-    "version": 3,
-    "type": "buy",
-    "paytype": "card",
-    "public_key": "sandbox_i73022413705",
-    "acq_id": 414963,
-    "order_id": "560c6ed2-cf3e-4dcb-b2f2-3b6209d8b788",
-    "liqpay_order_id": "K3O5CGZE1756027569147559",
-    "description": "sub-Premium-2025-08-24-2025-09-24-5",
-    "sender_first_name": "Оксана",
-    "sender_last_name": "Іващенко",
-    "sender_card_mask2": "424242*42",
-    "sender_card_bank": "Test",
-    "sender_card_type": "visa",
-    "sender_card_country": 804,
-    "ip": "188.163.31.56",
-    "amount": 30.0,
-    "currency": "USD",
-    "sender_commission": 0.0,
-    "receiver_commission": 0.45,
-    "agent_commission": 0.0,
-    "amount_debit": 1250.0,
-    "amount_credit": 1250.0,
-    "commission_debit": 0.0,
-    "commission_credit": 18.75,
-    "currency_debit": "UAH",
-    "currency_credit": "UAH",
-    "sender_bonus": 0.0,
-    "amount_bonus": 0.0,
-    "mpi_eci": "7",
-    "is_3ds": False,
-    "language": "uk",
-    "create_date": 1756027569150,
-    "end_date": 1756027569317,
-    "transaction_id": 2699352001,
-}
+# payment_data_example = {
+#     "payment_id": 2699352001,
+#     "action": "pay",
+#     "status": "success",
+#     "version": 3,
+#     "type": "buy",
+#     "paytype": "card",
+#     "public_key": "sandbox_i73022413705",
+#     "acq_id": 414963,
+#     "order_id": "560c6ed2-cf3e-4dcb-b2f2-3b6209d8b788",
+#     "liqpay_order_id": "K3O5CGZE1756027569147559",
+#     "description": "sub-Premium-2025-08-24-2025-09-24-5",
+#     "sender_first_name": "Оксана",
+#     "sender_last_name": "Іващенко",
+#     "sender_card_mask2": "424242*42",
+#     "sender_card_bank": "Test",
+#     "sender_card_type": "visa",
+#     "sender_card_country": 804,
+#     "ip": "188.163.31.56",
+#     "amount": 30.0,
+#     "currency": "USD",
+#     "sender_commission": 0.0,
+#     "receiver_commission": 0.45,
+#     "agent_commission": 0.0,
+#     "amount_debit": 1250.0,
+#     "amount_credit": 1250.0,
+#     "commission_debit": 0.0,
+#     "commission_credit": 18.75,
+#     "currency_debit": "UAH",
+#     "currency_credit": "UAH",
+#     "sender_bonus": 0.0,
+#     "amount_bonus": 0.0,
+#     "mpi_eci": "7",
+#     "is_3ds": False,
+#     "language": "uk",
+#     "create_date": 1756027569150,
+#     "end_date": 1756027569317,
+#     "transaction_id": 2699352001,
+# }
