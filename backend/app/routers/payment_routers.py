@@ -41,8 +41,6 @@ async def confirm_liqpay(request: Request, background_tasks: BackgroundTasks):
                 content={"status": "error", "message": "Payment not confirmed"},
                 status_code=400,
             )
-        
-        logger.info(f"Processing LiqPay payment confirmation for order_id: {decoded_data.get('order_id')}")
         updated = await payment_service.update_subscription_and_save_payment_confirmation(
             decoded_data, payment_provider_name="liqpay"
         )
