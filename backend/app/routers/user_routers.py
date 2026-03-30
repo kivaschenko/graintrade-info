@@ -404,32 +404,6 @@ async def delete_user(
 # Tariff counters
 
 
-# @router.post("/map/view")
-# async def increment_map_view(
-#     token: Annotated[str, Depends(oauth2_scheme)],
-# ):
-#     """Increment the map view counter for the user."""
-#     if not token:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token not found"
-#         )
-#     user_id, scopes = await get_current_user_id(token)
-#     user = await repo.get_by_id(user_id)
-#     if not user:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-#         )
-
-#     if user.map_views >= MAP_VIEW_LIMIT:
-#         logging.error("Map view limit reached")
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN, detail="Map view limit reached"
-#         )
-
-#     new_map_views = await repo.increment_map_views(user_id)
-#     return {"map_views": new_map_views}
-
-
 @router.put("/preferences", summary="Update notification preferences")
 async def update_preferences(
     prefs_data: PreferencesUpdateSchema,

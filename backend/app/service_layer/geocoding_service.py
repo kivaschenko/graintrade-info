@@ -4,13 +4,10 @@ Free and unlimited geocoding service for converting addresses to coordinates
 """
 
 import asyncio
-import logging
 from typing import Optional, Dict, Tuple
 import aiohttp
 from urllib.parse import quote
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from ..logger import logger
 
 # Rate limiting: Nominatim requires max 1 request per second
 _last_request_time = 0

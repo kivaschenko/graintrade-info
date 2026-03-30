@@ -3,15 +3,12 @@ from pathlib import Path
 import aio_pika
 import json
 import os
-import logging
 
 from typing import List
 from enum import StrEnum
 
 from dotenv import load_dotenv
-
-# Initialize logger
-logger = logging.getLogger(__name__)
+from .logger import logger
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")

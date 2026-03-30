@@ -1,10 +1,11 @@
 # app/database.py
 from pathlib import Path
 import os
-import logging
 import asyncpg
 import redis
 from dotenv import load_dotenv
+
+from .logger import logger
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,11 +21,11 @@ class Database:
         self.pool = await asyncpg.create_pool(
             dsn=self.database_url, min_size=10, max_size=10, max_queries=50000
         )
-        logging.info(f"Created Pool for DB: {self.pool}")
+        logger.info(f"Created Pool for DB: {self.pool}")
 
     async def disconnect(self):
         await self.pool.close()
-        logging.info("Disconnect the DB...")
+        logger.info("Disconnect the DB...")
 
 
 if DATABASE_URL:
@@ -44,11 +45,11 @@ class RedisDB:
 
     def connect(self):
         self.pool = redis.ConnectionPool().from_url(self.redis_url)
-        logging.info(f"Created Pool for Redis: {self.pool}")
+        logger.info(f"Created Pool for Redis: {self.pool}")
 
     def disconnect(self):
         self.pool.close()
-        logging.info("Closed Redis connection...")
+        logger.info("Closed Redis connection...")
 
 
 if REDIS_URL:
