@@ -3,8 +3,7 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 from ..database import database
-
-logger = logging.getLogger(__name__)
+from ..logger import logger
 
 
 async def create(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -22,16 +21,13 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
         Exception: If database operation fails
     """
     try:
-        # Required fields according to PaymentInDB schema
-        required_fields = [
+        # Essential fields that must be present for persistence.
+        essential_fields = [
             "payment_id",
             "order_id",
             "order_status",
             "currency",
             "amount",
-            "card_type",
-            "masked_card",
-            "payment_system",
             "response_status",
             "tran_type",
             "order_time",
@@ -39,11 +35,24 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
             "provider",
         ]
 
+        # Optional provider-specific fields that may be absent in live callbacks.
+        optional_fields_with_defaults = {
+            "card_type": "unknown",
+            "masked_card": "",
+            "payment_system": "unknown",
+        }
+
+        for field, default_value in optional_fields_with_defaults.items():
+            if field not in data or data[field] is None:
+                data[field] = default_value
+
         # Validate required fields and data types
-        for field in required_fields:
+        for field in essential_fields:
             if field not in data:
+                logger.error(f"Missing required field in payment data: {field}. Available fields: {list(data.keys())}")
                 raise ValueError(f"Missing required field: {field}")
             if data[field] is None:
+                logger.error(f"Field '{field}' is None in payment data. All data: {data}")
                 raise ValueError(f"Field cannot be None: {field}")
 
         # Ensure numeric fields are properly typed
@@ -55,7 +64,7 @@ async def create(data: Dict[str, Any]) -> Dict[str, Any]:
 
         # Convert additional_info to JSONB
         additional_info = {
-            k: v for k, v in data.items() if k not in required_fields and k != "id"
+            k: v for k, v in data.items() if k not in essential_fields and k != "id"
         }
 
         insert_query = """
