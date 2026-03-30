@@ -409,7 +409,7 @@ async def get_countries():
         countries = await items_model.get_countries_list()
         return {"status": "success", "countries": countries}
     except Exception as e:
-        logger.error(f"Error during countris list getting: {e}")
+        logger.error(f"Error during countries list getting: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",

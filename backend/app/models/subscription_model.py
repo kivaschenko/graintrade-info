@@ -222,6 +222,21 @@ async def get_by_id(subscription_id: int) -> SubscriptionInResponse:
         return subscription
 
 
+async def get_by_order_id(order_id: str) -> SubscriptionInResponse | None:
+    query = """
+        SELECT id, user_id, tarif_id, start_date, end_date, order_id, status, created_at,
+               provider, provider_payment_token, is_trial, trial_expires_at
+        FROM subscriptions
+        WHERE order_id = $1
+        LIMIT 1
+    """
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, order_id)
+        if row is None:
+            return None
+        return SubscriptionInResponse(**row)
+
+
 async def delete(subscription_id: int) -> None:
     query = "UPDATE subscriptions SET status = 'inactive' WHERE id = $1"
     async with database.pool.acquire() as connection:

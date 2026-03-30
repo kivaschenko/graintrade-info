@@ -101,8 +101,10 @@ async def payment_for_subscription_handler(
         checkout_result: Dict[str, Any] = await payment_service.process_payment(
             amount, order_id, order_desc, currency, email, language=language
         )
-        checkout_result["order_id"] = order_id
-        return checkout_result
+        # Avoid mutating the dict returned by the payment service
+        result_with_order: Dict[str, Any] = dict(checkout_result)
+        result_with_order["order_id"] = order_id
+        return result_with_order
     except Exception as e:
         logger.exception(f"Error in payment_for_subscription_handler: {str(e)}")
         return None
@@ -141,6 +143,19 @@ async def update_subscription_and_save_payment_confirmation(
     # Save payment confirmation and update subscription status
     try:
         order_id = payment_response.get("order_id")
+        existing_payment = await payment_model.get_by_order_id(order_id)
+        existing_subscription = await subscription_model.get_by_order_id(order_id)
+        if (
+            existing_payment is not None
+            and existing_subscription is not None
+            and existing_subscription.status == SubscriptionStatus.ACTIVE
+        ):
+            logger.info(
+                "Payment confirmation for order_id %s already processed; skipping duplicate update",
+                order_id,
+            )
+            return True
+
         logger.info(f"Normalizing payment data for order_id: {order_id}")
         payment_data = payment_service.normalize(payment_response)
         logger.info(f"Creating payment record for order_id: {order_id}")
