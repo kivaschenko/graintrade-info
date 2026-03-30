@@ -1,5 +1,4 @@
 from typing import Dict, Any
-import logging
 import uuid
 
 from ..models import subscription_model, payment_model
@@ -13,9 +12,7 @@ from ..payments import (
     make_start_end_dates_for_monthly_case,
 )
 from ..rabbit_mq import rabbitmq, QueueName
-
-
-logging.basicConfig(level=logging.INFO)
+from ..logger import logger
 
 
 PAYMENT_PROVIDERS = {
@@ -45,16 +42,16 @@ async def activate_free_subscription(user_id: int, tarif_id: int) -> bool:
                 status=SubscriptionStatus.INACTIVE,
             )
         )
-        logging.info(f"Created a new Free subscription: {subscription}")
+        logger.info(f"Created a new Free subscription: {subscription}")
         await subscription_model.update_status_by_order_id(
             SubscriptionStatus.ACTIVE, order_id
         )
-        logging.info(f"Updated status of subscription: {subscription}")
+        logger.info(f"Updated status of subscription: {subscription}")
         if not subscription:
             raise ValueError("Failed to create subscription in the database")
         return True
     except Exception as e:
-        logging.error(f"Error was during create free subscription: {e}")
+        logger.error(f"Error was during create free subscription: {e}")
         return False
 
 
@@ -75,7 +72,7 @@ async def payment_for_subscription_handler(
     """Handle payment for subscription using specified payment provider"""
     payment_service = PAYMENT_PROVIDERS.get(payment_provider_name)
     if not payment_service:
-        logging.error(f"Payment provider {payment_provider_name} not found")
+        logger.error(f"Payment provider {payment_provider_name} not found")
         return None
 
     # Initialize the payment service
@@ -97,17 +94,17 @@ async def payment_for_subscription_handler(
         )
         if not subscription:
             raise ValueError("Failed to create subscription in the database")
-        logging.info(f"Created a new subscription: {subscription}")
+        logger.info(f"Created a new subscription: {subscription}")
 
         # Process payment
-        logging.info(f"Processing payment for order_id: {order_id}")
+        logger.info(f"Processing payment for order_id: {order_id}")
         checkout_result: Dict[str, Any] = await payment_service.process_payment(
             amount, order_id, order_desc, currency, email, language=language
         )
         checkout_result["order_id"] = order_id
         return checkout_result
     except Exception as e:
-        logging.exception(f"Error in payment_for_subscription_handler: {str(e)}")
+        logger.exception(f"Error in payment_for_subscription_handler: {str(e)}")
         return None
 
 
@@ -118,7 +115,7 @@ async def update_subscription_and_save_payment_confirmation(
     """Update subscription status and save payment confirmation"""
     payment_service = PAYMENT_PROVIDERS.get(payment_provider_name)
     if not payment_service:
-        logging.error(f"Payment provider {payment_provider_name} not found")
+        logger.error(f"Payment provider {payment_provider_name} not found")
         return False
 
     # Initialize the payment service
@@ -127,35 +124,35 @@ async def update_subscription_and_save_payment_confirmation(
     try:
         order_id = payment_response.get("order_id")
         if not order_id:
-            logging.error("Order ID is missing in the payment response")
+            logger.error("Order ID is missing in the payment response")
             return False
 
         # # Verify the signature
         # if not payment_service.verify_signature(
         #     payment_response.get("order_id", ""), payment_response.get("signature", "")
         # ):
-        #     logging.error("Invalid payment signature")
+        #     logger.error("Invalid payment signature")
         #     return False
 
     except KeyError as e:
-        logging.error(f"Missing key in payment response: {e}")
+        logger.error(f"Missing key in payment response: {e}")
         return False
 
     # Save payment confirmation and update subscription status
     try:
         order_id = payment_response.get("order_id")
-        logging.info(f"Normalizing payment data for order_id: {order_id}")
+        logger.info(f"Normalizing payment data for order_id: {order_id}")
         payment_data = payment_service.normalize(payment_response)
-        logging.info(f"Creating payment record for order_id: {order_id}")
+        logger.info(f"Creating payment record for order_id: {order_id}")
         payment_record: Dict[str, Any] = await payment_model.create(payment_data)
-        logging.info(f"Payment record created, updating subscription for order_id: {order_id}")
+        logger.info(f"Payment record created, updating subscription for order_id: {order_id}")
         await subscription_model.update_status_by_order_id(
             SubscriptionStatus.ACTIVE, order_id, payment_record
         )
-        logging.info(f"Subscription activated for order_id: {order_id}")
+        logger.info(f"Subscription activated for order_id: {order_id}")
         return True
     except Exception as e:
-        logging.exception(
+        logger.exception(
             f"Error updating subscription and saving payment confirmation for order_id {payment_response.get('order_id')}: {str(e)}"
         )
         return False
@@ -167,7 +164,7 @@ async def verify_payment_status(
     """Verify payment status for a given order ID"""
     payment_service = PAYMENT_PROVIDERS.get(payment_provider_name)
     if not payment_service:
-        logging.error(f"Payment provider {payment_provider_name} not found")
+        logger.error(f"Payment provider {payment_provider_name} not found")
         return False
 
     # Initialize the payment service
@@ -176,10 +173,10 @@ async def verify_payment_status(
     try:
         status = await payment_service.check_payment_status(order_id)
         if not status:
-            logging.warning(f"Payment status for order_id {order_id} is None")
+            logger.warning(f"Payment status for order_id {order_id} is None")
             return False
     except Exception as e:
-        logging.error(f"Error checking payment status: {str(e)}")
+        logger.error(f"Error checking payment status: {str(e)}")
         return False
 
     provider_status = status.get("status")
@@ -190,7 +187,7 @@ async def verify_payment_status(
         )
         return bool(updated)
 
-    logging.info(
+    logger.info(
         "Payment %s finished with provider status: %s",
         order_id,
         provider_status,
@@ -209,10 +206,10 @@ async def send_success_payment_details_to_queue(
         await rabbitmq.connect()
         await rabbitmq.publish(message=payment_dict, queue=queue)
     except Exception as e:
-        logging.error(f"Failed to send item to RabbitMQ: {e}")
+        logger.error(f"Failed to send item to RabbitMQ: {e}")
     finally:
         await rabbitmq.close()
         # Ensure the connection is closed
-        logging.info("RabbitMQ connection closed after publishing payment details")
+        logger.info("RabbitMQ connection closed after publishing payment details")
         return True
     return False

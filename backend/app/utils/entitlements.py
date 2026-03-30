@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-import logging
 from typing import Any, Callable, Dict, Iterable, Optional, Set
 
 import jwt
@@ -11,8 +10,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from ..models import subscription_model
 from ..routers import JWT_SECRET, ALGORITHM
-
-logger = logging.getLogger(__name__)
+from ..logger import logger
 
 ENTITLEMENTS: Dict[str, Dict[str, Any]] = {
     "free": {

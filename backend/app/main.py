@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-import logging
 import os
 
 from fastapi import FastAPI, Depends, HTTPException, status
@@ -23,6 +22,7 @@ from .routers import map_routers
 from .routers import crypto as crypto_routers
 from .routers import webhooks as webhooks_routers
 from .models import subscription_model
+from .logger import logger
 
 
 JWT_SECRET: str = os.getenv("JWT_SECRET", '')
@@ -63,8 +63,8 @@ oauth2_scheme = OAuth2PasswordBearer(
     },
 )
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-logging.info(f"Starting App {app}...")
+logger.basicConfig(level=logger.INFO, format="%(asctime)s - %(message)s")
+logger.info(f"Starting App {app}...")
 
 app.add_middleware(
     CORSMiddleware,
@@ -184,5 +184,5 @@ async def redoc_premium(_: Annotated[bool, Depends(premium_only)]):
 #             data = await websocket.receive_text()
 #             await websocket.send_text(f"Message text was: {data}")
 #     except WebSocketDisconnect:
-#         logging.info("Client disconnected")
+#         logger.info("Client disconnected")
 #         connections.remove(websocket)

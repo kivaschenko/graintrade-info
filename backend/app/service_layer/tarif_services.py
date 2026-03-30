@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
-import logging
 
 from app.schemas import SubscriptionInResponse
+from app.logger import logger
 
 
 async def check_map_view_limit(
@@ -25,7 +25,7 @@ async def check_map_view_limit(
 async def check_subscription_status(subscription: SubscriptionInResponse) -> bool:
     """Check if subscription is active and not expired."""
     current_date = datetime.now(timezone.utc)
-    logging.info(
+    logger.info(
         f"Checking subscription status for user {subscription.user_id} with subscription {subscription.id}"
     )
 
@@ -40,7 +40,7 @@ async def check_subscription_status(subscription: SubscriptionInResponse) -> boo
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Your subscription has expired",
         )
-    logging.info(
+    logger.info(
         f"Subscription {subscription.id} is active and valid until {subscription.end_date}"
     )
     return True

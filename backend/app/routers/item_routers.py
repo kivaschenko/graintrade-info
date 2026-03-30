@@ -1,5 +1,4 @@
 from typing import Annotated, List, Optional
-import logging
 
 from fastapi import (
     Depends,
@@ -29,6 +28,7 @@ from ..service_layer import item_services
 from ..service_layer.geocoding_service import geocode_with_fallback
 from . import JWT_SECRET
 from ..utils.entitlements import EntitlementContext, require_entitlement
+from ..logger import logger
 
 router = APIRouter(tags=["Items"])
 oauth2_scheme = OAuth2PasswordBearer(
@@ -42,11 +42,6 @@ oauth2_scheme = OAuth2PasswordBearer(
         "view:map": "Allowed to view map.",
         "import:export": "Allowed to import/export data via Excel/CSV.",
     },
-)
-
-# Logging configuration
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 
@@ -65,10 +60,10 @@ async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]):
         user_id: str = payload.get("user_id")
         scopes: str = payload.get("scopes")
         if user_id is None:
-            logging.error("No user_id found in token")
+            logger.error("No user_id found in token")
             raise credentials_exception
     except jwt.PyJWTError as e:
-        logging.error(e)
+        logger.error(e)
         raise credentials_exception
     return user_id, scopes
 
@@ -84,12 +79,12 @@ async def create_item(
     token: Annotated[str, Depends(oauth2_scheme)],
 ):
     if token is None or token == "null" or token == "":
-        logging.error("No token provided")
+        logger.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id, scopes = await get_current_user_id(token)
     # check scope and permissions here
     if "create:item" not in scopes:
-        logging.error("Not enough permissions")
+        logger.error("Not enough permissions")
         raise HTTPException(status_code=403, detail="Not enough permissions")
     usage_info = await subscription_model.get_subscription_usage_for_user(int(user_id))
     counter_usage = usage_info.get("items_count")
@@ -97,14 +92,14 @@ async def create_item(
     tarif = await tarif_model.get_tarif_by_scope(scope)
     counter_limit = tarif.__getattribute__("items_limit")
     if counter_usage >= counter_limit:
-        logging.error("Not enough permissions, limit reached")
+        logger.error("Not enough permissions, limit reached")
         raise HTTPException(
             status_code=403, detail="Not enough permissions, service limit reached"
         )
 
     # Automatic geocoding if coordinates not provided but address is available
     if (item.latitude is None or item.longitude is None) and item.address:
-        logging.info(f"Geocoding address: {item.address}")
+        logger.info(f"Geocoding address: {item.address}")
         lat, lon, country, region = await geocode_with_fallback(
             address=item.address, country=item.country, region=item.region
         )
@@ -114,13 +109,13 @@ async def create_item(
             item.country = country
         if region:
             item.region = region
-        logging.info(f"Geocoded coordinates: {lat}, {lon}")
+        logger.info(f"Geocoded coordinates: {lat}, {lon}")
 
     # If coordinates provided but country/region missing, reverse geocode to fill them
     if (item.latitude is not None and item.longitude is not None) and (
         not item.country or not item.region
     ):
-        logging.info(
+        logger.info(
             f"Reverse geocoding coordinates: {item.latitude}, {item.longitude}"
         )
         lat, lon, country, region = await geocode_with_fallback(
@@ -133,11 +128,11 @@ async def create_item(
             item.country = country
         if region:
             item.region = region
-        logging.info(f"Reverse geocoded country/region: {country}, {region}")
+        logger.info(f"Reverse geocoded country/region: {country}, {region}")
 
     new_item = await items_model.create(item=item, user_id=int(user_id))
     if new_item is None:
-        logging.error("Item not created")
+        logger.error("Item not created")
         raise HTTPException(status_code=400, detail="Item not created")
     # Extend new Item with ctagories name, ua_name etc.
     new_item.user_id = int(user_id)
@@ -147,7 +142,7 @@ async def create_item(
     )
     new_item.category_name = category.name
     new_item.category_ua_name = category.ua_name
-    logging.info(f"New item created: {new_item}")
+    logger.info(f"New item created: {new_item}")
     background_tasks.add_task(item_services.send_item_to_queue, new_item)
     return new_item
 
@@ -164,11 +159,11 @@ async def create_items_batch(
 ):
     """Create multiple items in a single request for the authenticated user."""
     if token is None or token == "null" or token == "":
-        logging.error("No token provided")
+        logger.error("No token provided")
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id, scopes = await get_current_user_id(token)
     if "create:item" not in scopes:
-        logging.error("Not enough permissions")
+        logger.error("Not enough permissions")
         raise HTTPException(status_code=403, detail="Not enough permissions")
     try:
         created = await items_model.create_batch(items=items, user_id=int(user_id))
@@ -176,7 +171,7 @@ async def create_items_batch(
             it.user_id = user_id  # type: ignore
         return created
     except Exception as e:
-        logging.error(f"Error in create_items_batch: {e}")
+        logger.error(f"Error in create_items_batch: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -191,7 +186,7 @@ async def read_items(
 ):
     """Get all items with count value"""
     if limit > 100:
-        logging.error(f"The number of limit excited: {limit}")
+        logger.error(f"The number of limit excited: {limit}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Limit of items excited."
         )
@@ -210,7 +205,7 @@ async def read_items(
             "has_map_access": has_map_access,
         }
     except Exception as e:
-        logging.error(f"Error in read_items: {e}")
+        logger.error(f"Error in read_items: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -227,7 +222,7 @@ async def read_item(
     try:
         db_item = await items_model.get_by_id(item_id)
         if db_item is None:
-            logging.error(f"Item with id {item_id} not found")
+            logger.error(f"Item with id {item_id} not found")
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Item not found")
         # If token is provided, verify permisiion and increment map views
         if token != "null":
@@ -241,13 +236,13 @@ async def read_item(
             db_item.category_name = category.name
             db_item.category_ua_name = category.ua_name
         else:
-            logging.warning(f"Category with id {db_item.category_id} not found")
+            logger.warning(f"Category with id {db_item.category_id} not found")
             db_item.category_name = "Unknown"
             db_item.category_ua_name = "Невідомо"
-        logging.info(f"Item read successfully: {db_item}")
+        logger.info(f"Item read successfully: {db_item}")
         return db_item
     except Exception as e:
-        logging.error(f"Error in read_item: {e}")
+        logger.error(f"Error in read_item: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -291,7 +286,7 @@ async def delete_item_bound_to_user(
             telegram_message_id=telegram_message_id,
             chat_id=chat_id,
         )
-        logging.info(f"Item with id {item_id} deleted by user {user_id}")
+        logger.info(f"Item with id {item_id} deleted by user {user_id}")
         return {"status": "success", "message": "Item deleted successfully"}
     except Exception as e:
         return {"status": "error", "message": f"Something went wrong: {e}"}
@@ -322,7 +317,7 @@ async def read_items_by_user(
         )
         return {"items": items, "total_items": total_items}
     except Exception as e:
-        logging.error(f"Error read items by user_id: {e}")
+        logger.error(f"Error read items by user_id: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -401,7 +396,7 @@ async def get_items_geojson(
         )
         return {"status": "success", "items": items}
     except Exception as e:
-        logging.error(f"Error in get_all_items_geojson: {e}")
+        logger.error(f"Error in get_all_items_geojson: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -414,7 +409,7 @@ async def get_countries():
         countries = await items_model.get_countries_list()
         return {"status": "success", "countries": countries}
     except Exception as e:
-        logging.error(f"Error during countris list getting: {e}")
+        logger.error(f"Error during countris list getting: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -480,7 +475,7 @@ async def import_items_from_file(
         }
 
     except Exception as e:
-        logging.error(f"Error during file import: {e}")
+        logger.error(f"Error during file import: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error processing import file",
@@ -544,7 +539,7 @@ async def export_items_to_file(
         }
 
     except Exception as e:
-        logging.error(f"Error during export: {e}")
+        logger.error(f"Error during export: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error processing export request",
@@ -594,7 +589,7 @@ async def get_import_template(
         }
 
     except Exception as e:
-        logging.error(f"Error getting template: {e}")
+        logger.error(f"Error getting template: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error getting template",
