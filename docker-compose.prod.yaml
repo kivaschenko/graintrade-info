@@ -93,8 +93,10 @@ services:
       start_period: 20s
     resources:
       limits:
+        # Reduced from 4G: Airflow Scheduler runs heavy tasks via HTTP calls
+        # so Spark jobs still land inside this container. Keep margin for JVM.
         cpus: '1.5'
-        memory: 4G
+        memory: 3.5G
       reservations:
         cpus: '1'
         memory: 2.5G
@@ -241,9 +243,122 @@ services:
         cpus: '0.25'
         memory: 512M
 
+  # ──────────────────────────────────────────────────────────────────────────
+  # Apache Airflow 3.x — LocalExecutor on single server
+  #
+  # Architecture:
+  #   airflow-init      → one-time DB migration + admin user creation
+  #   airflow-webserver → UI on port 8180  (proxy behind Nginx in production)
+  #   airflow-scheduler → LocalExecutor; forks Airflow tasks as subprocesses
+  #
+  # DAGs (read-only bind mount):
+  #   ./data-pipeline/airflow/dags  →  /opt/airflow/dags
+  #
+  # Metadata DB: PostgreSQL  (separate 'airflow_db' database on host PG)
+  #   Set AIRFLOW_DB_URL in envs/airflow.env before first deploy.
+  #
+  # Memory budget: webserver 1 GB + scheduler 1.5 GB = 2.5 GB total.
+  # Total server usage after adding Airflow: ~53 GB / 64 GB.
+  # ──────────────────────────────────────────────────────────────────────────
+
+  airflow-init:
+    # Uses the same custom image as webserver/scheduler
+    image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-airflow:${TAG:-latest}
+    build:
+      context: ./data-pipeline/airflow
+      dockerfile: Dockerfile
+    container_name: airflow_init
+    restart: "no"           # run once; Docker won't restart it
+    depends_on: []
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./envs/airflow.env
+    networks:
+      - grain-network
+    command: >
+      bash -c "
+        airflow db migrate &&
+        airflow users create
+          --username $${AIRFLOW_ADMIN_USER:-admin}
+          --password $${AIRFLOW_ADMIN_PASSWORD:-changeme}
+          --firstname Admin
+          --lastname User
+          --role Admin
+          --email $${AIRFLOW_ADMIN_EMAIL:-admin@graintrade.info}
+      "
+
+  airflow-webserver:
+    image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-airflow:${TAG:-latest}
+    build:
+      context: ./data-pipeline/airflow
+      dockerfile: Dockerfile
+    container_name: airflow_webserver
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./envs/airflow.env
+    ports:
+      - "8180:8080"          # Airflow UI; proxy via Nginx in production
+    volumes:
+      - ./data-pipeline/airflow/dags:/opt/airflow/dags:ro
+      - airflow_logs:/opt/airflow/logs
+    networks:
+      - grain-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--max-time", "5", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    command: webserver
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 1G
+      reservations:
+        cpus: '0.25'
+        memory: 512M
+
+  airflow-scheduler:
+    image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-airflow:${TAG:-latest}
+    build:
+      context: ./data-pipeline/airflow
+      dockerfile: Dockerfile
+    container_name: airflow_scheduler
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./envs/airflow.env
+    volumes:
+      - ./data-pipeline/airflow/dags:/opt/airflow/dags:ro
+      - airflow_logs:/opt/airflow/logs
+    networks:
+      - grain-network
+    command: scheduler
+    resources:
+      limits:
+        # LocalExecutor forks task subprocesses inside this container.
+        # Memory is not needed for Spark (Spark runs inside data-pipeline)
+        # but each forked task process needs ~100-200 MB.
+        cpus: '0.75'
+        memory: 1.5G
+      reservations:
+        cpus: '0.5'
+        memory: 1G
+
 volumes:
   prometheus_data:
   grafana_data:
+  airflow_logs:            # persists Airflow task logs across restarts
 
 networks:
   grain-network:
