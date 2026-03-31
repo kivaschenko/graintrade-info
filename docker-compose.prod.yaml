@@ -13,10 +13,18 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        cpus: '1.5'
+        memory: 4G
+      reservations:
+        cpus: '1'
+        memory: 2.5G
 
   chat-room:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-chat-room:${TAG:-latest}
@@ -30,10 +38,18 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        cpus: '1'
+        memory: 3G
+      reservations:
+        cpus: '0.75'
+        memory: 2G
 
   notifications:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-notifications:${TAG:-latest}
@@ -47,10 +63,18 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 2G
+      reservations:
+        cpus: '0.3'
+        memory: 1G
 
   data-pipeline:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-data-pipeline:${TAG:-latest}
@@ -62,10 +86,18 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        cpus: '1.5'
+        memory: 4G
+      reservations:
+        cpus: '1'
+        memory: 2.5G
 
   frontend:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-frontend:${TAG:-latest}
@@ -78,6 +110,13 @@ services:
       - backend
       - chat-room
       - data-pipeline
+    resources:
+      limits:
+        cpus: '0.25'
+        memory: 1G
+      reservations:
+        cpus: '0.1'
+        memory: 512M
 
   landing-service:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-landing-service:${TAG:-latest}
@@ -87,79 +126,124 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 2G
+      reservations:
+        cpus: '0.3'
+        memory: 1G
 
   # 🧩 Node Exporter (host metrics)
-  #node_exporter:
-  #  image: prom/node-exporter:latest
-  #  container_name: node_exporter
-  #  restart: unless-stopped
-  #  network_mode: "host"
-  #  pid: "host"
-  #  volumes:
-  #    - /:/host:ro,rslave
-  #  command:
-  #    - "--path.rootfs=/host"
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+    network_mode: "host"
+    pid: "host"
+    volumes:
+      - /:/host:ro,rslave
+    command:
+      - "--path.rootfs=/host"
+    resources:
+      limits:
+        cpus: '0.25'
+        memory: 256M
+      reservations:
+        cpus: '0.1'
+        memory: 128M
 
-  ## 📊 PostgreSQL Exporter
-  #postgres_exporter:
-  #  image: prometheuscommunity/postgres-exporter
-  #  container_name: postgres_exporter
-  #  restart: unless-stopped
-  #  environment:
-  #    # Update this to point to your production Postgres instance
-  #    DATA_SOURCE_NAME: "postgresql://grain:teomeo2358@65.108.68.57:5433/postgres?sslmode=disable"
-  #  network_mode: "host"
+  # 📊 PostgreSQL Exporter
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres_exporter
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # Update this to point to your production Postgres instance
+      DATA_SOURCE_NAME: "postgresql://grain:teomeo2358@172.18.0.1:5432/graintrade_db?sslmode=disable"
+    network_mode: "host"
+    resources:
+      limits:
+        cpus: '0.25'
+        memory: 256M
+      reservations:
+        cpus: '0.1'
+        memory: 128M
 
-  ## 🔴 Redis Exporter
-  #redis_exporter:
-  #  image: oliver006/redis_exporter
-  #  container_name: redis_exporter
-  #  restart: unless-stopped
-  #  command:
-  #    # Update this to point to your production Redis instance
-  #    - "--redis.addr=redis://:Teodorathome@localhost:6379/1"
-  #  network_mode: "host"
+  # 🔴 Redis Exporter
+  redis_exporter:
+    image: oliver006/redis_exporter
+    container_name: redis_exporter
+    restart: unless-stopped
+    command:
+      # Update this to point to your production Redis instance
+      - "--redis.addr=redis://:Teodorathome@localhost:6379/1"
+    network_mode: "host"
+    resources:
+      limits:
+        cpus: '0.25'
+        memory: 256M
+      reservations:
+        cpus: '0.1'
+        memory: 128M
 
-  ## 📈 Prometheus
-  #prometheus:
-  #  image: prom/prometheus:latest
-  #  container_name: prometheus
-  #  restart: unless-stopped
-  #  ports:
-  #    - "9090:9090"
-  #  volumes:
-  #    - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-  #    - prometheus_data:/prometheus
-  #  extra_hosts:
-  #    - "host.docker.internal:host-gateway"
-  #  networks:
-  #    - grain-network
+  # 📈 Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - grain-network
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 1G
+      reservations:
+        cpus: '0.25'
+        memory: 512M
 
-  ## 🧠 Grafana
-  #grafana:
-  #  image: grafana/grafana:latest
-  #  container_name: grafana
-  #  restart: unless-stopped
-  #  ports:
-  #    - "3000:3000"
-  #  environment:
-  #    - GF_SECURITY_ADMIN_USER=civaschenko
-  #    - GF_SECURITY_ADMIN_PASSWORD=Teodorathome11
-  #  volumes:
-  #    - grafana_data:/var/lib/grafana
-  #    - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-  #  depends_on:
-  #    - prometheus
-  #  networks:
-  #    - grain-network
+  # 🧠 Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=civaschenko
+      - GF_SECURITY_ADMIN_PASSWORD=Teodorathome11
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - grain-network
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 1G
+      reservations:
+        cpus: '0.25'
+        memory: 512M
 
-#volumes:
-  #prometheus_data:
-  #grafana_data:
+volumes:
+  prometheus_data:
+  grafana_data:
 
 networks:
   grain-network:
