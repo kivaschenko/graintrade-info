@@ -4,6 +4,7 @@ from app.routers.data_source_router import router as data_source_router
 from app.routers.ingestion_router import router as ingestion_router
 from app.routers.health_router import router as health_router
 from app.routers.forecast_router import router as forecast_router
+from app.routers.pipeline_router import router as pipeline_router
 
 __all__ = [
     "commodity_router",
@@ -11,4 +12,5 @@ __all__ = [
     "ingestion_router",
     "health_router",
     "forecast_router",
+    "pipeline_router",
 ]
