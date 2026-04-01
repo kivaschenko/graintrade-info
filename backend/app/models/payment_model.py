@@ -5,6 +5,13 @@ from ..database import database
 from ..logger import logger
 
 
+async def get_by_order_id(order_id: str) -> Dict[str, Any] | None:
+    query = "SELECT * FROM payments WHERE order_id = $1 LIMIT 1"
+    async with database.pool.acquire() as connection:
+        row = await connection.fetchrow(query, order_id)
+        return dict(row) if row else None
+
+
 async def create(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create or update a payment record

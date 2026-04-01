@@ -72,7 +72,7 @@ async def geocode_address(
 
                     result = data[0]
                     address_details = result.get("address", {})
-                    print(f"Geocoding result for address '{address}': {result}")
+                    logger.debug("Geocoding result for address '%s': %s", address, result)
                     return {
                         "latitude": float(result["lat"]),
                         "longitude": float(result["lon"]),

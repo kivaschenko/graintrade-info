@@ -33,7 +33,6 @@ oauth2_scheme = OAuth2PasswordBearer(
         "import:export": "Allowed to import/export data via Excel/CSV.",
     },
 )
-logger.basicConfig(level=logger.INFO, format="%(asctime)s - %(message)s")
 
 # ==========
 # Dependency

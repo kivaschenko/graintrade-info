@@ -1,0 +1,12 @@
+# Extra dependencies on top of the official Airflow image.
+#
+# The base image (apache/airflow:3.0.0) already ships:
+#   apache-airflow, requests, pendulum, python-dotenv, psycopg2-binary, etc.
+#
+# Add only what the DAGs actually need beyond the base.
+
+# HTTP provider — used by DAG utility helpers (optional, DAGs use pure requests)
+apache-airflow-providers-http>=4.11.0,<5.0.0
+
+# postgres provider — used by Airflow's built-in PostgressHook (optional)
+apache-airflow-providers-postgres>=5.13.0,<6.0.0

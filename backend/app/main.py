@@ -63,7 +63,7 @@ oauth2_scheme = OAuth2PasswordBearer(
     },
 )
 
-logger.basicConfig(level=logger.INFO, format="%(asctime)s - %(message)s")
+
 logger.info(f"Starting App {app}...")
 
 app.add_middleware(

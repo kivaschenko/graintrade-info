@@ -15,6 +15,7 @@ from app.routers import (
     ingestion_router,
     health_router,
     forecast_router,
+    pipeline_router,
 )
 
 
@@ -82,6 +83,7 @@ app.include_router(commodity_router)
 app.include_router(data_source_router)
 app.include_router(ingestion_router)
 app.include_router(forecast_router)
+app.include_router(pipeline_router)  # Airflow integration: /pipeline/transformation, /pipeline/forecast
 
 
 @app.get("/")

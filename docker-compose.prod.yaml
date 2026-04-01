@@ -13,10 +13,18 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        cpus: '1.5'
+        memory: 4G
+      reservations:
+        cpus: '1'
+        memory: 2.5G
 
   chat-room:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-chat-room:${TAG:-latest}
@@ -30,10 +38,18 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        cpus: '1'
+        memory: 3G
+      reservations:
+        cpus: '0.75'
+        memory: 2G
 
   notifications:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-notifications:${TAG:-latest}
@@ -47,10 +63,18 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 2G
+      reservations:
+        cpus: '0.3'
+        memory: 1G
 
   data-pipeline:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-data-pipeline:${TAG:-latest}
@@ -62,10 +86,20 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        # Reduced from 4G: Airflow Scheduler runs heavy tasks via HTTP calls
+        # so Spark jobs still land inside this container. Keep margin for JVM.
+        cpus: '1.5'
+        memory: 3.5G
+      reservations:
+        cpus: '1'
+        memory: 2.5G
 
   frontend:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-frontend:${TAG:-latest}
@@ -78,6 +112,13 @@ services:
       - backend
       - chat-room
       - data-pipeline
+    resources:
+      limits:
+        cpus: '0.25'
+        memory: 1G
+      reservations:
+        cpus: '0.1'
+        memory: 512M
 
   landing-service:
     image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-landing-service:${TAG:-latest}
@@ -87,79 +128,237 @@ services:
     networks:
       - grain-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 2G
+      reservations:
+        cpus: '0.3'
+        memory: 1G
+
+  # 🧩 Node Exporter (host metrics)
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+    network_mode: "host"
+    pid: "host"
+    volumes:
+      - /:/host:ro,rslave
+    command:
+      - "--path.rootfs=/host"
+    resources:
+      limits:
+        cpus: '0.25'
+        memory: 256M
+      reservations:
+        cpus: '0.1'
+        memory: 128M
+
+  # 📊 PostgreSQL Exporter
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres_exporter
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # Update this to point to your production Postgres instance
+      DATA_SOURCE_NAME: "postgresql://grain:teomeo2358@172.18.0.1:5432/graintrade_db?sslmode=disable"
+    network_mode: "host"
+    resources:
+      limits:
+        cpus: '0.25'
+        memory: 256M
+      reservations:
+        cpus: '0.1'
+        memory: 128M
+
+  # 🔴 Redis Exporter
+  redis_exporter:
+    image: oliver006/redis_exporter
+    container_name: redis_exporter
+    restart: unless-stopped
+    command:
+      # Update this to point to your production Redis instance
+      - "--redis.addr=redis://:Teodorathome@localhost:6379/1"
+    network_mode: "host"
+    resources:
+      limits:
+        cpus: '0.25'
+        memory: 256M
+      reservations:
+        cpus: '0.1'
+        memory: 128M
+
+  # 📈 Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - grain-network
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 1G
+      reservations:
+        cpus: '0.25'
+        memory: 512M
+
+  # 🧠 Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=civaschenko
+      - GF_SECURITY_ADMIN_PASSWORD=Teodorathome11
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - grain-network
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 1G
+      reservations:
+        cpus: '0.25'
+        memory: 512M
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Apache Airflow 3.x — LocalExecutor on single server
+  #
+  # Architecture:
+  #   airflow-init      → one-time DB migration + admin user creation
+  #   airflow-webserver → UI on port 8180  (proxy behind Nginx in production)
+  #   airflow-scheduler → LocalExecutor; forks Airflow tasks as subprocesses
+  #
+  # DAGs (read-only bind mount):
+  #   ./data-pipeline/airflow/dags  →  /opt/airflow/dags
+  #
+  # Metadata DB: PostgreSQL  (separate 'airflow_db' database on host PG)
+  #   Set AIRFLOW_DB_URL in envs/airflow.env before first deploy.
+  #
+  # Memory budget: webserver 1 GB + scheduler 1.5 GB = 2.5 GB total.
+  # Total server usage after adding Airflow: ~53 GB / 64 GB.
+  # ──────────────────────────────────────────────────────────────────────────
+
+  airflow-init:
+    # Uses the same custom image as webserver/scheduler
+    image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-airflow:${TAG:-latest}
+    build:
+      context: ./data-pipeline/airflow
+      dockerfile: Dockerfile
+    container_name: airflow_init
+    restart: "no"           # run once; Docker won't restart it
+    depends_on: []
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./envs/airflow.env
+    networks:
+      - grain-network
+    command: >
+      bash -c "
+        airflow db migrate &&
+        airflow users create
+          --username $${AIRFLOW_ADMIN_USER:-admin}
+          --password $${AIRFLOW_ADMIN_PASSWORD:-changeme}
+          --firstname Admin
+          --lastname User
+          --role Admin
+          --email $${AIRFLOW_ADMIN_EMAIL:-admin@graintrade.info}
+      "
+
+  airflow-webserver:
+    image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-airflow:${TAG:-latest}
+    build:
+      context: ./data-pipeline/airflow
+      dockerfile: Dockerfile
+    container_name: airflow_webserver
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./envs/airflow.env
+    ports:
+      - "8180:8080"          # Airflow UI; proxy via Nginx in production
+    volumes:
+      - ./data-pipeline/airflow/dags:/opt/airflow/dags:ro
+      - airflow_logs:/opt/airflow/logs
+    networks:
+      - grain-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--max-time", "5", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
+    command: webserver
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 1G
+      reservations:
+        cpus: '0.25'
+        memory: 512M
 
-  # 🧩 Node Exporter (host metrics)
-  #node_exporter:
-  #  image: prom/node-exporter:latest
-  #  container_name: node_exporter
-  #  restart: unless-stopped
-  #  network_mode: "host"
-  #  pid: "host"
-  #  volumes:
-  #    - /:/host:ro,rslave
-  #  command:
-  #    - "--path.rootfs=/host"
+  airflow-scheduler:
+    image: ${IMAGE_REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-kivaschenko}/grain-airflow:${TAG:-latest}
+    build:
+      context: ./data-pipeline/airflow
+      dockerfile: Dockerfile
+    container_name: airflow_scheduler
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./envs/airflow.env
+    volumes:
+      - ./data-pipeline/airflow/dags:/opt/airflow/dags:ro
+      - airflow_logs:/opt/airflow/logs
+    networks:
+      - grain-network
+    command: scheduler
+    resources:
+      limits:
+        # LocalExecutor forks task subprocesses inside this container.
+        # Memory is not needed for Spark (Spark runs inside data-pipeline)
+        # but each forked task process needs ~100-200 MB.
+        cpus: '0.75'
+        memory: 1.5G
+      reservations:
+        cpus: '0.5'
+        memory: 1G
 
-  ## 📊 PostgreSQL Exporter
-  #postgres_exporter:
-  #  image: prometheuscommunity/postgres-exporter
-  #  container_name: postgres_exporter
-  #  restart: unless-stopped
-  #  environment:
-  #    # Update this to point to your production Postgres instance
-  #    DATA_SOURCE_NAME: "postgresql://grain:teomeo2358@65.108.68.57:5433/postgres?sslmode=disable"
-  #  network_mode: "host"
-
-  ## 🔴 Redis Exporter
-  #redis_exporter:
-  #  image: oliver006/redis_exporter
-  #  container_name: redis_exporter
-  #  restart: unless-stopped
-  #  command:
-  #    # Update this to point to your production Redis instance
-  #    - "--redis.addr=redis://:Teodorathome@localhost:6379/1"
-  #  network_mode: "host"
-
-  ## 📈 Prometheus
-  #prometheus:
-  #  image: prom/prometheus:latest
-  #  container_name: prometheus
-  #  restart: unless-stopped
-  #  ports:
-  #    - "9090:9090"
-  #  volumes:
-  #    - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-  #    - prometheus_data:/prometheus
-  #  extra_hosts:
-  #    - "host.docker.internal:host-gateway"
-  #  networks:
-  #    - grain-network
-
-  ## 🧠 Grafana
-  #grafana:
-  #  image: grafana/grafana:latest
-  #  container_name: grafana
-  #  restart: unless-stopped
-  #  ports:
-  #    - "3000:3000"
-  #  environment:
-  #    - GF_SECURITY_ADMIN_USER=civaschenko
-  #    - GF_SECURITY_ADMIN_PASSWORD=Teodorathome11
-  #  volumes:
-  #    - grafana_data:/var/lib/grafana
-  #    - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-  #  depends_on:
-  #    - prometheus
-  #  networks:
-  #    - grain-network
-
-#volumes:
-  #prometheus_data:
-  #grafana_data:
+volumes:
+  prometheus_data:
+  grafana_data:
+  airflow_logs:            # persists Airflow task logs across restarts
 
 networks:
   grain-network:

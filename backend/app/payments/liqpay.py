@@ -58,6 +58,10 @@ ORDER_DESCRIPTION = "sub-{tarif_name}-{start_date}-{end_date}-{user_id}"
 
 
 class LiqPayPaymentService(BasePaymentProvider):
+    # API_URL is used for the browser-based checkout flow (form submissions / redirects).
+    # API_REQUEST_URL is used for server-to-server LiqPay API calls (e.g., status checks,
+    # subscription management, and other backend operations) and must not be confused
+    # with the checkout endpoint above.
     API_URL = "https://www.liqpay.ua/api/3/checkout"
     API_REQUEST_URL = "https://www.liqpay.ua/api/request"
     _supportedActions = ["pay", "hold", "subscribe", "paydonate"]
@@ -123,7 +127,7 @@ class LiqPayPaymentService(BasePaymentProvider):
         else:
             raise ValueError(
                 "LiqPay server callback URL is not configured. "
-                "Set LIQPAY_SERVER_CALLBACK_URL or BASE_URL with https scheme."
+                "Set LIQPAY_SERVER_CALLBACK_URL or BASE_URL (for security, BASE_URL should use the https scheme)."
             )
         if result_url:
             params["result_url"] = result_url

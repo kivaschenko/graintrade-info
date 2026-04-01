@@ -1,13 +1,20 @@
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
-# Configure logging to write to a file
 logger = logging.getLogger("app_logger")
-logger.setLevel(logging.DEBUG)  # Set to DEBUG to capture all levels of messages
+log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
+log_level = getattr(logging, log_level_name, logging.INFO)
+logger.setLevel(log_level)
+logger.propagate = False
+
+# Avoid duplicate handlers when modules are reloaded in dev mode.
+if logger.handlers:
+    logger.handlers.clear()
 
 # Optionally, you can also set up logging to handle both file and console output
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
+console_handler.setLevel(log_level)
 console_handler.setFormatter(
     logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 )
