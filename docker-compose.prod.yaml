@@ -18,7 +18,8 @@ services:
       timeout: 5s
       retries: 2
       start_period: 20s
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '1.5'
         memory: 4G
@@ -43,7 +44,8 @@ services:
       timeout: 5s
       retries: 2
       start_period: 20s
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '1'
         memory: 3G
@@ -68,7 +70,8 @@ services:
       timeout: 5s
       retries: 2
       start_period: 20s
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '0.5'
         memory: 2G
@@ -91,7 +94,8 @@ services:
       timeout: 5s
       retries: 2
       start_period: 20s
-    resources:
+    deploy:
+      resources:
       limits:
         # Reduced from 4G: Airflow Scheduler runs heavy tasks via HTTP calls
         # so Spark jobs still land inside this container. Keep margin for JVM.
@@ -112,7 +116,8 @@ services:
       - backend
       - chat-room
       - data-pipeline
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '0.25'
         memory: 1G
@@ -133,7 +138,8 @@ services:
       timeout: 5s
       retries: 2
       start_period: 20s
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '0.5'
         memory: 2G
@@ -152,7 +158,8 @@ services:
       - /:/host:ro,rslave
     command:
       - "--path.rootfs=/host"
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '0.25'
         memory: 256M
@@ -171,7 +178,8 @@ services:
       # Update this to point to your production Postgres instance
       DATA_SOURCE_NAME: "postgresql://grain:teomeo2358@172.18.0.1:5432/graintrade_db?sslmode=disable"
     network_mode: "host"
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '0.25'
         memory: 256M
@@ -188,7 +196,8 @@ services:
       # Update this to point to your production Redis instance
       - "--redis.addr=redis://:Teodorathome@localhost:6379/1"
     network_mode: "host"
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '0.25'
         memory: 256M
@@ -210,7 +219,8 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - grain-network
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '0.5'
         memory: 1G
@@ -235,7 +245,8 @@ services:
       - prometheus
     networks:
       - grain-network
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '0.5'
         memory: 1G
@@ -316,7 +327,8 @@ services:
       retries: 3
       start_period: 30s
     command: webserver
-    resources:
+    deploy:
+      resources:
       limits:
         cpus: '0.5'
         memory: 1G
@@ -344,7 +356,8 @@ services:
     networks:
       - grain-network
     command: scheduler
-    resources:
+    deploy:
+      resources:
       limits:
         # LocalExecutor forks task subprocesses inside this container.
         # Memory is not needed for Spark (Spark runs inside data-pipeline)
