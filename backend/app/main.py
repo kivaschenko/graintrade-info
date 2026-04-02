@@ -63,7 +63,6 @@ oauth2_scheme = OAuth2PasswordBearer(
     },
 )
 
-
 logger.info(f"Starting App {app}...")
 
 app.add_middleware(
