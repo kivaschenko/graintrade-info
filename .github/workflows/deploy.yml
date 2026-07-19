@@ -171,25 +171,26 @@ jobs:
 
           IMAGE_TAG=${{ env.TAG }}
 
-          # ─── Note the change here: 'bash -se' instead of 'bash -seu' ───
           ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "DOCKERHUB_USERNAME='$DOCKERHUB_USERNAME' DOCKERHUB_TOKEN='$DOCKERHUB_TOKEN' IMAGE_NAMESPACE='$IMAGE_NAMESPACE' IMAGE_TAG='$IMAGE_TAG' bash -se" << 'EOF'
-          
-          # Explicitly target strict validation rules *after* environment shell initialization
           set -eu
 
-          # Automatically intercept and bind the user-space rootless Docker socket
-          if [ -z "${DOCKER_HOST:-}" ]; then
-            _uid=$(id -u)
-            if [ -S "/run/user/${_uid}/docker.sock" ]; then
-              export DOCKER_HOST="unix:///run/user/${_uid}/docker.sock"
-            fi
+          # 1. Determine user ID and set rootless socket path
+          _uid=$(id -u)
+          export DOCKER_HOST="unix:///run/user/${_uid}/docker.sock"
+
+          # 2. Verify socket existence; if missing, ensure the systemd user daemon is active
+          if [ ! -S "/run/user/${_uid}/docker.sock" ]; then
+            echo "Rootless docker socket not found at $DOCKER_HOST. Attempting to start user docker service..."
+            systemctl --user start docker || true
           fi
 
           cd /home/$USER/production
 
+          # 3. Authenticate with Docker Hub using the exported DOCKER_HOST
           echo "$DOCKERHUB_TOKEN" | docker login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
-          
+
+          # 4. Pull and launch containers passing DOCKER_HOST down to docker compose
           IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml pull
           IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml up -d
           EOF
