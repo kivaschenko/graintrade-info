@@ -171,13 +171,11 @@ jobs:
 
           IMAGE_TAG=${{ env.TAG }}
 
-          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" << EOF
-          set -euo pipefail
-          cd /home/$DEPLOY_USER/production
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "DOCKERHUB_USERNAME='$DOCKERHUB_USERNAME' DOCKERHUB_TOKEN='$DOCKERHUB_TOKEN' IMAGE_NAMESPACE='$IMAGE_NAMESPACE' IMAGE_TAG='$IMAGE_TAG' bash -seu" << 'EOF'
+          cd /home/$USER/production
 
           echo "$DOCKERHUB_TOKEN" | docker login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
-
-          # Fast validation: auth + repository/tag exists
           docker pull docker.io/$IMAGE_NAMESPACE/grain-backend:$IMAGE_TAG
 
           IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml pull
