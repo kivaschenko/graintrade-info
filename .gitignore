@@ -220,4 +220,4 @@ parsers_requests/
 data-pipeline/parsers_results/
 
 # Ignore workflow files
-.github/workflows/
+# .github/workflows/
