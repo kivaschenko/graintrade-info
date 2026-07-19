@@ -172,7 +172,15 @@ jobs:
           IMAGE_TAG=${{ env.TAG }}
 
           ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "DOCKERHUB_USERNAME='$DOCKERHUB_USERNAME' DOCKERHUB_TOKEN='$DOCKERHUB_TOKEN' IMAGE_NAMESPACE='$IMAGE_NAMESPACE' IMAGE_TAG='$IMAGE_TAG' bash -seu" << 'EOF'
+            "DOCKERHUB_USERNAME='$DOCKERHUB_USERNAME' DOCKERHUB_TOKEN='$DOCKERHUB_TOKEN' IMAGE_NAMESPACE='$IMAGE_NAMESPACE' IMAGE_TAG='$IMAGE_TAG' bash -lseu" << 'EOF'
+          # Auto-detect rootless Docker socket when DOCKER_HOST is not already set
+          if [ -z "${DOCKER_HOST:-}" ]; then
+            _uid=$(id -u)
+            if [ -S "/run/user/${_uid}/docker.sock" ]; then
+              export DOCKER_HOST="unix:///run/user/${_uid}/docker.sock"
+            fi
+          fi
+
           cd /home/$USER/production
 
           echo "$DOCKERHUB_TOKEN" | docker login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
