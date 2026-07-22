@@ -27,6 +27,7 @@ APACHE_CONF_MAIN="${APACHE_CONF_DIR}/conf/httpd.conf"
 APACHE_USER="apache"
 EVASIVE_LOG_DIR="/var/log/httpd/evasive"
 RATE_LIMIT_FILE="${APACHE_CONF_DIR}/rate_limit.txt"
+COMPAT_CONF_FILE="${APACHE_CONFD_DIR}/00-graintrade-compat.conf"
 
 # Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
@@ -94,6 +95,12 @@ done
 if [[ -f "$APACHE_CONFD_DIR/security.conf" ]]; then
     sed -i 's#/var/log/apache2/evasive#/var/log/httpd/evasive#g' "$APACHE_CONFD_DIR/security.conf"
 fi
+
+# 5b. Compatibility defines for configs authored for Debian-style Apache layout
+cat > "$COMPAT_CONF_FILE" <<'EOF'
+# Compatibility definitions for cross-distro vhost configs
+Define APACHE_LOG_DIR /var/log/httpd
+EOF
 
 # 6. SELinux and firewall adjustments for reverse-proxy use case
 echo "Applying SELinux and firewall settings..."
