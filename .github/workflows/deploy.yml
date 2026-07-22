@@ -173,10 +173,22 @@ jobs:
 
           ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "DOCKERHUB_USERNAME='$DOCKERHUB_USERNAME' DOCKERHUB_TOKEN='$DOCKERHUB_TOKEN' IMAGE_NAMESPACE='$IMAGE_NAMESPACE' IMAGE_TAG='$IMAGE_TAG' bash -se" << 'EOF'
-          set -eu
+          set -euo pipefail
+
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "ERROR: docker CLI is not installed on server"
+            exit 1
+          fi
+
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "ERROR: docker compose plugin is not available on server"
+            exit 1
+          fi
 
           # 1. Determine user ID and set rootless socket path
           _uid=$(id -u)
+          export XDG_RUNTIME_DIR="/run/user/${_uid}"
+          export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
           export DOCKER_HOST="unix:///run/user/${_uid}/docker.sock"
 
           # 2. Verify socket existence; if missing, ensure the systemd user daemon is active
@@ -185,12 +197,48 @@ jobs:
             systemctl --user start docker || true
           fi
 
+          # Wait briefly for the socket to appear after service start
+          for _ in $(seq 1 20); do
+            [ -S "/run/user/${_uid}/docker.sock" ] && break
+            sleep 1
+          done
+
+          # Fallback to rootful docker socket when rootless socket is unavailable
+          if [ ! -S "/run/user/${_uid}/docker.sock" ]; then
+            if [ -S "/var/run/docker.sock" ]; then
+              echo "Rootless docker socket still unavailable, falling back to /var/run/docker.sock"
+              export DOCKER_HOST="unix:///var/run/docker.sock"
+            else
+              echo "ERROR: No docker socket available (rootless or rootful)"
+              echo "Hint: for rootless docker, run: loginctl enable-linger $USER && systemctl --user enable --now docker"
+              exit 1
+            fi
+          fi
+
+          if ! docker info >/dev/null 2>&1; then
+            echo "ERROR: docker daemon is not reachable via DOCKER_HOST=$DOCKER_HOST"
+            exit 1
+          fi
+
           cd /home/$USER/production
+
+          if [ ! -f docker-compose.prod.yaml ]; then
+            echo "ERROR: /home/$USER/production/docker-compose.prod.yaml not found"
+            exit 1
+          fi
+
+          for _env_file in envs/backend.env envs/chat-room.env envs/notifications.env envs/data-pipeline.env; do
+            if [ ! -f "$_env_file" ]; then
+              echo "ERROR: missing required env file: /home/$USER/production/$_env_file"
+              exit 1
+            fi
+          done
 
           # 3. Authenticate with Docker Hub using the exported DOCKER_HOST
           echo "$DOCKERHUB_TOKEN" | docker login docker.io -u "$DOCKERHUB_USERNAME" --password-stdin
 
           # 4. Pull and launch containers passing DOCKER_HOST down to docker compose
+          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml config -q
           IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml pull
-          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml up -d
+          IMAGE_REGISTRY=docker.io IMAGE_NAMESPACE=$IMAGE_NAMESPACE TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yaml up -d --remove-orphans
           EOF
