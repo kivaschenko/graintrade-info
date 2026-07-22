@@ -1,125 +1,137 @@
 #!/bin/bash
 
-# Security Enhancement Deployment Script for Graintrade API
-# This script helps deploy the security configurations
+# Security Enhancement Deployment Script for Graintrade API (Fedora 44)
+# This script deploys Apache/httpd security configs on Fedora-family systems.
 
-echo "🔐 Deploying Apache Security Enhancements for Graintrade API..."
+set -euo pipefail
+
+echo "Deploying Apache security enhancements for Graintrade on Fedora..."
 
 # Check if running as root
 if [[ $EUID -ne 0 ]]; then
-   echo "❌ This script must be run as root (use sudo)" 
-   exit 1
+    echo "ERROR: This script must be run as root (use sudo)."
+    exit 1
 fi
+
+# Fedora-only guard
+if [[ ! -f /etc/fedora-release ]]; then
+    echo "ERROR: This script is adapted for Fedora. Detected non-Fedora OS."
+    exit 1
+fi
+
+# Paths and service names for Fedora
+APACHE_SERVICE="httpd"
+APACHE_CONF_DIR="/etc/httpd"
+APACHE_CONFD_DIR="${APACHE_CONF_DIR}/conf.d"
+APACHE_CONF_MAIN="${APACHE_CONF_DIR}/conf/httpd.conf"
+APACHE_USER="apache"
+EVASIVE_LOG_DIR="/var/log/httpd/evasive"
+RATE_LIMIT_FILE="${APACHE_CONF_DIR}/rate_limit.txt"
 
 # Get the script directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 APACHE_FILES_DIR="$SCRIPT_DIR/apache_files/sites-available"
 
-echo "📁 Working directory: $SCRIPT_DIR"
-echo "📁 Apache files directory: $APACHE_FILES_DIR"
+echo "Working directory: $SCRIPT_DIR"
+echo "Apache files directory: $APACHE_FILES_DIR"
 
-# Check if source files exist
-if [ ! -f "$APACHE_FILES_DIR/api.graintrade.info.conf" ]; then
-    echo "❌ Source file not found: $APACHE_FILES_DIR/api.graintrade.info.conf"
+# Check required source files
+if [[ ! -f "$APACHE_FILES_DIR/api.graintrade.info.conf" ]]; then
+    echo "ERROR: Source file not found: $APACHE_FILES_DIR/api.graintrade.info.conf"
     exit 1
 fi
 
-if [ ! -f "$APACHE_FILES_DIR/security.conf" ]; then
-    echo "❌ Source file not found: $APACHE_FILES_DIR/security.conf"
+if [[ ! -f "$APACHE_FILES_DIR/security.conf" ]]; then
+    echo "ERROR: Source file not found: $APACHE_FILES_DIR/security.conf"
     exit 1
 fi
 
-# 1. Install required Apache modules
-echo "📦 Installing required Apache modules..."
-apt-get update
-apt-get install -y libapache2-mod-evasive
+# 1. Install required packages
+echo "Installing Apache packages and modules with dnf..."
+dnf -y install httpd mod_ssl mod_evasive
 
-# Enable modules (don't fail if already enabled)
-echo "🔧 Enabling Apache modules..."
-a2enmod ssl || echo "⚠️  mod_ssl already enabled or failed to enable"
-a2enmod evasive || echo "⚠️  mod_evasive already enabled or failed to enable"
-a2enmod headers || echo "⚠️  mod_headers already enabled or failed to enable"
-a2enmod rewrite || echo "⚠️  mod_rewrite already enabled or failed to enable"
+# 2. Ensure service is enabled
+echo "Enabling and starting httpd service..."
+systemctl enable --now "$APACHE_SERVICE"
 
-# 2. Create rate limiting directory for mod_evasive
-echo "📁 Creating mod_evasive log directory..."
-mkdir -p /var/log/apache2/evasive
-chown www-data:www-data /var/log/apache2/evasive
+# 3. Create mod_evasive log directory and rate-limit file
+echo "Preparing mod_evasive log directory and rate-limit file..."
+mkdir -p "$EVASIVE_LOG_DIR"
+chown "$APACHE_USER":"$APACHE_USER" "$EVASIVE_LOG_DIR"
+chmod 750 "$EVASIVE_LOG_DIR"
 
-# 3. Create rate limit file for basic rewrite rules
-echo "📝 Creating rate limit tracking file..."
-touch /etc/apache2/rate_limit.txt
-chown www-data:www-data /etc/apache2/rate_limit.txt
+touch "$RATE_LIMIT_FILE"
+chown "$APACHE_USER":"$APACHE_USER" "$RATE_LIMIT_FILE"
+chmod 640 "$RATE_LIMIT_FILE"
 
-# 4. Copy configuration files
-echo "📋 Copying configuration files..."
-cp "$APACHE_FILES_DIR/api.graintrade.info.conf" /etc/apache2/sites-available/ || {
-    echo "❌ Failed to copy api.graintrade.info.conf"
-    exit 1
-}
+# 4. Copy configuration files to conf.d
+echo "Deploying virtual host and security config files..."
+install -m 644 "$APACHE_FILES_DIR/api.graintrade.info.conf" "$APACHE_CONFD_DIR/"
+install -m 644 "$APACHE_FILES_DIR/security.conf" "$APACHE_CONFD_DIR/"
 
-cp "$APACHE_FILES_DIR/security.conf" /etc/apache2/sites-available/ || {
-    echo "❌ Failed to copy security.conf"
-    exit 1
-}
-
-# Copy global security configuration
-if [ -f "$APACHE_FILES_DIR/global-security.conf" ]; then
-    cp "$APACHE_FILES_DIR/global-security.conf" /etc/apache2/conf-available/
-    a2enconf global-security
-    echo "✅ Global security configuration enabled"
+if [[ -f "$APACHE_FILES_DIR/global-security.conf" ]]; then
+    install -m 644 "$APACHE_FILES_DIR/global-security.conf" "$APACHE_CONFD_DIR/00-global-security.conf"
+    echo "Global security configuration deployed to $APACHE_CONFD_DIR/00-global-security.conf"
 fi
 
 # Copy other site configurations if they exist
-for config_file in graintrade.info-le-ssl.conf chat.graintrade.info.conf home.graintrade.info.conf pgadmin.graintrade.info.conf; do
-    if [ -f "$APACHE_FILES_DIR/$config_file" ]; then
-        echo "📋 Copying $config_file..."
-        cp "$APACHE_FILES_DIR/$config_file" /etc/apache2/sites-available/
+for config_file in \
+    graintrade.info-le-ssl.conf \
+    chat.graintrade.info.conf \
+    home.graintrade.info.conf \
+    pgadmin.graintrade.info.conf \
+    data-pipeline.graintrade.info.conf \
+    airflow.graintrade.info.conf \
+    minio.graintrade.info.conf
+do
+    if [[ -f "$APACHE_FILES_DIR/$config_file" ]]; then
+        echo "Deploying $config_file..."
+        install -m 644 "$APACHE_FILES_DIR/$config_file" "$APACHE_CONFD_DIR/$config_file"
     fi
 done
 
-# 5. Test Apache configuration
-echo "🧪 Testing Apache configuration..."
-apache2ctl configtest
+# 5. Align Debian-style path references inside security.conf to Fedora paths
+if [[ -f "$APACHE_CONFD_DIR/security.conf" ]]; then
+    sed -i 's#/var/log/apache2/evasive#/var/log/httpd/evasive#g' "$APACHE_CONFD_DIR/security.conf"
+fi
 
-if [ $? -eq 0 ]; then
-    echo "✅ Apache configuration test passed!"
-    
-    # 6. Reload Apache
-    echo "🔄 Reloading Apache..."
-    systemctl reload apache2
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Security enhancements deployed successfully!"
-        echo ""
-        echo "📊 Security features enabled:"
-        echo "  ✓ Block malicious file requests (.env, .git, wp-admin, etc.)"
-        echo "  ✓ Block WordPress vulnerability scans"
-        echo "  ✓ Block router/CGI exploitation attempts"
-        echo "  ✓ Block Microsoft Exchange attacks"
-        echo "  ✓ Block advertising file requests"
-        echo "  ✓ Block suspicious user agents"
-        echo "  ✓ Rate limiting with mod_evasive"
-        echo "  ✓ Security headers"
-        echo "  ✓ Custom error pages"
-        echo ""
-        echo "📝 Monitor logs at:"
-        echo "  - Apache access log: /var/log/apache2/access.log"
-        echo "  - Apache error log: /var/log/apache2/error.log"
-        echo "  - mod_evasive log: /var/log/apache2/evasive/"
-        echo ""
-        echo "🔧 To add more blocked IPs, edit:"
-        echo "  /etc/apache2/sites-available/security.conf"
-    else
-        echo "❌ Failed to reload Apache!"
-        exit 1
-    fi
-    
-else
-    echo "❌ Apache configuration test failed!"
-    echo "📋 Showing Apache error details:"
-    apache2ctl configtest 2>&1
-    echo ""
-    echo "Please check the configuration and fix any errors before reloading."
+# 6. SELinux and firewall adjustments for reverse-proxy use case
+echo "Applying SELinux and firewall settings..."
+if command -v setsebool >/dev/null 2>&1; then
+    setsebool -P httpd_can_network_connect 1 || true
+fi
+
+if command -v firewall-cmd >/dev/null 2>&1; then
+    firewall-cmd --permanent --add-service=http || true
+    firewall-cmd --permanent --add-service=https || true
+    firewall-cmd --reload || true
+fi
+
+# 7. Validate httpd configuration
+echo "Testing Apache/httpd configuration..."
+if ! httpd -t; then
+    echo "ERROR: httpd configuration test failed."
     exit 1
 fi
+
+# 8. Reload service
+echo "Reloading httpd..."
+systemctl reload "$APACHE_SERVICE"
+
+echo "Security enhancements deployed successfully."
+echo ""
+echo "Enabled/checked:"
+echo "  - Apache/httpd service: $APACHE_SERVICE"
+echo "  - Main config: $APACHE_CONF_MAIN"
+echo "  - Config include dir: $APACHE_CONFD_DIR"
+echo "  - mod_evasive log dir: $EVASIVE_LOG_DIR"
+echo "  - Rate limit file: $RATE_LIMIT_FILE"
+echo ""
+echo "Logs:"
+echo "  - Access log: /var/log/httpd/access_log"
+echo "  - Error log: /var/log/httpd/error_log"
+echo "  - mod_evasive: $EVASIVE_LOG_DIR"
+echo ""
+echo "Next checks:"
+echo "  - systemctl status httpd --no-pager"
+echo "  - httpd -M | grep -E 'rewrite|headers|ssl|evasive'"
