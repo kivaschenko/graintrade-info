@@ -279,5 +279,3 @@ created_at=datetime.datetime(2025, 8, 22, 12, 28, 30, 203969)
 provider='fondy' 
 provider_payment_token=None
 >
-
-password: TA3kPza7G25Jb9
