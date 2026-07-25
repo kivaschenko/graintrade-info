@@ -1,199 +1,211 @@
-# Apache Security Configuration for Graintrade
+# Apache2 Production Deployment for Graintrade
 
-This directory contains Apache security configurations to protect your Graintrade application from common web attacks and malicious crawlers.
+This guide explains how to deploy all core Graintrade microservices and the landing page on a production server using Docker Compose and Apache2 reverse proxy.
 
-## 🔐 Security Features Implemented
+## Scope
 
-### 1. **Malicious Request Blocking**
-- Blocks access to sensitive files (`.env`, `.git`, etc.)
-- Prevents WordPress vulnerability scans
-- Blocks router/CGI exploitation attempts
-- Prevents Microsoft Exchange/OWA attacks
-- Blocks advertising file requests (`ads.txt`, `sellers.json`)
+This runbook covers:
 
-### 2. **User Agent Filtering**
-Blocks requests from:
-- Empty user agents
-- Common attack tools (curl, wget, python scripts)
-- Security scanners (nikto, sqlmap, nmap)
-- Suspicious libraries (libwww, urllib, requests)
+- Frontend SPA
+- Backend API
+- Chat service (including WebSocket)
+- Notifications service
+- Data pipeline API
+- Landing pages service
 
-### 3. **Rate Limiting**
-- Basic rate limiting using mod_rewrite
-- Advanced rate limiting with mod_evasive (recommended)
-- Configurable thresholds for requests per minute
+## Service Routing Matrix
 
-### 4. **Security Headers**
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `X-XSS-Protection: 1; mode=block`
-- `Strict-Transport-Security` for HTTPS
+| Public Domain | Apache Config | Upstream Service | Host Port |
+|---|---|---|---|
+| graintrade.info, www.graintrade.info | graintrade.info-le-ssl.conf | frontend | 8080 |
+| api.graintrade.info | api.graintrade.info.conf | backend | 8000 |
+| chat.graintrade.info | chat.graintrade.info.conf | chat-room | 8001 |
+| data-pipeline.graintrade.info | data-pipeline.graintrade.info.conf | data-pipeline | 8004 |
+| home.graintrade.info, faq.graintrade.info | home.graintrade.info.conf | landing-service | 8003 |
 
-### 5. **IP-based Blocking**
-- Manual IP blocking for persistent attackers
-- Whitelist for internal networks
+Notes:
 
-## 📁 Files Structure
+- notifications currently has no dedicated public Apache vhost in this repository.
+- notifications runs on host port 8002 and is expected to be consumed by internal services.
 
-```
-apache_files/sites-available/
-├── api.graintrade.info.conf     # API server configuration with security
-├── graintrade.info-le-ssl.conf  # Main site configuration with security
-├── security.conf                # Shared security configurations
-├── chat.graintrade.info.conf    # Chat server configuration
-├── home.graintrade.info.conf    # Home server configuration
-└── pgadmin.graintrade.info.conf # PgAdmin configuration
-```
+Optional admin sites in this folder:
 
-## 🚀 Deployment Instructions
+- pgadmin.graintrade.info -> localhost:8081
+- airflow.graintrade.info -> localhost:8080
+- minio.graintrade.info -> localhost:9001
 
-### 1. **Quick Deployment**
+## Prerequisites
+
+1. Ubuntu 20.04/22.04+ production server with sudo access.
+2. DNS A records for all required domains pointing to the server.
+3. Docker Engine + Docker Compose plugin installed.
+4. Ports open in firewall/security group:
+    - 22/tcp
+    - 80/tcp
+    - 443/tcp
+5. Repository checked out on server.
+
+## 1. Start All Microservices
+
+From repository root:
+
 ```bash
-sudo ./deploy-security.sh
+docker compose -f docker-compose.prod.yaml pull
+docker compose -f docker-compose.prod.yaml up -d backend chat-room notifications data-pipeline frontend landing-service
+docker compose -f docker-compose.prod.yaml ps
 ```
 
-### 2. **Manual Deployment**
+Quick local health checks:
 
-1. Install required Apache modules:
+```bash
+curl -f http://127.0.0.1:8000/health
+curl -f http://127.0.0.1:8001/health
+curl -f http://127.0.0.1:8002/health
+curl -f http://127.0.0.1:8003/health
+curl -f http://127.0.0.1:8004/health
+curl -I http://127.0.0.1:8080
+```
+
+## 2. Install Apache2 and Required Modules
+
 ```bash
 sudo apt-get update
-sudo apt-get install libapache2-mod-evasive libapache2-mod-security2
-sudo a2enmod evasive security2 headers rewrite
+sudo apt-get install -y apache2 certbot python3-certbot-apache libapache2-mod-evasive
+
+sudo a2enmod ssl rewrite headers proxy proxy_http proxy_wstunnel expires deflate
+sudo a2enmod evasive
 ```
 
-2. Copy configuration files:
+If you use shared hardening rules from this directory, install and enable them as Apache conf:
+
+```bash
+sudo cp apache_files/sites-available/global-security.conf /etc/apache2/conf-available/global-security.conf
+sudo a2enconf global-security
+```
+
+## 3. Deploy Apache Virtual Hosts
+
+Copy configs from this repository:
+
 ```bash
 sudo cp apache_files/sites-available/*.conf /etc/apache2/sites-available/
 ```
 
-3. Test configuration:
+Enable required production sites:
+
+```bash
+sudo a2ensite graintrade.info-le-ssl.conf
+sudo a2ensite api.graintrade.info.conf
+sudo a2ensite chat.graintrade.info.conf
+sudo a2ensite data-pipeline.graintrade.info.conf
+sudo a2ensite home.graintrade.info.conf
+```
+
+Disable default site if still enabled:
+
+```bash
+sudo a2dissite 000-default.conf || true
+```
+
+## 4. Issue and Attach SSL Certificates
+
+Run Certbot for each public hostname:
+
+```bash
+sudo certbot --apache -d graintrade.info -d www.graintrade.info
+sudo certbot --apache -d api.graintrade.info
+sudo certbot --apache -d chat.graintrade.info
+sudo certbot --apache -d data-pipeline.graintrade.info
+sudo certbot --apache -d home.graintrade.info -d faq.graintrade.info
+```
+
+Validate renewal timer:
+
+```bash
+sudo systemctl status certbot.timer
+sudo certbot renew --dry-run
+```
+
+## 5. Validate Apache Configuration and Reload
+
 ```bash
 sudo apache2ctl configtest
-```
-
-4. Reload Apache:
-```bash
 sudo systemctl reload apache2
+sudo systemctl status apache2 --no-pager
 ```
 
-## 📊 Monitoring
-
-### Security Monitoring Script
-Use the provided monitoring script to track security events:
+## 6. End-to-End Smoke Test
 
 ```bash
-# View summary of all security events
+curl -I https://graintrade.info
+curl -f https://api.graintrade.info/health
+curl -f https://chat.graintrade.info/health
+curl -f https://data-pipeline.graintrade.info/health
+curl -f https://home.graintrade.info/health
+```
+
+Notifications check (internal service):
+
+```bash
+curl -f http://127.0.0.1:8002/health
+docker compose -f docker-compose.prod.yaml logs --tail=100 notifications
+```
+
+For WebSocket validation on chat, connect with your client to:
+
+- wss://chat.graintrade.info/ws/
+
+## Landing Page Notes
+
+The landing Apache vhost serves static files directly (alias /static) and proxies dynamic routes to landing-service on port 8003.
+
+If static files must be exported to host:
+
+```bash
+sudo mkdir -p /var/www/html/landing
+docker cp $(docker compose -f docker-compose.prod.yaml ps -q landing-service):/app/static /tmp/landing-static
+sudo rsync -a /tmp/landing-static/ /var/www/html/landing/static/
+sudo chown -R www-data:www-data /var/www/html/landing
+```
+
+## Security and Monitoring
+
+Use the bundled monitor script:
+
+```bash
 ./security-monitor.sh
-
-# View recent blocked requests
 ./security-monitor.sh blocked
-
-# View top attacking IPs
 ./security-monitor.sh attackers
-
-# View common attack patterns
 ./security-monitor.sh patterns
-
-# View mod_evasive blocks
 ./security-monitor.sh evasive
-
-# Real-time monitoring
 ./security-monitor.sh realtime
 ```
 
-### Log Locations
-- Apache access log: `/var/log/apache2/access.log`
-- Apache error log: `/var/log/apache2/error.log`
-- mod_evasive blocks: `/var/log/apache2/evasive/`
+Useful logs:
 
-## 🔧 Configuration Customization
+- /var/log/apache2/error.log
+- /var/log/apache2/access.log
+- /var/log/apache2/chat_error.log
+- /var/log/apache2/home.graintrade.info_error.log
 
-### Adding More Blocked IPs
-Edit `/etc/apache2/sites-available/security.conf`:
-```apache
-<RequireAll>
-    Require all granted
-    Require not ip 147.185.132.183
-    Require not ip NEW_SUSPICIOUS_IP
-</RequireAll>
+## Troubleshooting
+
+1. 502/503 from domain: container not healthy or wrong upstream port in vhost.
+2. SSL errors: DNS not propagated or missing certificate files in /etc/letsencrypt/live.
+3. WebSocket fails on chat: ensure proxy_wstunnel is enabled and chat service is on port 8001.
+4. Landing static 404: verify /var/www/html/landing/static exists and Apache can read it.
+5. Notifications errors: verify envs/notifications.env values and backend->notifications connectivity on port 8002.
+
+## One-Command Security Baseline
+
+If you only need to re-apply security-related Apache settings (not full deployment), you can still use:
+
+```bash
+sudo ./deploy-security.sh
 ```
-
-### Adjusting Rate Limits
-Edit mod_evasive settings in `security.conf`:
-```apache
-DOSPageCount        2     # Requests per page
-DOSPageInterval     1     # Time interval (seconds)
-DOSSiteCount        50    # Total site requests
-DOSSiteInterval     1     # Site interval (seconds)
-DOSBlockingPeriod   600   # Block duration (seconds)
-```
-
-### Whitelist Legitimate Bots
-To allow specific user agents, add exceptions before the blocking rules:
-```apache
-# Allow legitimate bots
-RewriteCond %{HTTP_USER_AGENT} (Googlebot|Bingbot) [NC]
-RewriteRule ^.*$ - [L]
-
-# Then add the blocking rules...
-```
-
-## 🎯 Attack Types Blocked
-
-Based on your logs, these configurations block:
-
-1. **Environment File Access**: `/.env`
-2. **WordPress Scans**: 
-   - `/wp-includes/wlwmanifest.xml`
-   - `/xmlrpc.php`
-   - `/wp-admin/`, `/wp-content/`, etc.
-3. **Git Repository Access**: `/.git/HEAD`
-4. **Router Exploits**: `/cgi-bin/luci/`
-5. **Exchange Server Attacks**: `/owa/auth/logon.aspx`
-6. **SEO File Scans**: `/ads.txt`, `/sellers.json`
-7. **Random Path Probing**: `/aaa9`, `/aab9`
-
-## 📈 Expected Results
-
-After deployment, you should see:
-- Significantly reduced backend 404 errors
-- Faster response times (fewer requests reaching backend)
-- Detailed logs of blocked attacks
-- Better server performance
-
-## ⚠️ Important Notes
-
-1. **Test First**: Always test configurations on staging before production
-2. **Monitor Logs**: Watch for false positives blocking legitimate traffic
-3. **Regular Updates**: Update IP blacklists and patterns regularly
-4. **Backup Configs**: Keep backups of working configurations
-
-## 🆘 Troubleshooting
-
-### If Legitimate Traffic is Blocked
-1. Check Apache error logs for specific blocking rules
-2. Add whitelist entries for legitimate IPs/user agents
-3. Adjust rate limiting thresholds
-
-### If Configuration Test Fails
-1. Check syntax in Apache config files
-2. Ensure all required modules are enabled
-3. Verify file paths in Include directives
-
-### Performance Issues
-1. Monitor server resources with new rules
-2. Adjust rate limiting settings if needed
-3. Consider hardware upgrades for high-traffic sites
-
-## 📞 Support
-
-For issues or questions:
-1. Check Apache error logs: `sudo tail -f /var/log/apache2/error.log`
-2. Test configuration: `sudo apache2ctl configtest`
-3. Monitor security events: `./security-monitor.sh`
 
 ---
 
-**Last Updated**: October 2025  
-**Version**: 1.0  
-**Tested On**: Ubuntu 20.04/22.04 with Apache 2.4
+Last Updated: 2026-07-25
+Version: 2.0
+Tested On: Ubuntu 22.04 with Apache 2.4

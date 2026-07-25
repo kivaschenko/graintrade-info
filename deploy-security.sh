@@ -1,21 +1,15 @@
 #!/bin/bash
 
-# Security Enhancement Deployment Script for Graintrade API (Fedora 44)
-# This script deploys Apache/httpd security configs on Fedora-family systems.
+# Apache deployment script for Graintrade production routing and security.
+# It installs/enables required Apache components, deploys vhost configs,
+# enables core production sites, validates Apache config, and reloads service.
 
 set -euo pipefail
 
-echo "Deploying Apache security enhancements for Graintrade on Fedora..."
+echo "🔐 Deploying Apache production routing/security for Graintrade..."
 
-# Check if running as root
 if [[ $EUID -ne 0 ]]; then
-    echo "ERROR: This script must be run as root (use sudo)."
-    exit 1
-fi
-
-# Fedora-only guard
-if [[ ! -f /etc/fedora-release ]]; then
-    echo "ERROR: This script is adapted for Fedora. Detected non-Fedora OS."
+    echo "❌ This script must be run as root (use sudo)."
     exit 1
 fi
 
@@ -28,110 +22,157 @@ APACHE_USER="apache"
 EVASIVE_LOG_DIR="/var/log/httpd/evasive"
 RATE_LIMIT_FILE="${APACHE_CONF_DIR}/rate_limit.txt"
 
-# Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-APACHE_FILES_DIR="$SCRIPT_DIR/apache_files/sites-available"
+APACHE_SITES_SRC="$SCRIPT_DIR/apache_files/sites-available"
+APACHE_SITES_DST="/etc/apache2/sites-available"
+APACHE_CONF_DST="/etc/apache2/conf-available"
 
-echo "Working directory: $SCRIPT_DIR"
-echo "Apache files directory: $APACHE_FILES_DIR"
+REQUIRED_SITE_FILES=(
+    "graintrade.info-le-ssl.conf"
+    "api.graintrade.info.conf"
+    "chat.graintrade.info.conf"
+    "data-pipeline.graintrade.info.conf"
+    "home.graintrade.info.conf"
+)
 
-# Check required source files
-if [[ ! -f "$APACHE_FILES_DIR/api.graintrade.info.conf" ]]; then
-    echo "ERROR: Source file not found: $APACHE_FILES_DIR/api.graintrade.info.conf"
-    exit 1
-fi
+REQUIRED_CERT_FILES=(
+    "/etc/letsencrypt/live/graintrade.info/fullchain.pem"
+    "/etc/letsencrypt/live/graintrade.info/privkey.pem"
+    "/etc/letsencrypt/live/api.graintrade.info/fullchain.pem"
+    "/etc/letsencrypt/live/api.graintrade.info/privkey.pem"
+    "/etc/letsencrypt/live/chat.graintrade.info/fullchain.pem"
+    "/etc/letsencrypt/live/chat.graintrade.info/privkey.pem"
+    "/etc/letsencrypt/live/data-pipeline.graintrade.info/fullchain.pem"
+    "/etc/letsencrypt/live/data-pipeline.graintrade.info/privkey.pem"
+    "/etc/letsencrypt/live/home.graintrade.info/fullchain.pem"
+    "/etc/letsencrypt/live/home.graintrade.info/privkey.pem"
+)
 
-if [[ ! -f "$APACHE_FILES_DIR/security.conf" ]]; then
-    echo "ERROR: Source file not found: $APACHE_FILES_DIR/security.conf"
-    exit 1
-fi
+ALL_COPY_FILES=(
+    "api.graintrade.info.conf"
+    "api.graintrade.info-simple.conf"
+    "chat.graintrade.info.conf"
+    "data-pipeline.graintrade.info.conf"
+    "graintrade.info-le-ssl.conf"
+    "home.graintrade.info.conf"
+    "pgadmin.graintrade.info.conf"
+    "airflow.graintrade.info.conf"
+    "minio.graintrade.info.conf"
+    "security.conf"
+)
 
-# 1. Install required packages
-echo "Installing Apache packages and modules with dnf..."
-dnf -y install httpd mod_ssl mod_evasive
+echo "📁 Working directory: $SCRIPT_DIR"
+echo "📁 Apache site source directory: $APACHE_SITES_SRC"
 
-# 2. Ensure service is enabled
-echo "Enabling and starting httpd service..."
-systemctl enable --now "$APACHE_SERVICE"
-
-# 3. Create mod_evasive log directory and rate-limit file
-echo "Preparing mod_evasive log directory and rate-limit file..."
-mkdir -p "$EVASIVE_LOG_DIR"
-chown "$APACHE_USER":"$APACHE_USER" "$EVASIVE_LOG_DIR"
-chmod 750 "$EVASIVE_LOG_DIR"
-
-touch "$RATE_LIMIT_FILE"
-chown "$APACHE_USER":"$APACHE_USER" "$RATE_LIMIT_FILE"
-chmod 640 "$RATE_LIMIT_FILE"
-
-# 4. Copy configuration files to conf.d
-echo "Deploying virtual host and security config files..."
-install -m 644 "$APACHE_FILES_DIR/api.graintrade.info.conf" "$APACHE_CONFD_DIR/"
-install -m 644 "$APACHE_FILES_DIR/security.conf" "$APACHE_CONFD_DIR/"
-
-if [[ -f "$APACHE_FILES_DIR/global-security.conf" ]]; then
-    install -m 644 "$APACHE_FILES_DIR/global-security.conf" "$APACHE_CONFD_DIR/00-global-security.conf"
-    echo "Global security configuration deployed to $APACHE_CONFD_DIR/00-global-security.conf"
-fi
-
-# Copy other site configurations if they exist
-for config_file in \
-    graintrade.info-le-ssl.conf \
-    chat.graintrade.info.conf \
-    home.graintrade.info.conf \
-    pgadmin.graintrade.info.conf \
-    data-pipeline.graintrade.info.conf \
-    airflow.graintrade.info.conf \
-    minio.graintrade.info.conf
-do
-    if [[ -f "$APACHE_FILES_DIR/$config_file" ]]; then
-        echo "Deploying $config_file..."
-        install -m 644 "$APACHE_FILES_DIR/$config_file" "$APACHE_CONFD_DIR/$config_file"
+for file in "${REQUIRED_SITE_FILES[@]}"; do
+    if [[ ! -f "$APACHE_SITES_SRC/$file" ]]; then
+        echo "❌ Required site file missing: $APACHE_SITES_SRC/$file"
+        exit 1
     fi
 done
 
-# 5. Align Debian-style path references inside security.conf to Fedora paths
-if [[ -f "$APACHE_CONFD_DIR/security.conf" ]]; then
-    sed -i 's#/var/log/apache2/evasive#/var/log/httpd/evasive#g' "$APACHE_CONFD_DIR/security.conf"
+missing_certs=0
+for cert_file in "${REQUIRED_CERT_FILES[@]}"; do
+    if [[ ! -f "$cert_file" ]]; then
+        missing_certs=1
+        break
+    fi
+done
+
+echo "📦 Installing Apache dependencies..."
+apt-get update
+apt-get install -y apache2 certbot python3-certbot-apache libapache2-mod-evasive
+
+echo "🔧 Enabling Apache modules..."
+MODULES=(ssl rewrite headers proxy proxy_http proxy_wstunnel expires deflate evasive)
+for mod in "${MODULES[@]}"; do
+    a2enmod "$mod" >/dev/null
+done
+
+echo "📁 Preparing mod_evasive and rate-limit files..."
+mkdir -p /var/log/apache2/evasive
+chown www-data:www-data /var/log/apache2/evasive
+touch /etc/apache2/rate_limit.txt
+chown www-data:www-data /etc/apache2/rate_limit.txt
+
+echo "📋 Copying Apache site files..."
+for config_file in "${ALL_COPY_FILES[@]}"; do
+    if [[ -f "$APACHE_SITES_SRC/$config_file" ]]; then
+        cp "$APACHE_SITES_SRC/$config_file" "$APACHE_SITES_DST/$config_file"
+    fi
+done
+
+if [[ -f "$APACHE_SITES_SRC/global-security.conf" ]]; then
+    echo "🛡️  Installing global security conf..."
+    cp "$APACHE_SITES_SRC/global-security.conf" "$APACHE_CONF_DST/global-security.conf"
+    a2enconf global-security >/dev/null
 fi
 
-# 6. SELinux and firewall adjustments for reverse-proxy use case
-echo "Applying SELinux and firewall settings..."
-if command -v setsebool >/dev/null 2>&1; then
-    setsebool -P httpd_can_network_connect 1 || true
+if [[ "$missing_certs" -eq 1 ]]; then
+    BOOTSTRAP_SITE="$APACHE_SITES_DST/graintrade-bootstrap-http.conf"
+    echo "⚠️  SSL certificates are missing. Entering bootstrap HTTP mode."
+    cat > "$BOOTSTRAP_SITE" <<'EOF'
+<VirtualHost *:80>
+    ServerName graintrade.info
+    ServerAlias www.graintrade.info api.graintrade.info chat.graintrade.info data-pipeline.graintrade.info home.graintrade.info faq.graintrade.info
+    DocumentRoot /var/www/html
+    <Directory /var/www/html>
+        Require all granted
+    </Directory>
+</VirtualHost>
+EOF
+
+    a2ensite graintrade-bootstrap-http.conf >/dev/null
+    for site_file in "${REQUIRED_SITE_FILES[@]}"; do
+        a2dissite "$site_file" >/dev/null || true
+    done
+else
+    echo "🌐 Enabling core production vhosts..."
+    for site_file in "${REQUIRED_SITE_FILES[@]}"; do
+        a2ensite "$site_file" >/dev/null
+    done
+    a2dissite graintrade-bootstrap-http.conf >/dev/null || true
+    rm -f "$APACHE_SITES_DST/graintrade-bootstrap-http.conf"
 fi
 
-if command -v firewall-cmd >/dev/null 2>&1; then
-    firewall-cmd --permanent --add-service=http || true
-    firewall-cmd --permanent --add-service=https || true
-    firewall-cmd --reload || true
-fi
+echo "🧹 Disabling default Apache site (if enabled)..."
+a2dissite 000-default.conf >/dev/null || true
 
-# 7. Validate httpd configuration
-echo "Testing Apache/httpd configuration..."
-if ! httpd -t; then
-    echo "ERROR: httpd configuration test failed."
+echo "🧪 Validating Apache configuration..."
+if ! apache2ctl configtest; then
+    echo ""
+    echo "❌ Apache config validation failed."
+    echo "Hint: SSL certificate file paths in enabled vhosts must exist."
+    echo "Run certbot for missing domains, then re-run this script."
     exit 1
 fi
 
-# 8. Reload service
-echo "Reloading httpd..."
-systemctl reload "$APACHE_SERVICE"
+echo "🔄 Reloading Apache..."
+systemctl reload apache2
+systemctl --no-pager --full status apache2 | sed -n '1,20p'
 
-echo "Security enhancements deployed successfully."
+if [[ "$missing_certs" -eq 1 ]]; then
+    echo ""
+    echo "✅ Apache HTTP bootstrap is active on port 80."
+    echo "Now issue certificates, then re-run this script:"
+    echo "  certbot --apache -d graintrade.info -d www.graintrade.info"
+    echo "  certbot --apache -d api.graintrade.info"
+    echo "  certbot --apache -d chat.graintrade.info"
+    echo "  certbot --apache -d data-pipeline.graintrade.info"
+    echo "  certbot --apache -d home.graintrade.info -d faq.graintrade.info"
+    exit 0
+fi
+
 echo ""
-echo "Enabled/checked:"
-echo "  - Apache/httpd service: $APACHE_SERVICE"
-echo "  - Main config: $APACHE_CONF_MAIN"
-echo "  - Config include dir: $APACHE_CONFD_DIR"
-echo "  - mod_evasive log dir: $EVASIVE_LOG_DIR"
-echo "  - Rate limit file: $RATE_LIMIT_FILE"
+echo "✅ Apache deployment completed."
 echo ""
-echo "Logs:"
-echo "  - Access log: /var/log/httpd/access_log"
-echo "  - Error log: /var/log/httpd/error_log"
-echo "  - mod_evasive: $EVASIVE_LOG_DIR"
+echo "Enabled core routes:"
+echo "  - graintrade.info        -> frontend:8080"
+echo "  - api.graintrade.info    -> backend:8000"
+echo "  - chat.graintrade.info   -> chat-room:8001"
+echo "  - data-pipeline.graintrade.info -> data-pipeline:8004"
+echo "  - home.graintrade.info   -> landing-service:8003"
 echo ""
-echo "Next checks:"
-echo "  - systemctl status httpd --no-pager"
-echo "  - httpd -M | grep -E 'rewrite|headers|ssl|evasive'"
+echo "Notes:"
+echo "  - notifications service remains internal on host port 8002."
+echo "  - If SSL certs are not issued yet, run certbot and re-run this script."
