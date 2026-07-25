@@ -13,6 +13,15 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
+# Paths and service names for Fedora
+APACHE_SERVICE="httpd"
+APACHE_CONF_DIR="/etc/httpd"
+APACHE_CONFD_DIR="${APACHE_CONF_DIR}/conf.d"
+APACHE_CONF_MAIN="${APACHE_CONF_DIR}/conf/httpd.conf"
+APACHE_USER="apache"
+EVASIVE_LOG_DIR="/var/log/httpd/evasive"
+RATE_LIMIT_FILE="${APACHE_CONF_DIR}/rate_limit.txt"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 APACHE_SITES_SRC="$SCRIPT_DIR/apache_files/sites-available"
 APACHE_SITES_DST="/etc/apache2/sites-available"
