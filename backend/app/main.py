@@ -70,8 +70,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:8080",
         "http://localhost:80",
-        "http://65.108.142.153:8080",
-        "http://65.108.142.153",
+        "http://37.27.71.120:8080",
+        "http://37.27.71.120",
         "https://api.graintrade.info",
         "https://graintrade.info",
         "https://www.graintrade.info",
