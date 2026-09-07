@@ -36,15 +36,27 @@ function loadRecaptchaScript() {
       return;
     }
 
-    const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(CAPTCHA_SITE_KEY)}`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => waitForGrecaptchaReady(resolve, reject);
-    script.onerror = () => {
+    const scriptSrc = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(CAPTCHA_SITE_KEY)}`;
+    let script = document.querySelector(`script[src="${scriptSrc}"]`);
+
+    const onScriptError = () => {
       scriptLoadPromise = null;
       reject(new Error('Failed to load CAPTCHA script'));
     };
+
+    if (script) {
+      script.addEventListener('load', () => waitForGrecaptchaReady(resolve, reject), { once: true });
+      script.addEventListener('error', onScriptError, { once: true });
+      waitForGrecaptchaReady(resolve, reject);
+      return;
+    }
+
+    script = document.createElement('script');
+    script.src = scriptSrc;
+    script.async = true;
+    script.defer = true;
+    script.addEventListener('load', () => waitForGrecaptchaReady(resolve, reject), { once: true });
+    script.addEventListener('error', onScriptError, { once: true });
     document.head.appendChild(script);
   });
 

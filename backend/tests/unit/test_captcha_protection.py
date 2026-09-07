@@ -147,7 +147,37 @@ async def test_password_recovery_rejects_low_captcha_score(monkeypatch, test_cli
 
 
 @pytest.mark.asyncio
-async def test_signup_rejects_missing_captcha_action(monkeypatch, test_client):
+@pytest.mark.parametrize(
+    ("path", "payload"),
+    [
+        (
+            "/users/",
+            {
+                "email": "user@example.com",
+                "password": "very-strong-password",
+                "captcha_token": "valid-looking-token",
+            },
+        ),
+        (
+            "/password-recovery",
+            {
+                "email": "user@example.com",
+                "captcha_token": "valid-looking-token",
+            },
+        ),
+        (
+            "/reset-password",
+            {
+                "token": "invalid-token",
+                "new_password": "new-password",
+                "captcha_token": "valid-looking-token",
+            },
+        ),
+    ],
+)
+async def test_protected_forms_reject_missing_captcha_action(
+    monkeypatch, test_client, path, payload
+):
     monkeypatch.setenv("CAPTCHA_ENABLED", "true")
     monkeypatch.setenv("CAPTCHA_SECRET_KEY", "test-secret")
     monkeypatch.setattr(
@@ -163,14 +193,7 @@ async def test_signup_rejects_missing_captcha_action(monkeypatch, test_client):
         ),
     )
 
-    response = await test_client.post(
-        "/users/",
-        json={
-            "email": "user@example.com",
-            "password": "very-strong-password",
-            "captcha_token": "valid-looking-token",
-        },
-    )
+    response = await test_client.post(path, json=payload)
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == "CAPTCHA action mismatch"
