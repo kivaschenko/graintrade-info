@@ -73,8 +73,9 @@ async def verify_captcha_or_raise(
             detail="CAPTCHA verification failed",
         )
 
-    if expected_action and verification.get("action"):
-        if verification.get("action") != expected_action:
+    if expected_action:
+        returned_action = verification.get("action")
+        if returned_action != expected_action:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="CAPTCHA action mismatch",

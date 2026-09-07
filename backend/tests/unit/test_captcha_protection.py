@@ -144,3 +144,33 @@ async def test_password_recovery_rejects_low_captcha_score(monkeypatch, test_cli
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == "CAPTCHA score too low"
+
+
+@pytest.mark.asyncio
+async def test_signup_rejects_missing_captcha_action(monkeypatch, test_client):
+    monkeypatch.setenv("CAPTCHA_ENABLED", "true")
+    monkeypatch.setenv("CAPTCHA_SECRET_KEY", "test-secret")
+    monkeypatch.setattr(
+        captcha_service,
+        "httpx",
+        type(
+            "_HttpxMock",
+            (),
+            {
+                "AsyncClient": lambda timeout: _CaptchaAsyncClient({"success": True}),
+                "HTTPError": Exception,
+            },
+        ),
+    )
+
+    response = await test_client.post(
+        "/users/",
+        json={
+            "email": "user@example.com",
+            "password": "very-strong-password",
+            "captcha_token": "valid-looking-token",
+        },
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == "CAPTCHA action mismatch"
