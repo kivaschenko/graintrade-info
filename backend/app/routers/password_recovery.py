@@ -85,9 +85,10 @@ async def request_password_recovery(
 
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
-async def reset_password(reset_data: PasswordReset):
+async def reset_password(reset_data: PasswordReset, request: Request):
     await verify_captcha_or_raise(
         reset_data.captcha_token,
+        remote_ip=request.client.host if request.client else None,
         expected_action="password_reset",
     )
     try:

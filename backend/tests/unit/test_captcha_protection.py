@@ -3,6 +3,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi import status
 
+from app.service_layer import captcha_service
 from app.service_layer.captcha_service import verify_captcha_or_raise
 
 
@@ -50,3 +51,96 @@ async def test_protected_forms_require_captcha_token_when_enabled(
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == "CAPTCHA token is required"
+
+
+class _CaptchaResponse:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return self._payload
+
+
+class _CaptchaAsyncClient:
+    def __init__(self, payload):
+        self._payload = payload
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    async def post(self, url, data):
+        return _CaptchaResponse(self._payload)
+
+
+@pytest.mark.asyncio
+async def test_signup_rejects_captcha_action_mismatch(monkeypatch, test_client):
+    monkeypatch.setenv("CAPTCHA_ENABLED", "true")
+    monkeypatch.setenv("CAPTCHA_SECRET_KEY", "test-secret")
+    monkeypatch.setattr(
+        captcha_service,
+        "httpx",
+        type(
+            "_HttpxMock",
+            (),
+            {
+                "AsyncClient": lambda timeout: _CaptchaAsyncClient(
+                    {"success": True, "action": "wrong_action", "score": 0.9}
+                ),
+                "HTTPError": Exception,
+            },
+        ),
+    )
+
+    response = await test_client.post(
+        "/users/",
+        json={
+            "email": "user@example.com",
+            "password": "very-strong-password",
+            "captcha_token": "valid-looking-token",
+        },
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == "CAPTCHA action mismatch"
+
+
+@pytest.mark.asyncio
+async def test_password_recovery_rejects_low_captcha_score(monkeypatch, test_client):
+    monkeypatch.setenv("CAPTCHA_ENABLED", "true")
+    monkeypatch.setenv("CAPTCHA_SECRET_KEY", "test-secret")
+    monkeypatch.setenv("CAPTCHA_MIN_SCORE", "0.5")
+    monkeypatch.setattr(
+        captcha_service,
+        "httpx",
+        type(
+            "_HttpxMock",
+            (),
+            {
+                "AsyncClient": lambda timeout: _CaptchaAsyncClient(
+                    {
+                        "success": True,
+                        "action": "password_recovery",
+                        "score": 0.1,
+                    }
+                ),
+                "HTTPError": Exception,
+            },
+        ),
+    )
+
+    response = await test_client.post(
+        "/password-recovery",
+        json={
+            "email": "user@example.com",
+            "captcha_token": "valid-looking-token",
+        },
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == "CAPTCHA score too low"
