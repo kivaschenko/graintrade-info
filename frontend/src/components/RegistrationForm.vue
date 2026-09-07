@@ -134,6 +134,7 @@
 <script>
 
 import publicApi from '@/services/publicApi';
+import { getCaptchaToken } from '@/services/captcha';
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
@@ -190,11 +191,13 @@ export default {
       submitError.value = '';
 
       try {
+        const captchaToken = await getCaptchaToken('signup');
         const response = await publicApi.post('/users/', {
           email: formData.email.trim().toLowerCase(),
           full_name: formData.full_name ? formData.full_name.trim() : null,
           phone: formData.phone ? formData.phone.trim() : null,
-          password: formData.password
+          password: formData.password,
+          captcha_token: captchaToken,
         });
 
         // Store the token if returned
@@ -205,7 +208,7 @@ export default {
         // Redirect to home page or login
         router.push('/');
       } catch (error) {
-        submitError.value = error.response?.data?.detail || 'Registration failed';
+        submitError.value = error.response?.data?.detail || error.message || 'Registration failed';
         console.error('Registration error:', error);
       } finally {
         isSubmitting.value = false;

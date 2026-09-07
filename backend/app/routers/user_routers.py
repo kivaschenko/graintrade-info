@@ -5,6 +5,7 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Request,
     Security,
     status,
     BackgroundTasks,
@@ -26,6 +27,7 @@ from ..schemas import (
 )
 from ..models import user_model, subscription_model
 from ..service_layer import user_services
+from ..service_layer.captcha_service import verify_captcha_or_raise
 from . import JWT_SECRET, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from ..schemas import PreferencesUpdateSchema
 from ..logger import logger
@@ -267,8 +269,14 @@ async def read_users_me(
 )
 async def create_user(
     user: UserInCreate,
+    request: Request,
     background_tasks: BackgroundTasks,
 ):
+    await verify_captcha_or_raise(
+        user.captcha_token,
+        remote_ip=request.client.host if request.client else None,
+        expected_action="signup",
+    )
     normalized_email = user.email.lower()
     existing_user = await user_model.get_by_email(normalized_email)
     if existing_user:

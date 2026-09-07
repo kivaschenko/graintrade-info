@@ -168,6 +168,10 @@ VUE_APP_CONTACT_EMAIL=support@graintrade.info
 VUE_APP_ENABLE_CHAT=true
 VUE_APP_ENABLE_MAPS=true
 VUE_APP_ENABLE_PAYMENTS=true
+
+# CAPTCHA (Google reCAPTCHA v3)
+VUE_APP_CAPTCHA_ENABLED=false
+VUE_APP_CAPTCHA_SITE_KEY=your_recaptcha_site_key
 ```
 
 ### 2. Installation & Development
@@ -271,6 +275,8 @@ VUE_APP_API_BASE_URL=http://localhost:8000
 VUE_APP_CHAT_WS_URL=ws://localhost:8001/ws
 VUE_APP_CHAT_HTTP_URL=http://localhost:8001
 VUE_APP_MAPBOX_ACCESS_TOKEN=pk.your_dev_token
+VUE_APP_CAPTCHA_ENABLED=false
+VUE_APP_CAPTCHA_SITE_KEY=your_dev_recaptcha_site_key
 ```
 
 #### Production (`.env.production`)
@@ -279,6 +285,8 @@ VUE_APP_API_BASE_URL=https://api.graintrade.info
 VUE_APP_CHAT_WS_URL=wss://chat.graintrade.info/ws
 VUE_APP_CHAT_HTTP_URL=https://chat.graintrade.info
 VUE_APP_MAPBOX_ACCESS_TOKEN=pk.your_prod_token
+VUE_APP_CAPTCHA_ENABLED=true
+VUE_APP_CAPTCHA_SITE_KEY=your_prod_recaptcha_site_key
 VUE_APP_GA4_MEASUREMENT_ID=google-measurement-id-placeholder
 VUE_APP_MS_CLARITY_PROJECT_ID=clarity-project-id-placeholder
 ```

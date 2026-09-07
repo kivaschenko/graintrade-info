@@ -160,6 +160,7 @@ class User(UserBase):
 
 class UserInCreate(UserBase):
     password: str
+    captcha_token: Optional[str] = None
 
 
 class UserInUpdate(UserBase):

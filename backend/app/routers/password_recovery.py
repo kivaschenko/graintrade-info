@@ -1,12 +1,13 @@
 from datetime import timedelta, datetime, timezone
 from pathlib import Path
 import os
-from fastapi import APIRouter, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, HTTPException, status, BackgroundTasks, Request
 from pydantic import BaseModel, EmailStr
 from dotenv import load_dotenv
 import jwt
 import bcrypt
 from ..models import user_model
+from ..service_layer.captcha_service import verify_captcha_or_raise
 from ..service_layer.user_services import send_recovery_event
 
 # Load environment variables
@@ -28,11 +29,13 @@ RECOVERY_URL = (
 
 class PasswordResetRequest(BaseModel):
     email: EmailStr
+    captcha_token: str | None = None
 
 
 class PasswordReset(BaseModel):
     token: str
     new_password: str
+    captcha_token: str | None = None
 
 
 def get_password_hash(password):
@@ -41,10 +44,17 @@ def get_password_hash(password):
 
 @router.post("/password-recovery", status_code=status.HTTP_200_OK)
 async def request_password_recovery(
-    request: PasswordResetRequest, background_tasks: BackgroundTasks
+    request_data: PasswordResetRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
 ):
+    await verify_captcha_or_raise(
+        request_data.captcha_token,
+        remote_ip=request.client.host if request.client else None,
+        expected_action="password_recovery",
+    )
     # Find user by email
-    user = await user_model.get_by_email(request.email)
+    user = await user_model.get_by_email(request_data.email)
     if not user:
         # Always return success to prevent email enumeration
         return {"message": "If the email exists, a recovery link has been sent"}
@@ -75,7 +85,12 @@ async def request_password_recovery(
 
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
-async def reset_password(reset_data: PasswordReset):
+async def reset_password(reset_data: PasswordReset, request: Request):
+    await verify_captcha_or_raise(
+        reset_data.captcha_token,
+        remote_ip=request.client.host if request.client else None,
+        expected_action="password_reset",
+    )
     try:
         # Verify token
         payload = jwt.decode(reset_data.token, RECOVERY_SECRET, algorithms=[ALGORITHM])
