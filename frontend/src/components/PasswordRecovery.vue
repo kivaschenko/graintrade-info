@@ -49,6 +49,7 @@
 
 <script setup>
 import publicApi from '@/services/publicApi';
+import { getCaptchaToken } from '@/services/captcha';
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -68,11 +69,15 @@ const passwordsMatch = computed(() => newPassword.value === confirmPassword.valu
 const requestRecovery = async () => {
   try {
     loading.value = true
-    await publicApi.post('/password-recovery', { email: email.value })
+    const captchaToken = await getCaptchaToken('password_recovery')
+    await publicApi.post('/password-recovery', {
+      email: email.value,
+      captcha_token: captchaToken,
+    })
     message.value = 'Recovery link sent to your email if account exists'
     isError.value = false
   } catch (error) {
-    message.value = 'An error occurred'
+    message.value = error.response?.data?.detail || error.message || 'An error occurred'
     isError.value = true
   } finally {
     loading.value = false
@@ -88,15 +93,17 @@ const resetPassword = async () => {
 
   try {
     loading.value = true
+    const captchaToken = await getCaptchaToken('password_reset')
     await publicApi.post('/reset-password', {
       token: token.value,
-      new_password: newPassword.value
+      new_password: newPassword.value,
+      captcha_token: captchaToken,
     })
     message.value = 'Password successfully reset'
     isError.value = false
     setTimeout(() => router.push('/login'), 2000)
   } catch (error) {
-    message.value = 'An error occurred'
+    message.value = error.response?.data?.detail || error.message || 'An error occurred'
     isError.value = true
   } finally {
     loading.value = false

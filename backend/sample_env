@@ -43,3 +43,9 @@ NOWPAYMENTS_IPN=https://fox-grand-seriously.ngrok-free.app/api/payments/nowpayme
 # Password recovery
 RECOVERY_TOKEN_EXPIRE_MINUTES=30
 RECOVERY_SECRET="dev-recovery-secret-key"
+
+# CAPTCHA (Google reCAPTCHA v3)
+CAPTCHA_ENABLED=false
+CAPTCHA_SECRET_KEY=""
+CAPTCHA_VERIFY_URL="https://www.google.com/recaptcha/api/siteverify"
+CAPTCHA_MIN_SCORE=0.5
